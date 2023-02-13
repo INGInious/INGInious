@@ -101,6 +101,10 @@ class DockerAgent(Agent):
         # Does this agent allow ssh_student ?
         self._ssh_allowed = ssh_allowed
 
+        # Background tasks, stores async tasks we don't really care about but must not be
+        # garbage collected before completion.
+        self._background_tasks = set()
+
     async def _init_clean(self):
         """ Must be called when the agent is starting """
         # Data about running containers
@@ -716,7 +720,7 @@ class DockerAgent(Agent):
                                 await self.start_ssh(student_containers_streams[msg["student_container_id"]][0],
                                                      info)  # If using ssh with kata: wait for ssh info and start ssh
                             else:  # classical run_student (not ssh_student) with a kata runtime -> handle student_container outputs
-                                self._loop.create_task(self._handle_student_container_outputs(
+                                self._start_background_task(self._handle_student_container_outputs(
                                     student_containers_streams[msg["student_container_id"]][0], write_stream))
 
                         elif msg["type"] in ["stdin", "student_signal"]:  # Simply transfer to student_container
@@ -1011,3 +1015,10 @@ class DockerAgent(Agent):
                                 "%s was detected as a runtime; it would duplicate another one, so we ignore it. %s",
                                 runtime, str(v))
         return retval
+
+    def _start_background_task(self, *args, **kwargs):
+        """ Starts a background task, using self._loop.create_task. This function follows the same signature.
+            Ensures that the task is being run and that it is not garbage collected before completion. """
+        task = self._loop.create_task(*args, **kwargs)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)

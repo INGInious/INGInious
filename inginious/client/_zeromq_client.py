@@ -154,7 +154,7 @@ class BetterParanoidPirateClient(object, metaclass=abc.ABCMeta):
 
     async def _reconnect(self):
         """
-        Called when the remote server is innacessible and the connection has to be restarted
+        Called when the remote server is inaccessible and the connection has to be restarted
         """
 
         # 1. Close all transactions

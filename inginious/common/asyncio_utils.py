@@ -9,6 +9,7 @@
 
 import asyncio
 import threading
+import weakref
 from functools import wraps, partial
 from typing import TypeVar, Generic
 
@@ -73,10 +74,20 @@ class AsyncProxy(Generic[T]):
         return _inner
 
 
+# Mapping from asyncio loops -> sets of running tasks, used in create_safe_task
+# This is a weakref dict: if a loop is not referenced anywhere else, it will be garbage collected and
+# removed from this dict.
+__background_tasks = weakref.WeakKeyDictionary()
+
+
 def create_safe_task(loop, logger, coroutine):
-    """ Calls loop.create_task with a safe (== with logged exception) coroutine """
+    """ Calls loop.create_task with a safe (with logged exception / protection against garbage collection) coroutine """
     task = loop.create_task(coroutine)
     task.add_done_callback(lambda task: __log_safe_task(logger, task))
+    if loop not in __background_tasks:
+        __background_tasks[loop] = set()
+    __background_tasks[loop].add(task)
+    task.add_done_callback(__background_tasks[loop].discard)
     return task
 
 
