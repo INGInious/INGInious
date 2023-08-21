@@ -56,7 +56,7 @@
         <div class="col-md-12 mb-3">
             {% for config_item in course.get_task_dispenser().config_items %}
                 <div class="pills pills-{{ config_item.get_id() }}" style="display: none;">
-                {% with taskid="" %}
+                {% with grouped=True %}
                     {% include config_item.get_template() %}
                 {% endwith %}
                 </div>
@@ -69,9 +69,7 @@
         </div>
     </div>
 </div>
-{% for taskid in tasks %}
-    {% include "course_admin/task_dispensers/util_task_edit_modal.html" %}
-{% endfor %}
+{% include "course_admin/task_dispensers/util_task_edit_modal.html" %}
 </div>
 
 <div id="edit-modals-template">
@@ -196,6 +194,8 @@
     });
 
     $(function() {
+        $(".task_settings").tooltip({"placement": "bottom"});
+        $(".delete_task").tooltip({"placement": "bottom"});
 
         $(".tasks_list").each(function(){
             draggable_tasks[this.id] = dispenser_util_make_tasks_list_sortable($(this));

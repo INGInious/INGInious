@@ -11,6 +11,7 @@ var draggable_sections = {};
 var draggable_tasks = {};
 var timeouts = [],  lastenter;
 var warn_before_exit = false;
+var dispenser_config = {};
 
 /*****************************
  *     Renaming Elements     *
@@ -417,6 +418,7 @@ function dispenser_util_make_sections_list_sortable(element) {
 /**********************
  *  Submit structure  *
  **********************/
+
 function dispenser_util_get_sections_list(element) {
     return element.children(".section").map(function (index) {
         const structure = {
@@ -450,107 +452,6 @@ function dispenser_util_get_section_config(element) {
             config_list[this.id] = this.value;
     });
     return config_list;
-}
-
-function dispenser_util_get_weight(tasks_id) {
-    $(".weight").each(function(){
-        if(this.name in tasks_id){
-            if(this.value === ""){
-                tasks_id[this.name]["weight"] = 1;
-            }else{
-                tasks_id[this.name]["weight"] = parseFloat(this.value);
-            }
-        }
-    });
-}
-
-function dispenser_util_get_no_stored_submissions(tasks_id){
-    $(".no_stored_submissions").each(function(){
-        var taskid = this.id;
-        if(taskid in tasks_id && this.checked && this.value === "store_all"){
-            tasks_id[taskid]["no_stored_submissions"] = 0;
-        }else if(taskid in tasks_id && this.checked && this.value === "store_not_all"){
-            $("#no_stored_submissions_value_"+taskid).each(function(){
-                var value = parseInt(this.value);
-                if(!isNaN(value)){
-                    tasks_id[taskid]["no_stored_submissions"] = value;
-                }else{
-                    tasks_id[taskid]["no_stored_submissions"] = 5;
-                }
-            });
-        }
-    });
-}
-
-function dispenser_util_get_evaluation_mode(tasks_id){
-    $(".evaluation_submission").each(function(){
-        var taskid = this.id;
-        if(taskid in tasks_id && this.checked && this.value === "best"){
-            tasks_id[taskid]["evaluation_mode"] = "best";
-        }else if(taskid in tasks_id && this.checked && this.value === "last"){
-            tasks_id[taskid]["evaluation_mode"] = "last"
-        }
-    });
-}
-
-function dispenser_util_get_submission_limit(tasks_id){
-    $(".submission_limit").each(function (){
-        var taskid = this.id;
-        if(taskid in tasks_id && $(this).prop("checked")) {
-            if(this.value === "none") {
-                tasks_id[taskid]["submission_limit"] = {"amount": -1, "period": -1};
-            } else if(this.value === "hard") {
-                $("#submission_limit_hard_" + taskid).each(function(){
-                    var value = parseInt(this.value);
-                    tasks_id[taskid]["submission_limit"] = {"amount": !isNaN(value) ? value: -1, "period": -1};
-                });
-            } else if(this.value === "soft") {
-                tasks_id[taskid]["submission_limit"] = {}
-                $("#submission_limit_soft_0_" + taskid).each(function(){
-                    var value = parseInt(this.value);
-                    tasks_id[taskid]["submission_limit"]["amount"] = !isNaN(value) ? value: -1;
-                });
-                $("#submission_limit_soft_1_" + taskid).each(function(){
-                    var value = parseInt(this.value);
-                    tasks_id[taskid]["submission_limit"]["period"] = !isNaN(value) ? value: -1;
-                });
-            }
-        }
-    });
-}
-
-function dispenser_util_get_group_submission(tasks_id){
-    $(".group_submission").each(function (){
-        var taskid = this.id;
-        if(taskid in tasks_id && $(this).prop("checked"))
-            tasks_id[taskid]["group_submission"] = this.value === "true";
-    });}
-
-function dispenser_util_get_accessibility(tasks_id) {
-    $(".accessibility").each(function (){
-        const taskid = this.id;
-        if(taskid in tasks_id && $(this).prop("checked")) {
-            if(this.value === "true")
-                tasks_id[taskid]["accessibility"] = true;
-            else if(this.value === "false")
-                tasks_id[taskid]["accessibility"] = false;
-            else {
-                const accessibility_start = $("#accessibility_start_" + taskid).val();
-                const accessibility_end = $("#accessibility_end_" + taskid).val();
-                const accessibility_soft_end = $("#accessibility_soft_end_" + taskid).val();
-                tasks_id[taskid]["accessibility"] = accessibility_start + '/' + accessibility_soft_end + '/' + accessibility_end;
-            }
-        }
-    });
-}
-
-function dispenser_util_get_categories(tasks_id){
-    $(".categories").each(function(){
-        var taskid = this.id;
-        if(taskid in tasks_id){
-            tasks_id[taskid]["categories"] = this.value !== "" ? this.value.split(",") : [];
-        }
-    });
 }
 
 function dispenser_util_get_tasks_list(element) {
@@ -593,7 +494,7 @@ function dispenser_util_get_task_config() {
 function dispenser_util_structure() {
     return JSON.stringify({
         "toc": dispenser_util_get_sections_list($('#course_structure').children(".content")),
-        "config": dispenser_util_get_task_config()
+        "config": dispenser_config
     });
 }
 

@@ -1,8 +1,8 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-{% set no_stored_submissions = course.get_task_dispenser().get_no_stored_submissions(taskid) %}
 {% if short %}
+{% set no_stored_submissions = course.get_task_dispenser().get_no_stored_submissions(taskid) %}
 {{_("Submission storage")}} :
     <span class="submission_storage submission_storage-all_sub" {% if no_stored_submissions != 0 %} style="display: none;" {% endif %}>{{ _("All submissions") }}</span>
     <span class="submission_storage submission_storage-no_stored_submissions" {% if no_stored_submissions == 0 %} style="display: none;" {% endif %}>
@@ -10,53 +10,87 @@
     </span>
 {% else %}
 <div class="mt-3">{{_("Submission storage")}}</div>
-<div class="{%if not taskid %} grouped-actions-{% endif %}no_stored_submissions">
+<div class="no_stored_submissions">
     <label>
-        <input type="radio" value="store_all" class="no_stored_submissions" name="no_stored_submissions_{{taskid}}" {%if taskid %} id="{{taskid}}" {% endif %} {{ 'checked'|safe if no_stored_submissions == 0 }} />
+        <input type="radio" value="store_all" class="no_stored_submissions" name="no_stored_submissions"  />
         {{_("All submissions")}}
     </label><br/>
     <div class="row">
         <div>
             <label class="col-xs-12 col-lg-12">
-                <input type="radio" value="store_not_all" class="no_stored_submissions" name="no_stored_submissions_{{taskid}}" {%if taskid %} id="{{taskid}}" {% endif %} {{ 'checked'|safe if no_stored_submissions > 0 }} />
-                {{ _("Only the last {nbr_submissions} submissions").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><input {%if taskid %} name="no_stored_submissions" {% endif %} class="form-control input-xs" id="no_stored_submissions_value_' + (taskid) + '" style="height:20px;padding: 0 10px;" value="' + (no_stored_submissions|string if no_stored_submissions > 0 else '') + '" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
+                <input type="radio" value="store_not_all" class="no_stored_submissions" name="no_stored_submissions"  />
+                {{ _("Only the last {nbr_submissions} submissions").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><input class="form-control input-xs" id="no_stored_submissions_value" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
             </label>
         </div>
     </div>
 </div>
 
-{% if taskid %}
+{% if not grouped %}
 <script>
-    $("#edit_{{taskid}} .no_stored_submissions input").change(function () {
-        let action = $(this).attr("name");
-        if(action == "no_stored_submissions_{{taskid}}") {
-            $("#task_{{taskid}} .submission_storage").hide();
-            if($(this).val() == "store_all")
-                $("#task_{{taskid}} .submission_storage-all_sub").show();
-            else
-                $("#task_{{taskid}} .submission_storage-no_stored_submissions").show();
+    // Feed modal
+    $("#edit_task_modal").on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var taskid = button.data('taskid');
+        var no_stored_subs = dispenser_config[taskid]["no_stored_submissions"];
+        var value;
+
+        if (no_stored_subs == 0) {
+            value = 'store_all';
+        } else {
+            value = 'store_not_all';
+            $(this).find("#no_stored_submissions_value").val(no_stored_subs);
         }
-        else
-            $("#task_{{taskid}} .submission_storage-no_stored_submissions span").text($(this).val());
+
+        var field = $(this).find(".no_stored_submissions input[value=" + value + "]");
+        field.prop("checked", true);
     });
-</script>
-{% else %}
-<script>
-    $(".grouped-actions-no_stored_submissions input").change(function () {
+
+    // Catch modal changes
+    $("#edit_task_modal .no_stored_submissions input").change(function () {
+        var taskid = $("#edit_task_modal").data("taskid");
         let action = $(this).attr("name");
-        if(action == "no_stored_submissions_") {
-            let value =  $(this).val();
-            $(".grouped-actions-task:checked").each(function () {
-                $("#edit-modals .no_stored_submissions #" + $(this).data("taskid") + "[value=" + value + "]").prop("checked", true).change();
-            });
-        }
-        else {
-            let value =  $(this).val();
-            $(".grouped-actions-task:checked").each(function () {
-                $("#edit-modals .no_stored_submissions #no_stored_submissions_value_" + $(this).data("taskid")).val(value).change();
-            });
+
+        if(action == "no_stored_submissions") {
+            $("#task_" + taskid + " .submission_storage").hide();
+            if($(this).val() == "store_all") {
+                $("#task_" + taskid + " .submission_storage-all_sub").show();
+                dispenser_config[taskid]["no_stored_submissions"] = 0;
+            } else {
+                $("#task_" + taskid + " .submission_storage-no_stored_submissions").show();
+                dispenser_config[taskid]["no_stored_submissions"] = Number($(this).val());
+            }
+        } else {
+            let id = $(this).attr("id");
+            $("#task_" + taskid + " .submission_storage-no_stored_submissions").show();
+            $("#task_" + taskid + " .submission_storage-no_stored_submissions span").text($(this).val());
+            dispenser_config[taskid]["no_stored_submissions"] = Number($(this).val());
         }
     });
+
+    // Catch grouped action changes
+    $("#grouped-actions-edit .no_stored_submissions input").change(function () {
+        let value = $(this).val();
+        let action = $(this).attr("name");
+        $(".grouped-actions-task:checked").each(function () {
+            var taskid = $(this).data("taskid");
+
+            if(action == "no_stored_submissions") {
+                $("#task_" + taskid + " .submission_storage").hide();
+                if(value == "store_all") {
+                    $("#task_" + taskid + " .submission_storage-all_sub").show();
+                    dispenser_config[taskid]["no_stored_submissions"] = 0;
+                } else {
+                    $("#task_" + taskid + " .submission_storage-no_stored_submissions").show();
+                    dispenser_config[taskid]["no_stored_submissions"] = Number(value);
+                }
+            } else {
+                $("#task_" + taskid + " .submission_storage-no_stored_submissions").show();
+                $("#task_" + taskid + " .submission_storage-no_stored_submissions span").text(value);
+                dispenser_config[taskid]["no_stored_submissions"] = Number(value);
+            }
+        });
+    });
+
 </script>
 {% endif %}
 {% endif %}

@@ -1,26 +1,37 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-{% set weight = course.get_task_dispenser().get_weight(taskid) %}
-
 {% if short %}
+{% set weight = course.get_task_dispenser().get_weight(taskid) %}
 {{ _("Grade weight (in comparison to other tasks)") }} : <span>{{ weight }}</span>
 {% else %}
 <div class="mt-3">{{ _("Grade weight (in comparison to other tasks)") }}</div>
-<input type="number" class="{%if not taskid %}grouped-actions-{% endif %}weight form-control" {% if weight > 1 %} value='{{ weight }}' {% endif %} placeholder="1" {%if taskid %} name="{{taskid}}" {% endif %} />
+<input type="number" class="weight form-control" placeholder="1" {%if taskid %} name="{{taskid}}" {% endif %} />
 
-{%if taskid %}
+{% if not grouped %}
 <script>
-    $("#edit_{{taskid}} input.weight").change(function () {
-        $("#task_{{taskid}} .pills-weight span").text($(this).val());
+    // Feed modal
+    $("#edit_task_modal").on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var taskid = button.data('taskid');
+        var field = $(this).find(".weight");
+        field.val(dispenser_config[taskid]["weight"]);
     });
-</script>
-{% else %}
-<script>
-    $(".grouped-actions-weight").change(function () {
+
+    // Catch modal changes
+    $("#edit_task_modal .weight").change(function () {
+        var taskid = $("#edit_task_modal").data("taskid");
+        dispenser_config[taskid]["weight"] = Number($(this).val());
+        $("#task_" + taskid + " .pills-weight span").text($(this).val());
+    });
+
+    // Catch grouped action changes
+    $("#grouped-actions-edit .weight").change(function () {
         let value = $(this).val();
         $(".grouped-actions-task:checked").each(function () {
-            $("#edit_" + $(this).data("taskid") + " input.weight").val(value).change();
+            var taskid = $(this).data("taskid");
+            dispenser_config[taskid]["weight"] = Number(value);
+            $("#task_" + taskid + " .pills-weight span").text(value);
         });
     });
 </script>

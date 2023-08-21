@@ -1,46 +1,42 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-{% set categories = course.get_task_dispenser().get_categories(taskid) %}
-
 {% if short %}
+{% set categories = course.get_task_dispenser().get_categories(taskid) %}
 {{_("Categories")}} :
     <span class="categories-span">{{ ','.join(categories) }}</span>
 {% else %}
 <div class="mt-3">{{_("Categories")}}</div>
-<div class="form-group row {%if not taskid %}grouped-actions-categories{% endif %}">
-    <div class="col-sm-10">
-        <input type="text" class="form-control categories" {%if taskid %} id="{{taskid}}" {% endif %} placeholder="{{ _('Tag name, separated by commas') }}"
-               value="{{','.join(categories)}}">
-    </div>
+<div class="form-group categories">
+        <input id="categories{%if grouped %}_grouped{% endif %}" type="text" class="form-control" placeholder="{{ _('Tag name, separated by commas') }}">
 </div>
 
-{% if taskid %}
+{% if not grouped %}
 <script>
-    $("#edit_{{taskid}} input.categories").change(function () {
-        $("#task_{{taskid}} .categories-span").text($(this).val());
-    });
-</script>
-{% else %}
-<script>
-    $(".grouped-actions-categories input").change(function () {
-        let value = $(this).val();
-        $(".grouped-actions-task:checked").each(function () {
-            console.log($("#edit_" + $(this).data("taskid") +  "input.categories"));
-            $("#edit_" + $(this).data("taskid") +  " input.categories").val(value).change();
-        });
+
+    // Feed modal
+    $("#edit_task_modal").on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var taskid = button.data('taskid');
+        var field = $(this).find(".categories input");
+
+        field.val(dispenser_config[taskid]["categories"].join(','));
     });
 
-    $(function() {
-        $("#edit-modals .categories").each(function () {
-            $(this).selectize({delimiter: ",", persist: false,
-                create: function (input) { return { value: input, text: input }; }
-            });
-        });
-        $("#edit-modals").on("new_task", function () {
-            $(this).find(".categories").last().selectize({delimiter: ",", persist: false,
-                create: function (input) { return { value: input, text: input }; }
-            });
+    // Catch modal changes
+    $("#edit_task_modal .categories input").change(function () {
+        var taskid = $("#edit_task_modal").data("taskid");
+        dispenser_config[taskid]["categories"] = $(this).val().split(",");
+        $("#task_" + taskid + " .categories-span").text($(this).val()).change();
+    });
+
+    // Catch grouped action changes
+    $("#grouped-actions-edit .categories input").change(function () {
+        let value = $(this).val();
+        $(".grouped-actions-task:checked").each(function () {
+            var taskid = $(this).data("taskid");
+            dispenser_config[taskid]["categories"] = value.split(",");
+            $("#task_" + taskid + " .categories-span").text(value);
         });
     });
 </script>

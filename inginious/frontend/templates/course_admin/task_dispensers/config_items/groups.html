@@ -1,18 +1,18 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-{% set group_submission = course.get_task_dispenser().get_group_submission(taskid) %}
 {%if short %}
+    {% set group_submission = course.get_task_dispenser().get_group_submission(taskid) %}
     {{_("Submission mode")}} :
     <span class="group_submission group_submission-true" {% if not group_submission %} style="display: none;" {% endif %}>{{ _("Per group") }}</span>
     <span class="group_submission group_submission-false" {% if group_submission %} style="display: none;" {% endif %}>{{ _("Individually") }}</span>
 {% else %}
 <div class="mt-3">{{_("Submission mode")}}</div>
-<div class="form-group {%if not taskid %} grouped-actions-{% endif %}group_submissions">
+<div class="form-group group_submissions">
     <div class="row">
         <div class="col-md-12">
             <label>
-            <input type="radio" value="false" name="group_submission_{{taskid}}" {%if taskid %} id="{{taskid}}" {% endif %} class="group_submission"
+            <input type="radio" value="false" name="group_submission_{{taskid}}" class="group_submission"
                 {{ 'checked="checked"'|safe if not group_submission }}/>
             {{ _("Individually") }}
             </label>
@@ -21,7 +21,7 @@
     <div class="row">
         <div class="col-md-12">
             <label>
-                <input type="radio" value="true" name="group_submission_{{taskid}}" {%if taskid %} id="{{taskid}}" {% endif %} class="group_submission"
+                <input type="radio" value="true" name="group_submission_{{taskid}}" class="group_submission"
                     {{ 'checked="checked"'|safe if group_submission }} />
                 {{_("Per group")}}
             </label>
@@ -29,22 +29,41 @@
     </div>
 </div>
 
-{%if taskid %}
+{% if not grouped %}
 <script>
-    $("#edit_{{taskid}} .group_submissions input").change(function () {
-        $("#task_{{taskid}} span.group_submission").hide();
-        if($(this).val() == "true")
-            $("#task_{{taskid}} .group_submission-true").show();
-        else
-            $("#task_{{taskid}} .group_submission-false").show();
+    // Feed modal
+    $("#edit_task_modal").on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var taskid = button.data('taskid');
+        var value = dispenser_config[taskid]["group_submission"];
+        var field = $(this).find(".group_submissions input[value=" + value + "]");
+        field.prop("checked", true);
     });
-</script>
-{% else %}
-<script>
-    $(".grouped-actions-group_submissions input").change(function () {
-        let value =  $(this).val();
+
+    // Catch modal changes
+    $("#edit_task_modal .group_submissions input").change(function () {
+        var taskid = $("#edit_task_modal").data("taskid");
+        dispenser_config[taskid]["group_submission"] = Boolean($(this).val());
+
+        $("#task_" + taskid + " span.group_submission").hide();
+        if($(this).val() == "true")
+            $("#task_" + taskid + " .group_submission-true").show();
+        else
+            $("#task_" + taskid + " .group_submission-false").show();
+    });
+
+    // Catch grouped action changes
+    $("#grouped-actions-edit .group_submissions input").change(function () {
+        let value = $(this).val();
         $(".grouped-actions-task:checked").each(function () {
-            $("#edit-modals .group_submissions #" + $(this).data("taskid") + "[value=" + value + "]").prop("checked", true).change();
+            var taskid = $(this).data("taskid");
+            dispenser_config[taskid]["group_submission"] = Boolean(value);
+
+            $("#task_" + taskid + " span.group_submission").hide();
+            if(value == "true")
+                $("#task_" + taskid + " .group_submission-true").show();
+            else
+                $("#task_" + taskid + " .group_submission-false").show();
         });
     });
 </script>

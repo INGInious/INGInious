@@ -106,8 +106,8 @@ class TableOfContents(TaskDispenser):
             "hidden_if_empty": SectionConfigItem(_("Hidden if empty"),"checkbox",False)
         }
         return template_helper.render("course_admin/task_dispensers/toc.html", course=course,
-                                      course_structure=self._toc, tasks=task_data, task_errors=task_errors, config_fields=config_fields,
-                                      config_items_funcs=["dispenser_util_get_" + config_item.get_id() for config_item in self.config_items])
+                                      course_structure=self._toc, tasks=task_data, task_errors=task_errors, 
+                                      config_fields=config_fields, dispenser_config=self._task_config)
 
     def render(self, template_helper, course, tasks_data, tag_list, username):
         """ Returns the formatted task list"""
@@ -121,6 +121,8 @@ class TableOfContents(TaskDispenser):
         valid, errors = check_toc(new_toc.get("toc", {}))
         if valid:
             valid, errors = check_task_config(self.config_items, new_toc.get("config", {}))
+        if valid and new_toc:
+            new_toc["imported"] = dispenser_data.get("imported", False) or self._dispenser_data.get("imported", False)
         return new_toc if valid else None, errors
 
     def get_ordered_tasks(self):

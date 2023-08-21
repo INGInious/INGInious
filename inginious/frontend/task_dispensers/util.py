@@ -325,7 +325,7 @@ class TerminalSection(Section):
         """
         return {
             "title": self._title,
-            "tasks_list": {taskid: rank for rank, taskid in enumerate(self._task_list)}
+            "tasks_list": self._task_list
         }
 
 

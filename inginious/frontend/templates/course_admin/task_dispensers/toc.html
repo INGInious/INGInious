@@ -25,7 +25,5 @@
 {% endwith %}
 
 <script>
-    $(function() {
-        task_config_funcs = [ {{ config_items_funcs | join(",")}} ];
-    });
+    dispenser_config = JSON.parse('{{ dispenser_config | tojson }}');
 </script>
