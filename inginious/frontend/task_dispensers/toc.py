@@ -28,10 +28,7 @@ class TableOfContents(TaskDispenser):
         if isinstance(dispenser_data, list):
             dispenser_data = {"toc": dispenser_data}
 
-        if not dispenser_data.get("config", {}):
-            dispenser_data["config"] = {
-                taskid: {item.get_id(): item.default for item in self.config_items} for taskid in task_list_func()
-            }
+        dispenser_data.setdefault("config", {})
 
         if not isinstance(dispenser_data, dict) or "toc" not in dispenser_data:
             raise Exception("Invalid dispenser data structure")

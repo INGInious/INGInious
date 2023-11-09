@@ -31,6 +31,8 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
+        if (!("no_stored_submissions" in dispenser_config[taskid]))
+            return;
         var no_stored_subs = dispenser_config[taskid]["no_stored_submissions"];
         var value;
 

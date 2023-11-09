@@ -83,6 +83,8 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
+        if (!("accessibility" in dispenser_config[taskid]))
+            return;
         var accessibility = dispenser_config[taskid]["accessibility"];
         var value;
 

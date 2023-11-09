@@ -127,7 +127,9 @@ function dispenser_util_add_tasks_to_section(button) {
         warn_before_exit = true;
         if(existing_task)
             content.append($("#task_" + selected_tasks[i] + "_clone").clone().attr("id", 'task_' + selected_tasks[i]));
-        else {
+            if(!(selected_tasks[i] in dispenser_config))
+                dispenser_config[selected_tasks[i]] = {};
+	else {
             // Copy and add the new task
             var new_task_clone = $("#new_task_clone").clone();
             new_task_clone.attr("id", 'task_' + selected_tasks[i]);
@@ -206,7 +208,8 @@ function dispenser_util_delete_task(button, keep_files, taskid){
     }
     const task = $("#task_" + taskid);
     const parent = task.closest(".tasks_list");
-    task.remove()
+    task.remove();
+    delete dispenser_config[taskid];
 
     warn_before_exit = true;
     dispenser_util_content_modified(parent);

@@ -44,6 +44,8 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
+        if (!("submission_limit" in dispenser_config[taskid]))
+            return;
         var sub_limit = dispenser_config[taskid]["submission_limit"];
         var value;
 

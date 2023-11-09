@@ -30,6 +30,8 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
+        if (!("evaluation_mode" in dispenser_config[taskid]))
+            return;
         var value = dispenser_config[taskid]["evaluation_mode"];
         var field = $(this).find(".evaluation_submission input[value=" + value + "]");
         field.prop("checked", true);

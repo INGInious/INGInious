@@ -50,7 +50,7 @@
                         {% endif %}
                     </div>
                     <div class="ml-auto">
-                        <button class="delete_task btn btn-sm btn-warning" onclick="dispenser_util_delete_task(this, false, this.closest('.task').id.to_taskid())"
+                        <button class="delete_task btn btn-sm btn-warning" onclick="dispenser_util_delete_task(this, '{{ taskid }}')"
                                 title="{{ _('Delete invalid task') }}" style="font-size: 1em;" data-toggle="tooltip" data-placement="bottom">
                             <i class="fa fa-trash"></i>
                         </button>
