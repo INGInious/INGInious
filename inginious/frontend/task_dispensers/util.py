@@ -341,13 +341,23 @@ def check_toc(toc):
     return True, "Valid TOC"
 
 
-def parse_tasks_config(config_items, data):
+def parse_tasks_config(task_list, config_items, data):
     """
     Parse the task settings and modify data to set default values if needed
     :param data: the raw content of the task settings
     """
-    for taskid, structure in data.items():
 
+    # Clean the config dict from unexpected tasks
+    unexpected = [taskid for taskid in data if taskid not in task_list]
+    for taskid in unexpected:
+        del data[taskid]
+
+    # Set default empty dict for missing tasks
+    for taskid in task_list:
+        data.setdefault(taskid, {})
+
+    # Check each config validity
+    for taskid, structure in data.items():
         try:
             for config_item in config_items:
                 id = config_item.get_id()
@@ -356,14 +366,14 @@ def parse_tasks_config(config_items, data):
             raise InvalidTocException("In taskid {} : {}".format(taskid, str(ex)))
 
 
-def check_task_config(config_items, data):
+def check_task_config(task_list, config_items, data):
     """
 
     :param data: the raw content of the task settings
     :return:  (True, '') if the settings are valid or (False, The error message) otherwise
     """
     try:
-        parse_tasks_config(config_items, data)
+        parse_tasks_config(task_list, config_items, data)
         return True, ''
     except Exception as ex:
         return False, str(ex)

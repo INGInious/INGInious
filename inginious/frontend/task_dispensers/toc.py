@@ -36,7 +36,7 @@ class TableOfContents(TaskDispenser):
         TaskDispenser.__init__(self, task_list_func, dispenser_data, database, course_id)
         self._toc = SectionsList(dispenser_data.get("toc", {}))
         self._task_config = dispenser_data.get("config", {})
-        parse_tasks_config(self.config_items, self._task_config)
+        parse_tasks_config(self._task_list_func().keys(), self.config_items, self._task_config)
 
     @classmethod
     def get_id(cls):
@@ -127,7 +127,7 @@ class TableOfContents(TaskDispenser):
         new_toc = dispenser_data
         valid, errors = check_toc(new_toc.get("toc", {}))
         if valid:
-            valid, errors = check_task_config(self.config_items, new_toc.get("config", {}))
+            valid, errors = check_task_config(self._task_list_func().keys(), self.config_items, new_toc.get("config", {}))
         if valid and new_toc:
             new_toc["imported"] = dispenser_data.get("imported", False) or self._dispenser_data.get("imported", False)
         return new_toc if valid else None, errors
