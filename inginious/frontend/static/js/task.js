@@ -115,7 +115,7 @@ function displayNewSubmission(id)
     
     //If there exists tags, we add a badge with '0' in the new submission.
     if($('span', $('#main_tag_group')).length > 0){
-        submission_link.append('<span class="badge alert-info" id="tag_counter" >0</span>');
+        submission_link.prepend('<span class="badge alert-info" id="tag_counter" >0</span> ');
     }
 
     submissions.prepend(submission_link);
@@ -813,7 +813,7 @@ function updateMainTags(data){
         //If this is a alert-danger class, this is an misconception
         if($(this).attr('class') == "badge alert-danger"){
             $(this).hide();
-        }else if($(this).attr('class') == "badge alert-default"){
+        }else if($(this).attr('class') == "badge alert-warning"){
             //Remove auto tags
             $(this).remove();
         }else{
@@ -837,10 +837,10 @@ function updateMainTags(data){
             if(tag.startsWith("*auto-tag-")){
                 var max_length = 28;
                 if(data["tests"][tag].length > max_length){
-                    $('#main_tag_group').append('<span class="badge alert-default" data-toggle="tooltip" data-placement="top" data-original-title="'+data["tests"][tag]+'">'+data["tests"][tag].substring(0, max_length)+'…</span>');
+                    $('#main_tag_group').append('<span class="badge alert-warning" data-toggle="tooltip" data-placement="top" data-original-title="'+data["tests"][tag]+'">'+data["tests"][tag].substring(0, max_length)+'…</span>');
                 }
                 else{
-                    $('#main_tag_group').append('<span class="badge alert-default">'+data["tests"][tag]+'</span>');
+                    $('#main_tag_group').append('<span class="badge alert-warning">'+data["tests"][tag]+'</span>');
                 }
             }
         }
@@ -861,24 +861,17 @@ function updateTagsToNewSubmission(elem, data){
     //Get all tags listed in main tag section
     $('span', $('#main_tag_group')).each(function() {
         var id = $(this).attr("id");
-        var color = $(this).attr("class");
-        //Only consider normal tag (we do not consider misconception
-        if(color != "badge alert-danger"){
-            if(id in data && data[id]){
-                n_ok++;
-                tags_ok.push($(this).text());
-            }
-            n_tot++;
+        if(id in data && data[id]){
+            n_ok++;
+            tags_ok.push($(this).text());
         }
+        n_tot++;
     });
     badge.text(n_ok);
-    if(n_tot == n_ok){
-        badge.attr("class", "badge alert-success");
-    }else if(n_ok > 0){
-        badge.attr("data-toggle", "tooltip");
-        badge.attr("data-placement", "left");
-        badge.attr('data-original-title', tags_ok.join(", "));
-    }
+    badge.attr("data-toggle", "tooltip");
+    badge.attr("data-placement", "left");
+    badge.attr('data-original-title', tags_ok.join(", "));
+
 }
 
 /*

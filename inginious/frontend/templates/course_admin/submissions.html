@@ -144,15 +144,17 @@
                     <td>
                     {% set course_tags = course.get_tags() %}
                     {% for tag_submission in submission['tests'] %}
-                        {% set tag = course_tags[tag_submission] %}
-                        {% if tag.get_type() == 0  %}
-                            <span style="line-height: 18px;">
-                                <span class="badge alert-success" id="{{ tag.get_id() }}">{{ tag.get_name(user_manager.session_language()) }}</span>
-                            </span>
-                        {% elif tag.get_type() == 1 %}
-                            <span style="line-height: 18px;">
-                                <span class="badge alert-danger" id="{{ tag.get_id() }}"> {{ tag.get_name(user_manager.session_language()) }}</span>
-                            </span>
+                        {% if tag_submission in course_tags %}
+                            {% set tag = course_tags[tag_submission] %}
+                            {% if tag.get_type() == 0  %}
+                                <span style="line-height: 18px;">
+                                    <span class="badge alert-success" id="{{ tag.get_id() }}" style="border:1px solid green;">{{ tag.get_name(user_manager.session_language()) }}</span>
+                                </span>
+                            {% elif tag.get_type() == 1 %}
+                                <span style="line-height: 18px;">
+                                    <span class="badge alert-danger" id="{{ tag.get_id() }}"> {{ tag.get_name(user_manager.session_language()) }}</span>
+                                </span>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
                     {# Auto-tags not defined in task #}
@@ -160,10 +162,10 @@
                         {% for tag in submission["tests"] %}
                             {% if tag.startswith("*auto-tag-") %}
                                 <span style="line-height: 18px;">
-                                    {% if len(submission["tests"][tag]) > 30 %}
-                                        <span class="badge alert-default" data-toggle="tooltip" data-placement="left" data-original-title="{{submission['tests'][tag]}}">{{ submission["tests"][tag][:30] }} …</span>
+                                    {% if submission["tests"][tag] | length > 30 %}
+                                        <span class="badge alert-warning" data-toggle="tooltip" data-placement="left" data-original-title="{{submission['tests'][tag]}}">{{ submission["tests"][tag][:30] }} …</span>
                                     {% else %}
-                                        <span class="badge alert-default">{{ submission["tests"][tag] }}</span>
+                                        <span class="badge alert-warning">{{ submission["tests"][tag] }}</span>
                                     {% endif %}
                                 </span>
                             {% endif %}
