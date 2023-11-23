@@ -693,15 +693,16 @@ function drag_drop_handler() {
 
     // Drag enter
     $(".upload-area").on('dragenter', function (e) {
-        $("#edit_task_tabs_content").append("<p id='dragtext'><b>Drag a file here</b></p>");
+        $("#dragtext").css("visibility", "visible");
+        $(this).addClass("dragin");
         e.stopPropagation();
         e.preventDefault();
-
     });
 
     // Drag over
     $(".upload-area").on('dragover', function (e) {
         $(this).addClass("dragin");
+        $("#dragtext").css("visibility", "visible");
         e.stopPropagation();
         e.preventDefault();
 
@@ -709,12 +710,14 @@ function drag_drop_handler() {
 
     $(".upload-area").on('dragleave',function(e){
         $(this).removeClass("dragin");
-        $("#dragtext").remove();
+        $("#dragtext").css("visibility", "hidden");
+        e.stopPropagation();
+        e.preventDefault();
     });
 
     // Drop
     $(".upload-area").on('drop', function (e) {
-        $("#dragtext").remove();
+        $("#dragtext").css("visibility", "hidden");
         e.stopPropagation();
         e.preventDefault();
 
@@ -723,11 +726,6 @@ function drag_drop_handler() {
         fd.append('file', file[0]);
         fd.append('name',file[0].name);
         uploadData(fd);
-    });
-
-    // Open file selector on div click
-    $(".upload-area").click(function(){
-        $("#file").click();
     });
 
     // file selected

@@ -1,7 +1,8 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-<div role="tabpanel" class="tab-pane show active upload-area" id="tab_file_list">
+<div role="tabpanel" class="tab-pane show active " id="tab_file_list">
+
     {% if error is not none %}
         <div class="alert alert-danger" role="alert" style="text-align: center;">
             {{ error }}
@@ -10,7 +11,7 @@
 
     <input type="file" name="file" id="file" style="display: none;">
     <div style="overflow-x:auto;">
-        <table class="table table-bordered table-sm">
+        <table class="table table-bordered table-sm upload-area">
             <thead class="table-borderless">
                 <th class="col-sm-8">{{_("Path")}}</th>
                 <th class="col-sm-1">{{_("Download")}}</th>
@@ -66,4 +67,4 @@
     drag_drop_handler();
     </script>
 </div>
-
+<p id="dragtext" class="mb-0" style="visibility: hidden;"><b>{{ _("Drag and drop a file here.") }}</b></p>
