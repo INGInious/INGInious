@@ -1,0 +1,58 @@
+site_name: INGInious
+site_url: "https://doc.inginious.org"
+repo_url: "https://github.com/UCL-INGI/INGInious"
+repo_name: "UCL-INGI/INGInious"
+
+theme:
+  name: material
+  features:
+    - search:
+        lang: en
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.indexes 
+    - toc.integrate
+    - navigation.top
+    - navigation.footer
+
+  palette: 
+    # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-7 
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - tables
+
+extra:
+  version:
+    provider: mike
+
+plugins:
+  - search:
+  - mkdoxy:
+      projects:
+        api:
+          src-dirs: inginious
+          full-doc: True
+          doxy-cfg:
+            FILE_PATTERNS: "*.py"
+            RECURSIVE: True
+      save-api: .mkdoxy
+
+nav:
+  - index.md
+  - setup.md
+  - admin.md
+  - teacher.md
+  - API Documentation:
+    - api/index.md
+    - Links: api/links.md
