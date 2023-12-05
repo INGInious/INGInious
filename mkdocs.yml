@@ -1,10 +1,11 @@
 site_name: INGInious
-site_url: "https://doc.inginious.org"
+site_url: "https://docs.inginious.org"
 repo_url: "https://github.com/UCL-INGI/INGInious"
 repo_name: "UCL-INGI/INGInious"
 
 theme:
   name: material
+  logo: assets/header.png
   features:
     - search:
         lang: en
@@ -16,6 +17,8 @@ theme:
     - toc.integrate
     - navigation.top
     - navigation.footer
+    - content.code.copy
+    - content.code.annotate
 
   palette: 
     # Palette toggle for light mode
@@ -31,10 +34,30 @@ theme:
 
 markdown_extensions:
   - tables
-
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+        
 extra:
   version:
     provider: mike
+  social:
+    - icon: simple/zulip
+      link: https://inginious.zulipchat.com/
+    - icon: fontawesome/regular/message
+      link: https://github.com/UCL-INGI/INGInious/discussions
+    - icon: fontawesome/brands/github
+      link: https://github.com/UCL-INGI/INGInious
+  copyright: Copyright &copy; 2014 - 2023 Université catholique de Louvain.
 
 plugins:
   - search:
@@ -46,6 +69,7 @@ plugins:
           doxy-cfg:
             FILE_PATTERNS: "*.py"
             RECURSIVE: True
+            OPTIMIZE_OUTPUT_JAVA: True
       save-api: .mkdoxy
 
 nav:
@@ -56,3 +80,4 @@ nav:
   - API Documentation:
     - api/index.md
     - Links: api/links.md
+  - change.md
