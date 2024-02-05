@@ -21,6 +21,8 @@ from pymongo import ReturnDocument
 from binascii import hexlify
 import os
 import re
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 
 
 class AuthInvalidInputException(Exception):
@@ -286,21 +288,55 @@ class UserManager:
         """
         return self._auth_methods
 
-    def auth_user(self, username, password):
+    def auth_user(self, username, password, do_connect=True):
         """
         Authenticate the user in database
         :param username: Username/Login
         :param password: User password
-        :return: Returns a dict representing the user
+        :param do_connect: indicates if the user must be connected after authentification, True by default
+        :return: Returns a dict representing the user, or None if the authentication was not successful
         """
-        password_hash = self.hash_password(password)
-
         user = self._database.users.find_one(
-            {"username": username, "password": password_hash, "activate": {"$exists": False}})
+            {"username": username, "activate": {"$exists": False}})
 
-        return user if user is not None and self.connect_user(username, user["realname"], user["email"],
-                                                              user["language"],
-                                                              user.get("tos_accepted", False)) else None
+        if user is None:
+            return None
+
+        method, db_hash = user["password"].split("-", 1) if "-" in user["password"] else ("sha512", user["password"])
+
+        if self.verify_hash(db_hash, password, method):
+            if do_connect:
+                self.connect_user(username, user["realname"], user["email"], user["language"],
+                                  user.get("tos_accepted", False))
+            return user
+
+    def verify_hash(cls, db_hash, password, method="sha512"):
+        """
+        Verify a hash
+        :param db_hash: The hash to verify
+        :param password: The password to verify
+        :param method: The hash method
+        :return: A boolean if the hash is correct
+        """
+        available_methods = {"sha512": cls.verify_hash_sha512, "argon2id": cls.verify_hash_argon2id}
+
+        if method in available_methods:
+            return available_methods[method](db_hash, password)
+        else:
+            raise AuthInvalidMethodException()
+
+
+    def verify_hash_sha512(cls, db_hash, password):
+        return cls.hash_password_sha512(password) == db_hash
+
+
+    def verify_hash_argon2id(cls, db_hash, password):
+        try:
+            ph = PasswordHasher()
+            return ph.verify(db_hash, password)
+        except VerifyMismatchError:
+            return False
+
 
     def is_user_activated(self, username):
         """
@@ -1024,9 +1060,31 @@ class UserManager:
         return hexlify(os.urandom(40)).decode('utf-8')
 
     @classmethod
-    def hash_password(cls, content):
+    def hash_password_sha512(cls, content):
         """
         :param content: a str input
         :return a hash of str input
         """
         return hashlib.sha512(content.encode("utf-8")).hexdigest()
+
+    @classmethod
+    def hash_password_argon2id(cls, content):
+        """
+        :param content: a str input
+        :return a hash of str input
+        """
+        ph = PasswordHasher()
+        return ph.hash(content)
+
+    @classmethod
+    def hash_password(cls, content):
+        """
+        Encapsulates the other password hashing functions
+        :param content: a str input
+        :return a hash of str input
+        """
+
+        methods = {"argon2id": cls.hash_password_argon2id, "sha512": cls.hash_password_sha512}
+        latest_method = "argon2id"
+
+        return latest_method + "-" + methods[latest_method](content)
