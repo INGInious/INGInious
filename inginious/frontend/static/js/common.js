@@ -77,11 +77,25 @@ function registerCodeEditor(textarea, lang, lines, firstline=1)
 
     var is_single = $(textarea).hasClass('single');
 
+     var keyMappings = {
+        'Ctrl-Enter': function() {
+                                 $('body,html').animate({
+                                   scrollTop: $('#task-submit').offset().top
+                                 }, 'fast');
+                               }
+     }
+
+    if (user_indentation_type["text"] == "tabs") {
+        keyMappings["Tab"] = function(cm) { cm.execCommand("insertTab"); cm.execCommand("indentLess"); cm.execCommand("insertTab"); };
+    } else {
+        keyMappings["Tab"] = function(cm) { cm.execCommand("insertSoftTab");};
+    }
+
 
 
     var editor = CodeMirror.fromTextArea(textarea, {
         lineNumbers:       true,
-        firstLineNumber: parseInt(firstline),
+        firstLineNumber:   parseInt(firstline),
         mode:              mode["mime"],
         foldGutter:        true,
         styleActiveLine:   true,
@@ -89,19 +103,15 @@ function registerCodeEditor(textarea, lang, lines, firstline=1)
         autoCloseBrackets: true,
         lineWrapping:      true,
         gutters:           ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-        indentUnit:        4,
+        indentUnit:        user_indentation_type["indent"],
+        indentWithTabs:    user_indentation_type["indentWithTabs"],
+        tabSize:           user_indentation_type["indent"],
         viewportMargin:    Infinity,
         lint:              function()
                            {
                                return []
                            },
-        extraKeys:         {
-                               'Ctrl-Enter': function() {
-                                 $('body,html').animate({
-                                   scrollTop: $('#task-submit').offset().top
-                                 }, 'fast');
-                               },
-                           },
+        extraKeys:         keyMappings
     });
 
     if(is_single)

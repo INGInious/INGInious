@@ -43,8 +43,9 @@ class ProfilePage(INGIniousAuthPage):
                     msg = _("Incorrect email.")
                     return result, msg, error
                 else:
-                    self.user_manager.connect_user(result["username"], result["realname"], result["email"],
-                                                   result["language"], result.get("tos_accepted", False))
+                    self.user_manager.set_session_username(data["username"])
+
+        profile_data_to_be_updated = {}
 
         # Check if updating the password.
         if self.app.allow_registration and len(data["passwd"]) in range(1, 6):
@@ -68,38 +69,44 @@ class ProfilePage(INGIniousAuthPage):
                 return result, msg, error
             else:
                 passwd_hash = UserManager.hash_password(data["passwd"])
-                result = self.database.users.find_one_and_update({"username": self.user_manager.session_username()},
-                                                                 {"$set": {"password": passwd_hash}},
-                                                                 return_document=ReturnDocument.AFTER)
+                profile_data_to_be_updated["password"] = passwd_hash
 
         # Check if updating language
-        if data["language"] != userdata["language"]:
+        if data["language"] != userdata.get("language", "en"):
             language = data["language"] if data["language"] in self.app.available_languages else "en"
-            result = self.database.users.find_one_and_update({"username": self.user_manager.session_username()},
-                                                             {"$set": {"language": language}},
-                                                             return_document=ReturnDocument.AFTER)
-            if not result:
-                error = True
-                msg = _("Incorrect username.")
-                return result, msg, error
-            else:
-                self.user_manager.set_session_language(language)
+            profile_data_to_be_updated["language"] = language
+
+        # check if updating code indentation
+        if data["code_indentation"] != userdata.get("code_indentation", "4"):
+            code_indentation = data["code_indentation"] if data["code_indentation"] in self.app.available_indentation_types.keys() else "4"
+            profile_data_to_be_updated["code_indentation"] = code_indentation
 
         # Checks if updating name
-        if len(data["realname"]) > 0:
-            result = self.database.users.find_one_and_update({"username": self.user_manager.session_username()},
-                                                             {"$set": {"realname": data["realname"]}},
-                                                             return_document=ReturnDocument.AFTER)
+        if data["realname"] != userdata.get("realname", ""):
+            if len(data["realname"]) > 0:
+                profile_data_to_be_updated["realname"] = data["realname"]
+            else:
+                error = True
+                msg = _("Name is too short.")
+                return result, msg, error
+
+        # updating profile in DB
+        if profile_data_to_be_updated:
+            self.database.users.find_one_and_update({"username": self.user_manager.session_username()},
+                                                    {"$set": profile_data_to_be_updated},
+                                                    return_document=ReturnDocument.AFTER)
             if not result:
                 error = True
                 msg = _("Incorrect username.")
                 return result, msg, error
             else:
-                self.user_manager.set_session_realname(data["realname"])
-        else:
-            error = True
-            msg = _("Name is too short.")
-            return result, msg, error
+                # updating session
+                if "language" in profile_data_to_be_updated:
+                    self.user_manager.set_session_language(profile_data_to_be_updated["language"])
+                if "code_indentation" in profile_data_to_be_updated:
+                    self.user_manager.set_session_code_indentation(profile_data_to_be_updated["code_indentation"])
+                if "realname" in profile_data_to_be_updated:
+                    self.user_manager.set_session_realname(profile_data_to_be_updated["realname"])
 
         msg = _("Profile updated.")
 

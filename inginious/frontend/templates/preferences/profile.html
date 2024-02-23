@@ -70,6 +70,14 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="col-sm-12">
+            <label class="control-label">{{ _("Code indentation :") }} </label>
+            <select name="code_indentation" class="form-control">
+                {% for code, indentation_data in available_indentation_types.items() %}
+                <option value="{{code}}" {% if code == user_manager.session_code_indentation() %} selected {% endif %}>{{ _(indentation_data["text"]) }}</option>
+                {% endfor %}
+            </select>
+        </div>
         {% if allow_registration %}
             <div class="col-sm-12">
                 <label class="control-label">{{ _("Old password :") }} </label>

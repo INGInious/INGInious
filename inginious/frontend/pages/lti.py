@@ -146,8 +146,7 @@ class LTILoginPage(INGIniousPage):
 
         user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]})
         if user_profile:
-            self.user_manager.connect_user(user_profile["username"], user_profile["realname"], user_profile["email"],
-                                           user_profile["language"], user_profile.get("tos_accepted", False))
+            self.user_manager.connect_user(user_profile)
 
         if self.user_manager.session_logged_in():
             return redirect(self.app.get_path("lti", "task"))

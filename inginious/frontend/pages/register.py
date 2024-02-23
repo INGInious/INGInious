@@ -100,6 +100,7 @@ class RegistrationPage(INGIniousPage):
                                                 "activate": activate_hash,
                                                 "bindings": {},
                                                 "language": self.user_manager._session.get("language", "en"),
+                                                "code_indentation": "4",
                                                 "tos_accepted": True
                                                 })
                 try:

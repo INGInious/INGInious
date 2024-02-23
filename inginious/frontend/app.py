@@ -180,6 +180,14 @@ def get_app(config):
     available_languages = {"en": "English"}
     available_languages.update(available_translations)
 
+    # available indentation types
+    available_indentation_types = {
+        "2": {"text": "2 spaces", "indent": 2, "indentWithTabs": False},
+        "3": {"text": "3 spaces", "indent": 3, "indentWithTabs": False},
+        "4": {"text": "4 spaces", "indent": 4, "indentWithTabs": False},
+        "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
+    }
+
     l10n_manager = L10nManager()
 
     l10n_manager.translations["en"] = gettext.NullTranslations()  # English does not need translation ;-)
@@ -247,6 +255,7 @@ def get_app(config):
     template_helper.add_to_template_globals("_", _)
     template_helper.add_to_template_globals("str", str)
     template_helper.add_to_template_globals("available_languages", available_languages)
+    template_helper.add_to_template_globals("available_indentation_types", available_indentation_types)
     template_helper.add_to_template_globals("get_homepath", get_homepath)
     template_helper.add_to_template_globals("get_path", get_path)
     template_helper.add_to_template_globals("pkg_version", __version__)
@@ -304,6 +313,7 @@ def get_app(config):
     flask_app.allow_registration = config.get("allow_registration", True)
     flask_app.allow_deletion = config.get("allow_deletion", True)
     flask_app.available_languages = available_languages
+    flask_app.available_indentation_types = available_indentation_types
     flask_app.welcome_page = config.get("welcome_page", None)
     flask_app.terms_page = config.get("terms_page", None)
     flask_app.privacy_page = config.get("privacy_page", None)

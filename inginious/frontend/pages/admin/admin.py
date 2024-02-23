@@ -64,7 +64,8 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
                 "email": email,
                 "password": password,
                 "bindings": {},
-                "language": "en"})
+                "language": "en",
+                "code_indentation": "4"})
         else:
             feedback = _("Unknown action.")
         if feedback:

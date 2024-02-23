@@ -209,5 +209,8 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     {{ template_helper.call('javascript_footer') | safe }}
+    <script>
+        var user_indentation_type = {{ available_indentation_types[user_manager.session_code_indentation()] | tojson }};
+    </script>
 </body>
 </html>

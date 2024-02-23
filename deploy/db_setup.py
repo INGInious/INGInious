@@ -42,9 +42,10 @@ if __name__ == '__main__':
     database = try_mongodb_opts('db')
 
     database.users.insert_one({"username": username,
-                                       "realname": realname,
-                                       "email": email,
-                                       "password": UserManager.hash_password(password),
-                                       "bindings": {},
-                                       "language": "en"})
+                               "realname": realname,
+                               "email": email,
+                               "password": UserManager.hash_password(password),
+                               "bindings": {},
+                               "language": "en",
+                               "code_indentation": "4"})
     print('Superadmin user added!')
