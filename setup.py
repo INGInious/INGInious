@@ -18,6 +18,7 @@ install_requires = [
     "lti==0.9.5",
     "MarkupSafe==3.0.2",
     "msgpack==1.1.0",
+    "PyLTI1p3==2.0.0",
     "natsort==8.4.0",
     "psutil==6.1.1",
     "pymongo==4.11",

@@ -3,6 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
+import json
 import re
 import flask
 
@@ -10,6 +11,8 @@ from inginious.common.base import dict_from_prefix, id_checker
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
+from pylti1p3.tool_config import ToolConfDict
+from jwcrypto.jwk import JWK  # type: ignore
 
 class CourseSettingsPage(INGIniousAdminPage):
     """ Couse settings """
@@ -84,11 +87,37 @@ class CourseSettingsPage(INGIniousAdminPage):
 
         course_content['is_lti'] = 'lti' in data and data['lti'] == "true"
         course_content['lti_url'] = data.get("lti_url", "")
-        course_content['lti_keys'] = dict([x.split(":") for x in data['lti_keys'].splitlines() if x])
 
-        for lti_key in course_content['lti_keys'].keys():
-            if not re.match("^[a-zA-Z0-9]*$", lti_key):
-                errors.append(_("LTI keys must be alphanumerical."))
+        try:
+            lti_config = json.loads(data['lti_config'])
+            assert isinstance(lti_config, dict), 'Not a JSON object'
+            for iss in lti_config:
+                iss_config = lti_config[iss]
+                assert type(iss_config) is list, f'Issuer {iss} must have a list of client_id configuration'
+                for i, client_config in enumerate(iss_config):
+                    required_keys = {'default', 'client_id', 'auth_login_url', 'auth_token_url', 'key_set_url', 'private_key', 'public_key', 'deployment_ids'}
+                    for key in required_keys:
+                        assert key in client_config, f'Missing {key} in client config {i} of issuer {iss}'
+            tool_conf = ToolConfDict(lti_config)
+            for iss in lti_config:
+                for i, client_config in enumerate(lti_config[iss]):
+                    tool_conf.set_private_key(iss, client_config['private_key'], client_id=client_config['client_id'])
+                    try:
+                        JWK.from_pem(client_config['private_key'].encode('utf-8')).export(private_key=True)  # Checks the private key format
+                    except ValueError:
+                        raise Exception(f"Error in private key of client config {i} of issuer {iss}")
+                    tool_conf.set_public_key(iss, client_config['public_key'], client_id=client_config['client_id'])
+                    try:
+                        JWK.from_pem(client_config['public_key'].encode('utf-8')).export(private_key=False)  # Checks the public key format
+                    except ValueError:
+                        raise Exception(f"Error in public key of client config {i} of issuer {iss}")
+            course_content['lti_config'] = lti_config
+        except json.JSONDecodeError as ex:
+            errors.append(_("LTI config couldn't parse as JSON") + ' - ' + str(ex))
+        except AssertionError as ex:
+            errors.append(_('LTI config is incorrect') + ' - ' + str(ex))
+        except Exception as ex:
+            errors.append(_('LTI config is incorrect') + ' - ' + str(ex))
 
         course_content['lti_send_back_grade'] = 'lti_send_back_grade' in data and data['lti_send_back_grade'] == "true"
 

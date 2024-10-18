@@ -155,7 +155,7 @@ class UserManager:
                     "task": (course_id, task_id),
                     "outcome_service_url": outcome_service_url,
                     "outcome_result_id": outcome_result_id,
-                    "consumer_key": consumer_key
+                    "platform_instance_id": platform_instance_id
                 }
 
             where all these data where provided by the LTI consumer, and MAY NOT be equivalent to the data
@@ -227,7 +227,7 @@ class UserManager:
         self._session["lti"] = None
         self._session["tos_signed"] = None
 
-    def create_lti_session(self, user_id, roles, realname, email, course_id, task_id, consumer_key, outcome_service_url,
+    def create_lti_session(self, user_id, roles, realname, email, course_id, task_id, platform_instance_id, outcome_service_url,
                            outcome_result_id, tool_name, tool_desc, tool_url, context_title, context_label):
         """ Creates an LTI cookieless session. Returns the new session id"""
 
@@ -242,7 +242,7 @@ class UserManager:
             "task": (course_id, task_id),
             "outcome_service_url": outcome_service_url,
             "outcome_result_id": outcome_result_id,
-            "consumer_key": consumer_key,
+            "platform_instance_id": platform_instance_id,
             "context_title": context_title,
             "context_label": context_label,
             "tool_description": tool_desc,
@@ -254,7 +254,7 @@ class UserManager:
 
     def attempt_lti_login(self):
         """ Given that the current session is an LTI one (session_lti_info does not return None), attempt to find an INGInious user
-            linked to this lti username/consumer_key. If such user exists, logs in using it.
+            linked to this lti username/platform_instance_id. If such user exists, logs in using it.
              
             Returns True (resp. False) if the login was successful
         """

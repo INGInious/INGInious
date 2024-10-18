@@ -23,7 +23,7 @@ from inginious.frontend.pages.social import AuthenticationPage, CallbackPage
 from inginious.frontend.pages.course_register import CourseRegisterPage
 from inginious.frontend.pages.course import CoursePage
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
-from inginious.frontend.pages.lti import LTITaskPage, LTILaunchPage, LTIBindPage, LTIAssetPage, LTILoginPage
+from inginious.frontend.pages.lti import LTITaskPage, LTIBindPage, LTIAssetPage, LTILaunchPage, LTIOIDCLoginPage, LTIJWKSPage, LTILoginPage
 from inginious.frontend.pages.group import GroupPage
 from inginious.frontend.pages.marketplace import MarketplacePage
 from inginious.frontend.pages.marketplace_course import MarketplaceCoursePage
@@ -83,9 +83,12 @@ def init_flask_mapping(flask_app):
                            view_func=BindingsPage.as_view('bindingspage'))
     flask_app.add_url_rule('/preferences/delete', view_func=DeletePage.as_view('deletepage'))
     flask_app.add_url_rule('/preferences/profile', view_func=ProfilePage.as_view('profilepage'))
-    flask_app.add_url_rule('/lti/task', view_func=LTITaskPage.as_view('ltitaskpage'))
-    flask_app.add_url_rule('/lti/<courseid>/<taskid>',
+    flask_app.add_url_rule('/lti/oidc_login/<courseid>',
+                           view_func=LTIOIDCLoginPage.as_view('ltioidcloginpage'))
+    flask_app.add_url_rule('/lti/launch/<courseid>/<taskid>',
                            view_func=LTILaunchPage.as_view('ltilaunchpage'))
+    flask_app.add_url_rule('/lti/jwks/<courseid>/<keyset_hash>', view_func=LTIJWKSPage.as_view('ltijwkspage'))
+    flask_app.add_url_rule('/lti/task', view_func=LTITaskPage.as_view('ltitaskpage'))
     flask_app.add_url_rule('/lti/bind', view_func=LTIBindPage.as_view('ltibindpage'))
     flask_app.add_url_rule('/lti/login', view_func=LTILoginPage.as_view('ltiloginpage'))
     flask_app.add_url_rule('/lti/asset/<path:asset_url>',

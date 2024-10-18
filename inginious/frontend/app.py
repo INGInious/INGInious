@@ -16,6 +16,7 @@ from gridfs import GridFS
 from binascii import hexlify
 from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
+from flask_caching import Cache
 
 import inginious.frontend.pages.course_admin.utils as course_admin_utils
 import inginious.frontend.pages.preferences.utils as preferences_utils
@@ -86,6 +87,8 @@ def _put_configuration_defaults(config):
     config["SESSION_USE_SIGNER"] = True
     config["PERMANENT_SESSION_LIFETIME"] = config['session_parameters']["timeout"]
     config["SECRET_KEY"] = config['session_parameters']["secret_key"]
+    config["CACHE_TYPE"] = "simple"
+    config["CACHE_DEFAULT_TIMEOUT"] = 600
 
     smtp_conf = config.get('smtp', None)
     if smtp_conf is not None:
@@ -309,6 +312,8 @@ def get_app(config):
     flask_app.privacy_page = config.get("privacy_page", None)
     flask_app.static_directory = config.get("static_directory", "./static")
     flask_app.webdav_host = config.get("webdav_host", None)
+    cache = Cache(flask_app)
+    flask_app.cache = cache
 
     # Init the mapping of the app
     init_flask_mapping(flask_app)

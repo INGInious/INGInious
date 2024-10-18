@@ -4,15 +4,15 @@
 # more information about the licensing of this file.
 
 import flask
-from flask import redirect
-from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
-from inginious.frontend.lti_request_validator import LTIValidator
+from flask import jsonify, redirect
+from werkzeug.exceptions import Forbidden, NotFound
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from itsdangerous import want_bytes
 
 from inginious.common import exceptions
-from inginious.frontend.lti_tool_provider import LTIWebPyToolProvider
 from inginious.frontend.pages.tasks import BaseTaskPage
+
+from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest, FlaskCacheDataStorage
 
 
 class LTITaskPage(INGIniousAuthPage):
@@ -53,6 +53,7 @@ class LTIBindPage(INGIniousAuthPage):
         return False
 
     def fetch_lti_data(self, session_id):
+        """ Retrieves the corresponding session. """
         # TODO : Flask session interface does not allow to open a specific session
         # It could be worth putting these information outside of the session dict
         sess = self.database.sessions.find_one({"_id": session_id})
@@ -91,7 +92,7 @@ class LTIBindPage(INGIniousAuthPage):
 
         try:
             course = self.course_factory.get_course(data["task"][0])
-            if data["consumer_key"] not in course.lti_keys().keys():
+            if data["platform_instance_id"] not in course.lti_platform_instances_ids():
                 raise Exception()
         except:
             return self.template_helper.render("lti_bind.html", success=False, session_id="",
@@ -100,20 +101,20 @@ class LTIBindPage(INGIniousAuthPage):
         if data:
             user_profile = self.database.users.find_one({"username": self.user_manager.session_username()})
             lti_user_profile = self.database.users.find_one(
-                {"ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]})
-            if not user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data["consumer_key"],
+                {"ltibindings." + data["task"][0] + "." + data["platform_instance_id"]: data["username"]})
+            if not user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data["platform_instance_id"],
                                                                                     "") and not lti_user_profile:
                 # There is no binding yet, so bind LTI to this account
                 self.database.users.find_one_and_update({"username": self.user_manager.session_username()}, {"$set": {
-                    "ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]}})
+                    "ltibindings." + data["task"][0] + "." + data["platform_instance_id"]: data["username"]}})
             elif not (lti_user_profile and user_profile["username"] == lti_user_profile["username"]):
                 # There exists an LTI binding for another account, refuse auth!
                 self.logger.info("User %s tried to bind LTI user %s in for %s:%s, but %s is already bound.",
                                  user_profile["username"],
                                  data["username"],
                                  data["task"][0],
-                                 data["consumer_key"],
-                                 user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data["consumer_key"], ""))
+                                 data["platform_instance_id"],
+                                 user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data["platform_instance_id"], ""))
                 return self.template_helper.render("lti_bind.html", success=False,
                                                    session_id=cookieless_session_id,
                                                    data=data,
@@ -122,6 +123,122 @@ class LTIBindPage(INGIniousAuthPage):
         return self.template_helper.render("lti_bind.html", success=True,
                                            session_id=cookieless_session_id, data=data, error="")
 
+
+class LTIJWKSPage(INGIniousPage):
+    endpoint = 'ltijwkspage'
+
+    def GET(self, courseid, keyset_hash):
+        try:
+            course = self.course_factory.get_course(courseid)
+        except exceptions.CourseNotFoundException as ex:
+            raise NotFound(description=_(str(ex)))
+
+        lti_config = course.lti_config()
+        for issuer in lti_config:
+            for client_config in lti_config[issuer]:
+                if keyset_hash == course.lti_keyset_hash(issuer, client_config['client_id']):
+                    tool_conf = course.lti_tool()
+                    return jsonify(tool_conf.get_jwks(iss=issuer, client_id=client_config['client_id']))
+
+        raise NotFound(description=_("Keyset not found"))
+
+
+class LTIOIDCLoginPage(INGIniousPage):
+    endpoint = 'ltioidcloginpage'
+
+    def _handle_oidc_login_request(self, courseid):
+        """ Initiates the LTI 1.3 OIDC login. """
+        try:
+            course = self.course_factory.get_course(courseid)
+        except exceptions.CourseNotFoundException as ex:
+            raise NotFound(description=_(str(ex)))
+
+        tool_conf = course.lti_tool()
+        launch_data_storage = FlaskCacheDataStorage(self.app.cache)
+
+        flask_request = FlaskRequest()
+        target_link_uri = flask_request.get_param('target_link_uri')
+        if not target_link_uri:
+            raise Exception('Missing "target_link_uri" param')
+
+        oidc_login = FlaskOIDCLogin(flask_request, tool_conf, launch_data_storage=launch_data_storage)
+        return oidc_login.enable_check_cookies().redirect(target_link_uri)
+
+    def GET(self, courseid):
+        return self._handle_oidc_login_request(courseid)
+
+    def POST(self, courseid):
+        return self._handle_oidc_login_request(courseid)
+
+
+class LTILaunchPage(INGIniousPage):
+    endpoint = 'ltilaunchpage'
+
+    def _handle_message_launch(self, courseid, taskid):
+        """ Decrypt and process the LTI Launch message. """
+        try:
+            course = self.course_factory.get_course(courseid)
+        except exceptions.CourseNotFoundException as ex:
+            raise NotFound(description=_(str(ex)))
+
+        tool_conf = course.lti_tool()
+        launch_data_storage = FlaskCacheDataStorage(self.app.cache)
+        flask_request = FlaskRequest()
+        message_launch = FlaskMessageLaunch(flask_request, tool_conf, launch_data_storage=launch_data_storage)
+
+        _launch_id = message_launch.get_launch_id()  # TODO(mp): With a good use of the cache, this could be used as a non-session id
+        launch_data = message_launch.get_launch_data()
+
+        user_id = launch_data['sub']
+        roles = launch_data['https://purl.imsglobal.org/spec/lti/claim/roles']
+        realname = self._find_realname(launch_data)
+        email = launch_data.get('email', '')
+        platform_instance_id = '/'.join([launch_data['iss'], message_launch.get_client_id(), launch_data['https://purl.imsglobal.org/spec/lti/claim/deployment_id']])
+        outcome_service_url = launch_data.get('lis_outcome_service_url')  # TODO(mp): Port the Outcome service to LTI 1.3
+        outcome_result_id = launch_data.get('lis_result_sourcedid')  # TODO(mp): Port the Outcome service to LTI 1.3
+        tool = launch_data.get('https://purl.imsglobal.org/spec/lti/claim/tool_platform', {})
+        tool_name = tool.get('name', 'N/A')
+        tool_desc = tool.get('description', 'N/A')
+        tool_url = tool.get('url', 'N/A')
+        context = launch_data['https://purl.imsglobal.org/spec/lti/claim/context']
+        context_title = context.get('context_title', 'N/A')
+        context_label = context.get('context_label', 'N/A')
+
+        self.user_manager.create_lti_session(user_id, roles, realname, email, courseid, taskid, platform_instance_id,
+                                                              outcome_service_url, outcome_result_id, tool_name, tool_desc, tool_url,
+                                                              context_title, context_label)
+        loggedin = self.user_manager.attempt_lti_login()
+        if loggedin:
+            return redirect(self.app.get_path("lti", "task"))
+        else:
+            return redirect(self.app.get_path("lti", "login"))
+
+    def GET(self, courseid, taskid):
+        return self._handle_message_launch(courseid, taskid)
+
+    def POST(self, courseid, taskid):
+        return self._handle_message_launch(courseid, taskid)
+
+    def _find_realname(self, launch_data):
+        """ Returns the most appropriate name to identify the user """
+
+        # First, try the full name
+        if "name" in launch_data:
+            return launch_data["name"]
+        if "given" in launch_data and "family_name" in launch_data:
+            return launch_data["given"] + launch_data["family_name"]
+
+        # Then the email
+        if "email" in launch_data:
+            return launch_data["email"]
+
+        # Then only part of the full name
+        if "family_name" in launch_data:
+            return launch_data["family_name"]
+        if "given" in launch_data:
+            return launch_data["given"]
+
+        return launch_data["sub"]
 
 class LTILoginPage(INGIniousPage):
     def is_lti_page(self):
@@ -138,13 +255,13 @@ class LTILoginPage(INGIniousPage):
 
         try:
             course = self.course_factory.get_course(data["task"][0])
-            if data["consumer_key"] not in course.lti_keys().keys():
+            if data["platform_instance_id"] not in course.lti_platform_instances_ids():
                 raise Exception()
         except:
             return self.template_helper.render("lti_bind.html", success=False, session_id="",
-                                               data=None, error="Invalid LTI data")
+                                               data=None, error=_("Invalid LTI data"))
 
-        user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["consumer_key"]: data["username"]})
+        user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["platform_instance_id"]: data["username"]})
         if user_profile:
             self.user_manager.connect_user(user_profile["username"], user_profile["realname"], user_profile["email"],
                                            user_profile["language"], user_profile.get("tos_accepted", False))
@@ -161,94 +278,3 @@ class LTILoginPage(INGIniousPage):
         """
         return self.GET()
 
-
-class LTILaunchPage(INGIniousPage):
-    """
-    Page called by the TC to start an LTI session on a given task
-    """
-    endpoint = 'ltilaunchpage'
-
-    def GET(self, courseid, taskid):
-        raise MethodNotAllowed()
-
-    def POST(self, courseid, taskid):
-        (session_id, loggedin) = self._parse_lti_data(courseid, taskid)
-        if loggedin:
-            return redirect(self.app.get_path("lti", "task"))
-        else:
-            return redirect(self.app.get_path("lti", "login"))
-
-    def _parse_lti_data(self, courseid, taskid):
-        """ Verify and parse the data for the LTI basic launch """
-        post_input = flask.request.form
-        self.logger.debug('_parse_lti_data:' + str(post_input))
-
-        try:
-            course = self.course_factory.get_course(courseid)
-        except exceptions.CourseNotFoundException as ex:
-            raise NotFound(description=_(str(ex)))
-
-        try:
-            test = LTIWebPyToolProvider.from_webpy_request()
-            validator = LTIValidator(self.database.nonce, course.lti_keys())
-            verified = test.is_valid_request(validator)
-        except Exception as ex:
-            self.logger.error("Error while parsing the LTI request : {}".format(str(post_input)))
-            self.logger.error("The exception caught was :  {}".format(str(ex)))
-            raise Forbidden(description=_("Error while parsing the LTI request"))
-
-        if verified:
-            self.logger.debug('parse_lit_data for %s', str(post_input))
-            user_id = post_input["user_id"]
-            roles = post_input.get("roles", "Student").split(",")
-            realname = self._find_realname(post_input)
-            email = post_input.get("lis_person_contact_email_primary", "")
-            lis_outcome_service_url = post_input.get("lis_outcome_service_url", None)
-            outcome_result_id = post_input.get("lis_result_sourcedid", None)
-            consumer_key = post_input["oauth_consumer_key"]
-
-            if course.lti_send_back_grade():
-                if lis_outcome_service_url is None or outcome_result_id is None:
-                    self.logger.info('Error: lis_outcome_service_url is None but lti_send_back_grade is True')
-                    raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
-                                        "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
-            else:
-                lis_outcome_service_url = None
-                outcome_result_id = None
-
-            tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
-            tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
-            tool_url = post_input.get('tool_consumer_instance_url', 'N/A')
-            context_title = post_input.get('context_title', 'N/A')
-            context_label = post_input.get('context_label', 'N/A')
-
-            session_id = self.user_manager.create_lti_session(user_id, roles, realname, email, courseid, taskid, consumer_key,
-                                                              lis_outcome_service_url, outcome_result_id, tool_name, tool_desc, tool_url,
-                                                              context_title, context_label)
-            loggedin = self.user_manager.attempt_lti_login()
-
-            return session_id, loggedin
-        else:
-            self.logger.info("Couldn't validate LTI request")
-            raise Forbidden(description=_("Couldn't validate LTI request"))
-
-    def _find_realname(self, post_input):
-        """ Returns the most appropriate name to identify the user """
-
-        # First, try the full name
-        if "lis_person_name_full" in post_input:
-            return post_input["lis_person_name_full"]
-        if "lis_person_name_given" in post_input and "lis_person_name_family" in post_input:
-            return post_input["lis_person_name_given"] + post_input["lis_person_name_family"]
-
-        # Then the email
-        if "lis_person_contact_email_primary" in post_input:
-            return post_input["lis_person_contact_email_primary"]
-
-        # Then only part of the full name
-        if "lis_person_name_family" in post_input:
-            return post_input["lis_person_name_family"]
-        if "lis_person_name_given" in post_input:
-            return post_input["lis_person_name_given"]
-
-        return post_input["user_id"]
