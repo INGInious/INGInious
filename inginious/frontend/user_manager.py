@@ -153,8 +153,7 @@ class UserManager:
                     "realname": realname,
                     "roles": roles,
                     "task": (course_id, task_id),
-                    "outcome_service_url": outcome_service_url,
-                    "outcome_result_id": outcome_result_id,
+                    "message_launch_id": message_launch_id,
                     "platform_instance_id": platform_instance_id
                 }
 
@@ -227,8 +226,8 @@ class UserManager:
         self._session["lti"] = None
         self._session["tos_signed"] = None
 
-    def create_lti_session(self, user_id, roles, realname, email, course_id, task_id, platform_instance_id, outcome_service_url,
-                           outcome_result_id, tool_name, tool_desc, tool_url, context_title, context_label):
+    def create_lti_session(self, user_id, roles, realname, email, course_id, task_id, platform_instance_id, message_launch_id,
+                           tool_name, tool_desc, tool_url, context_title, context_label):
         """ Creates an LTI cookieless session. Returns the new session id"""
 
         self._destroy_session()  # don't forget to destroy the current session
@@ -240,8 +239,7 @@ class UserManager:
             "realname": realname,
             "roles": roles,
             "task": (course_id, task_id),
-            "outcome_service_url": outcome_service_url,
-            "outcome_result_id": outcome_result_id,
+            "message_launch_id": message_launch_id,
             "platform_instance_id": platform_instance_id,
             "context_title": context_title,
             "context_label": context_label,

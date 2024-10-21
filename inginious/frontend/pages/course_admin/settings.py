@@ -95,9 +95,10 @@ class CourseSettingsPage(INGIniousAdminPage):
                 iss_config = lti_config[iss]
                 assert type(iss_config) is list, f'Issuer {iss} must have a list of client_id configuration'
                 for i, client_config in enumerate(iss_config):
-                    required_keys = {'default', 'client_id', 'auth_login_url', 'auth_token_url', 'key_set_url', 'private_key', 'public_key', 'deployment_ids'}
+                    required_keys = {'default', 'client_id', 'auth_login_url', 'auth_token_url', 'private_key', 'public_key', 'deployment_ids'}
                     for key in required_keys:
                         assert key in client_config, f'Missing {key} in client config {i} of issuer {iss}'
+                    assert "key_set_url" in client_config or "key_set" in client_config, f'key_set_url or key_set is missing in client config {i} of issuer {iss}'
             tool_conf = ToolConfDict(lti_config)
             for iss in lti_config:
                 for i, client_config in enumerate(lti_config[iss]):

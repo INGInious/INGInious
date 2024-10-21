@@ -11,8 +11,9 @@ from itsdangerous import want_bytes
 
 from inginious.common import exceptions
 from inginious.frontend.pages.tasks import BaseTaskPage
+from inginious.frontend.lti_grade_manager import MongoLTILaunchDataStorage
 
-from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest, FlaskCacheDataStorage
+from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest
 
 
 class LTITaskPage(INGIniousAuthPage):
@@ -153,15 +154,14 @@ class LTIOIDCLoginPage(INGIniousPage):
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
-        tool_conf = course.lti_tool()
-        launch_data_storage = FlaskCacheDataStorage(self.app.cache)
-
         flask_request = FlaskRequest()
         target_link_uri = flask_request.get_param('target_link_uri')
         if not target_link_uri:
             raise Exception('Missing "target_link_uri" param')
+        taskid = target_link_uri.split('/')[-1]
 
-        oidc_login = FlaskOIDCLogin(flask_request, tool_conf, launch_data_storage=launch_data_storage)
+        launch_data_storage = MongoLTILaunchDataStorage(self.database, courseid, taskid)
+        oidc_login = FlaskOIDCLogin(flask_request, course.lti_tool(), launch_data_storage=launch_data_storage)
         return oidc_login.enable_check_cookies().redirect(target_link_uri)
 
     def GET(self, courseid):
@@ -182,11 +182,11 @@ class LTILaunchPage(INGIniousPage):
             raise NotFound(description=_(str(ex)))
 
         tool_conf = course.lti_tool()
-        launch_data_storage = FlaskCacheDataStorage(self.app.cache)
+        launch_data_storage = MongoLTILaunchDataStorage(self.database, courseid, taskid)
         flask_request = FlaskRequest()
         message_launch = FlaskMessageLaunch(flask_request, tool_conf, launch_data_storage=launch_data_storage)
 
-        _launch_id = message_launch.get_launch_id()  # TODO(mp): With a good use of the cache, this could be used as a non-session id
+        launch_id = message_launch.get_launch_id()  # TODO(mp): With a good use of the cache, this could be used as a non-session id
         launch_data = message_launch.get_launch_data()
 
         user_id = launch_data['sub']
@@ -194,8 +194,6 @@ class LTILaunchPage(INGIniousPage):
         realname = self._find_realname(launch_data)
         email = launch_data.get('email', '')
         platform_instance_id = '/'.join([launch_data['iss'], message_launch.get_client_id(), launch_data['https://purl.imsglobal.org/spec/lti/claim/deployment_id']])
-        outcome_service_url = launch_data.get('lis_outcome_service_url')  # TODO(mp): Port the Outcome service to LTI 1.3
-        outcome_result_id = launch_data.get('lis_result_sourcedid')  # TODO(mp): Port the Outcome service to LTI 1.3
         tool = launch_data.get('https://purl.imsglobal.org/spec/lti/claim/tool_platform', {})
         tool_name = tool.get('name', 'N/A')
         tool_desc = tool.get('description', 'N/A')
@@ -204,9 +202,12 @@ class LTILaunchPage(INGIniousPage):
         context_title = context.get('context_title', 'N/A')
         context_label = context.get('context_label', 'N/A')
 
+        can_report_grades = message_launch.has_ags() and tool_conf.get_iss_config(iss=message_launch.get_iss(),
+                                                                                  client_id=message_launch.get_client_id()).get('auth_token_url')
+
         self.user_manager.create_lti_session(user_id, roles, realname, email, courseid, taskid, platform_instance_id,
-                                                              outcome_service_url, outcome_result_id, tool_name, tool_desc, tool_url,
-                                                              context_title, context_label)
+                                             launch_id if can_report_grades else None, tool_name, tool_desc, tool_url, context_title, context_label)
+
         loggedin = self.user_manager.attempt_lti_login()
         if loggedin:
             return redirect(self.app.get_path("lti", "task"))

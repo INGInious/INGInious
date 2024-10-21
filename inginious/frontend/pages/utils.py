@@ -28,7 +28,7 @@ from pymongo.database import Database
 from inginious.frontend.course_factory import CourseFactory
 from inginious.frontend.task_factory import TaskFactory
 from inginious.frontend.course_factory import CourseFactory
-from inginious.frontend.lti_outcome_manager import LTIOutcomeManager
+from inginious.frontend.lti_grade_manager import LTIGradeManager
 
 
 class INGIniousPage(MethodView):
@@ -150,9 +150,9 @@ class INGIniousPage(MethodView):
         return self.app.webterm_link
 
     @property
-    def lti_outcome_manager(self) -> LTIOutcomeManager:
+    def lti_grade_manager(self) -> LTIGradeManager:
         """ Returns the LTIOutcomeManager singleton """
-        return self.app.lti_outcome_manager
+        return self.app.lti_grade_manager
 
     @property
     def webdav_host(self) -> str:
