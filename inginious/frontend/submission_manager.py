@@ -97,7 +97,7 @@ class WebAppSubmissionManager:
 
         self._plugin_manager.call_hook("submission_done", submission=submission, archive=archive, newsub=newsub)
 
-        if course.lti_send_back_grade:
+        if course.lti_send_back_grade():
             for username in submission["username"]:
                 self._lti_grade_manager.add(username,
                                               submission["courseid"],

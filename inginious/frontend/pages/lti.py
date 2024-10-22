@@ -70,7 +70,7 @@ class LTIBindPage(INGIniousAuthPage):
         return self.template_helper.render("lti_bind.html", success=False, data=data, error="")
 
     def POST_AUTH(self):
-        data, error = self._get_lti_session_data_or_error()
+        data, error = self._get_lti_session_data()
         if error:
             return error
 
@@ -222,6 +222,7 @@ class LTILaunchPage(INGIniousPage):
         return launch_data["sub"]
 
 class LTILoginPage(INGIniousPage):
+    @property
     def is_lti_page(self):
         return True
 

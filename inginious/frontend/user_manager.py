@@ -118,7 +118,6 @@ class UserManager:
     def _lti_session(self):
         """ Returns the LTI session dict. """
         assert self.session_is_lti()
-        print("get session", flask.request.args.get('session_id'), flask.g.get('lti_session_id'))
         if 'lti_session' not in flask.g:
             if 'session_id' in flask.request.args:
                 flask.g.lti_session = self._database.lti_sessions.find_one({'session_id': flask.request.args['session_id']})
@@ -129,7 +128,6 @@ class UserManager:
     @staticmethod
     def _lti_session_save(app, response):
         """ Saves in database the LTI session. This function is a Flask event receiver. """
-        print("save session", flask.request.args.get('session_id'), flask.g.get('lti_session_id'))
         if app.user_manager.session_is_lti():
             lti_session_id = flask.request.args.get('session_id', flask.g.get('lti_session_id'))
             app.user_manager._database.lti_sessions.find_one_and_update({'session_id': lti_session_id}, {'$set': flask.g.lti_session}, upsert=True)
@@ -138,7 +136,6 @@ class UserManager:
     @property
     def _session(self):
         """ Returns the session. """
-        print(self._flask_session, self._lti_session)
         return self._flask_session if not self.session_is_lti() else self._lti_session
 
     def session_logged_in(self):

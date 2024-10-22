@@ -73,7 +73,6 @@ class LTIGradeManager(threading.Thread):
                 try:
                     course = self._app.course_factory.get_course(courseid)
                     task = course.get_task(taskid)
-                    print(self._app.user_manager.get_task_cache(username, courseid, task.get_id()))
                     grade = self._app.user_manager.get_task_cache(username, courseid, task.get_id())["grade"]
                 except Exception:
                     self._logger.error("An exception occurred while getting a course/LTI secret/grade in LTIGradeManager.", exc_info=True)
