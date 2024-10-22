@@ -103,19 +103,15 @@ def get_homepath():
     """ Returns the URL root. """
     return flask.request.url_root[:-1]
 
-def get_path(*path_parts, force_cookieless=False):
+def get_path(*path_parts):
     """
     :param path_parts: List of elements in the path to be separated by slashes
-    :param force_cookieless: Force the cookieless session; the link will include the session_creator if needed.
     """
-    session = flask.session
-    request = flask.request
-    query_delimiter = '&' if path_parts and '?' in path_parts[-1] else '?'
+    lti_session_id = flask.request.args.get('session_id', flask.g.get('lti_session_id'))
     path_parts = (get_homepath(), ) + path_parts
-    if session.sid is not None and session.cookieless:
-        return "/".join(path_parts) + f"{query_delimiter}session_id={session.sid}"
-    if force_cookieless:
-        return "/".join(path_parts) + f"{query_delimiter}session_id="
+    if lti_session_id:
+        query_delimiter = '&' if path_parts and '?' in path_parts[-1] else '?'
+        return "/".join(path_parts) + f"{query_delimiter}session_id={lti_session_id}"
     return "/".join(path_parts)
 
 
@@ -164,30 +160,6 @@ def get_app(config):
         "sessions", config.get('SESSION_USE_SIGNER', False), True  # config.get('SESSION_PERMANENT', True)
     )
 
-    # Init gettext
-    available_translations = {
-        "de": "Deutsch",
-        "el": "ελληνικά",
-        "es": "Español",
-        "fr": "Français",
-        "he": "עִבְרִית",
-        "nl": "Nederlands",
-        "nb_NO": "Norsk (bokmål)",
-        "pt": "Português",
-        "vi": "Tiếng Việt"
-    }
-
-    available_languages = {"en": "English"}
-    available_languages.update(available_translations)
-
-    l10n_manager = L10nManager()
-
-    l10n_manager.translations["en"] = gettext.NullTranslations()  # English does not need translation ;-)
-    for lang in available_translations.keys():
-        l10n_manager.translations[lang] = gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
-
-    builtins.__dict__['_'] = l10n_manager.gettext
-
     if config.get("maintenance", False):
         template_helper = TemplateHelper(PluginManager(), None, config.get('use_minified_js', True))
         template_helper.add_to_template_globals("get_homepath", get_homepath)
@@ -226,6 +198,7 @@ def get_app(config):
     course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types, plugin_manager, database)
 
     user_manager = UserManager(database, config.get('superadmins', []))
+    flask.request_finished.connect(UserManager._lti_session_save, flask_app)
 
     update_pending_jobs(database)
 
@@ -239,6 +212,30 @@ def get_app(config):
     register_utils(database, user_manager, template_helper)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
+
+    # Init gettext
+    available_translations = {
+        "de": "Deutsch",
+        "el": "ελληνικά",
+        "es": "Español",
+        "fr": "Français",
+        "he": "עִבְרִית",
+        "nl": "Nederlands",
+        "nb_NO": "Norsk (bokmål)",
+        "pt": "Português",
+        "vi": "Tiếng Việt"
+    }
+
+    available_languages = {"en": "English"}
+    available_languages.update(available_translations)
+
+    l10n_manager = L10nManager(user_manager)
+
+    l10n_manager.translations["en"] = gettext.NullTranslations()  # English does not need translation ;-)
+    for lang in available_translations.keys():
+        l10n_manager.translations[lang] = gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
+
+    builtins.__dict__['_'] = l10n_manager.gettext
 
     # Init web mail
     mail.init_app(flask_app)

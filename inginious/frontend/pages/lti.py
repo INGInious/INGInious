@@ -3,6 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
+import hashlib
 import flask
 from flask import jsonify, redirect
 from werkzeug.exceptions import Forbidden, NotFound
@@ -53,51 +54,32 @@ class LTIBindPage(INGIniousAuthPage):
     def is_lti_page(self):
         return False
 
-    def fetch_lti_data(self, session_id):
-        """ Retrieves the corresponding session. """
-        # TODO : Flask session interface does not allow to open a specific session
-        # It could be worth putting these information outside of the session dict
-        sess = self.database.sessions.find_one({"_id": session_id})
-        if sess:
-            cookieless_session = self.app.session_interface.serializer.loads(want_bytes(sess['data']))
-        else:
-            return KeyError()
-        return session_id, cookieless_session["lti"]
+    def _get_lti_session_data(self):
+        if not self.user_manager.session_is_lti():
+            return self.template_helper.render("lti_bind.html", success=False, data=None, error=_("Missing LTI session id"))
+
+        data = self.user_manager.session_lti_info()
+        if data is None:
+            return None, self.template_helper.render("lti_bind.html", success=False, data=None, error=_("Invalid LTI session id"))
+        return data, None
 
     def GET_AUTH(self):
-        input_data = flask.request.args
-        if "session_id" not in input_data:
-            return self.template_helper.render("lti_bind.html", success=False, session_id="",
-                                               data=None, error=_("Missing LTI session id"))
-
-        try:
-            cookieless_session_id, data = self.fetch_lti_data(input_data["session_id"])
-        except KeyError:
-            return self.template_helper.render("lti_bind.html", success=False, session_id="",
-                                               data=None, error=_("Invalid LTI session id"))
-
-        return self.template_helper.render("lti_bind.html", success=False,
-                                           session_id=cookieless_session_id, data=data, error="")
+        data, error = self._get_lti_session_data()
+        if error:
+            return error
+        return self.template_helper.render("lti_bind.html", success=False, data=data, error="")
 
     def POST_AUTH(self):
-        input_data = flask.request.args
-        if "session_id" not in input_data:
-            return self.template_helper.render("lti_bind.html",success=False, session_id="",
-                                               data= None, error=_("Missing LTI session id"))
-
-        try:
-            cookieless_session_id, data = self.fetch_lti_data(input_data["session_id"])
-        except KeyError:
-            return self.template_helper.render("lti_bind.html", success=False, session_id="",
-                                               data=None, error=_("Invalid LTI session id"))
+        data, error = self._get_lti_session_data_or_error()
+        if error:
+            return error
 
         try:
             course = self.course_factory.get_course(data["task"][0])
             if data["platform_instance_id"] not in course.lti_platform_instances_ids():
                 raise Exception()
         except:
-            return self.template_helper.render("lti_bind.html", success=False, session_id="",
-                                               data=None, error=_("Invalid LTI data"))
+            return self.template_helper.render("lti_bind.html", success=False, data=None, error=_("Invalid LTI data"))
 
         if data:
             user_profile = self.database.users.find_one({"username": self.user_manager.session_username()})
@@ -116,13 +98,10 @@ class LTIBindPage(INGIniousAuthPage):
                                  data["task"][0],
                                  data["platform_instance_id"],
                                  user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data["platform_instance_id"], ""))
-                return self.template_helper.render("lti_bind.html", success=False,
-                                                   session_id=cookieless_session_id,
-                                                   data=data,
+                return self.template_helper.render("lti_bind.html", success=False, data=data,
                                                    error=_("Your account is already bound with this context."))
 
-        return self.template_helper.render("lti_bind.html", success=True,
-                                           session_id=cookieless_session_id, data=data, error="")
+        return self.template_helper.render("lti_bind.html", success=True, data=data, error="")
 
 
 class LTIJWKSPage(INGIniousPage):
@@ -205,7 +184,8 @@ class LTILaunchPage(INGIniousPage):
         can_report_grades = message_launch.has_ags() and tool_conf.get_iss_config(iss=message_launch.get_iss(),
                                                                                   client_id=message_launch.get_client_id()).get('auth_token_url')
 
-        self.user_manager.create_lti_session(user_id, roles, realname, email, courseid, taskid, platform_instance_id,
+        session_id = hashlib.sha256(launch_id.encode('utf-8')).digest().hex()  # TODO(mp): Make this more secure
+        self.user_manager.create_lti_session(session_id, user_id, roles, realname, email, courseid, taskid, platform_instance_id,
                                              launch_id if can_report_grades else None, tool_name, tool_desc, tool_url, context_title, context_label)
 
         loggedin = self.user_manager.attempt_lti_login()
@@ -259,7 +239,7 @@ class LTILoginPage(INGIniousPage):
             if data["platform_instance_id"] not in course.lti_platform_instances_ids():
                 raise Exception()
         except:
-            return self.template_helper.render("lti_bind.html", success=False, session_id="",
+            return self.template_helper.render("lti_bind.html", success=False,
                                                data=None, error=_("Invalid LTI data"))
 
         user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data["platform_instance_id"]: data["username"]})

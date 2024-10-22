@@ -9,6 +9,7 @@ import hashlib
 import flask
 from typing import Dict, Optional
 
+from flask.sessions import NullSession
 from werkzeug.exceptions import NotFound
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
@@ -83,7 +84,7 @@ class UserManager:
         :type superadmins: list(str)
         :param superadmins: list of the super-administrators' usernames
         """
-        self._session = flask.session
+        self._flask_session = flask.session
         self._database = database
         self._superadmins = superadmins
         self._auth_methods = OrderedDict()
@@ -108,6 +109,37 @@ class UserManager:
     ##############################################
     #           User session management          #
     ##############################################
+
+    def session_is_lti(self) -> bool:
+        """ Returns whether the current request comes from an LTI session. """
+        return 'session_id' in flask.request.args or 'lti_session_id' in flask.g or isinstance(flask.session, NullSession)
+
+    @property
+    def _lti_session(self):
+        """ Returns the LTI session dict. """
+        assert self.session_is_lti()
+        print("get session", flask.request.args.get('session_id'), flask.g.get('lti_session_id'))
+        if 'lti_session' not in flask.g:
+            if 'session_id' in flask.request.args:
+                flask.g.lti_session = self._database.lti_sessions.find_one({'session_id': flask.request.args['session_id']})
+        if 'lti_session' not in flask.g or not flask.g.lti_session:
+            flask.g.lti_session = {}
+        return flask.g.lti_session
+
+    @staticmethod
+    def _lti_session_save(app, response):
+        """ Saves in database the LTI session. This function is a Flask event receiver. """
+        print("save session", flask.request.args.get('session_id'), flask.g.get('lti_session_id'))
+        if app.user_manager.session_is_lti():
+            lti_session_id = flask.request.args.get('session_id', flask.g.get('lti_session_id'))
+            app.user_manager._database.lti_sessions.find_one_and_update({'session_id': lti_session_id}, {'$set': flask.g.lti_session}, upsert=True)
+        # TODO(mp): Find whether the session should be dropped instead?
+
+    @property
+    def _session(self):
+        """ Returns the session. """
+        print(self._flask_session, self._lti_session)
+        return self._flask_session if not self.session_is_lti() else self._lti_session
 
     def session_logged_in(self):
         """ Returns True if a user is currently connected in this session, False else """
@@ -162,13 +194,9 @@ class UserManager:
 
             If the current session is not an LTI one, returns None.
         """
-        if "lti" in self._session:
+        if self.session_is_lti() and "lti" in self._session:
             return self._session["lti"]
         return None
-
-    def session_cookieless(self):
-        """ Indicates if the current session is cookieless """
-        return self._session.cookieless
 
     def session_id(self):
         """ Returns the current session id"""
@@ -178,9 +206,9 @@ class UserManager:
         """ Returns the oauth state for login """
         return self._session.setdefault("auth_storage", {})
 
-    def session_language(self):
+    def session_language(self, default="en"):
         """ Returns the current session language """
-        return self._session.get("language", "en")
+        return self._session.get("language", default)
 
     def session_api_key(self):
         """ Returns the API key for the current user. Created on first demand. """
@@ -205,7 +233,7 @@ class UserManager:
         self._session["language"] = language
 
     def _set_session(self, username, realname, email, language, tos_signed):
-        """ Init the session. Preserves potential LTI information. """
+        """ Init the session. """
         self._session["loggedin"] = True
         self._session["email"] = email
         self._session["username"] = username
@@ -213,25 +241,14 @@ class UserManager:
         self._session["language"] = language
         self._session["tos_signed"] = tos_signed
         self._session["token"] = None
-        if "lti" not in self._session:
-            self._session["lti"] = None
 
-    def _destroy_session(self):
-        """ Destroy the session """
-        self._session["loggedin"] = False
-        self._session["email"] = None
-        self._session["username"] = None
-        self._session["realname"] = None
-        self._session["token"] = None
-        self._session["lti"] = None
-        self._session["tos_signed"] = None
-
-    def create_lti_session(self, user_id, roles, realname, email, course_id, task_id, platform_instance_id, message_launch_id,
+    def create_lti_session(self, session_id, user_id, roles, realname, email, course_id, task_id, platform_instance_id, message_launch_id,
                            tool_name, tool_desc, tool_url, context_title, context_label):
-        """ Creates an LTI cookieless session. Returns the new session id"""
+        """ Creates an LTI session. Returns the new session id"""
 
-        self._destroy_session()  # don't forget to destroy the current session
-        session_id = self._session.sid
+        self._session.clear()
+        flask.g.lti_session_id = session_id
+        flask.g.lti_session = {}
 
         self._session["lti"] = {
             "email": email,
@@ -256,7 +273,7 @@ class UserManager:
              
             Returns True (resp. False) if the login was successful
         """
-        if "lti" not in self._session:
+        if not self.session_is_lti():
             raise Exception("Not an LTI session")
 
         # TODO allow user to be automagically connected if the TC uses the same user id
@@ -369,7 +386,7 @@ class UserManager:
             ip = flask.request.remote_addr
             self._logger.info("User %s disconnected - %s - %s - %s", self.session_username(), self.session_realname(),
                               self.session_email(), ip)
-        self._destroy_session()
+        self._session.clear()
 
     def get_users_count(self):
         return self._database.users.estimated_document_count()

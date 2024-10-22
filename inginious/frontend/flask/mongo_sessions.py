@@ -7,7 +7,7 @@
 # https://flasksession.readthedocs.io/
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from bson.objectid import ObjectId
 
 try:
@@ -20,19 +20,18 @@ from flask.sessions import SessionMixin
 from werkzeug.datastructures import CallbackDict
 from flask.sessions import SessionInterface
 from werkzeug.exceptions import HTTPException
-from inginious.frontend.pages.lti import LTILaunchPage
+from inginious.frontend.pages.lti import LTILaunchPage, LTIOIDCLoginPage
 
 
 class MongoDBSession(CallbackDict, SessionMixin):
     """Baseclass for server-side based sessions."""
 
-    def __init__(self, initial=None, sid=None, permanent=None, cookieless=False):
+    def __init__(self, initial=None, sid=None, permanent=None):
         def on_update(self):
             self.modified = True
         CallbackDict.__init__(self, initial, on_update)
         self.sid = sid
         self.modified = False
-        self.cookieless = cookieless
         if permanent:
             self.permanent = permanent
 
@@ -67,31 +66,26 @@ class MongoDBSessionInterface(SessionInterface):
                       key_derivation='hmac')
 
     def open_session(self, app, request):
-        # Check for cookieless session in the path
-        path_session = request.args.get('session_id')
+        # Check for LTI session in the path
+        lti_session = request.args.get('session_id')
 
-        # Check if currently accessed URL is LTI launch page
+        # Check if currently accessed URL is LTI launch pages
         try:
             # request.url_rule is not set yet here.
             endpoint, _ = app.create_url_adapter(request).match()
-            is_lti_launch = endpoint == LTILaunchPage.endpoint
+            is_lti_launch = endpoint in [LTIOIDCLoginPage.endpoint, LTILaunchPage.endpoint]
         except HTTPException:
             is_lti_launch = False
 
-        if path_session:  # Cookieless session
-            cookieless = True
-            sid = path_session
-        elif is_lti_launch:
-            cookieless = True
-            sid = None
-        else:
-            cookieless = False
-            sid = request.cookies.get(self.get_cookie_name(app))
+        if lti_session or is_lti_launch:
+            return None
+
+        sid = request.cookies.get(self.get_cookie_name(app))
 
         if not sid:
             sid = self._generate_sid()
-            return self.session_class(sid=sid, permanent=self.permanent, cookieless=cookieless)
-        if not path_session and self.use_signer:
+            return self.session_class(sid=sid, permanent=self.permanent)
+        if self.use_signer:
             signer = self._get_signer(app)
             if signer is None:
                 return None
@@ -100,11 +94,11 @@ class MongoDBSessionInterface(SessionInterface):
                 sid = sid_as_bytes.decode()
             except BadSignature:
                 sid = self._generate_sid()
-                return self.session_class(sid=sid, permanent=self.permanent, cookieless=cookieless)
+                return self.session_class(sid=sid, permanent=self.permanent)
 
         store_id = sid
         document = self.store.find_one({'_id': store_id})
-        if document and document.get('expiration') <= datetime.utcnow():
+        if document and document.get('expiration') <= datetime.now(timezone.utc):
             # Delete expired session
             self.store.delete_one({'_id': store_id})
             document = None
@@ -112,10 +106,10 @@ class MongoDBSessionInterface(SessionInterface):
             try:
                 val = document['data']
                 data = self.serializer.loads(want_bytes(val))
-                return self.session_class(data, sid=sid, cookieless=cookieless)
+                return self.session_class(data, sid=sid)
             except:
-                return self.session_class(sid=sid, permanent=self.permanent, cookieless=cookieless)
-        return self.session_class(sid=sid, permanent=self.permanent, cookieless=cookieless)
+                return self.session_class(sid=sid, permanent=self.permanent)
+        return self.session_class(sid=sid, permanent=self.permanent)
 
     def save_session(self, app, session, response):
         domain = self.get_cookie_domain(app)
@@ -130,16 +124,14 @@ class MongoDBSessionInterface(SessionInterface):
         httponly = self.get_cookie_httponly(app)
         secure = self.get_cookie_secure(app)
         expires = self.get_expiration_time(app, session)
-        cookieless = session.cookieless
         val = self.serializer.dumps(dict(session))
         self.store.update_one({'_id': store_id},
-                              {"$set": {'data': val, 'expiration': expires, 'cookieless': cookieless}},
+                              {"$set": {'data': val, 'expiration': expires}},
                               upsert=True)
         if self.use_signer:
             session_id = self._get_signer(app).sign(session.sid).decode()
         else:
             session_id = session.sid
-        if not cookieless:
-            response.set_cookie(self.get_cookie_name(app), session_id,
-                                expires=expires, httponly=httponly,
-                                domain=domain, path=path, secure=secure)
+        response.set_cookie(self.get_cookie_name(app), session_id,
+                            expires=expires, httponly=httponly,
+                            domain=domain, path=path, secure=secure)
