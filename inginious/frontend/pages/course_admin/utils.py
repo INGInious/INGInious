@@ -352,6 +352,7 @@ def get_menu(course, current, renderer, plugin_manager, user_manager):
 
     if user_manager.has_admin_rights_on_course(course):
         default_entries += [("danger", "<i class='fa fa-bomb fa-fw'></i>&nbsp; " + _("Danger zone"))]
+        default_entries += [("api_tokens", "<i class='fa fa-id-card fa-fw'></i>&nbsp; " + _("API tokens"))]
 
     # Hook should return a tuple (link,name) where link is the relative link from the index of the course administration.
     additional_entries = [entry for entry in plugin_manager.call_hook('course_admin_menu', course=course) if entry is not None]
