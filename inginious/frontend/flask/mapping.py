@@ -48,6 +48,7 @@ from inginious.frontend.pages.course_admin.danger_zone import CourseDangerZonePa
 from inginious.frontend.pages.course_admin.statistics import CourseStatisticsPage
 from inginious.frontend.pages.course_admin.search_user import CourseAdminSearchUserPage
 from inginious.frontend.pages.course_admin.api_tokens import CourseAPITokensPage
+from inginious.frontend.pages.course_admin.api_auth import CourseAPIAuthPage
 
 
 def init_flask_maintenance_mapping(flask_app):
@@ -141,3 +142,5 @@ def init_flask_mapping(flask_app):
                            view_func=AdministrationUserActionPage.as_view('administrationuseractionpage'))
     flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/api_tokens',
                            view_func=CourseAPITokensPage.as_view('courseapipage'))
+    flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/api_auth',
+                           view_func=CourseAPIAuthPage.as_view('apiauthpage'))
