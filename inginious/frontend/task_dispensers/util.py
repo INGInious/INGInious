@@ -1,7 +1,12 @@
+"""
+Contains de task config item classes and the sections classes.
+"""
 # -*- coding: utf-8 -*-
 #
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
+from datetime import datetime
+
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from inginious.common.base import id_checker
@@ -178,7 +183,7 @@ class SubmissionLimit(TaskConfigItem):
 
 
 class Accessibility(TaskConfigItem):
-    default = False
+    default = {"start": datetime.min, "soft_end": datetime.max.replace(microsecond=0), "end": datetime.max.replace(microsecond=0)}
 
     @classmethod
     def get_template(cls):
@@ -195,10 +200,11 @@ class Accessibility(TaskConfigItem):
     @classmethod
     def get_value(cls, task_config):
         accessibility = task_config.get(cls.get_id(), cls.default)
-        try:
-            AccessibleTime(accessibility)
-        except Exception as message:
-            raise InvalidTocException("Invalid task accessibility : {}".format(message))
+        if isinstance(accessibility, dict):
+            try:
+                AccessibleTime(accessibility)
+            except Exception as message:
+                raise InvalidTocException("Invalid task accessibility : {}".format(message))
         return accessibility
 
 
@@ -371,7 +377,6 @@ def parse_tasks_config(task_list, config_items, data):
 
 def check_task_config(task_list, config_items, data):
     """
-
     :param data: the raw content of the task settings
     :return:  (True, '') if the settings are valid or (False, The error message) otherwise
     """

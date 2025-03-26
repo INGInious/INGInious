@@ -11,7 +11,6 @@ from natsort import natsorted
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
-
 class CourseTaskListPage(INGIniousAdminPage):
     """ List informations about all tasks """
 

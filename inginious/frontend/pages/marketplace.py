@@ -5,6 +5,7 @@
 
 """ Course page """
 import sys
+from datetime import datetime
 import flask
 from flask import redirect
 from werkzeug.exceptions import Forbidden
@@ -82,7 +83,7 @@ def import_taskset(taskset, new_tasksetid, username, taskset_factory):
     try:
         new_descriptor = {"description": old_descriptor.get("description", ""),
                           'admins': [username],
-                          "accessible": False,
+                          "accessible":  {"start": datetime.max.replace(microsecond=0), "end": datetime.max.replace(microsecond=0)},
                           "tags": old_descriptor.get("tags", {})}
         if "name" in old_descriptor:
             new_descriptor["name"] = old_descriptor["name"] + " - " + new_tasksetid

@@ -37,6 +37,7 @@ class TableOfContents(TaskDispenser):
         self._toc = SectionsList(dispenser_data.get("toc", {}))
         self._task_config = dispenser_data.get("config", {})
         parse_tasks_config(self._task_list_func().keys(), self.config_items, self._task_config)
+        self._task_config = self.adapt_accessibilities(self._task_config)
 
     @classmethod
     def get_id(cls):
@@ -161,3 +162,10 @@ class TableOfContents(TaskDispenser):
                 raise Exception(f"In task {taskid} : {e}")
         dispenser_data["imported"] = True
         return dispenser_data
+
+    def adapt_accessibilities(self, task_config): # better name ? -> function to pass data through all potential objects
+        """ Adapts the task accessibilities to the new format by passing them through the AccessibleTime object"""
+        for task in task_config:
+            accessibility = AccessibleTime(Accessibility.get_value(self._task_config.get(task, {}))) # reproduces .get_accessibilities from TableOfContent
+            task_config[task]["accessibility"] = accessibility.get_string_dict()
+        return task_config

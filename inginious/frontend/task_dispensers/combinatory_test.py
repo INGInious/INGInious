@@ -4,6 +4,8 @@
 # more information about the licensing of this file.
 
 from random import Random
+from datetime import datetime
+
 import inginious
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.util import SectionConfigItem, Weight, SubmissionStorage, EvaluationMode, \
@@ -27,7 +29,8 @@ class CombinatoryTest(TableOfContents):
         return False
 
     def get_accessibilities(self, taskids, usernames):
-        result = {username: {taskid: AccessibleTime(False) for taskid in taskids} for username in usernames}
+        result = {username: {taskid: AccessibleTime({"start": datetime.min, "soft_end": datetime.max.replace(microsecond=0), "end": datetime.max.replace(microsecond=0)})
+                             for taskid in taskids} for username in usernames}
         for index, section in enumerate(self._toc):
             task_list = [taskid for taskid in section.get_tasks()
                          if AccessibleTime(Accessibility.get_value(self._task_config.get(taskid, {}))).after_start()]
@@ -37,7 +40,8 @@ class CombinatoryTest(TableOfContents):
                 random_order_choices = task_list.copy()
                 rand.shuffle(random_order_choices)
                 for taskid in random_order_choices[0:amount_questions]:
-                    result[username][taskid] = AccessibleTime(Accessibility.get_value(self._task_config.get(taskid, {})))
+                    accessibility_period = Accessibility.get_value(self._task_config.get(taskid, {}))
+                    result[username][taskid] = AccessibleTime(accessibility_period)
 
         return result
 
@@ -50,9 +54,8 @@ class CombinatoryTest(TableOfContents):
         taskset = element if isinstance(element, inginious.frontend.tasksets.Taskset) else None
         course = element if isinstance(element, inginious.frontend.courses.Course) else None
 
-        return template_helper.render("task_dispensers_admin/combinatory_test.html",  element=element, course=course,
-                                      taskset=taskset, dispenser_structure=self._toc, dispenser_config=self._task_config,
-                                      tasks=task_data, task_errors=task_errors, config_fields=config_fields)
+        return template_helper.render("task_dispensers_admin/combinatory_test.html",  element=element, course=course, taskset=taskset,
+                                      dispenser_structure=self._toc, dispenser_config=self._task_config, tasks=task_data, task_errors=task_errors, config_fields=config_fields)
 
     def render(self, template_helper, course, tasks_data, tag_list, username):
         """ Returns the formatted task list"""

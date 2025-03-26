@@ -1,8 +1,8 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
+{% set at = element.get_task_dispenser().get_accessibility(taskid, user_manager.session_username()) %}
 {% if short %}
-    {% set at = element.get_task_dispenser().get_accessibility(taskid, user_manager.session_username()) %}
     {{_("Accessibility")}} :
     <span class="accessibility accessibility-never" {% if not at.is_never_accessible() %} style="display: none;" {% endif %}>{{_("Never")}}</span>
     <span class="accessibility accessibility-always" {% if not at.is_always_accessible() %} style="display: none;" {% endif %}>{{_("Always")}}</span>
@@ -83,21 +83,33 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
+
         if (!("accessibility" in dispenser_config[taskid]))
             return;
         var accessibility = dispenser_config[taskid]["accessibility"];
         var value;
 
-        if (accessibility === true) {
-            value = 'true';
-        } else if (accessibility === false) {
-            value = 'false';
-        } else {
+        special_dates = ["{{ at.min }}", "{{ at.max }}"]
+        function isSpecialDate(date) {
+            return special_dates.includes(date);
+        }
+
+        if (Object.values(accessibility).some(date => !isSpecialDate(date))) {
             value = 'custom';
-            var splitted_values = accessibility.split("/");
-            $(this).find("#accessibility_start").val(splitted_values[0]);
-            $(this).find("#accessibility_soft_end").val(splitted_values[1]);
-            $(this).find("#accessibility_end").val(splitted_values[2]);
+
+            $(this).find('#accessibility_start_picker').datetimepicker('date', isSpecialDate(accessibility["start"]) ? null : accessibility["start"]);
+            $(this).find('#accessibility_soft_end_picker').datetimepicker('date', isSpecialDate(accessibility["soft_end"]) ? null : accessibility["soft_end"]);
+            $(this).find('#accessibility_end_picker').datetimepicker('date', isSpecialDate(accessibility["end"]) ? null : accessibility["end"]);
+        } else {
+            if (Object.values(accessibility).some(date => date == "{{ at.min }}")) {
+                value = 'true';
+            } else {
+                value = 'false';
+            }
+
+            $(this).find('#accessibility_start_picker').datetimepicker('date', null);
+            $(this).find('#accessibility_soft_end_picker').datetimepicker('date', null);
+            $(this).find('#accessibility_end_picker').datetimepicker('date', null);
         }
 
         var field = $(this).find(".accessibility input[value=" + value + "]");
@@ -114,62 +126,68 @@
             $("#task_" + taskid + " .accessibility").hide();
             if($(this).val() == "true") {
                 $("#task_" + taskid + " .accessibility-always").show();
-                dispenser_config[taskid]["accessibility"] = true;
+                dispenser_config[taskid]["accessibility"]["start"] = "{{ at.min }}";
+                dispenser_config[taskid]["accessibility"]["soft_end"] = "{{ at.max }}";
+                dispenser_config[taskid]["accessibility"]["end"] = "{{ at.max }}";
             } else if($(this).val() == "false") {
                 $("#task_" + taskid + " .accessibility-never").show();
-                dispenser_config[taskid]["accessibility"] = false;
+                dispenser_config[taskid]["accessibility"]["start"] = "{{ at.max }}";
+                dispenser_config[taskid]["accessibility"]["soft_end"] = "{{ at.max }}";
+                dispenser_config[taskid]["accessibility"]["end"] = "{{ at.max }}";
             } else {
                 $("#task_" + taskid + " .accessibility-custom").show();
                 var start = $("#edit_task_modal").find("#accessibility_start").val();
                 var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
                 var end = $("#edit_task_modal").find("#accessibility_end").val();
-                dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
 
+                dispenser_config[taskid]["accessibility"]["start"] = start == "" ? "{{ at.min }}" : start;
+                dispenser_config[taskid]["accessibility"]["soft_end"] = soft_end == "" ? "{{ at.max }}" : soft_end;
+                dispenser_config[taskid]["accessibility"]["end"] = end == "" ? "{{ at.max }}" : end;
             }
         } else {
             let id = $(this).attr("id");
-            if (id == "accessibility_start")
-                $("#task_" + taskid + " .accessibility-custom-start").text($(this).val());
-            else if(id == "accessibility_end")
-                $("#task_" + taskid + " .accessibility-custom-end").text($(this).val());
-            else
-                $("#task_" + taskid + " .accessibility-custom-soft-end").text($(this).val());
 
-            var start = $("#edit_task_modal").find("#accessibility_start").val();
-            var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
-            var end = $("#edit_task_modal").find("#accessibility_end").val();
-            dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
+            if (id == "accessibility_start") {
+                var start = $("#task_" + taskid + " .accessibility-custom-start").text($(this).val());
+                dispenser_config[taskid]["accessibility"]["start"] = start == "" ? "{{ at.min }}" : start;
+            } else if(id == "accessibility_end") {
+                var end = $("#task_" + taskid + " .accessibility-custom-end").text($(this).val());
+                dispenser_config[taskid]["accessibility"]["end"] = end == "" ? "{{ at.max }}" : end;
+            } else {
+                var soft_end = $("#task_" + taskid + " .accessibility-custom-soft-end").text($(this).val());
+                dispenser_config[taskid]["accessibility"]["soft_end"] = soft_end == "" ? "{{ at.max }}" : soft_end;
+            }
         }
     });
 
     $('#accessibility_start_picker').on("change.datetimepicker", function () {
+        if( $("input[name='accessibility']:checked").val() != "custom")
+            return;
         var taskid = $("#edit_task_modal").data("taskid");
         let val = $("#edit_task_modal #accessibility_start").val();
         $("#task_" + taskid + " .accessibility-custom-start").text(val);
         var start = $("#edit_task_modal").find("#accessibility_start").val();
-        var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
-        var end = $("#edit_task_modal").find("#accessibility_end").val();
-        dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
+        dispenser_config[taskid]["accessibility"]["start"] = start == "" ? "{{ at.min }}" : start;
     });
 
     $('#accessibility_end_picker').on("change.datetimepicker", function () {
+        if( $("input[name='accessibility']:checked").val() != "custom")
+            return;
         var taskid = $("#edit_task_modal").data("taskid");
         let val = $("#edit_task_modal #accessibility_end").val();
         $("#task_" + taskid + " .accessibility-custom-end").text(val);
-        var start = $("#edit_task_modal").find("#accessibility_start").val();
-        var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
         var end = $("#edit_task_modal").find("#accessibility_end").val();
-        dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
+        dispenser_config[taskid]["accessibility"]["end"] = end == "" ? "{{ at.max }}" : end;
     });
 
     $('#accessibility_soft_end_picker').on("change.datetimepicker", function () {
+        if( $("input[name='accessibility']:checked").val() != "custom")
+            return;
         var taskid = $("#edit_task_modal").data("taskid");
         let val = $("#edit_task_modal #accessibility_soft_end").val();
         $("#task_" + taskid + " .accessibility-custom-soft-end").text(val);
-        var start = $("#edit_task_modal").find("#accessibility_start").val();
         var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
-        var end = $("#edit_task_modal").find("#accessibility_end").val();
-        dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
+        dispenser_config[taskid]["accessibility"]["soft_end"] = soft_end == "" ? "{{ at.max }}" : soft_end;
     });
 
     // Catch grouped action changes
@@ -184,17 +202,23 @@
                 $("#task_" + taskid + " .accessibility").hide();
                 if(value == "true") {
                     $("#task_" + taskid + " .accessibility-always").show();
-                    dispenser_config[taskid]["accessibility"] = true;
+                    dispenser_config[taskid]["accessibility"]["start"] = "{{ at.min }}";
+                    dispenser_config[taskid]["accessibility"]["soft_end"] = "{{ at.max }}";
+                    dispenser_config[taskid]["accessibility"]["end"] = "{{ at.max }}";
                 } else if(value== "false") {
                     $("#task_" + taskid + " .accessibility-never").show();
-                    dispenser_config[taskid]["accessibility"] = false;
+                    dispenser_config[taskid]["accessibility"]["start"] = "{{ at.max }}";
+                    dispenser_config[taskid]["accessibility"]["soft_end"] = "{{ at.max }}";
+                    dispenser_config[taskid]["accessibility"]["end"] = "{{ at.max }}";
                 } else {
                     $("#task_" + taskid + " .accessibility-custom").show();
                     var start = $("#grouped-actions-edit #accessibility_start").val();
                     var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
                     var end = $("#grouped-actions-edit #accessibility_end").val();
-                    dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
 
+                    dispenser_config[taskid]["accessibility"]["start"] = start == "" ? "{{ at.min }}" : start;
+                    dispenser_config[taskid]["accessibility"]["soft_end"] = soft_end == "" ? "{{ at.max }}" : soft_end;
+                    dispenser_config[taskid]["accessibility"]["end"] = end == "" ? "{{ at.max }}" : end;
                 }
             } else {
                 if (id == "accessibility_start")
@@ -207,7 +231,10 @@
                 var start = $("#grouped-actions-edit #accessibility_start").val();
                 var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
                 var end = $("#grouped-actions-edit #accessibility_end").val();
-                dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
+
+                dispenser_config[taskid]["accessibility"]["start"] = start == "" ? "{{ at.min }}" : start;
+                dispenser_config[taskid]["accessibility"]["soft_end"] = soft_end == "" ? "{{ at.max }}" : soft_end;
+                dispenser_config[taskid]["accessibility"]["end"] = end == "" ? "{{ at.max }}" : end;
             }
         });
     });
@@ -217,29 +244,23 @@
         $(".grouped-actions-task:checked").each(function () {
             $("#task_" + $(this).data("taskid") + " .accessibility-custom-start").text(val);
             var start = $("#grouped-actions-edit #accessibility_start").val();
-            var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
-            var end = $("#grouped-actions-edit #accessibility_end").val();
-            dispenser_config[$(this).data("taskid")]["accessibility"] = start + "/" + soft_end + "/" + end;
+            dispenser_config[$(this).data("taskid")]["accessibility"]["start"] = start == "" ? "{{ at.min }}" : start;
         });
     });
     $('#accessibility_end_picker_grouped').on("change.datetimepicker", function () {
         let val = $("#grouped-actions-edit #accessibility_end").val();
         $(".grouped-actions-task:checked").each(function () {
             $("#task_" + $(this).data("taskid") + " .accessibility-custom-end").text(val);
-            var start = $("#grouped-actions-edit #accessibility_start").val();
-            var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
             var end = $("#grouped-actions-edit #accessibility_end").val();
-            dispenser_config[$(this).data("taskid")]["accessibility"] = start + "/" + soft_end + "/" + end;
+            dispenser_config[$(this).data("taskid")]["accessibility"]["end"] = end == "" ? "{{ at.max }}" : end;
         });
     });
     $('#accessibility_soft_end_picker_grouped').on("change.datetimepicker", function () {
         let val = $("#grouped-actions-edit #accessibility_soft_end").val();
         $(".grouped-actions-task:checked").each(function () {
             $("#task_" + $(this).data("taskid") + " .accessibility-custom-soft-end").text(val);
-            var start = $("#grouped-actions-edit #accessibility_start").val();
             var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
-            var end = $("#grouped-actions-edit #accessibility_end").val();
-            dispenser_config[$(this).data("taskid")]["accessibility"] = start + "/" + soft_end + "/" + end;
+            dispenser_config[$(this).data("taskid")]["accessibility"]["soft_end"] = soft_end == "" ? "{{ at.max }}" : soft_end;
         });
     });
 

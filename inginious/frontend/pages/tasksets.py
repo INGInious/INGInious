@@ -4,6 +4,7 @@
 # more information about the licensing of this file.
 
 """ Index page """
+from datetime import datetime
 import flask
 from collections import OrderedDict
 
@@ -35,7 +36,8 @@ class TasksetsPage(INGIniousAuthPage):
                 if self.user_manager.session_username() in taskset.get_admins() or taskset.is_public() or self.user_manager.user_is_superadmin():
                     task_dispenser = taskset.get_task_dispenser()
                     self.course_factory.create_course(courseid, {
-                        "name": courseid, "accessible": False, "tasksetid": taskset.get_id(),
+                        "name": courseid, "accessible":  {"start": datetime.max.replace(microsecond=0), "end": datetime.max.replace(microsecond=0)},
+                        "registration": {"start": datetime.max.replace(microsecond=0), "end": datetime.max.replace(microsecond=0)}, "tasksetid": taskset.get_id(),
                         "admins": [self.user_manager.session_username()], "students": [],
                         "task_dispenser": task_dispenser.get_id(), "dispenser_data": task_dispenser.get_dispenser_data()
                     })

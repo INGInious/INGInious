@@ -5,6 +5,8 @@
 
 """ A custom YAML based on PyYAML, that provides Ordered Dicts """
 # Most ideas for this implementation comes from http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
+from datetime import datetime
+
 from collections import OrderedDict
 
 import yaml as original_yaml
@@ -74,10 +76,16 @@ def dump(data, stream=None, **kwds):
     def _default_representer(dumper, data):
         return _long_str_representer(dumper, str(data))
 
+    def _timestamp_representer(dumper, data):
+        date = data.strftime("%4Y-%m-%dT%H:%M:%SZ")
+        return dumper.represent_scalar('tag:yaml.org,2002:timestamp', date)
+
+
     OrderedDumper.add_representer(str, _long_str_representer)
     OrderedDumper.add_representer(str, _long_str_representer)
     OrderedDumper.add_representer(OrderedDict, _dict_representer)
     OrderedDumper.add_representer(None, _default_representer)
+    OrderedDumper.add_representer(datetime, _timestamp_representer)
 
     s = original_yaml.dump(data, stream, OrderedDumper, encoding='utf-8', allow_unicode=True, default_flow_style=False, indent=4, **kwds)
 

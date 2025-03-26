@@ -1,6 +1,10 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
+<script>
+    dispenser_config = JSON.parse('{{ dispenser_config | tojson }}');
+</script>
+
 {% include "task_dispensers_admin/util.html" %}
 
 <div id="dispenser_structure" data-level="2" class="sections_list pb-3 mb-3">
@@ -24,6 +28,3 @@
    {% include "task_dispensers_admin/empty_section.html" %}
 {% endwith %}
 
-<script>
-    dispenser_config = JSON.parse('{{ dispenser_config | tojson }}');
-</script>

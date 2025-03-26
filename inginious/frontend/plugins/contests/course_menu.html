@@ -21,11 +21,11 @@
             </div>
             <div class="col-sm-11" style="margin-left:-10px;">
                 {% if start > start.now() %}
-                    <span class="contest_starting_time" starts-at="{{ start.strftime('%Y-%m-%d %H:%M:%S') }}"></span>
+                    <span class="contest_starting_time" starts-at="{{ start.strftime('%4Y-%m-%d %H:%M:%S') }}"></span>
                 {% else %}
-                    <span class="contest_remaining_time" ends-at="{{ end.strftime('%Y-%m-%d %H:%M:%S') }}"></span>
+                    <span class="contest_remaining_time" ends-at="{{ end.strftime('%4Y-%m-%d %H:%M:%S') }}"></span>
                     {% if blackout != end %}
-                        <br/><span class="contest_blackout_time" blackout-at="{{ blackout.strftime('%Y-%m-%d %H:%M:%S') }}"></span>
+                        <br/><span class="contest_blackout_time" blackout-at="{{ blackout.strftime('%4Y-%m-%d %H:%M:%S') }}"></span>
                     {% endif %}
                 {% endif %}
             </div>

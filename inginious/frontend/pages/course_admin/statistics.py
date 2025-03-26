@@ -195,8 +195,8 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
             now = datetime.now().replace(minute=0, second=0, microsecond=0)
             daterange = [now - timedelta(days=14), now]
 
-        params["date_before"] = daterange[1].strftime("%Y-%m-%d %H:%M:%S")
-        params["date_after"] = daterange[0].strftime("%Y-%m-%d %H:%M:%S")
+        params["date_before"] = daterange[1].strftime("%4Y-%m-%d %H:%M:%S")
+        params["date_after"] = daterange[0].strftime("%4Y-%m-%d %H:%M:%S")
         display_hours = (daterange[1] - daterange[0]).days < 4
 
         users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, params)
@@ -209,7 +209,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
                                                  float(params["grade_min"]) if params.get('grade_min', '') else None,
                                                  float(params["grade_max"]) if params.get('grade_max', '') else None
                                              ],
-                                             submit_time_between=[x.strftime("%Y-%m-%d %H:%M:%S") for x in daterange],
+                                             submit_time_between=[x.strftime("%4Y-%m-%d %H:%M:%S") for x in daterange],
                                              keep_only_crashes="crashes_only" in params)
 
         stats_tasks = self._tasks_stats(tasks, filter, limit)
