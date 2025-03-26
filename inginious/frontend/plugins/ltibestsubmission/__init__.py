@@ -18,7 +18,7 @@ class LTIBestSubmissionPage(INGIniousAuthPage):
 
         # get the INGInious username from the ToolConsumer-provided username
         inginious_usernames = list(self.database.users.find(
-            {"ltibindings." + courseid + "." + data["consumer_key"]: data["username"]}
+            {"ltibindings." + courseid + "." + data["platform_instance_id"]: data["username"]}
         ))
 
         if not inginious_usernames:
