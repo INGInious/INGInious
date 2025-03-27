@@ -1,0 +1,94 @@
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+
+{% extends "layout.html" %}
+
+{% block title %} {{ course.get_name(user_manager.session_language()) }} - {{ _("Tokens") }} {% endblock %}
+
+{% block column %}
+{{ template_helper.call('course_admin_menu',course=course,current='api_tokens') | safe }}
+{% endblock %}
+
+{% block navbar %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{get_homepath()}}/course/{{course.get_id()}}">{{course.get_name(user_manager.session_language())}}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_homepath()}}/admin/{{course.get_id()}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
+                <i class="fa fa-user-secret"></i></a></li>
+            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-id-card"></i> {{ _("API tokens") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
+        </ol>
+    </nav>
+{% endblock %}
+
+
+{% block content %}
+<h2>{{_("API Tokens")}}</h2>
+<div class="card-header bg-success text-white">
+    {{ _("Add token") }}
+</div>
+<div class="card-body">
+    <form class="form-horizontal" id="tokens_form" method="post">
+        <div class="row">
+            <div class="col-md-6">
+                <input type="text" placeholder="description" name="descr" value="" class="form-control">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <div class='input-group date' id='time_picker' data-target-input="nearest">
+                        <input data-target='#time_picker' name="expiration" data-date-format="YYYY-MM-DD HH:mm:ss" placeholder="2014-06-29 10:00" type='text' class="form-control datetimepicker-input"/>
+                        <div class="input-group-append" data-target="#time_picker" data-toggle="datetimepicker">
+                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-block btn-info" type="submit" name="add_token"><i class="fa fa-plus fa-lg"></i> {{ _("Create token") }}</button>
+            </div>
+        </div>
+    </form>
+    <script type="text/javascript">
+        $(function() {
+            $('#time_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
+        });
+    </script>
+     {% if msg != "" and msg != "removed" %}
+        <h4>{{ _("Your token string is shown under here. You can now copy it where you need it. It will not be possible to recover the string afterward.") }}</h4>
+        <hr>
+        <p>{{msg}}</p>
+    {% endif %}
+</div>
+<div class="card-header bg-dark text-white">
+    {{ _("Existing tokens") }}
+</div>
+<div class="card-body">
+    <form class="form-horizontal" id="remove_form" method="post">
+        <table id="table" class="table">
+            <tbody>
+                {% if msg == "removed" %}
+                    <p>{{ _("Token removed") }}</p>
+                {% endif %}
+                {% for token in tokens %}
+                    {% set tok_id = token["_id"] %}
+                    <tr id="{{loop.index}}">
+                        <td>ID : {{token["_id"]}}</td>
+                        {% if token["description"] == "" %}
+                            <td class="text-secondary">{{ _("No description") }}</td>
+                        {% else %}
+                            <td>{{token["description"]}}</td>
+                        {% endif %}
+                        {% if str(token["expire"]) == "9999-12-31 00:00:00" %}
+                            <td class="text-secondary">{{ _("Doesn't expire") }}</td>
+                        {% elif token["expire"] >= now %}
+                            <td>Expire {{token["expire"].strftime("%Y %m %d %H:%M:%S")}}</td>
+                        {% else %}
+                            <td class="text-danger">Expired since {{token["expire"].strftime("%Y %m %d %H:%M:%S")}}</td>
+                        {% endif %}
+                        <td><button class="btn btn-info btn-block" type="submit" name="token_id" value="{{tok_id}}"><i class="fa fa-minus fa-lg"></i> {{ _("Remove token") }}</button></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+</div>
+{% endblock %}

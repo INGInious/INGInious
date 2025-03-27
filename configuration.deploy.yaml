@@ -12,5 +12,6 @@ session_parameters:
     timeout: 86400
 superadmins:
 - superadmin
+jwt_key: p3JcQcTwcnKxr39t7p6B7cbaE8CvuPPoOj3kE4HyoCrlKM10BLly72X3Q90uJ8kaDb
 tasks_directory: /inginious/tasks
 use_minified_js: true
