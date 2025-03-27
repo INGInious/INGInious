@@ -15,7 +15,7 @@ import asyncio
 
 from inginious.backend.backend import Backend
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("agent", help="Address to which the agents will connect to the backend in the form protocol://host:port. For example, "
                                            "tcp://127.0.0.1:2001", type=str)
@@ -56,3 +56,7 @@ if __name__ == "__main__":
         logger.info("Waiting for ZMQ to send remaining messages to backend (can take 1 sec)")
         context.destroy(1000)  # give zeromq 1 sec to send remaining messages
         logger.info("Done")
+
+
+if __name__ == "__main__":
+    main()

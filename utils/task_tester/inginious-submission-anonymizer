@@ -124,7 +124,7 @@ def anonymize(prefix: str, archive: str):
                         with open(new_submission_file, 'w') as fd: fd.write(new_content)
 
 
-if __name__ == '__main__':
+def main():
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -187,3 +187,7 @@ if __name__ == '__main__':
             _OTHER_FIELDS.append((field, new_value))
 
     anonymize(prefix, archive)
+
+
+if __name__ == "__main__":
+    main()

@@ -13,7 +13,7 @@ import time
 import json
 import sys
 
-from yaml import SafeLoader
+from yaml import SafeLoader, load
 
 from inginious.common.tags import Tag
 from inginious.frontend.tasks import Task
@@ -22,9 +22,9 @@ from inginious.common.log import init_logging
 from inginious.frontend.course_factory import create_factories
 from inginious.client.client_sync import ClientSync
 from inginious.frontend.arch_helper import start_asyncio_and_zmq, create_arch
-from yaml import load
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.task_problems import get_default_displayable_problem_types
+from inginious.frontend.parsable_text import ParsableText
 
 
 def import_class(name):
@@ -246,7 +246,7 @@ def test_all_files(config, client, course_factory):
         # exit(-1)  # or 255 if exit code is on 8 bits
 
 
-if __name__ == "__main__":
+def main():
     # Arguments parsing
     parser = argparse.ArgumentParser(description="Test the correctness of results contained in yaml files")
     parser.add_argument("--logging", '-l', help="enables logging", action="store_true")
@@ -312,3 +312,7 @@ if __name__ == "__main__":
         exit(66)
 
     print("\nAll yaml files in {} directory are consistent with the tests\n".format(args.course_dir))
+
+
+if __name__ == "__main__":
+    main()

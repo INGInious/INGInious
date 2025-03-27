@@ -80,5 +80,6 @@ def main():
             return
         print(INFO + "Nothing happened" + ENDC)
 
+
 if __name__ == "__main__":
     main()
