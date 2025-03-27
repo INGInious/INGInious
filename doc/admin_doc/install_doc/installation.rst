@@ -492,7 +492,7 @@ You can then add virtual host entries in a ``/etc/httpd/vhosts.d/inginious.conf`
         ServerName my_inginious_domain
         LoadModule wsgi_module /usr/lib64/python3.5/site-packages/mod_wsgi/server/mod_wsgi-py35.cpython-35m-x86_64-linux-gnu.so
 
-        WSGIScriptAlias / "/usr/bin/inginious-webapp"
+        WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webapp.py"
         WSGIScriptReloading On
 
         Alias /static /usr/lib/python3.6/site-packages/inginious/frontend/static
@@ -512,7 +512,7 @@ You can then add virtual host entries in a ``/etc/httpd/vhosts.d/inginious.conf`
         ServerName my_inginious_domain
         LoadModule wsgi_module /usr/lib64/python3.6/site-packages/mod_wsgi/server/mod_wsgi-py35.cpython-35m-x86_64-linux-gnu.so
 
-        WSGIScriptAlias / "/usr/bin/inginious-webdav"
+        WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webdav.py"
         WSGIScriptReloading On
 
         <Directory "/usr/bin">
@@ -562,7 +562,7 @@ Add virtual host entries in a `/etc/apache2/sites-available/inginious.conf` file
   ::
 
     <VirtualHost *:80>
-        WSGIScriptAlias / "/usr/local/bin/inginious-webapp"
+        WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webapp.py"
         WSGIScriptReloading On
 
         Alias /static /usr/local/lib/python3.6/dist-packages/inginious/frontend/static
@@ -583,7 +583,7 @@ Add virtual host entries in a `/etc/apache2/sites-available/inginious.conf` file
 
 
     <VirtualHost *:8080>
-            WSGIScriptAlias / "/usr/local/bin/inginious-webdav"
+            WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webdav.py"
             WSGIScriptReloading On
 
             <Directory "/usr/local/bin">

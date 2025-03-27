@@ -68,7 +68,7 @@ class TaskTesterLogger(logging.Logger):
 
 logger = TaskTesterLogger()
 
-def job_done_callback(result, filename, inputfiles, data):
+def job_done_callback(result, filename, inputfiles, data, verbose):
     """ Compare a given submission with the result of its replay.
     """
     logger.info('-- [%i/%i] Testing input file <%s>' % (
@@ -189,7 +189,7 @@ def get_config(configfile):
 
     return load_json_or_yaml(configfile)
 
-def launch_job(filename, data, inputfiles, task):
+def launch_job(filename, data, inputfiles, task, job_manager, verbose):
     """ Re-run a submission and compare the results.
         :param filename:    The path towards the submission.
         :param data:        The submission content.
@@ -199,9 +199,9 @@ def launch_job(filename, data, inputfiles, task):
                             submission have been updated.
     """
     result, grade, problems, tests, custom, state, archive, stdout, stderr = job_manager.new_job(0, task, data["input"], "Task tester", True)
-    job_done_callback({"result":result, "grade": grade, "problems": problems, "tests": tests, "custom": custom, "archive": archive, "stdout": stdout, "stderr": stderr}, filename, inputfiles, data)
+    job_done_callback({"result":result, "grade": grade, "problems": problems, "tests": tests, "custom": custom, "archive": archive, "stdout": stdout, "stderr": stderr}, filename, inputfiles, data, verbose)
 
-def test_task(course, taskid) -> tuple[list, int]:
+def test_task(course, taskid, job_manager, verbose) -> tuple[list, int]:
     """ Re-run submissions for a specific task.
         :param course:  The course containing the task to test.
         :param taskid:  The ID of the task to test.
@@ -231,7 +231,7 @@ def test_task(course, taskid) -> tuple[list, int]:
             
         with open(filename, 'r') as fd:
             submission = inginious.common.custom_yaml.load(fd)
-        launch_job(filename, submission, inputfiles, task)
+        launch_job(filename, submission, inputfiles, task, job_manager, verbose)
     
     result = (job_done_callback.failed, job_done_callback.jobs_done)
 
@@ -256,8 +256,7 @@ def test_task(course, taskid) -> tuple[list, int]:
     return result
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
         'Replay submissions of a given course to ensure that its task\'s grading processes are '
         'consistent over time.'
@@ -337,7 +336,7 @@ if __name__ == "__main__":
             logger.warning('-> Task <%s> explicitely ignored' % taskid)
             total_ignored.append(taskid)
         else:
-            failed, done = test_task(course, taskid)
+            failed, done = test_task(course, taskid, job_manager, verbose)
             total_failed += failed
             total_done += done
         print()
@@ -364,3 +363,7 @@ if __name__ == "__main__":
         else:
             logger.success('--> All the previous submissions of the tested tasks passed')
             sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

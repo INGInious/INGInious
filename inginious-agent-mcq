@@ -26,7 +26,8 @@ def import_class(name):
         mod = getattr(mod, comp)
     return mod
 
-if __name__ == "__main__":
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("backend", help="Address to the backend, in the form protocol://host:port. For example, tcp://127.0.0.1:2000", type=str)
     parser.add_argument("--friendly-name", help="Friendly name to help identify agent.", default="", type=str)
@@ -89,3 +90,7 @@ if __name__ == "__main__":
             logger.info("Waiting for ZMQ to send remaining messages to backend (can take 1 sec)")
             context.destroy(1000)  # give zeromq 1 sec to send remaining messages
             logger.info("Done")
+
+
+if __name__ == "__main__":
+    main()
