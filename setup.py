@@ -49,29 +49,18 @@ doc_requires = [
 ]
 
 scripts = [] if os.environ.get("INGINIOUS_COMPOSE") else [
-    'inginious-agent-docker',
-    'inginious-agent-mcq',
-    'inginious-backend',
-    'inginious-webapp',
-    'inginious-webdav',
-    'inginious-install',
-    'inginious-autotest',
-    'utils/sync/inginious-synchronize',
-    'utils/container_update/inginious-container-update',
-    'utils/database_updater/inginious-database-update'
-]
-
-scripts = [] if os.environ.get("INGINIOUS_COMPOSE") else [
-    'inginious-agent-docker',
-    'inginious-agent-mcq',
-    'inginious-backend',
-    'inginious-webapp',
-    'inginious-webdav',
-    'inginious-install',
-    'inginious-autotest',
-    'utils/sync/inginious-synchronize',
-    'utils/container_update/inginious-container-update',
-    'utils/database_updater/inginious-database-update'
+    'inginious/scripts/inginious-agent-docker',
+    'inginious/scripts/inginious-agent-mcq',
+    'inginious/scripts/inginious-backend',
+    'inginious/scripts/inginious-webapp',
+    'inginious/scripts/inginious-webdav',
+    'inginious/scripts/inginious-install',
+    'inginious/scripts/inginious-autotest',
+    'inginious/scripts/sync/inginious-synchronize',
+    'inginious/scripts/container_update/inginious-container-update',
+    'inginious/scripts/database_update/inginious-database-update',
+    'inginious/scripts/task_tester/inginious-test-task',
+    'inginious/scripts/task_tester/inginious-submission-anonymizer'
 ]
 
 # Setup
