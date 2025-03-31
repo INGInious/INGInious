@@ -1,13 +1,13 @@
 ARG  VERSION=latest
-ARG  REGISTRY
+ARG  REGISTRY=ghcr.io
 
 FROM ${REGISTRY}/inginious/core-base:${VERSION}
 
 COPY inginious/frontend inginious/frontend/
 COPY inginious/client inginious/client/
-COPY inginious-webapp .
+COPY inginious/scripts inginious/scripts
 
-RUN dnf install -y git gcc python39-devel
+RUN dnf install -y git gcc python3.11-devel
 
 # See https://github.com/pypa/setuptools_scm/#usage-from-docker
 RUN --mount=source=.git,target=.git,type=bind \
@@ -15,4 +15,4 @@ RUN --mount=source=.git,target=.git,type=bind \
 
 COPY deploy/db_setup.py /tmp/db_setup.py
 
-CMD ["sh", "-c", "python3 /tmp/db_setup.py; python3 inginious-webapp"]
+CMD ["sh", "-c", "python3 /tmp/db_setup.py; python3 -m inginious.scripts.webapp"]
