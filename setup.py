@@ -48,20 +48,22 @@ doc_requires = [
     "sphinx-tabs==3.4.5"
 ]
 
-scripts = [] if os.environ.get("INGINIOUS_COMPOSE") else [
-    'inginious/scripts/inginious-agent-docker',
-    'inginious/scripts/inginious-agent-mcq',
-    'inginious/scripts/inginious-backend',
-    'inginious/scripts/inginious-webapp',
-    'inginious/scripts/inginious-webdav',
-    'inginious/scripts/inginious-install',
-    'inginious/scripts/inginious-autotest',
-    'inginious/scripts/sync/inginious-synchronize',
-    'inginious/scripts/container_update/inginious-container-update',
-    'inginious/scripts/database_update/inginious-database-update',
-    'inginious/scripts/task_tester/inginious-test-task',
-    'inginious/scripts/task_tester/inginious-submission-anonymizer'
-]
+entry_points = {} if os.environ.get("INGINIOUS_COMPOSE") else {
+    'console_scripts': [
+        "inginious-agent-docker = inginious.scripts.agent_docker:main",
+        "inginious-agent-mcq = inginious.scripts.agent_mcq:main",
+        "inginious-backend = inginious.scripts.backend:main",
+        "inginious-webapp = inginious.scripts.webapp:main",
+        "inginious-webdav = inginious.scripts.webdav:main",
+        "inginious-install = inginious.scripts.install:main",
+        "inginious-autotest = inginious.scripts.autotest:main",
+        "inginious-synchronize = inginious.scripts.sync.synchronize:main",
+        "inginious-container-update = inginious.scripts.container_update:main",
+        "inginious-database-update = inginious.scripts.database_update:main",
+        "inginious-test-task = inginious.scripts.task_tester.task_tester:main",
+        "inginious-submission-anonymizer = inginious.scripts.task_tester.submission_anonymizer:main"
+    ]
+}
 
 # Setup
 setup(
@@ -78,7 +80,7 @@ setup(
         "test": test_requires,
         "doc": test_requires + doc_requires
     },
-    scripts=scripts,
+    entry_points=entry_points,
     include_package_data=True,
     test_suite='nose.collector',
     author="INGInious contributors",

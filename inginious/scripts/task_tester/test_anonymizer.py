@@ -13,7 +13,7 @@ FIELDS_TO_REPLACE = [
     ('time', ''), ('@time', ''), ('@email', 'anonymized@anonymized'), ('@username', 'anonymized')
 ]
 
-BASE_CMD = 'python3 inginious/scripts/task_tester/inginious-submission-anonymizer '
+BASE_CMD = 'python3 inginious/scripts/task_tester/submission_anonymizer.py '
 
 @pytest.fixture
 def get_simple_submission():
