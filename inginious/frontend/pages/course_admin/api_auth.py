@@ -3,73 +3,48 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from flask import request, Response
+from flask import request, Response, abort
 import jwt
 from datetime import datetime
 import json
-from bson.json_util import dumps
 
-from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.pages.utils import INGIniousPage
 
 
-class CourseAPIAuthPage(INGIniousAdminPage):
+class DataAPIPage(INGIniousPage):
+    """ Token verification and handler for the data API """
 
-    def GET(self, courseid):
-        """ GET request """
+    def __init__(self):
+        super().__init__()
+        self.jwt_key = str(self.app.jwt_key)
+
+    def verify(self):
+        """ verify if a token is valid """
         auth_header = request.headers.get('Authorization')
-        msg, code = self.decode_token(auth_header)
-        if code == 200:
-            # DB request parameters
-            params = {"courseid": msg}
-            if "taskid" in request.args:
-                params["taskid"] = request.args.get("taskid")
-            if "username" in request.args:
-                params["username"] = request.args.get("username")
-
-            if request.args.get("type") == "tasks":
-                msg = dumps(self.database.user_tasks.find(params))
-            elif request.args.get("type") == "submissions":
-                msg = dumps(self.database.submissions.find(params))
-            else:
-                msg = json.dumps({"message": "No data type specified"})
-        else:
-            # error message
-            msg = json.dumps({"message": msg})
-
-        return self.page(msg, code)
-
-    def decode_token(self, auth_header):
-        """ Returns decoded courseid or error, and http code """
-        key = str(self.app.jwt_key)
-
         try:
-            if auth_header[:7] != "Bearer ":
-                return ("token not bearer", 401)
-            token = auth_header[7:]
-            decoded = jwt.decode(token, key, algorithms=["HS256"])
+            token = auth_header.split()[1]
+            decoded = jwt.decode(token, self.jwt_key, algorithms=["HS256"])
         except:
-            return ("No token", 401)
-
+            abort(401, description="No authentification token found.")
         try:
             tok_id = decoded["_id"]
             expire = datetime.strptime(decoded["expire"], "%Y-%m-%d %H:%M:%S")
             courseid = decoded["courseid"]
         except:
-            return ("Invalid token", 401)
+            abort(401, description="Invalid token.")
 
         stored_token = self.database.tokens.find_one({"$expr": {"$eq": ["$_id", {"$toObjectId": tok_id}]}})
         if stored_token is None:
-            return ("Token no found", 401)
+            abort(401, description="Authentification token not recognized.")
 
         if expire < datetime.now():
-            return ("The token has expired", 403)
+            abort(403, description="The authentification token is expired.")
 
-        return (courseid, 200)
+        return courseid
 
-    def page(self, msg, code):
-        """ Sends response in json """
+    def response(self, msg):
         response = Response()
-        response.response = msg
+        response.response = json.dumps({"message": msg})
         response.content_type = "text/json; charset=utf-8"
-        response.status_code = code
+        response.status_code = 200
         return response

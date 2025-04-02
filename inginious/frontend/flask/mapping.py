@@ -19,7 +19,7 @@ from inginious.frontend.pages.preferences.profile import ProfilePage
 from inginious.frontend.pages.preferences.utils import PrefRedirectPage
 from inginious.frontend.pages.utils import SignInPage, LogOutPage
 from inginious.frontend.pages.register import RegistrationPage
-from inginious.frontend.pages.social import AuthenticationPage, CallbackPage
+from inginious.frontend.pages.social import AuthenticationPage, CallbackPage, SharePage
 from inginious.frontend.pages.course_register import CourseRegisterPage
 from inginious.frontend.pages.course import CoursePage
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
@@ -40,6 +40,7 @@ from inginious.frontend.pages.course_admin.student_info import CourseStudentInfo
 from inginious.frontend.pages.course_admin.submission import SubmissionPage
 from inginious.frontend.pages.course_admin.submissions import CourseSubmissionsPage
 from inginious.frontend.pages.course_admin.task_list import CourseTaskListPage
+from inginious.frontend.pages.course_admin.tags import CourseTagsPage
 from inginious.frontend.pages.course_admin.audience_edit import CourseEditAudience
 from inginious.frontend.pages.course_admin.task_edit import CourseEditTask
 from inginious.frontend.pages.course_admin.task_edit_file import CourseTaskFiles
@@ -48,7 +49,8 @@ from inginious.frontend.pages.course_admin.danger_zone import CourseDangerZonePa
 from inginious.frontend.pages.course_admin.statistics import CourseStatisticsPage
 from inginious.frontend.pages.course_admin.search_user import CourseAdminSearchUserPage
 from inginious.frontend.pages.course_admin.api_tokens import CourseAPITokensPage
-from inginious.frontend.pages.course_admin.api_auth import CourseAPIAuthPage
+from inginious.frontend.pages.course_admin.submissions_data import SubmissionsEndpoint
+from inginious.frontend.pages.course_admin.user_tasks_data import UserTasksEndpoint
 
 
 def init_flask_maintenance_mapping(flask_app):
@@ -142,5 +144,7 @@ def init_flask_mapping(flask_app):
                            view_func=AdministrationUserActionPage.as_view('administrationuseractionpage'))
     flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/api_tokens',
                            view_func=CourseAPITokensPage.as_view('courseapipage'))
-    flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/api_auth',
-                           view_func=CourseAPIAuthPage.as_view('apiauthpage'))
+    flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/submissions_data',
+                           view_func=SubmissionsEndpoint.as_view('submissiondata'))
+    flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/user_tasks_data',
+                           view_func=UserTasksEndpoint.as_view('usertasksdata'))
