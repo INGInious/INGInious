@@ -15,8 +15,7 @@ class SubmissionsEndpoint(DataAPIPage):
         courseid = self.verify()
 
         # DB request parameters
-        # params = {"courseid": courseid}
-        params = {"courseid": "LSINF1101-PYTHON"}  # rep
+        params = {"courseid": courseid}
         if "taskid" in request.args:
             params["taskid"] = request.args.get("taskid")
         if "username" in request.args:
