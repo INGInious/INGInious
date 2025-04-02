@@ -107,11 +107,7 @@ def init_flask_mapping(flask_app):
                            view_func=CourseSubmissionsPage.as_view('coursesubmissionspage'))
     flask_app.add_url_rule('/admin/<courseid>/tasks',
                            view_func=CourseTaskListPage.as_view('coursetasklistpage'))
-<<<<<<< HEAD
     flask_app.add_url_rule('/admin/<courseid>/edit/audience/<audienceid>',
-=======
-    flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/edit/audience/<audienceid>',
->>>>>>> 310c79e0 (fix accidental erasure)
                            view_func=CourseEditAudience.as_view('courseditaudience'))
     flask_app.add_url_rule('/admin/<courseid>/edit/task/<taskid>',
                            view_func=CourseEditTask.as_view('coursedittask'))
