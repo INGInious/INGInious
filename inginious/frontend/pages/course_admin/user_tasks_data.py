@@ -25,7 +25,7 @@ class UserTasksEndpoint(DataAPIPage):
         if "succeeded" in request.args:
             if request.args.get("succeeded") == "true":
                 params["succeeded"] = True
-            else:
+            elif request.args.get("succeeded") == "false":
                 params["succeeded"] = False
 
         if "evaluation" in request.args:
