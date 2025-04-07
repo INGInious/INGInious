@@ -4,7 +4,6 @@
 # more information about the licensing of this file.
 from flask import request
 from bson.json_util import dumps
-from datetime import datetime
 
 from inginious.frontend.pages.course_admin.api_auth import DataAPIPage
 
