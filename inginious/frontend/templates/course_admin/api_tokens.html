@@ -77,12 +77,12 @@
                         {% else %}
                             <td>{{token["description"]}}</td>
                         {% endif %}
-                        {% if str(token["expire"]) == "9999-12-31 00:00:00" %}
+                        {% if str(token["exp"]) == "9999-12-31 00:00:00" %}
                             <td class="text-secondary">{{ _("Doesn't expire") }}</td>
-                        {% elif token["expire"] >= now %}
-                            <td>Expire {{token["expire"].strftime("%Y %m %d %H:%M:%S")}}</td>
+                        {% elif token["exp"] >= now %}
+                            <td>Expire {{token["exp"].strftime("%Y %m %d %H:%M:%S")}}</td>
                         {% else %}
-                            <td class="text-danger">Expired since {{token["expire"].strftime("%Y %m %d %H:%M:%S")}}</td>
+                            <td class="text-danger">Expired since {{token["exp"].strftime("%Y %m %d %H:%M:%S")}}</td>
                         {% endif %}
                         <td><button class="btn btn-info btn-block" type="submit" name="token_id" value="{{tok_id}}"><i class="fa fa-minus fa-lg"></i> {{ _("Remove token") }}</button></td>
                     </tr>

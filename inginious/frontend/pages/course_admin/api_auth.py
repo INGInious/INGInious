@@ -7,6 +7,7 @@ from flask import request, Response, abort
 import jwt
 from datetime import datetime
 import json
+from bson.objectid import ObjectId
 
 from inginious.frontend.pages.utils import INGIniousPage
 
@@ -18,29 +19,28 @@ class DataAPIPage(INGIniousPage):
         super().__init__()
         self.jwt_key = str(self.app.jwt_key)
 
-    def verify(self):
+    def verify(self, courseid):
         """ verify if a token is valid """
         auth_header = request.headers.get('Authorization')
         try:
             token = auth_header.split()[1]
             decoded = jwt.decode(token, self.jwt_key, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            abort(403, description="The authentification token is expired.")
         except:
             abort(401, description="No authentification token found.")
         try:
             tok_id = decoded["_id"]
-            expire = datetime.strptime(decoded["expire"], "%Y-%m-%d %H:%M:%S")
-            courseid = decoded["courseid"]
         except:
             abort(401, description="Invalid token.")
+        if decoded["courseid"] != courseid:
+            abort(401, description="Token course doesn't match requested course.")
 
-        stored_token = self.database.tokens.find_one({"$expr": {"$eq": ["$_id", {"$toObjectId": tok_id}]}})
+        stored_token = self.database.tokens.find_one({'_id': ObjectId(tok_id)})
         if stored_token is None:
             abort(401, description="Authentification token not recognized.")
 
-        if expire < datetime.now():
-            abort(403, description="The authentification token is expired.")
-
-        return courseid
+        return True
 
     def response(self, msg):
         response = Response()

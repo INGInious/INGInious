@@ -4,6 +4,7 @@
 # more information about the licensing of this file.
 from flask import request
 from bson.json_util import dumps
+from datetime import datetime
 
 from inginious.frontend.pages.course_admin.api_auth import DataAPIPage
 
@@ -12,14 +13,24 @@ class SubmissionsEndpoint(DataAPIPage):
 
     def GET(self, courseid):
         """ GET request """
-        courseid = self.verify()
+
+        self.verify(courseid)
 
         # DB request parameters
         params = {"courseid": courseid}
-        if "taskid" in request.args:
-            params["taskid"] = request.args.get("taskid")
-        if "username" in request.args:
-            params["username"] = request.args.get("username")
+
+        textfilters = ["taskid", "username", "status", "result"]
+        for filt in textfilters:
+            if filt in request.args:
+                params[filt] = request.args.get(filt)
+
+        if "mingrade" in request.args and "maxgrade" in request.args:
+            params["grade"] = {"$gte": float(request.args["mingrade"]), "$lte": float(request.args["maxgrade"])}
+        elif "mingrade" in request.args:
+            params["grade"] = {"$gte": float(request.args["mingrade"])}
+        elif "maxgrade" in request.args:
+            params["grade"] = {"$lte": float(request.args["maxgrade"])}
+
         return self.page(params)
 
     def page(self, params):

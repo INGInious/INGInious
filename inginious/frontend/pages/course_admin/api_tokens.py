@@ -6,9 +6,9 @@
 from collections import OrderedDict
 
 import flask
-
 import jwt
 from datetime import datetime
+from bson.objectid import ObjectId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
@@ -32,15 +32,14 @@ class CourseAPITokensPage(INGIniousAdminPage):
                 expire = datetime(9999, 12, 31)
             else:
                 expire = datetime.strptime(expire, "%Y-%m-%d %H:%M:%S")
-            document = {"courseid": courseid, "expire": expire, "description": descr}
+            document = {"courseid": courseid, "exp": expire, "description": descr}
             self.database.tokens.insert_one(document)
             document["_id"] = str(document["_id"]) # otherwise can't be serialized to JSON by jwt
-            document["expire"] = str(document["expire"])
             msg = str(self.generate_token(document))
 
         else:
             tok_id = user_input.get("token_id", "")
-            self.database.tokens.delete_one({"$expr": {"$eq": ["$_id", {"$toObjectId": tok_id}]}})
+            self.database.tokens.delete_one({'_id': ObjectId(tok_id)})
             msg = "removed"
 
         return self.page(course, msg)
