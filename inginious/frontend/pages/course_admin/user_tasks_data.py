@@ -2,7 +2,7 @@
 #
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
-from flask import request
+from flask import request, abort
 from bson.json_util import dumps
 
 from inginious.frontend.pages.course_admin.api_auth import DataAPIPage
@@ -27,12 +27,16 @@ class UserTasksEndpoint(DataAPIPage):
                 params["succeeded"] = True
             elif request.args.get("succeeded") == "false":
                 params["succeeded"] = False
+            else:
+                abort(400, description="Unrecognized value.")
 
         if "evaluation" in request.args:
             if request.args.get("evaluation") == "true":
                 params["submissionid"] = {"$ne": None}
             elif request.args.get("evaluation") == "false":
                 params["submissionid"] = {"$eq": None}
+            else:
+                abort(400, description="Unrecognized value.")
 
         if "mingrade" in request.args and "maxgrade" in request.args:
             params["grade"] = {"$gte": float(request.args["mingrade"]), "$lte": float(request.args["maxgrade"])}

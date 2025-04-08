@@ -5,7 +5,6 @@
 
 from flask import request, Response, abort
 import jwt
-from datetime import datetime
 import json
 from bson.objectid import ObjectId
 
@@ -44,7 +43,7 @@ class DataAPIPage(INGIniousPage):
 
     def response(self, msg):
         response = Response()
-        response.response = json.dumps({"message": msg})
+        response.response = json.dumps(msg)
         response.content_type = "text/json; charset=utf-8"
         response.status_code = 200
         return response
