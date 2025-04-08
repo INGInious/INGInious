@@ -70,19 +70,19 @@
                 {% endif %}
                 {% for token in tokens %}
                     {% set tok_id = token["_id"] %}
-                    <tr id="{{loop.index}}">
+                    <tr id="listtoken{{loop.index}}">
                         <td>ID : {{token["_id"]}}</td>
                         {% if token["description"] == "" %}
                             <td class="text-secondary">{{ _("No description") }}</td>
                         {% else %}
                             <td>{{token["description"]}}</td>
                         {% endif %}
-                        {% if str(token["expire"]) == "9999-12-31 00:00:00" %}
+                        {% if str(token["exp"]) == "max" %}
                             <td class="text-secondary">{{ _("Doesn't expire") }}</td>
-                        {% elif token["expire"] >= now %}
-                            <td>Expire {{token["expire"].strftime("%Y %m %d %H:%M:%S")}}</td>
+                        {% elif token["exp"] >= now %}
+                            <td>Expire {{token["exp"].isoformat(' ')}}</td>
                         {% else %}
-                            <td class="text-danger">Expired since {{token["expire"].strftime("%Y %m %d %H:%M:%S")}}</td>
+                            <td class="text-danger">Expired since {{token["exp"].isoformat(' ')}}</td>
                         {% endif %}
                         <td><button class="btn btn-info btn-block" type="submit" name="token_id" value="{{tok_id}}"><i class="fa fa-minus fa-lg"></i> {{ _("Remove token") }}</button></td>
                     </tr>
