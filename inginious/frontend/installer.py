@@ -174,6 +174,10 @@ class Installer:
         auth_opts = self.configure_authentication(database)
         options.update(auth_opts)
 
+        self._display_header("JWT SECRET")
+        jwt_opts = self.configure_jwt()
+        options.update(jwt_opts)
+
         self._display_info("You may want to add additional plugins to the configuration file.")
 
         self._display_header("REMOTE DEBUGGING - IN BROWSER")
@@ -604,6 +608,11 @@ class Installer:
     def configuration_filename(self):
         """ Returns the name of the configuration file """
         return "configuration.yaml"
+
+    def configure_jwt(self):
+        """ Create jwt secret key """
+        options = {"jwt_key": hexlify(os.urandom(32)).decode('utf-8')}
+        return options
 
     def support_remote_debugging(self):
         """ Returns True if the frontend supports remote debugging, False else"""

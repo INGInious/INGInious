@@ -139,5 +139,5 @@ def init_flask_mapping(flask_app):
                            view_func=AdministrationUsersPage.as_view('administrationuserspage'))
     flask_app.add_url_rule('/administrator/user_action',
                            view_func=AdministrationUserActionPage.as_view('administrationuseractionpage'))
-    flask_app.add_url_rule('/<cookieless:sessionid>admin/<courseid>/api_tokens',
+    flask_app.add_url_rule('/admin/<courseid>/api_tokens',
                            view_func=CourseAPITokensPage.as_view('courseapipage'))
