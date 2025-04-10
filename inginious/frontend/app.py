@@ -32,7 +32,7 @@ from inginious import get_root_path, __version__, DB_VERSION
 from inginious.frontend.course_factory import create_factories
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems.local import LocalFSProvider
-from inginious.frontend.lti_outcome_manager import LTIOutcomeManager
+from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest

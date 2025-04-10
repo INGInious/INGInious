@@ -5,7 +5,9 @@ from inginious.common.tasks_problems import MultipleChoiceProblem, CodeProblem, 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
-class LTIBestSubmissionPage(INGIniousAuthPage):
+class LTI11BestSubmissionPage(INGIniousAuthPage):
+    _field = "consumer_key"
+
     def is_lti_page(self):
         return True
 
@@ -18,7 +20,7 @@ class LTIBestSubmissionPage(INGIniousAuthPage):
 
         # get the INGInious username from the ToolConsumer-provided username
         inginious_usernames = list(self.database.users.find(
-            {"ltibindings." + courseid + "." + data["consumer_key"]: data["username"]}
+            {"ltibindings." + courseid + "." + data[self._field]: data["username"]}
         ))
 
         if not inginious_usernames:
@@ -78,4 +80,4 @@ class LTIBestSubmissionPage(INGIniousAuthPage):
 
 def init(plugin_manager, *args, **kwargs):
     """ Init the plugin """
-    plugin_manager.add_page("/lti/bestsubmission", LTIBestSubmissionPage.as_view('ltibestsubmissionpage'))
+    plugin_manager.add_page("/lti/bestsubmission", LTI11BestSubmissionPage.as_view('lti11bestsubmissionpage'))

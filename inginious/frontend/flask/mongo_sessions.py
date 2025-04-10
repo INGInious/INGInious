@@ -20,7 +20,7 @@ from flask.sessions import SessionMixin
 from werkzeug.datastructures import CallbackDict
 from flask.sessions import SessionInterface
 from werkzeug.exceptions import HTTPException
-from inginious.frontend.pages.lti import LTILaunchPage
+from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage
 
 
 class MongoDBSession(CallbackDict, SessionMixin):
@@ -73,7 +73,7 @@ class MongoDBSessionInterface(SessionInterface):
         try:
             # request.url_rule is not set yet here.
             endpoint, _ = app.create_url_adapter(request).match()
-            is_lti_launch = endpoint == LTILaunchPage.endpoint
+            is_lti_launch = endpoint == LTI11LaunchPage.endpoint
         except HTTPException:
             is_lti_launch = False
 
