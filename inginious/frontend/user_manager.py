@@ -184,9 +184,7 @@ class UserManager:
                     "realname": realname,
                     "roles": roles,
                     "task": (course_id, task_id),
-                    "outcome_service_url": outcome_service_url,
-                    "outcome_result_id": outcome_result_id,
-                    "consumer_key": consumer_key
+                    <lti version dependent fields>
                 }
 
             where all these data where provided by the LTI consumer, and MAY NOT be equivalent to the data
@@ -268,29 +266,14 @@ class UserManager:
         self._session["lti"] = None
         self._session["tos_signed"] = False
 
-    def create_lti_session(self, session_id, user_id, roles, realname, email, course_id, task_id, consumer_key, outcome_service_url,
-                           outcome_result_id, tool_name, tool_desc, tool_url, context_title, context_label):
+    def create_lti_session(self, session_id, session_dict):
         """ Creates an LTI session. Returns the new session id"""
 
         self._session.clear()
         flask.g.lti_session_id = session_id
         flask.g.lti_session = {}
 
-        self._session["lti"] = {
-            "email": email,
-            "username": user_id,
-            "realname": realname,
-            "roles": roles,
-            "task": (course_id, task_id),
-            "outcome_service_url": outcome_service_url,
-            "outcome_result_id": outcome_result_id,
-            "consumer_key": consumer_key,
-            "context_title": context_title,
-            "context_label": context_label,
-            "tool_description": tool_desc,
-            "tool_name": tool_name,
-            "tool_url": tool_url
-        }
+        self._session["lti"] = session_dict
 
         return session_id
 
