@@ -24,6 +24,7 @@ from inginious.frontend.pages.course_register import CourseRegisterPage
 from inginious.frontend.pages.course import CoursePage
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage, LTI11BindPage, LTI11LoginPage
+from inginious.frontend.pages.lti.v1_3 import LTI13LaunchPage, LTI13BindPage, LTI13LoginPage, LTI13OIDCLoginPage, LTI13JWKSPage
 from inginious.frontend.pages.lti import LTITaskPage, LTIAssetPage
 from inginious.frontend.pages.group import GroupPage
 from inginious.frontend.pages.marketplace import MarketplacePage
@@ -91,6 +92,15 @@ def init_flask_mapping(flask_app):
     flask_app.add_url_rule('/lti/login', view_func=LTI11LoginPage.as_view('ltiloginpage'))
     flask_app.add_url_rule('/lti/asset/<path:asset_url>',
                            view_func=LTIAssetPage.as_view('ltiassetpage'))
+
+    flask_app.add_url_rule('/lti1.3/oidc_login/<courseid>',
+                           view_func=LTI13OIDCLoginPage.as_view('lti13oidcloginpage'))
+    flask_app.add_url_rule('/lti1.3/launch/<courseid>/<taskid>',
+                           view_func=LTI13LaunchPage.as_view('lti13launchpage'))
+    flask_app.add_url_rule('/lti1.3/jwks/<courseid>/<keyset_hash>', view_func=LTI13JWKSPage.as_view('lti13jwkspage'))
+    flask_app.add_url_rule('/lti1.3/bind', view_func=LTI13BindPage.as_view('lti13bindpage'))
+    flask_app.add_url_rule('/lti1.3/login', view_func=LTI13LoginPage.as_view('lti13loginpage'))
+
     flask_app.add_url_rule('/admin/<courseid>',
                            view_func=CourseRedirectPage.as_view('courseredirect'))
     flask_app.add_url_rule('/admin/<courseid>/settings',
