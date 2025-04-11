@@ -78,6 +78,11 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         raise NotFound()
 
 
+class LTI13BestSubmissionPage(LTI11BestSubmissionPage):
+    _field = "platform_instance_id"
+
+
 def init(plugin_manager, *args, **kwargs):
     """ Init the plugin """
     plugin_manager.add_page("/lti/bestsubmission", LTI11BestSubmissionPage.as_view('lti11bestsubmissionpage'))
+    plugin_manager.add_page("/lti1.3/bestsubmission", LTI11BestSubmissionPage.as_view('lti13bestsubmissionpage'))
