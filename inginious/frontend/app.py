@@ -213,9 +213,9 @@ def get_app(config):
 
     client = create_arch(config, fs_provider, zmq_context, course_factory)
 
-    lti_outcome_manager = LTIOutcomeManager(database, user_manager, course_factory)
+    lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager, course_factory)}
 
-    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_outcome_manager)
+    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
     template_helper = TemplateHelper(plugin_manager, user_manager, config.get('use_minified_js', True))
 
     register_utils(database, user_manager, template_helper)
@@ -307,7 +307,6 @@ def get_app(config):
     flask_app.default_max_file_size = default_max_file_size
     flask_app.backup_dir = config.get("backup_directory", './backup')
     flask_app.webterm_link = config.get("webterm", None)
-    flask_app.lti_outcome_manager = lti_outcome_manager
     flask_app.allow_registration = config.get("allow_registration", True)
     flask_app.allow_deletion = config.get("allow_deletion", True)
     flask_app.available_languages = available_languages

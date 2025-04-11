@@ -10,7 +10,6 @@ import queue
 import time
 
 from lti import OutcomeRequest
-
 from pymongo import ReturnDocument
 
 
@@ -23,7 +22,7 @@ class LTIOutcomeManager(threading.Thread):
         self._course_factory = course_factory
         self._queue = queue.Queue()
         self._stopped = False
-        self._logger = logging.getLogger("inginious.webapp.lti_outcome_manager")
+        self._logger = logging.getLogger("inginious.webapp.lti1_1.outcome_manager")
         self.start()
 
     def stop(self):
@@ -84,23 +83,22 @@ class LTIOutcomeManager(threading.Thread):
                          mongo_entry["taskid"], mongo_entry["consumer_key"], mongo_entry["service_url"],
                          mongo_entry["result_id"], mongo_entry["nb_attempt"]))
 
-    def add(self, username, courseid, taskid, consumer_key, service_url, result_id):
+    def add(self, submission):
         """ Add a job in the queue
-        :param username:
-        :param courseid:
-        :param taskid:
-        :param consumer_key:
-        :param service_url:
-        :param result_id:
+        :param submission: the submission dict
         """
-        search = {"username": username, "courseid": courseid,
-                  "taskid": taskid, "service_url": service_url,
-                  "consumer_key": consumer_key, "result_id": result_id}
+        if "outcome_service_url" not in submission or "outcome_result_id" not in submission or "outcome_consumer_key" not in submission:
+            return
 
-        entry = self._database.lis_outcome_queue.find_one_and_update(search, {"$set": {"nb_attempt": 0}},
-                                                                     return_document=ReturnDocument.BEFORE, upsert=True)
-        if entry is None:  # and it should be
-            self._add_to_queue(self._database.lis_outcome_queue.find_one(search))
+        for username in submission["username"]:
+            search = {"username": username, "courseid": submission["courseid"],
+                      "taskid": submission["taskid"], "service_url": submission["outcome_service_url"],
+                      "consumer_key": submission["outcome_consumer_key"], "result_id": submission["outcome_result_id"]}
+
+            entry = self._database.lis_outcome_queue.find_one_and_update(search, {"$set": {"nb_attempt": 0}},
+                                                                         return_document=ReturnDocument.BEFORE, upsert=True)
+            if entry is None:  # and it should be
+                self._add_to_queue(self._database.lis_outcome_queue.find_one(search))
 
     def _delete_in_db(self, mongo_id):
         """
@@ -119,3 +117,24 @@ class LTIOutcomeManager(threading.Thread):
         entry = self._database.lis_outcome_queue.find_one_and_update({"_id": mongo_id}, {"$inc": {"nb_attempt": 1}})
 
         self._add_to_queue(entry)
+
+    def tag_submission(self, submission, lti_info):
+        """
+        Tags the submission with the information needed for score publishing
+        :param submission: the submission dictionary
+        :param lti_info: the lti session information
+        """
+        outcome_service_url = lti_info["outcome_service_url"]
+        outcome_result_id = lti_info["outcome_result_id"]
+        outcome_consumer_key = lti_info["consumer_key"]
+
+        # safety check
+        if outcome_result_id is None or outcome_service_url is None:
+            self._logger.error("outcome_result_id or outcome_service_url is None, but grade needs to be sent back to TC! Ignoring.")
+            return
+
+        submission.update({
+            "outcome_service_url": outcome_service_url,
+            "outcome_result_id": outcome_result_id,
+            "outcome_consumer_key": outcome_consumer_key
+        })
