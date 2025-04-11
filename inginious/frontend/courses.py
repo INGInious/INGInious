@@ -7,9 +7,11 @@
 
 import copy
 import gettext
+import hashlib
 import re
-from typing import List
+from typing import Iterable, List
 from collections import OrderedDict
+from pylti1p3.tool_config import ToolConfDict
 
 from inginious.common.tags import Tag
 from inginious.frontend.accessible_time import AccessibleTime
@@ -78,6 +80,7 @@ class Course(object):
             self._is_lti = self._content.get('is_lti', False)
             self._lti_url = self._content.get('lti_url', '')
             self._lti_keys = self._content.get('lti_keys', {})
+            self._lti_config = self._content.get('lti_config', {})
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
             task_dispenser_class = task_dispensers.get(self._content.get('task_dispenser', 'toc'), TableOfContents)
@@ -99,6 +102,7 @@ class Course(object):
             self._allow_unregister = False
         else:
             self._lti_keys = {}
+            self._lti_config = {}
             self._lti_url = ''
             self._lti_send_back_grade = False
 
@@ -190,6 +194,29 @@ class Course(object):
     def lti_keys(self):
         """ {name: key} for the LTI customers """
         return self._lti_keys if self._is_lti else {}
+
+    def lti_config(self):
+        """ LTI Tool config dictionary. Specs are at https://github.com/dmitry-viskov/pylti1.3/blob/master/README.rst?plain=1#L70-L98 """
+        return self._lti_config if self._is_lti else {}
+
+    def lti_tool(self) -> ToolConfDict:
+        """ LTI Tool object. """
+        lti_tool = ToolConfDict(self._lti_config)
+        for iss in self._lti_config:
+            for client_config in self._lti_config[iss]:
+                lti_tool.set_private_key(iss, client_config['private_key'], client_id=client_config['client_id'])
+                lti_tool.set_public_key(iss, client_config['public_key'], client_id=client_config['client_id'])
+        return lti_tool
+
+    def lti_platform_instances_ids(self) -> Iterable[str]:
+        """ Set of LTI Platform instance ids registered for this course. """
+        for iss in self._lti_config:
+            for client_config in self._lti_config[iss]:
+                for deployment_id in client_config['deployment_ids']:
+                    yield '/'.join([iss, client_config['client_id'], deployment_id])
+
+    def lti_keyset_hash(self, issuer: str, client_id: str) -> str:
+        return hashlib.md5((issuer + client_id).encode('utf-8')).digest().hex()
 
     def lti_url(self):
         """ Returns the URL to the external platform the course is hosted on """
