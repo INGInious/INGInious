@@ -46,6 +46,7 @@ dependencies = [
     "itsdangerous==2.2.0",
     "Jinja2==3.1.5",
     "lti==0.9.5",
+    "PyLTI1p3==2.0.0",
     "MarkupSafe==3.0.2",
     "msgpack==1.1.0",
     "natsort==8.4.0",
