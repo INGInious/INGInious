@@ -88,6 +88,7 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
     def get_client_secret(self, client_key, request):
         return self._keys[client_key] if client_key in self._keys else None
 
+
 class LTI11LaunchPage(INGIniousPage):
     """
     Page called by the TC to start an LTI session on a given task
@@ -150,6 +151,7 @@ class LTI11LaunchPage(INGIniousPage):
 
             session_id = str(ObjectId())
             session_dict = {
+                "version": "1.1",
                 "email": email,
                 "username": user_id,
                 "realname": realname,

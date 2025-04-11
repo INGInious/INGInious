@@ -27,7 +27,7 @@ from inginious.frontend.parsable_text import ParsableText
 class WebAppSubmissionManager:
     """ Manages submissions. Communicates with the database and the client. """
 
-    def __init__(self, client, user_manager, database, gridfs, plugin_manager, lti_outcome_manager):
+    def __init__(self, client, user_manager, database, gridfs, plugin_manager, lti_score_publishers):
         """
         :type client: inginious.client.client.AbstractClient
         :type user_manager: inginious.frontend.user_manager.UserManager
@@ -42,7 +42,7 @@ class WebAppSubmissionManager:
         self._gridfs = gridfs
         self._plugin_manager = plugin_manager
         self._logger = logging.getLogger("inginious.webapp.submissions")
-        self._lti_outcome_manager = lti_outcome_manager
+        self._lti_score_publishers = lti_score_publishers
 
     def _job_done_callback(self, submissionid, task, result, grade, problems, tests, custom, state, archive, stdout,
                            stderr, task_dispenser,  newsub=True):
@@ -97,14 +97,10 @@ class WebAppSubmissionManager:
 
         self._plugin_manager.call_hook("submission_done", submission=submission, archive=archive, newsub=newsub)
 
-        if "outcome_service_url" in submission and "outcome_result_id" in submission and "outcome_consumer_key" in submission:
-            for username in submission["username"]:
-                self._lti_outcome_manager.add(username,
-                                              submission["courseid"],
-                                              submission["taskid"],
-                                              submission["outcome_consumer_key"],
-                                              submission["outcome_service_url"],
-                                              submission["outcome_result_id"])
+        if "lti_version" in submission:
+            lti_score_publisher = self._lti_score_publishers.get(submission["lti_version"], None)
+            if lti_score_publisher:
+                lti_score_publisher.add(submission)
 
     def _before_submission_insertion(self, task, inputdata, debug, obj):
         """
@@ -128,19 +124,10 @@ class WebAppSubmissionManager:
 
         lti_info = self._user_manager.session_lti_info()
         if lti_info is not None and course.lti_send_back_grade():
-            outcome_service_url = lti_info["outcome_service_url"]
-            outcome_result_id = lti_info["outcome_result_id"]
-            outcome_consumer_key = lti_info["consumer_key"]
-
-            # safety check
-            if outcome_result_id is None or outcome_service_url is None:
-                self._logger.error(
-                    "outcome_result_id or outcome_service_url is None, but grade needs to be sent back to TC! Ignoring.")
-                return
-
-            obj.update({"outcome_service_url": outcome_service_url,
-                        "outcome_result_id": outcome_result_id,
-                        "outcome_consumer_key": outcome_consumer_key})
+            lti_score_publisher = self._lti_score_publishers.get(lti_info["version"], None)
+            if lti_score_publisher:
+                obj.update({"lti_version": lti_info["version"]})
+                lti_score_publisher.tag_submission(obj, lti_info)
 
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
