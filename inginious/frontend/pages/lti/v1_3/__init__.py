@@ -77,7 +77,7 @@ class LTI13LaunchPage(INGIniousPage):
         flask_request = FlaskRequest()
         message_launch = FlaskMessageLaunch(flask_request, tool_conf, launch_data_storage=launch_data_storage)
 
-        _launch_id = message_launch.get_launch_id()  # TODO(mp): With a good use of the cache, this could be used as a non-session id
+        launch_id = message_launch.get_launch_id()
         launch_data = message_launch.get_launch_data()
 
         user_id = launch_data['sub']
@@ -93,6 +93,9 @@ class LTI13LaunchPage(INGIniousPage):
         context_title = context.get('context_title', 'N/A')
         context_label = context.get('context_label', 'N/A')
 
+        auth_token_url = tool_conf.get_iss_config(iss=message_launch.get_iss(), client_id=message_launch.get_client_id()).get('auth_token_url')
+        can_report_grades = message_launch.has_ags() and auth_token_url
+
         session_id = str(ObjectId())
         session_dict = {
             "version": "1.3",
@@ -102,6 +105,7 @@ class LTI13LaunchPage(INGIniousPage):
             "roles": roles,
             "task": (courseid, taskid),
             "platform_instance_id": platform_instance_id,
+            "message_launch_id": launch_id if can_report_grades else None,
             "context_title": context_title,
             "context_label": context_label,
             "tool_description": tool_desc,
