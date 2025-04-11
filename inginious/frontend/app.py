@@ -32,7 +32,8 @@ from inginious import get_root_path, __version__, DB_VERSION
 from inginious.frontend.course_factory import create_factories
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems.local import LocalFSProvider
-from inginious.frontend.lti_outcome_manager import LTIOutcomeManager
+from inginious.frontend.lti.v1_1 import LTIOutcomeManager
+from inginious.frontend.lti.v1_3 import LTIGradeManager
 from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
@@ -213,9 +214,10 @@ def get_app(config):
 
     client = create_arch(config, fs_provider, zmq_context, course_factory)
 
-    lti_outcome_manager = LTIOutcomeManager(database, user_manager, course_factory)
+    lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager, course_factory),
+                            "1.3": LTIGradeManager(database, user_manager, course_factory)}
 
-    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_outcome_manager)
+    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
     template_helper = TemplateHelper(plugin_manager, user_manager, config.get('use_minified_js', True))
 
     register_utils(database, user_manager, template_helper)
@@ -307,7 +309,6 @@ def get_app(config):
     flask_app.default_max_file_size = default_max_file_size
     flask_app.backup_dir = config.get("backup_directory", './backup')
     flask_app.webterm_link = config.get("webterm", None)
-    flask_app.lti_outcome_manager = lti_outcome_manager
     flask_app.allow_registration = config.get("allow_registration", True)
     flask_app.allow_deletion = config.get("allow_deletion", True)
     flask_app.available_languages = available_languages
