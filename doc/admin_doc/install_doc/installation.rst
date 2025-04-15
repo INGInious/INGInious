@@ -214,7 +214,7 @@ INGInious studio, that allows to modify and test your tasks directly in your bro
 that allows to interface with Learning Management System via the LTI_ specification. Any LMS supporting LTI_ is
 compatible. This includes Moodle, edX, among many others.
 
-.. _LTI: http://www.imsglobal.org/LTI/v1p1/ltiIMGv1p1.html
+.. _LTI: https://www.1edtech.org/standards/lti
 
 It is recommended to create a folder for INGInious and subfolders for tasks and backup, e.g.:
 ::
