@@ -1,12 +1,12 @@
 INGInious
 =========
 
-.. image:: https://api.codacy.com/project/badge/Grade/7cd8340004ef4d409143d5c24259efc1
+.. image:: https://app.codacy.com/project/badge/Grade/a555b98bda7444d8afcd06963178193d
    :alt: Codacy Badge
-   :target: https://app.codacy.com/gh/INGInious/INGInious?utm_source=github.com&utm_medium=referral&utm_content=INGInious/INGInious&utm_campaign=Badge_Grade_Dashboard
-.. image:: https://app.codacy.com/project/badge/Coverage/9102bbf54901478dbe288a386195f77e
+   :target: https://app.codacy.com/gh/INGInious/INGInious/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
+.. image:: https://app.codacy.com/project/badge/Coverage/a555b98bda7444d8afcd06963178193d
    :alt: Codacy coverage Badge
-   :target: https://www.codacy.com/gh/INGInious/INGInious/dashboard?utm_source=github.com&utm_medium=referral&utm_content=INGInious/INGInious&utm_campaign=Badge_Coverage
+   :target: https://www.codacy.com/gh/INGInious/INGInious/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_Coverage
 .. image:: https://github.com/INGInious/INGInious/actions/workflows/ci.yml/badge.svg
     :target: https://github.com/INGInious/INGInious/actions
 .. image:: https://github.com/INGInious/INGInious/actions/workflows/env_containers.yml/badge.svg
