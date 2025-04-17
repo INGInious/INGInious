@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-04-04 16:51+0200\n"
+"POT-Creation-Date: 2025-04-17 09:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: inginious/frontend/courses.py:29
+#: inginious/frontend/courses.py:31
 msgid "List of exercises"
 msgstr ""
 
@@ -48,7 +48,7 @@ msgid ""
 "state."
 msgstr ""
 
-#: inginious/frontend/submission_manager.py:430
+#: inginious/frontend/submission_manager.py:417
 msgid "Feedback is badly formatted."
 msgstr ""
 
@@ -77,20 +77,20 @@ msgstr ""
 msgid "Environment type {0} is unknown"
 msgstr ""
 
-#: inginious/frontend/user_manager.py:495
+#: inginious/frontend/user_manager.py:504
 msgid "Auth method not found."
 msgstr ""
 
 #: inginious/frontend/pages/preferences/bindings.py:42
-#: inginious/frontend/user_manager.py:550
+#: inginious/frontend/user_manager.py:559
 msgid "Incorrect authentication binding."
 msgstr ""
 
-#: inginious/frontend/user_manager.py:560
+#: inginious/frontend/user_manager.py:569
 msgid "You must set a password before removing all bindings."
 msgstr ""
 
-#: inginious/frontend/user_manager.py:591
+#: inginious/frontend/user_manager.py:600
 msgid "User could not be created."
 msgstr ""
 
@@ -144,42 +144,6 @@ msgstr ""
 
 #: inginious/frontend/pages/group.py:67
 msgid "You're not registered in a group."
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:25 inginious/frontend/pages/lti.py:33
-#: inginious/frontend/pages/lti.py:46 inginious/frontend/pages/lti.py:137
-msgid "No LTI data available."
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:69 inginious/frontend/pages/lti.py:84
-msgid "Missing LTI session id"
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:75 inginious/frontend/pages/lti.py:90
-msgid "Invalid LTI session id"
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:98
-msgid "Invalid LTI data"
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:120
-msgid "Your account is already bound with this context."
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:197
-msgid "Error while parsing the LTI request"
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:212
-msgid ""
-"In order to send grade back to the TC, INGInious needs the parameters "
-"lis_outcome_service_url and lis_outcome_result_id in the LTI basic-"
-"launch-request. Please contact your administrator."
-msgstr ""
-
-#: inginious/frontend/pages/lti.py:232
-msgid "Couldn't validate LTI request"
 msgstr ""
 
 #: inginious/frontend/pages/marketplace.py:32
@@ -423,35 +387,35 @@ msgstr ""
 msgid " <truncated>"
 msgstr ""
 
-#: inginious/frontend/pages/utils.py:200
+#: inginious/frontend/pages/utils.py:194
 msgid ""
 "An account using this email already exists and is not bound with this "
 "service. For security reasons, please log in via another method and bind "
 "your account in your profile."
 msgstr ""
 
-#: inginious/frontend/pages/utils.py:203
+#: inginious/frontend/pages/utils.py:197
 msgid ""
 "Couldn't fetch the required information from the service. Please check "
 "the provided permissions (name, email) and contact your INGInious "
 "administrator if the error persists."
 msgstr ""
 
-#: inginious/frontend/pages/utils.py:229
+#: inginious/frontend/pages/utils.py:223
 msgid "Invalid login/password"
 msgstr ""
 
-#: inginious/frontend/pages/utils.py:257
+#: inginious/frontend/pages/utils.py:251
 #: inginious/frontend/templates/forbidden.html:5
 #: inginious/frontend/templates/forbidden.html:9
 msgid "Forbidden"
 msgstr ""
 
-#: inginious/frontend/pages/utils.py:271
+#: inginious/frontend/pages/utils.py:265
 msgid "You have not sufficient right to see this part."
 msgstr ""
 
-#: inginious/frontend/pages/utils.py:320
+#: inginious/frontend/pages/utils.py:314
 msgid "File doesn't exist."
 msgstr ""
 
@@ -524,40 +488,49 @@ msgstr ""
 msgid "An error occurred while deleting the course data: {}"
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:33
+#: inginious/frontend/pages/course_admin/settings.py:37
 msgid "Invalid name"
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:37
+#: inginious/frontend/pages/course_admin/settings.py:41
 msgid "You cannot remove yourself from the administrators of this course"
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:54
+#: inginious/frontend/pages/course_admin/settings.py:58
 msgid "Invalid accessibility dates"
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:69
+#: inginious/frontend/pages/course_admin/settings.py:73
 msgid "Invalid registration dates"
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:77
+#: inginious/frontend/pages/course_admin/settings.py:81
 msgid "Invalid ACL value"
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:91
+#: inginious/frontend/pages/course_admin/settings.py:95
 msgid "LTI keys must be alphanumerical."
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:124
+#: inginious/frontend/pages/course_admin/settings.py:126
+msgid "LTI config couldn't parse as JSON"
+msgstr ""
+
+#: inginious/frontend/pages/course_admin/settings.py:128
+#: inginious/frontend/pages/course_admin/settings.py:130
+msgid "LTI config is incorrect"
+msgstr ""
+
+#: inginious/frontend/pages/course_admin/settings.py:163
 msgid "Some tag fields were missing."
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:127
+#: inginious/frontend/pages/course_admin/settings.py:166
 #, python-brace-format
 msgid "Invalid tag id: {}"
 msgstr ""
 
-#: inginious/frontend/pages/course_admin/settings.py:143
+#: inginious/frontend/pages/course_admin/settings.py:182
 msgid "Some datas have the same id! The id must be unique."
 msgstr ""
 
@@ -795,6 +768,48 @@ msgstr ""
 #: inginious/frontend/templates/course_admin/danger_zone.html:18
 #: inginious/frontend/templates/course_admin/danger_zone.html:24
 msgid "Danger zone"
+msgstr ""
+
+#: inginious/frontend/pages/lti/__init__.py:22
+#: inginious/frontend/pages/lti/__init__.py:30
+#: inginious/frontend/pages/lti/__init__.py:43
+#: inginious/frontend/pages/lti/__init__.py:123
+msgid "No LTI data available."
+msgstr ""
+
+#: inginious/frontend/pages/lti/__init__.py:59
+msgid "Missing LTI session id"
+msgstr ""
+
+#: inginious/frontend/pages/lti/__init__.py:64
+msgid "Invalid LTI session id"
+msgstr ""
+
+#: inginious/frontend/pages/lti/__init__.py:83
+msgid "Invalid LTI data"
+msgstr ""
+
+#: inginious/frontend/pages/lti/__init__.py:103
+msgid "Your account is already bound with this context."
+msgstr ""
+
+#: inginious/frontend/pages/lti/v1_1/__init__.py:125
+msgid "Error while parsing the LTI request"
+msgstr ""
+
+#: inginious/frontend/pages/lti/v1_1/__init__.py:140
+msgid ""
+"In order to send grade back to the TC, INGInious needs the parameters "
+"lis_outcome_service_url and lis_outcome_result_id in the LTI basic-"
+"launch-request. Please contact your administrator."
+msgstr ""
+
+#: inginious/frontend/pages/lti/v1_1/__init__.py:176
+msgid "Couldn't validate LTI request"
+msgstr ""
+
+#: inginious/frontend/pages/lti/v1_3/__init__.py:35
+msgid "Keyset not found"
 msgstr ""
 
 #: inginious/frontend/pages/preferences/bindings.py:32
@@ -1038,7 +1053,7 @@ msgstr ""
 #: inginious/frontend/templates/course_admin/task_dispensers/util_move_modal.html:17
 #: inginious/frontend/templates/course_admin/task_list.html:56
 #: inginious/frontend/templates/course_admin/task_list.html:122
-#: inginious/frontend/templates/lti_bind.html:32
+#: inginious/frontend/templates/lti/bind.html:32
 #: inginious/frontend/templates/preferences/delete.html:59
 #: inginious/frontend/templates/queue.html:112
 #: inginious/frontend/templates/unregister_modal.html:19
@@ -1046,7 +1061,7 @@ msgid "Cancel"
 msgstr ""
 
 #: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:90
-#: inginious/frontend/templates/course_admin/settings.html:432
+#: inginious/frontend/templates/course_admin/settings.html:455
 #: inginious/frontend/templates/course_admin/task_edit.html:10
 #: inginious/frontend/templates/course_admin/task_edit.html:31
 #: inginious/frontend/templates/course_admin/task_edit.html:97
@@ -1432,71 +1447,6 @@ msgstr ""
 
 #: inginious/frontend/templates/layout.html:203
 msgid "Privacy Policy"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:5
-msgid "Bind LTI"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:7
-msgid "Binding to an existing LMS"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:16
-msgid "Authorization required"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:18
-#, python-brace-format
-msgid ""
-"You are going to bind your INGInious account <strong>{realname} "
-"[{username}]</strong> with the following LTI tool and context:"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:20
-msgid "Tool name:"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:21
-msgid "Tool description:"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:22
-msgid "Tool URL:"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:23
-msgid "Tool context:"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:24
-msgid "Tool identifiers:"
-msgstr ""
-
-#: inginious/frontend/templates/lti_bind.html:31
-msgid "Bind my account"
-msgstr ""
-
-#: inginious/frontend/templates/lti_login.html:13
-msgid "Hello!"
-msgstr ""
-
-#: inginious/frontend/templates/lti_login.html:14
-msgid "Welcome on the INGInious platform."
-msgstr ""
-
-#: inginious/frontend/templates/lti_login.html:26
-msgid ""
-"In order to use INGInious via this platform, please bind your existing "
-"account or create a new one."
-msgstr ""
-
-#: inginious/frontend/templates/lti_login.html:33
-msgid "Bind your INGInious account"
-msgstr ""
-
-#: inginious/frontend/templates/lti_login.html:34
-msgid "Refresh"
 msgstr ""
 
 #: inginious/frontend/templates/maintenance.html:9
@@ -2431,20 +2381,34 @@ msgid "External platform URL"
 msgstr ""
 
 #: inginious/frontend/templates/course_admin/settings.html:351
-msgid "LTI keys"
+msgid "LTI 1.1 consumer keys and secrets"
 msgstr ""
 
 #: inginious/frontend/templates/course_admin/settings.html:353
 msgid ""
-"LTI keys in the form name:key, separated by newlines. Please ensure keys "
-"are long enough and random."
+"LTI consumer keys and secrets in the form key:secret, separated by "
+"newlines. Please ensure keys are long enough and random."
 msgstr ""
 
 #: inginious/frontend/templates/course_admin/settings.html:358
-msgid "Send back grades"
+msgid "LTI 1.3 (Feature preview) Tool configuration"
+msgstr ""
+
+#: inginious/frontend/templates/course_admin/settings.html:360
+msgid ""
+"LTI 1.3 Tool configuration in JSON form, refer to INGInious teachers "
+"documentation."
 msgstr ""
 
 #: inginious/frontend/templates/course_admin/settings.html:365
+msgid "LTI 1.3 (Feature preview) JSON Web Key Sets"
+msgstr ""
+
+#: inginious/frontend/templates/course_admin/settings.html:381
+msgid "Send back grades"
+msgstr ""
+
+#: inginious/frontend/templates/course_admin/settings.html:388
 msgid ""
 "Enable this to send back grades to the calling Tool Consumer (which is, "
 "most of the time, your LMS). INGInious will deactivate students' access "
@@ -2452,42 +2416,42 @@ msgid ""
 " be only available from the LTI interface."
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:380
+#: inginious/frontend/templates/course_admin/settings.html:403
 msgid "New tag"
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:385
+#: inginious/frontend/templates/course_admin/settings.html:408
 #: inginious/frontend/templates/course_admin/submissions.html:66
 msgid "id"
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:386
+#: inginious/frontend/templates/course_admin/settings.html:409
 msgid "name"
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:387
+#: inginious/frontend/templates/course_admin/settings.html:410
 msgid "description"
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:388
+#: inginious/frontend/templates/course_admin/settings.html:411
 msgid "show to students"
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:389
+#: inginious/frontend/templates/course_admin/settings.html:412
 msgid "type "
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:402
-#: inginious/frontend/templates/course_admin/settings.html:420
+#: inginious/frontend/templates/course_admin/settings.html:425
+#: inginious/frontend/templates/course_admin/settings.html:443
 msgid "Skill"
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:403
-#: inginious/frontend/templates/course_admin/settings.html:421
+#: inginious/frontend/templates/course_admin/settings.html:426
+#: inginious/frontend/templates/course_admin/settings.html:444
 msgid "Misconception"
 msgstr ""
 
-#: inginious/frontend/templates/course_admin/settings.html:409
+#: inginious/frontend/templates/course_admin/settings.html:432
 msgid "Unknown name"
 msgstr ""
 
@@ -3614,6 +3578,71 @@ msgstr ""
 #: inginious/frontend/templates/course_admin/task_dispensers/config_items/weight.html:6
 #: inginious/frontend/templates/course_admin/task_dispensers/config_items/weight.html:8
 msgid "Grade weight (in comparison to other tasks)"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:5
+msgid "Bind LTI"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:7
+msgid "Binding to an existing LMS"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:16
+msgid "Authorization required"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:18
+#, python-brace-format
+msgid ""
+"You are going to bind your INGInious account <strong>{realname} "
+"[{username}]</strong> with the following LTI tool and context:"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:20
+msgid "Tool name:"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:21
+msgid "Tool description:"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:22
+msgid "Tool URL:"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:23
+msgid "Tool context:"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:24
+msgid "Tool identifiers:"
+msgstr ""
+
+#: inginious/frontend/templates/lti/bind.html:31
+msgid "Bind my account"
+msgstr ""
+
+#: inginious/frontend/templates/lti/login.html:13
+msgid "Hello!"
+msgstr ""
+
+#: inginious/frontend/templates/lti/login.html:14
+msgid "Welcome on the INGInious platform."
+msgstr ""
+
+#: inginious/frontend/templates/lti/login.html:26
+msgid ""
+"In order to use INGInious via this platform, please bind your existing "
+"account or create a new one."
+msgstr ""
+
+#: inginious/frontend/templates/lti/login.html:33
+msgid "Bind your INGInious account"
+msgstr ""
+
+#: inginious/frontend/templates/lti/login.html:34
+msgid "Refresh"
 msgstr ""
 
 #: inginious/frontend/templates/preferences/bindings.html:46
