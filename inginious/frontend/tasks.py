@@ -223,4 +223,5 @@ class Task(object):
 
     def get_dispenser_settings(self, fields):
         """ Fetch the legacy config fields now used by task dispensers """
-        return {field_class.get_id(): field_class.get_value({field_class.get_id(): self._data[field]}) for field, field_class in fields.items() if field in self._data}
+        return {field_class.get_id(): self._data[field] for field, field_class in fields.items()
+                if field in self._data and field_class.get_value({field_class.get_id(): self._data[field]})}

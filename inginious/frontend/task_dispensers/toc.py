@@ -140,7 +140,6 @@ class TableOfContents(TaskDispenser):
     def has_legacy_tasks(self):
         """ Checks if the task files contains dispenser settings """
         for taskid, task in self._task_list_func().items():
-            test = task.get_dispenser_settings(self.legacy_fields)
             if task.get_dispenser_settings(self.legacy_fields):
                 return True
         return False
