@@ -7,6 +7,7 @@
 import logging
 import hashlib
 import flask
+import tzlocal
 from typing import Dict, Optional
 
 from werkzeug.exceptions import NotFound
@@ -208,6 +209,10 @@ class UserManager:
         """ Returns the current session language """
         return self._session.get("language", default)
 
+    def session_timezone(self):
+        """ Returns the current session timezone """
+        return self._session.get("timezone", tzlocal.get_localzone_name())
+
     def session_code_indentation(self):
         """ Returns the current session code indentation """
         return self._session.get("code_indentation", "4")
@@ -239,6 +244,9 @@ class UserManager:
     def set_session_language(self, language):
         self._session["language"] = language
 
+    def set_session_timezone(self, timezone):
+        self._session["timezone"] = timezone
+
     def set_session_code_indentation(self, code_indentation):
         """ Sets the code indentation of the current user in the session, if one is open."""
         if self.session_logged_in():
@@ -251,6 +259,7 @@ class UserManager:
         self._session["username"] = user["username"]
         self._session["realname"] = user["realname"]
         self._session["language"] = user.get("language", "en")
+        self._session["timezone"] = user.get("timezone", tzlocal.get_localzone_name())
         self._session["code_indentation"] = user.get("code_indentation", "4")
         self._session["tos_signed"] = user.get("tos_accepted", False)
         self._session["token"] = None
