@@ -39,7 +39,11 @@ class DataAPIPage(INGIniousPage):
         if stored_token is None:
             abort(401, description="Authentification token not recognized.")
 
-        return True
+        if decoded["scope"] == "course admin":
+            return (True, "course admin")
+        elif decoded["scope"] == "user":
+            return (False, decoded["username"])
+        abort(401, description="Token has no scope.")
 
     def response(self, msg):
         response = Response()

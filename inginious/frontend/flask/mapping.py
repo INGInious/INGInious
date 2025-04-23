@@ -27,6 +27,9 @@ from inginious.frontend.pages.lti import LTITaskPage, LTILaunchPage, LTIBindPage
 from inginious.frontend.pages.group import GroupPage
 from inginious.frontend.pages.marketplace import MarketplacePage
 from inginious.frontend.pages.marketplace_course import MarketplaceCoursePage
+from inginious.frontend.pages.api_user_tokens import CourseAPIUserTokensPage
+from inginious.frontend.pages.course_admin.submissions_data import SubmissionsEndpoint
+from inginious.frontend.pages.course_admin.user_tasks_data import UserTasksEndpoint
 from inginious.frontend.pages.api.auth_methods import APIAuthMethods
 from inginious.frontend.pages.api.authentication import APIAuthentication
 from inginious.frontend.pages.api.courses import APICourses
@@ -48,8 +51,6 @@ from inginious.frontend.pages.course_admin.danger_zone import CourseDangerZonePa
 from inginious.frontend.pages.course_admin.statistics import CourseStatisticsPage
 from inginious.frontend.pages.course_admin.search_user import CourseAdminSearchUserPage
 from inginious.frontend.pages.course_admin.api_tokens import CourseAPITokensPage
-from inginious.frontend.pages.course_admin.submissions_data import SubmissionsEndpoint
-from inginious.frontend.pages.course_admin.user_tasks_data import UserTasksEndpoint
 
 
 def init_flask_maintenance_mapping(flask_app):
@@ -143,7 +144,9 @@ def init_flask_mapping(flask_app):
                            view_func=AdministrationUserActionPage.as_view('administrationuseractionpage'))
     flask_app.add_url_rule('/admin/<courseid>/api_tokens',
                            view_func=CourseAPITokensPage.as_view('courseapipage'))
-    flask_app.add_url_rule('/admin/<courseid>/submissions_data',
+    flask_app.add_url_rule('/course/<courseid>/api_user_tokens',
+                           view_func=CourseAPIUserTokensPage.as_view('courseapiuserpage'))
+    flask_app.add_url_rule('/course/<courseid>/submissions_data',
                            view_func=SubmissionsEndpoint.as_view('submissiondata'))
-    flask_app.add_url_rule('/admin/<courseid>/user_tasks_data',
+    flask_app.add_url_rule('/course/<courseid>/user_tasks_data',
                            view_func=UserTasksEndpoint.as_view('usertasksdata'))

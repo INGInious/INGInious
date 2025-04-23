@@ -3,26 +3,27 @@
 
 {% extends "layout.html" %}
 
-{% block title %} {{ course.get_name(user_manager.session_language()) }} - {{ _("Tokens") }} {% endblock %}
+{% set registered = user_manager.course_is_user_registered(course) %}
+{% set staff = user_manager.has_staff_rights_on_course(course) %}
+
+{% block title %} {{ course.get_name(user_manager.session_language()) }} - {{ _("User Tokens") }} {% endblock %}
 
 {% block column %}
-{{ template_helper.call('course_admin_menu',course=course,current='api_tokens') | safe }}
+{{ template_helper.call('course_menu', course=course, template_helper=template_helper) | safe }}
 {% endblock %}
 
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{get_homepath()}}/course/{{course.get_id()}}">{{course.get_name(user_manager.session_language())}}</a></li>
-            <li class="breadcrumb-item"><a href="{{get_homepath()}}/admin/{{course.get_id()}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
-                <i class="fa fa-user-secret"></i></a></li>
-            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-id-card"></i> {{ _("API tokens") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
+            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-id-card"></i> {{ _("API user tokens") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
     </nav>
 {% endblock %}
 
 
 {% block content %}
-<h2>{{_("API Tokens")}}</h2>
+<h2>{{_("API User Tokens")}}</h2>
 <div class="card-header bg-success text-white">
     {{ _("Add token") }}
 </div>
@@ -59,7 +60,7 @@
     {% endif %}
 </div>
 <div class="card-header bg-dark text-white">
-    {{ _("Existing tokens") }}
+    {{ _("Your tokens") }}
 </div>
 <div class="card-body">
     <form class="form-horizontal" id="remove_form" method="post">

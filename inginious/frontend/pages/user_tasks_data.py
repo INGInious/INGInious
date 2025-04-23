@@ -5,7 +5,7 @@
 from flask import request, abort
 from bson.json_util import dumps
 
-from inginious.frontend.pages.course_admin.api_auth import DataAPIPage
+from inginious.frontend.pages.api_auth import DataAPIPage
 
 class UserTasksEndpoint(DataAPIPage):
     """ Endpoint to retrieve user task data """
@@ -13,10 +13,13 @@ class UserTasksEndpoint(DataAPIPage):
     def GET(self, courseid):
         """ GET request """
 
-        self.verify(courseid)
+        admin, username = self.verify(courseid)
 
         # DB request parameters
         params = {"courseid": courseid}
+        if not admin:
+            params["username"] = username
+
         textfilters = ["taskid", "username"]
         for filt in textfilters:
             if filt in request.args:
@@ -57,4 +60,3 @@ class UserTasksEndpoint(DataAPIPage):
     def page(self, params):
         msg = dumps(self.database.user_tasks.find(params))
         return self.response(msg)
-

@@ -32,14 +32,14 @@ class CourseAPITokensPage(INGIniousAdminPage):
                 expire = datetime(9999, 12, 31)
             else:
                 expire = datetime.strptime(expire, "%Y-%m-%d %H:%M:%S")
-            document = {"courseid": courseid, "exp": expire, "description": descr}
+            document = {"courseid": courseid, "exp": expire, "description": descr, "scope": "course admin"}
             self.database.tokens.insert_one(document)
             document["_id"] = str(document["_id"]) # otherwise can't be serialized to JSON by jwt
             msg = str(self.generate_token(document))
 
         else:
             tok_id = user_input.get("token_id", "")
-            self.database.tokens.delete_one({'_id': ObjectId(tok_id)})
+            self.database.tokens.delete_one({'_id': ObjectId(tok_id), "courseid": courseid, "scope": "course admin"})
             msg = "removed"
 
         return self.page(course, msg)

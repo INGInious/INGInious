@@ -63,6 +63,9 @@
                     {{ _("Group management") }}
                 {% endif %}
             </a>
+            <a class="list-group-item list-group-item-action list-group-item-info" href="{{ get_homepath() }}/course/{{ course.get_id() }}/api_user_tokens">
+                <i class="fa fa-id-card fa-fw"></i>&nbsp; {{ _("User Tokens") }}
+            </a>
             {% if course.allow_unregister() %}
                 <a href="#" data-toggle="modal" data-target="#unregister_modal" class="list-group-item list-group-item-action list-group-item-info">
                     <i class="fa fa-user-times fa-fw"></i>&nbsp; {{ _("Unregister from this course") }}
