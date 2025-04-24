@@ -3,8 +3,8 @@
 
 <script>
     $(function() {
-        $('#date_before_picker').datetimepicker({locale: '{{ user_manager.session_language() }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
-        $('#date_after_picker').datetimepicker({locale: '{{ user_manager.session_language() }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
+        $('#date_before_picker').datetimepicker({locale: '{{ user_manager.session_language() }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
+        $('#date_after_picker').datetimepicker({locale: '{{ user_manager.session_language() }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
 
         $('#panel-user-audience').find('a[data-toggle="tab"]').on('shown.bs.tab', function(e)
         {
