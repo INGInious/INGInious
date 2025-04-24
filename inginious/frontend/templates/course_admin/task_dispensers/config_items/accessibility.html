@@ -72,7 +72,7 @@
     </div>
     <script type="text/javascript">
         $(function() {
-           $('.date_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
+           $('.date_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
         });
     </script>
 </div>
