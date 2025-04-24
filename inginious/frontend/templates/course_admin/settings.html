@@ -188,8 +188,8 @@
                     </div>
                     <script type="text/javascript">
                         $(function() {
-                            $('#accessible_start_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
-                            $('#accessible_end_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
+                            $('#accessible_start_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
+                            $('#accessible_end_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
                         });
                     </script>
                 </div>
@@ -247,8 +247,8 @@
                     </div>
                     <script type="text/javascript">
                         $(function() {
-                            $('#registration_start_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
-                            $('#registration_end_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
+                            $('#registration_start_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
+                            $('#registration_end_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
                         });
                     </script>
                 </div>
