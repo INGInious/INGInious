@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Contains AccessibleTime, class that represents the period of time when a course/task is accessible """
-
+import zoneinfo
 from datetime import datetime, timezone
 
 
@@ -108,26 +108,26 @@ class AccessibleTime(object):
         """ Returns true if the course/task is never accessible """
         return self._val[0] == self.date_max and self._val[1] == self.date_max
 
-    def get_std_start_date(self):
+    def get_std_start_date(self, tz):
         """ If the date is custom, return the start datetime in ISO format. Else, returns "". """
         first, _ = self._val
         if first != self.date_min and first != self.date_max:
-            return first.isoformat()
+            return first.astimezone(zoneinfo.ZoneInfo(tz)).isoformat()
         else:
             return ""
 
-    def get_std_end_date(self):
+    def get_std_end_date(self, tz):
         """ If the date is custom, return the end datetime in ISO format. Else, returns "". """
         _, second = self._val
         if second != self.date_max:
-            return second.isoformat()
+            return second.astimezone(zoneinfo.ZoneInfo(tz)).isoformat()
         else:
             return ""
 
-    def get_std_soft_end_date(self):
+    def get_std_soft_end_date(self, tz):
         """ If the date is custom, return the soft datetime in ISO format. Else, returns "". """
         if self._soft_end != self.date_max:
-            return self._soft_end.isoformat()
+            return self._soft_end.astimezone(zoneinfo.ZoneInfo(tz)).isoformat()
         else:
             return ""
 

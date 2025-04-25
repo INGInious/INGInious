@@ -37,7 +37,7 @@
                     {% elif accessibility.is_never_accessible() %}
                         {{ _("It's too late") }}
                     {% else %}
-                        {{ accessibility.get_soft_end_date().strftime("%d/%m/%Y %H:%M:%S") }}
+                        {{ accessibility.get_std_soft_end_date(user_manager.session_timezone()) }}
                     {% endif %}
                 </td>
             </tr>
