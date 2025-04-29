@@ -79,7 +79,7 @@ class HiddenUntilDirective(Directive, object):
                 node = nodes.caution()
                 self.add_name(node)
                 text = translation.gettext("The feedback below will be hidden to the students until {}.").format(
-                    hidden_until.strftime("%d/%m/%Y %H:%M:%S"))
+                    hidden_until.isoformat())
                 self.state.nested_parse(StringList(text.split("\n")), 0, node)
                 output.append(node)
 
@@ -95,7 +95,7 @@ class HiddenUntilDirective(Directive, object):
             self.add_name(node)
             text = translation.gettext(
                 "A part of this feedback is hidden until {}. Please come back later and reload the submission to see the full feedback.").format(
-                hidden_until.strftime("%d/%m/%Y %H:%M:%S"))
+                hidden_until.isoformat())
             self.state.nested_parse(StringList(text.split("\n")), 0, node)
             return [node]
 
