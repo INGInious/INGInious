@@ -180,9 +180,9 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    dt = datetime.datetime.strptime(data["backupdate"], "%Y%m%d.%H%M%S")
+                    dt = datetime.datetime.strptime(data["backupdate"], "%Y%m%d.%H%M%S").astimezone()
                     self.restore_course(courseid, data["backupdate"])
-                    msg = _("Course restored to date : {}.").format(dt.strftime("%Y-%m-%d %H:%M:%S"))
+                    msg = _("Course restored to date : {}.").format(dt.isoformat())
                 except Exception as ex:
                     msg = _("An error occurred while restoring backup: {}").format(repr(ex))
                     error = True
@@ -208,7 +208,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             for backup in glob.glob(os.path.join(filepath, '*.zip')):
                 try:
                     basename = os.path.basename(backup)[0:-4]
-                    dt = datetime.datetime.strptime(basename, "%Y%m%d.%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+                    dt = datetime.datetime.strptime(basename, "%Y%m%d.%H%M%S").astimezone().isoformat()
                     backups.append({"file": basename, "date": dt})
                 except:  # Wrong format
                     pass

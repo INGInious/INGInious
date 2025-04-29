@@ -322,7 +322,7 @@ class BaseTaskPage(object):
             'status': data['status'],
             'result': data.get('result', 'crash'),
             'id': str(data["_id"]),
-            'submitted_on': str(data['submitted_on']),
+            'submitted_on': data['submitted_on'].isoformat(),
             'grade': str(data.get("grade", 0.0)),
             'replace': replace and not reloading  # Replace the evaluated submission
         }
@@ -351,7 +351,7 @@ class BaseTaskPage(object):
             tojson["title"] = _("An internal error occurred. Please retry later. "
                                 "If the error persists, send an email to the course administrator.")
 
-        tojson["title"] += " " + _("[Submission #{submissionid} (<b>{submissionDate}</b>)]").format(submissionid=data["_id"], submissionDate=data["submitted_on"].strftime("%Y-%m-%d %H:%M:%S"))
+        tojson["title"] += " " + _("[Submission #{submissionid} (<b>{submissionDate}</b>)]").format(submissionid=data["_id"], submissionDate=data["submitted_on"].isoformat())
         tojson["title"] = self.plugin_manager.call_hook_recursive("feedback_title", task=task, submission=data, title=tojson["title"])["title"]
         
         tojson["text"] = data.get("text", "")
