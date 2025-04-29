@@ -185,7 +185,7 @@
             {% if eval_submission %}
                 <a href="#" id="my_submission" class="submission list-group-item list-group-item-action list-group-item-info" data-submission-id="{{ eval_submission['_id'] }}">
                     <i class="fa fa-chevron-right fa-fw"></i>
-                    {{ eval_submission["submitted_on"].strftime("%d/%m/%Y %H:%M:%S") }} - {{ eval_submission.get("grade",0.0) }}%
+                    {{ eval_submission["submitted_on"].isoformat() }} - {{ eval_submission.get("grade",0.0) }}%
                 </a>
             {% else %}
                 <div id="my_submission" class="list-group-item list-group-item-info"><i class="fa fa-chevron-right fa-fw"></i> {{ _("No submission") }}</div>
@@ -226,9 +226,9 @@
                             <!-- End Tags -->
                         
                             {% if "grade" in submission %}
-                                <span id="txt">{{ submission["submitted_on"].strftime("%d/%m/%Y %H:%M:%S") }} - {{ submission["grade"] }}%</span>
+                                <span id="txt">{{ submission["submitted_on"].isoformat() }} - {{ submission["grade"] }}%</span>
                             {% else %}
-                                <span id="txt">{{ submission["submitted_on"].strftime("%d/%m/%Y %H:%M:%S") }}</span>
+                                <span id="txt">{{ submission["submitted_on"].isoformat() }}</span>
                             {% endif %}
                         </li>
                     {% endfor %}

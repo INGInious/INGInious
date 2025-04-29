@@ -18,7 +18,7 @@ class QueuePage(INGIniousAuthPage):
         """ GET request """
         jobs_running, jobs_waiting = self.submission_manager.get_job_queue_snapshot()
         return self.template_helper.render("queue.html", jobs_running=jobs_running, jobs_waiting=jobs_waiting,
-                                                 from_timestamp=datetime.fromtimestamp)
+                                           from_timestamp=lambda x: datetime.fromtimestamp(x).astimezone())
 
     def POST_AUTH(self, *args, **kwargs):
         if self.user_manager.user_is_superadmin():

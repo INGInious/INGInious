@@ -50,7 +50,7 @@ def _get_submissions(course_factory, submission_manager, user_manager, translati
         )
         data = {
             "id": str(submission["_id"]),
-            "submitted_on": str(submission["submitted_on"]),
+            "submitted_on": submission["submitted_on"].isoformat(),
             "status": submission["status"]
         }
 

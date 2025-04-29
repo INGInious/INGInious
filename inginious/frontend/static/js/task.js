@@ -111,7 +111,7 @@ function displayNewSubmission(id)
         "data-submission-id": id
     }).on('click', clickOnSubmission);
 
-    jQuery('<span id="txt"/>', {}).text(getDateTime()).appendTo(submission_link);
+    jQuery('<span id="txt"/>', {}).text(new Date().toISOString()).appendTo(submission_link);
     
     //If there exists tags, we add a badge with '0' in the new submission.
     if($('span', $('#main_tag_group')).length > 0){
@@ -201,19 +201,6 @@ function clickOnSubmission()
         return;
     loadOldSubmissionInput($(this).attr('data-submission-id'), true);
     $('body').removeClass('sidebar-active');
-}
-
-//Get current datetime
-function getDateTime()
-{
-    var MyDate = new Date();
-
-    return ('0' + MyDate.getDate()).slice(-2) + '/'
-        + ('0' + (MyDate.getMonth() + 1)).slice(-2) + '/'
-        + MyDate.getFullYear() + " "
-        + ('0' + MyDate.getHours()).slice(-2) + ':'
-        + ('0' + MyDate.getMinutes()).slice(-2) + ':'
-        + ('0' + MyDate.getSeconds()).slice(-2);
 }
 
 //Verify the task form (files, ...)

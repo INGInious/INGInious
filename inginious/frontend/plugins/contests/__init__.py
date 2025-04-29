@@ -35,8 +35,8 @@ class Contest(TableOfContents):
         self._contest_settings = dispenser_data.get(
             'contest_settings',
             {"enabled": False,
-             "start": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-             "end": (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S"),
+             "start": datetime.now().astimezone().isoformat(),
+             "end": (datetime.now().astimezone() + timedelta(hours=1)).isoformat(),
              "blackout": 0,
              "penalty": 20}
         )
@@ -90,8 +90,8 @@ def course_menu(course, template_helper):
 
     contest_data = task_dispenser.get_contest_data()
     if contest_data['enabled']:
-        start = datetime.strptime(contest_data['start'], "%Y-%m-%d %H:%M:%S")
-        end = datetime.strptime(contest_data['end'], "%Y-%m-%d %H:%M:%S")
+        start = datetime.fromisoformat(contest_data['start']).astimezone()
+        end = datetime.fromisoformat(contest_data['end']).astimezone()
         blackout = end - timedelta(hours=contest_data['blackout'])
         return template_helper.render("course_menu.html", template_folder="frontend/plugins/contests",
                                       course=course, start=start, end=end, blackout=blackout)
@@ -110,8 +110,8 @@ class ContestScoreboard(INGIniousAuthPage):
         contest_data = task_dispenser.get_contest_data()
         if not contest_data['enabled']:
             raise NotFound()
-        start = datetime.strptime(contest_data['start'], "%Y-%m-%d %H:%M:%S")
-        end = datetime.strptime(contest_data['end'], "%Y-%m-%d %H:%M:%S")
+        start = datetime.fromisoformat(contest_data['start']).astimezone()
+        end = datetime.fromisoformat(contest_data['end']).astimezone()
         blackout = end - timedelta(hours=contest_data['blackout'])
 
         users = self.user_manager.get_course_registered_users(course)
@@ -229,12 +229,12 @@ class ContestAdmin(INGIniousAdminPage):
             contest_data['end'] = new_data["end"]
 
             try:
-                start = datetime.strptime(contest_data['start'], "%Y-%m-%d %H:%M:%S")
+                start = datetime.fromisoformat(contest_data['start'])
             except:
                 errors.append('Invalid start date')
 
             try:
-                end = datetime.strptime(contest_data['end'], "%Y-%m-%d %H:%M:%S")
+                end = datetime.fromisoformat(contest_data['end'])
             except:
                 errors.append('Invalid end date')
 
