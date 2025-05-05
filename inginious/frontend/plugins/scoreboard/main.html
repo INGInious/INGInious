@@ -19,7 +19,7 @@
 <div class="list-group">
     {% if scoreboards|length %}
         {% for sid, name in scoreboards.items() %}
-            <a href="{{get_path('scoreboard', course.get_id(), sid)}}" class="list-group-item list-group-item-action">{{name}}</a>
+            <a href="{{get_path('scoreboard', course.get_id(), sid | string)}}" class="list-group-item list-group-item-action">{{name}}</a>
         {% endfor %}
     {% else %}
         <a href="#" class="list-group-item list-group-item-action disabled">No scoreboards have been defined for this course</a>
