@@ -16,6 +16,7 @@ from gridfs import GridFS
 from binascii import hexlify
 from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
+from bson.codec_options import CodecOptions
 
 import inginious.frontend.pages.course_admin.utils as course_admin_utils
 import inginious.frontend.pages.preferences.utils as preferences_utils
@@ -152,6 +153,9 @@ def get_app(config):
         database.db_version.insert_one({"db_version": DB_VERSION})
     elif db_version.get("db_version", 0) != DB_VERSION:
         raise Exception("Please update the database before running INGInious")
+
+    # Apply tz_aware codec option on submissions collection
+    database.aware_submissions = database.submissions.with_options(codec_options=CodecOptions(tz_aware=True))
 
     flask_app = flask.Flask(__name__)
 
