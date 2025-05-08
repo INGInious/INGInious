@@ -586,7 +586,7 @@ class UserManager:
         if not result:
             return False
         else:
-            self._database.submissions.delete_many({"username": username})
+            self._database.aware_submissions.delete_many({"username": username})
             self._database.user_tasks.delete_many({"username": username})
             user_courses = self._database.courses.find({"students": username})
             for elem in user_courses: self.course_unregister_user(elem['_id'], username)
@@ -756,13 +756,13 @@ class UserManager:
                 {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]})
             def_sub = []
             if task_dispenser.get_evaluation_mode(task.get_id()) == 'best':  # if best, update cache consequently (with best submission)
-                def_sub = list(self._database.submissions.find(
+                def_sub = list(self._database.aware_submissions.find(
                     {"username": username, "courseid": task.get_course_id(), "taskid": task.get_id(),
                      "status": "done"}).sort(
                     [("grade", pymongo.DESCENDING), ("submitted_on", pymongo.DESCENDING)]).limit(1))
 
             elif task_dispenser.get_evaluation_mode(task.get_id()) == 'last':  # if last, update cache with last submission
-                def_sub = list(self._database.submissions.find(
+                def_sub = list(self._database.aware_submissions.find(
                     {"username": username, "courseid": task.get_course_id(), "taskid": task.get_id()})
                                .sort([("submitted_on", pymongo.DESCENDING)]).limit(1))
 

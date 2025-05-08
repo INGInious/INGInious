@@ -117,7 +117,7 @@ class ContestScoreboard(INGIniousAuthPage):
         users = self.user_manager.get_course_registered_users(course)
         tasks = list(course.get_tasks().keys())
 
-        db_results = self.database.submissions.find({
+        db_results = self.database.aware_submissions.find({
             "username": {"$in": users},
             "courseid": courseid,
             "submitted_on": {"$gte": start, "$lt": blackout},
