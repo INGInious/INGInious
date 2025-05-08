@@ -95,14 +95,14 @@ class CourseTaskListPage(INGIniousAdminPage):
 
     def wipe_task(self, courseid, taskid):
         """ Wipe the data associated to the taskid from DB"""
-        submissions = self.database.submissions.find({"courseid": courseid, "taskid": taskid})
+        submissions = self.database.aware_submissions.find({"courseid": courseid, "taskid": taskid})
         for submission in submissions:
             for key in ["input", "archive"]:
                 if key in submission and type(submission[key]) == bson.objectid.ObjectId:
                     self.submission_manager.get_gridfs().delete(submission[key])
 
         self.database.user_tasks.delete_many({"courseid": courseid, "taskid": taskid})
-        self.database.submissions.delete_many({"courseid": courseid, "taskid": taskid})
+        self.database.aware_submissions.delete_many({"courseid": courseid, "taskid": taskid})
 
         logging.getLogger("inginious.webapp.task_edit").info("Task %s/%s wiped.", courseid, taskid)
 
