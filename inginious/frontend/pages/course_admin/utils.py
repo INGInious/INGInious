@@ -217,17 +217,10 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
             filter.setdefault("grade", {})["$lte"] = float(grade_between[1])
 
         # Submit time
-        try:
-            if submit_time_between and submit_time_between[0] is not None:
-                filter.setdefault("submitted_on", {})["$gte"] = datetime.strptime(submit_time_between[0],
-                                                                                  "%Y-%m-%d %H:%M:%S")
-            if submit_time_between and submit_time_between[1] is not None:
-                filter.setdefault("submitted_on", {})["$lte"] = datetime.strptime(submit_time_between[1],
-                                                                                  "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            # TODO it would be nice to display this in the interface. However, this should never happen because
-            # we have a nice JS interface that prevents this.
-            pass
+        if submit_time_between and submit_time_between[0] is not None:
+            filter.setdefault("submitted_on", {})["$gte"] = datetime.fromisoformat(submit_time_between[0])
+        if submit_time_between and submit_time_between[1] is not None:
+            filter.setdefault("submitted_on", {})["$lte"] = datetime.fromisoformat(submit_time_between[1])
 
         # Only crashed or timed-out submissions
         if keep_only_crashes:
