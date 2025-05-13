@@ -28,8 +28,8 @@ from inginious.frontend.pages.group import GroupPage
 from inginious.frontend.pages.marketplace import MarketplacePage
 from inginious.frontend.pages.marketplace_course import MarketplaceCoursePage
 from inginious.frontend.pages.api_user_tokens import CourseAPIUserTokensPage
-from inginious.frontend.pages.course_admin.submissions_data import SubmissionsEndpoint
-from inginious.frontend.pages.course_admin.user_tasks_data import UserTasksEndpoint
+from inginious.frontend.pages.submissions_data import SubmissionsEndpoint
+from inginious.frontend.pages.user_tasks_data import UserTasksEndpoint
 from inginious.frontend.pages.api.auth_methods import APIAuthMethods
 from inginious.frontend.pages.api.authentication import APIAuthentication
 from inginious.frontend.pages.api.courses import APICourses
