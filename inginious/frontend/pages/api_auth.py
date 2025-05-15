@@ -18,7 +18,7 @@ class DataAPIPage(INGIniousPage):
         super().__init__()
         self.jwt_key = str(self.app.jwt_key)
 
-    def verify(self, courseid):
+    def verify(self, courseid=None):
         """ verify if a token is valid """
         auth_header = request.headers.get('Authorization')
         try:
@@ -32,7 +32,7 @@ class DataAPIPage(INGIniousPage):
             tok_id = decoded["_id"]
         except:
             abort(401, description="Invalid token.")
-        if decoded["courseid"] != courseid:
+        if decoded["courseid"] != courseid and courseid is not None:
             abort(401, description="Token course doesn't match requested course.")
 
         stored_token = self.database.tokens.find_one({'_id': ObjectId(tok_id)})
