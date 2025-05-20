@@ -111,7 +111,7 @@ function displayNewSubmission(id)
         "data-submission-id": id
     }).on('click', clickOnSubmission);
 
-    jQuery('<span id="txt"/>', {}).text(new Date().toISOString()).appendTo(submission_link);
+    jQuery('<span id="txt"/>', {}).text(dtf.format(new Date())).appendTo(submission_link);
     
     //If there exists tags, we add a badge with '0' in the new submission.
     if($('span', $('#main_tag_group')).length > 0){
@@ -565,6 +565,10 @@ function displayTaskStudentAlertWithProblems(content, type)
 
     colorizeStaticCode();
     MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+
+    task_alert.find("time").each(function () {
+        $(this).text(dtf.format(new Date($(this).attr("datetime"))));
+    })
 }
 
 function load_feedback_code(key, content) {

@@ -9,8 +9,8 @@
                 <i class="fa fa-info fa-fw"></i>
             </div>
             <div class="col-sm-11" style="margin-left:-10px;">
-                Contest starts: {{ start.isoformat() }}<br/>
-                Contest ends: {{ end.isoformat() }}
+                Contest starts: <time datetime="{{ start.isoformat() }}">{{ start.isoformat() }}</time><br/>
+                Contest ends: <time datetime="{{ end.isoformat() }}">{{ end.isoformat() }}</time>
             </div>
         </div>
     </div>
