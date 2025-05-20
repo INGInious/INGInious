@@ -111,7 +111,7 @@ function displayNewSubmission(id)
         "data-submission-id": id
     }).on('click', clickOnSubmission);
 
-    jQuery('<span id="txt"/>', {}).text(new Date().toISOString()).appendTo(submission_link);
+    jQuery('<span id="txt"/>', {}).text(dtf.format(new Date())).appendTo(submission_link);
     
     //If there exists tags, we add a badge with '0' in the new submission.
     if($('span', $('#main_tag_group')).length > 0){
@@ -548,6 +548,7 @@ function displayTaskStudentAlertWithProblems(content, type)
     {
         task_alert.html(getAlertCode(content.title, content.text, type, true));
         firstPos = task_alert.offset().top;
+        task_alert.find("time").text(dtf.format(new Date(task_alert.find("time").attr("datetime"))));
     }
 
     if("problems" in content)
