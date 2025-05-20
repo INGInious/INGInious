@@ -4,6 +4,8 @@
 //
 "use strict";
 
+let user_indentation_type;
+
 function init_common()
 {
     //Init CodeMirror

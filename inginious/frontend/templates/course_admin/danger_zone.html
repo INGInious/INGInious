@@ -103,11 +103,11 @@
                     <tbody>
                         {% for backup in backups %}
                             <tr>
-                                <td>{{ backup['date'] }}</td>
+                                <td><time datetime="{{ backup['date'].isoformat() }}">{{ backup['date'].isoformat() }}</time></td>
                                 <td>
                                     <div class="pull-right btn-group btn-group-sm">
 
-                                        <button type="button" data-backupdate="{{backup['date']}}" data-backupfile="{{backup['file']}}" data-toggle="modal" data-target="#restore_modal" class="btn btn-danger restore" title="{{ _('Restore backup') }}">
+                                        <button type="button" data-backupdate="{{backup['date'].isoformat()}}" data-backupfile="{{backup['file']}}" data-toggle="modal" data-target="#restore_modal" class="btn btn-danger restore" title="{{ _('Restore backup') }}">
                                             <i class="fa fa-recycle"></i>
                                         </button>
 
@@ -122,7 +122,7 @@
                 <script type="text/javascript">
                         $('#restore_modal').on('show.bs.modal', function (event) {
                           $('.modal-dialog .backupdate').each(function (index) {
-                              $(this).text($(event.relatedTarget).data('backupdate'));
+                              $(this).text(dtf.format(new Date($(event.relatedTarget).data('backupdate'))));
                           });
                           $('.modal-dialog #backupdate').val($(event.relatedTarget).data('backupfile'));
                         });

@@ -351,7 +351,7 @@ class BaseTaskPage(object):
             tojson["title"] = _("An internal error occurred. Please retry later. "
                                 "If the error persists, send an email to the course administrator.")
 
-        tojson["title"] += " " + _("[Submission #{submissionid} (<b>{submissionDate}</b>)]").format(submissionid=data["_id"], submissionDate=data["submitted_on"].isoformat())
+        tojson["title"] += " " + _("[Submission #{submissionid} - <b><time datetime='{submissionDate}'>{submissionDate}</time></b>]").format(submissionid=data["_id"], submissionDate=data["submitted_on"].isoformat())
         tojson["title"] = self.plugin_manager.call_hook_recursive("feedback_title", task=task, submission=data, title=tojson["title"])["title"]
         
         tojson["text"] = data.get("text", "")

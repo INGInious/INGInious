@@ -36,10 +36,10 @@
                 <td>{{agent_name}}</td>
                 <td>{{info}}</td>
                 <td>{{launcher}}</td>
-                <td>{{from_timestamp(started_at).isoformat()}}</td>
+                <td><time datetime="{{from_timestamp(started_at).isoformat()}}">{{from_timestamp(started_at).isoformat()}}</time></td>
                 <td>
                     {% if max_time >= 0 %}
-                        {{from_timestamp(started_at+max_time).isoformat()}}
+                        <time datetime="{{from_timestamp(started_at+max_time).isoformat()}}">{{from_timestamp(started_at+max_time).isoformat()}}</time>
                     {% else %}
                         {{_("No timeout set")}}
                     {% endif %}
