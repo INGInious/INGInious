@@ -7,8 +7,11 @@
     <span class="accessibility accessibility-never" {% if not at.is_never_accessible() %} style="display: none;" {% endif %}>{{_("Never")}}</span>
     <span class="accessibility accessibility-always" {% if not at.is_always_accessible() %} style="display: none;" {% endif %}>{{_("Always")}}</span>
     <span class="accessibility accessibility-custom" {% if at.is_always_accessible() or at.is_never_accessible() %} style="display: none;" {% endif %}>
-        {{ _("Custom, from: {} to: {}").format('<span class="accessibility-custom-start">' + str(at.get_std_start_date(user_manager.session_timezone())) + '</span>', '<span class="accessibility-custom-end">' + at.get_std_end_date(user_manager.session_timezone()) + '</span>') | safe}}
-        (<span class="accessibility-custom-soft-end">{{ at.get_std_soft_end_date(user_manager.session_timezone()) }}</span>)
+        {% set start_date = '<time datetime="' + at.get_std_start_date() + '">' + at.get_std_start_date() + '</time>' if at.get_std_start_date() else '' %}
+        {% set end_date = '<time datetime="' + at.get_std_end_date() + '">' + at.get_std_end_date() + '</time>' if at.get_std_end_date() else '' %}
+        {% set soft_end_date = '<time datetime="' + at.get_std_soft_end_date() + '">' + at.get_std_soft_end_date() + '</time>' if at.get_std_soft_end_date() else '' %}
+        {{ _("Custom, from: {} to: {}").format('<span class="accessibility-custom-start">' + start_date + '</span>', '<span class="accessibility-custom-end">' + end_date + '</span>') | safe}}
+        (<span class="accessibility-custom-soft-end">{{ soft_end_date | safe }}</span>)
     </span>
 {% else %}
 
@@ -128,12 +131,13 @@
             }
         } else {
             let id = $(this).attr("id");
+            let time = $("<time/>").attr("datetime", $(this).val()).text(dtf.format(new Date($(this).val())));
             if (id == "accessibility_start")
-                $("#task_" + taskid + " .accessibility-custom-start").text($(this).val());
+                $("#task_" + taskid + " .accessibility-custom-start").empty().append(time);
             else if(id == "accessibility_end")
-                $("#task_" + taskid + " .accessibility-custom-end").text($(this).val());
+                $("#task_" + taskid + " .accessibility-custom-end").empty().append(time);
             else
-                $("#task_" + taskid + " .accessibility-custom-soft-end").text($(this).val());
+                $("#task_" + taskid + " .accessibility-custom-soft-end").empty().append(time);
 
             var start = $("#edit_task_modal").find("#accessibility_start").val();
             var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
@@ -145,7 +149,8 @@
     $('#accessibility_start_picker').on("change.datetimepicker", function () {
         var taskid = $("#edit_task_modal").data("taskid");
         let val = $("#edit_task_modal #accessibility_start").val();
-        $("#task_" + taskid + " .accessibility-custom-start").text(val);
+        let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
+        $("#task_" + taskid + " .accessibility-custom-start").empty().append(time);
         var start = $("#edit_task_modal").find("#accessibility_start").val();
         var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
         var end = $("#edit_task_modal").find("#accessibility_end").val();
@@ -155,7 +160,8 @@
     $('#accessibility_end_picker').on("change.datetimepicker", function () {
         var taskid = $("#edit_task_modal").data("taskid");
         let val = $("#edit_task_modal #accessibility_end").val();
-        $("#task_" + taskid + " .accessibility-custom-end").text(val);
+        let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
+        $("#task_" + taskid + " .accessibility-custom-end").empty().append(time);
         var start = $("#edit_task_modal").find("#accessibility_start").val();
         var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
         var end = $("#edit_task_modal").find("#accessibility_end").val();
@@ -165,7 +171,8 @@
     $('#accessibility_soft_end_picker').on("change.datetimepicker", function () {
         var taskid = $("#edit_task_modal").data("taskid");
         let val = $("#edit_task_modal #accessibility_soft_end").val();
-        $("#task_" + taskid + " .accessibility-custom-soft-end").text(val);
+        let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
+        $("#task_" + taskid + " .accessibility-custom-soft-end").empty().append(time);
         var start = $("#edit_task_modal").find("#accessibility_start").val();
         var soft_end = $("#edit_task_modal").find("#accessibility_soft_end").val();
         var end = $("#edit_task_modal").find("#accessibility_end").val();
@@ -197,12 +204,13 @@
 
                 }
             } else {
+                let time = $("<time/>").attr("datetime", value).text(dtf.format(new Date(value)));
                 if (id == "accessibility_start")
-                    $("#task_" + taskid + " .accessibility-custom-start").text(value);
+                    $("#task_" + taskid + " .accessibility-custom-start").empty().append(time);
                 else if(id == "accessibility_end")
-                    $("#task_" + taskid + " .accessibility-custom-end").text(value);
+                    $("#task_" + taskid + " .accessibility-custom-end").empty().append(time);
                 else
-                    $("#task_" + taskid + " .accessibility-custom-soft-end").text(value);
+                    $("#task_" + taskid + " .accessibility-custom-soft-end").empty().append(time);
 
                 var start = $("#grouped-actions-edit #accessibility_start").val();
                 var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
@@ -215,7 +223,8 @@
     $('#accessibility_start_picker_grouped').on("change.datetimepicker", function () {
         let val = $("#grouped-actions-edit #accessibility_start").val();
         $(".grouped-actions-task:checked").each(function () {
-            $("#task_" + $(this).data("taskid") + " .accessibility-custom-start").text(val);
+            let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
+            $("#task_" + $(this).data("taskid") + " .accessibility-custom-start").empty().append(time);
             var start = $("#grouped-actions-edit #accessibility_start").val();
             var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
             var end = $("#grouped-actions-edit #accessibility_end").val();
@@ -225,7 +234,8 @@
     $('#accessibility_end_picker_grouped').on("change.datetimepicker", function () {
         let val = $("#grouped-actions-edit #accessibility_end").val();
         $(".grouped-actions-task:checked").each(function () {
-            $("#task_" + $(this).data("taskid") + " .accessibility-custom-end").text(val);
+            let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
+            $("#task_" + $(this).data("taskid") + " .accessibility-custom-end").empty().append(time);
             var start = $("#grouped-actions-edit #accessibility_start").val();
             var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
             var end = $("#grouped-actions-edit #accessibility_end").val();
@@ -235,7 +245,8 @@
     $('#accessibility_soft_end_picker_grouped').on("change.datetimepicker", function () {
         let val = $("#grouped-actions-edit #accessibility_soft_end").val();
         $(".grouped-actions-task:checked").each(function () {
-            $("#task_" + $(this).data("taskid") + " .accessibility-custom-soft-end").text(val);
+            let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
+            $("#task_" + $(this).data("taskid") + " .accessibility-custom-soft-end").empty().append(time);
             var start = $("#grouped-actions-edit #accessibility_start").val();
             var soft_end = $("#grouped-actions-edit #accessibility_soft_end").val();
             var end = $("#grouped-actions-edit #accessibility_end").val();
