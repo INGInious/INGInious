@@ -85,6 +85,7 @@
     <script src="{{get_homepath()}}/static/js/codemirror/mode/meta.js" type="text/javascript" charset="utf-8"></script>
     <script src="{{get_homepath()}}/static/js/libs/popper.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="{{get_homepath()}}/static/js/libs/moment.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/moment-timezone-with-data.min.js" type="text/javascript" charset="utf-8"></script>
     {% if  _("__is_rtl") == "true"%}
         <script src="{{ get_homepath() }}/static/js/libs/bootstrap-rtl.min.js" type="text/javascript" charset="utf-8"></script>
     {% else %}
@@ -211,6 +212,11 @@
     {{ template_helper.call('javascript_footer') | safe }}
     <script>
         var user_indentation_type = {{ available_indentation_types[user_manager.session_code_indentation()] | tojson }};
+        var dtf = new Intl.DateTimeFormat({{ user_manager.session_language() | tojson }}, {
+        dateStyle: "short",
+        timeStyle: "medium",
+        timeZone: {{ user_manager.session_timezone() | tojson }},
+    });
     </script>
 </body>
 </html>
