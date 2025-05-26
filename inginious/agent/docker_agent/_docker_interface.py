@@ -6,6 +6,7 @@
 """
     (not asyncio) Interface to Docker
 """
+import json
 import os
 from datetime import datetime
 from typing import List, Tuple, Dict
@@ -60,6 +61,7 @@ class DockerInterface(object):  # pragma: no cover
                 created = x.history()[0]['Created']
                 ports = [int(y) for y in x.labels["org.inginious.grading.ports"].split(
                     ",")] if "org.inginious.grading.ports" in x.labels else []
+                variables = [(key.removeprefix("org.inginious.variable."), json.loads(x.labels[key])["description"], json.loads(x.labels[key])["value"]) for key in x.labels if key.startswith('org.inginious.variable.')]
 
                 for docker_runtime in runtimes:
                     if "org.inginious.grading.need_root" in x.labels and not docker_runtime.run_as_root:
@@ -79,7 +81,8 @@ class DockerInterface(object):  # pragma: no cover
                         "title": title,
                         "created": created,
                         "ports": ports,
-                        "runtime": docker_runtime.runtime
+                        "runtime": docker_runtime.runtime,
+                        "variables": variables,
                     }
             except:
                 logging.getLogger("inginious.agent").exception("Container %s is badly formatted", title or "[cannot load title]")
@@ -89,7 +92,7 @@ class DockerInterface(object):  # pragma: no cover
         for envtype, content in images.items():
             latest[envtype] = {}
             for img_id, img_c in content.items():
-                if img_c["title"] not in latest[envtype] or latest[envtype][img_c["title"]]["created"] < img_c["created"]:
+                if img_c["title"] not in latest[envtype] or latest[envtype][img_c["title"]]["created"] < img_c["created"] or len(latest[envtype][img_c["title"]]["variables"]) < len(img_c["variables"]):
                     latest[envtype][img_c["title"]] = {"id": img_id, **img_c}
         return latest
 

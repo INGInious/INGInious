@@ -23,8 +23,8 @@
                     {% for env_envtype, envs in environments.items() %}
                         {% if envtype == env_envtype %}
                             {% for env in envs %}
-                                <option value="{{env}}" {{ 'selected="selected"' if env == task_data.get('environment_id') }}>
-                                    {{ env }}
+                                <option value="{{env[0]}}" {{ 'selected="selected"' if env[0] == task_data.get('environment_id') }}>
+                                    {{ env[0] }}
                                 </option>
                             {% endfor %}
                         {% endif %}

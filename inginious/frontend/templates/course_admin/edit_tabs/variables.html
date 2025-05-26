@@ -1,24 +1,23 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
-
-<div class="row">
-    <div class="col-sm-3">
-        <button class="btn btn-primary btn-success btn-block task_edit_add_variable_button" type="button" onclick="clickHandler()">
-            <i class="fa fa-plus"></i>
-            <div class="d-none d-sm-inline">{{ _("Add a variable") }}</div>
-        </button>
-    </div>
-</div>
-
-<br/>
 <div class="row">
     <div class="col-sm-3">
         <div id="variable_list_container" class="text-center">
             <h3>{{ _("Variables") }}</h3>
-            <p class="font-italic" id="no_variable_message">{{ _("No variables for this exercise") }}</p>
-            <div class="list-group" id="variable_list" role="tablist">
-                {% for key in task_data.get('variables', {}).keys() %}
-                    <a class="list-group-item list-group-item-action" data-toggle="list" href="#{{ key }}" role="tab">{{ key }}</a>
+            {% set judges = environments[task_data.environment_type] %}
+            {% set selected_judge = namespace() %}
+            {% for judge in judges %}
+                {% if judge[0] == task_data.get("environment_id", "") %}
+                    {% set selected_judge.name = judge[0] %}
+                    {% set selected_judge.variables = judge[1] %}
+                {% endif %}
+            {% endfor %}
+            {% if selected_judge.variables | length == 0 %}
+                <p class="font-italic" id="no_variable_message">{{ _("No variables for this exercise") }}</p>
+            {% endif %}
+            <div class="list-group" id="variable_list" role="tablist">    
+                {% for variable in selected_judge.variables %}
+                    <a class="list-group-item list-group-item-action" data-toggle="list" href="#{{ variable[0] }}" role="tab">{{ variable[0] }}</a>
                 {% endfor %}
             </div> 
         </div>
@@ -26,155 +25,30 @@
 
     <div class="col-sm-9">
         <div id="tab-container" class="tab-content">
-            {% if task_data.get('variables', {}) | length  > 0 %}
-            {% for key, value in task_data.get('variables').items() %}
-                <div class="tab-pane" id="{{key}}" role="tabpanel">
+            {% for variable in selected_judge.variables %}
+                <div class="tab-pane" id="{{variable[0]}}" role="tabpanel">
                     <div class="form-group row">
                         <label for="name" class="col-sm-2 control-label">{{ _("Name") }}</label>
                         <div class="col-sm-10">
-                            <input type="text" class="form-control" id="variable_name" name="variable[{{key}}][variable_name]" placeholder="name for this variable" value="{{ value.get('variable_name', '') | safe }}">
-                        </div>
-                    </div>
-            
-                    <div class="form-group row">
-                        <label for="name" class="col-sm-2 control-label">{{ _("Type") }}</label>
-                        <div class="col-sm-10">
-                            <select class="form-control" id="variable_type_{{key}}" name="variable[{{key}}][variable_type]" onchange="isCodeProblem('{{key}}')">
-                                <!-- TODO: get types of variables with new API -->
-                                <option value="String">String</option>
-                                <option value="Number">Number</option>
-                                <option value="Code">Code</option>
-                            </select>
+                            <input type="text" class="form-control" id="variable_name" name="variable[{{variable[0]}}][variable_name]" placeholder="name for this variable" value="{{ variable[0] }}">
                         </div>
                     </div>
             
                     <div class="form-group row">
                         <label for="name" class="col-sm-2 control-label">{{ _("Description") }}</label>
                         <div class="col-sm-10">
-                            <textarea id="variable_description_{{key}}" class="form-control code-editor" name="variable[{{key}}][variable_description]" data-x-language="rst" data-x-lines="10">{{ value.get('variable_description', '') }}</textarea>
-                        </div>
-                    </div>
-            
-                    <div id="templateModel_{{key}}" class="form-group row">
-                        <label for="name" class="col-sm-2 control-label">{{ _("Template") }}</label>
-                        <div class="col-sm-10">
-                            <select class="form-control" id="variable_template">
-                                <!-- TODO: get files in common with new API -->
-                                <option value="variable_template_1">File 1</option>
-                                <option value="variable_template_2">File 2</option>
-                            </select>
+                            <textarea id="variable_description_{{variable[0]}}" class="form-control code-editor" name="variable[{{variable[0]}}][variable_description]" data-x-language="rst" data-x-lines="10">{{variable[1]}}</textarea>
                         </div>
                     </div>
             
                     <div class="form-group row">
                         <label for="name" class="col-sm-2 control-label">{{ _("Value") }}</label>
-                        <div id="variable_value_input_{{key}}" class="col-sm-10" data-value="{{ value.get('variable_value', '') }}"></div>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="variable_value_{{variable[0]}}" name="variable[{{variable[0]}}][variable_value]" placeholder="value for this variable" value="{{ task_data.get('variables', {}).get(variable[0], {}).get('variable_value', variable[2]) }}">
+                        </div>
                     </div>
                 </div>
             {% endfor %}
-            {% endif %}
         </div>
     </div>
 </div>
-
-<script>
-    function load_variable_list() {
-        if("{{ task_data.get('variables', {}).keys() | length }}" != 0){
-            $(`#no_variable_message`).addClass('d-none');
-
-            $('#variable_list').children().each(function() {
-                const key = $(this).text().trim();
-                console.log("{{ task_data.get('variables', {}).get(key, {}).get('variable_value', '') }}");
-                isCodeProblem(key, '');
-            });
-        }
-    }
-            
-    function clickHandler() {
-        $(`#no_variable_message`).addClass('d-none');
-
-        let key = "new_variable"
-        
-        if($('#variable_list').children().filter(function() {
-            return $(this).text().trim() === 'new_variable';
-        }).length > 0) {
-            key = `new_variable_${$('#variable_list').children().length}`;
-        }
-
-        $('#variable_list').append(
-            `<a class="list-group-item list-group-item-action" data-toggle="list" href="#${key}" role="tab">${key}</a>`
-        );
-
-        $('#tab-container').append(
-            `
-            <div class="tab-pane" id="${key}" role="tabpanel">
-                    <div class="form-group row">
-                        <label for="name" class="col-sm-2 control-label">{{ _("Name") }}</label>
-                        <div class="col-sm-10">
-                            <input type="text" class="form-control" id="variable_name" name="variable[${key}][variable_name]" placeholder="name for this variable">
-                        </div>
-                    </div>
-            
-                    <div class="form-group row">
-                        <label for="name" class="col-sm-2 control-label">{{ _("Type") }}</label>
-                        <div class="col-sm-10">
-                            <select class="form-control" id="variable_type_${key}" name="variable[${key}][variable_type]" onchange="isCodeProblem('${key}')">
-                                <option value="String">String</option>
-                                <option value="Number">Number</option>
-                                <option value="Code">Code</option>
-                                
-                            </select>
-                        </div>
-                    </div>
-            
-                    <div class="form-group row">
-                        <label for="name" class="col-sm-2 control-label">{{ _("Description") }}</label>
-                        <div class="col-sm-10">
-                            <textarea id="variable_description_${key}" class="form-control code-editor" name="variable[${key}][variable_description]" data-x-language="rst" data-x-lines="10"></textarea>
-                        </div>
-                    </div>
-            
-                    <div id="templateModel_${key}" class="form-group row">
-                        <label for="name" class="col-sm-2 control-label">{{ _("Template") }}</label>
-                        <div class="col-sm-10">
-                            <select class="form-control" id="variable_template">
-                                <option value="variable_template_1">File 1</option>
-                                <option value="variable_template_2">File 2</option>
-                            </select>
-                        </div>
-                    </div>
-            
-                    <div class="form-group row">
-                        <label for="name" class="col-sm-2 control-label">{{ _("Value") }}</label>
-                        <div id="variable_value_input_${key}" class="col-sm-10" data-value=""></div>
-                    </div>
-                </div>
-            `
-        );
-
-        isCodeProblem(key, '');
-
-        registerCodeEditor($(`#variable_description_${key}`)[0], 'text', 10);
-        refresh_codemirror();
-    };
-
-    function isCodeProblem(key, value) {
-        if ($(`#variable_type_${key}`).val() === 'Code') {
-            $(`#templateModel_${key}`).removeClass('d-none');
-
-            $(`#variable_value_input_${key}`).html(`
-                <textarea id="variable_value_${key}" class="form-control code-editor"
-                name="variable[${key}][variable_value]" data-x-language="rst" data-x-lines="10"></textarea>
-            `);
-        } else {
-            $(`#templateModel_${key}`).addClass('d-none');
-            
-            $(`#variable_value_input_${key}`).html(
-                `<input type="text" class="form-control" id="variable_value_${key}" name="variable[${key}][variable_value]"
-                placeholder="value for this variable" value="${$(`#variable_value_input_${key}`).data('value')}">`
-            );
-        }
-    }
-
-    load_variable_list();
-</script>

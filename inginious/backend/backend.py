@@ -24,7 +24,7 @@ from inginious.common.messages import BackendNewJob, AgentJobStarted, AgentJobDo
 WaitingJob = namedtuple('WaitingJob', ['priority', 'time_received', 'client_addr', 'job_id', 'msg'])
 
 RunningJob = namedtuple('RunningJob', ['agent_addr', 'client_addr', 'msg', 'time_started'])
-EnvironmentInfo = namedtuple('EnvironmentInfo', ['last_id', 'created_last', 'agents', 'type'])
+EnvironmentInfo = namedtuple('EnvironmentInfo', ['last_id', 'created_last', 'agents', 'type', 'variables'])
 AgentInfo = namedtuple('AgentInfo', ['name', 'environments'])  # environments is a list of tuple (type, environment)
 
 class Backend(object):
@@ -108,7 +108,8 @@ class Backend(object):
     async def send_environment_update_to_client(self, client_addrs):
         """ :param client_addrs: list of clients to which we should send the update """
         self._logger.debug("Sending environments updates...")
-        available_environments = {type: list(environments.keys()) for type, environments in self._environments.items()}
+        available_environments = {type: [(env, env_info.variables) for env, env_info in environments.items()] for type, environments in self._environments.items()}
+        self._logger.info(available_environments)
         msg = BackendUpdateEnvironments(available_environments)
         for client in client_addrs:
             await ZMQUtils.send_with_addr(self._client_socket, client, msg)
@@ -245,6 +246,8 @@ class Backend(object):
                 self._environments[environment_type] = {}
             env_dict = self._environments[environment_type]
             for name, environment_info in environments.items():
+                self._logger.info("Anatole Backend env info")
+                self._logger.info(environment_info)
                 if name in env_dict:
                     # check if the id is the same
                     if env_dict[name].last_id == environment_info["id"]:
@@ -271,11 +274,11 @@ class Backend(object):
                                              env_dict[name].last_id, env_dict[name].created_last,
                                              str(agent_addr), environment_info["id"], environment_info["created"])
                         env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"],
-                                                         env_dict[name].agents + [agent_addr], environment_type)
+                                                         env_dict[name].agents + [agent_addr], environment_type, environment_info.get("variables", []))
                 else:
                     # just add it
                     self._logger.debug("Registering environment %s/%s for agent %s", environment_type, name, str(agent_addr))
-                    env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"], [agent_addr], environment_type)
+                    env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"], [agent_addr], environment_type, environment_info.get("variables", []))
 
         # update the queue
         await self.update_queue()

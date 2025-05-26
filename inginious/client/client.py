@@ -306,7 +306,7 @@ class Client(BetterParanoidPirateClient):
         environment_type = task.get_environment_type()
         environment = task.get_environment_id()
 
-        if environment_type not in self._available_environments or environment not in self._available_environments[environment_type]:
+        if environment_type not in self._available_environments.keys() or environment not in dict(self._available_environments[environment_type]):
             self._logger.warning("Env %s/%s not available for task %s/%s", environment_type, environment, task.get_course_id(),
                                  task.get_id())
             ssh_callback(None, None, None, None)  # ssh_callback must be called once
