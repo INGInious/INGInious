@@ -12,6 +12,7 @@ from typing import List, Tuple, Dict
 
 import docker
 import logging
+import platform
 
 from docker.types import Ulimit
 
@@ -132,7 +133,7 @@ class DockerInterface(object):  # pragma: no cover
         if ports is None:
             ports = {}
 
-        nofile_limit = Ulimit(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
+        ulimits = self.__get_safe_ulimits(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
 
         response = self._docker.containers.create(
             image,
@@ -150,7 +151,7 @@ class DockerInterface(object):  # pragma: no cover
                 course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro'}
             },
             runtime=runtime,
-            ulimits=[nofile_limit]
+            ulimits=ulimits,
         )
         return response.id
 
@@ -188,7 +189,7 @@ class DockerInterface(object):  # pragma: no cover
         else:
             net_mode = 'container:' + share_network_of_container
 
-        nofile_limit = Ulimit(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
+        ulimits = self.__get_safe_ulimits(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
 
         response = self._docker.containers.create(
             image,
@@ -208,7 +209,7 @@ class DockerInterface(object):  # pragma: no cover
                 course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro'}
             },
             runtime=runtime,
-            ulimits=[nofile_limit]
+            ulimits=ulimits,
         )
 
         return response.id
@@ -274,6 +275,21 @@ class DockerInterface(object):  # pragma: no cover
         :return: dict of runtime: path_to_runtime
         """
         return {name: x["path"] for name, x in self._docker.info()["Runtimes"].items()}
+    
+    def __get_safe_ulimits(self, name, soft, hard):
+        """
+        Returns a list of a Ulimit object with the given parameters if running on a system that supports ulimits (unlike MacOS).
+        Otherwise, returns an empty list.
+        """
+        if platform.system().lower() == "darwin":
+            logging.getLogger("inginious.agent").warning(
+                "Ulimits are not supported on MacOS. The ulimit '%s' with soft=%d and hard=%d will not be set.",
+                name,
+                soft,
+                hard,
+            )
+            return []
+        return [Ulimit(name=name, soft=soft, hard=hard)]
 
 class FixDockerSocket():  # pragma: no cover
     """
