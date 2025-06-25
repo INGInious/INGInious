@@ -536,12 +536,7 @@ class UserManager:
                                 "bindings": {auth_id: [username, additional]}, "language": self.session_language(),
                                 "code_indentation": self.session_code_indentation(), "tos_accepted": False}
 
-                self._database.users.insert_one({"username": user["username"],
-                                                 "realname": user["realname"],
-                                                 "email": user["email"],
-                                                 "bindings": user["bindings"],
-                                                 "language": user["language"],
-                                                 "code_indentation": user["code_indentation"]})
+                self._database.users.insert_one(user_profile)
                 self.connect_user(user_profile)
 
         return True
