@@ -486,11 +486,13 @@ class UserManager:
         user = self._database.users.find_one_and_update({"activate": activate_hash}, {"$unset": {"activate": True}})
         return user is not None
 
-    def bind_user(self, auth_id, user):
+    def bind_user(self, auth_id, user, force_username=False):
         """
         Add a binding method to a user
         :param auth_id: The binding method id
         :param user: User object
+        :param force_username: If True, a user created with this binding will have its username set immediately.
+                               If False (default), the created user will have an empty username, and later be asked to provide one.
         :return: Boolean if method has been add
         """
         username, realname, email, additional = user
@@ -532,7 +534,9 @@ class UserManager:
                 return False
             else:
                 # New user, create an account using email address
-                user_profile = {"username": "", "realname": realname, "email": email,
+                # If force_username is set, also use the given username
+                new_username = username if force_username else ""
+                user_profile = {"username": new_username, "realname": realname, "email": email,
                                 "bindings": {auth_id: [username, additional]}, "language": self.session_language(),
                                 "code_indentation": self.session_code_indentation(), "tos_accepted": False}
 
