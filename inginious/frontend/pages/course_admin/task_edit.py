@@ -192,6 +192,6 @@ class CourseEditTask(INGIniousAdminPage):
                 task_fs.copy_to(tmpdirname)
 
         self.task_factory.delete_all_possible_task_files(courseid, taskid)
-        self.task_factory.update_task_descriptor_content(courseid, taskid, data, force_extension=file_ext)
+        self.task_factory.update_task_descriptor_content(courseid, taskid, data, force_extension=file_ext, user=self.user_manager.session_git())
 
         return json.dumps({"status": "ok"})

@@ -137,7 +137,7 @@ class CourseSettingsPage(INGIniousAdminPage):
 
 
         if len(errors) == 0:
-            self.course_factory.update_course_descriptor_content(courseid, course_content)
+            self.course_factory.update_course_descriptor_content(courseid, course_content, user=self.user_manager.session_git())
             errors = None
             course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)  # don't forget to reload the modified course
 

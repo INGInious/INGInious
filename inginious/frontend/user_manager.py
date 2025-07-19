@@ -162,6 +162,12 @@ class UserManager:
             return None
         return self._session["realname"]
 
+    def session_git(self):
+        """ Returns the user information required for Git commit authorship. """
+        if not self.session_logged_in():
+            return None
+        return (self.session_realname(), self.session_email())
+
     def session_tos_signed(self):
         """ Returns True if the current user has signed the tos"""
         if not self.session_logged_in():

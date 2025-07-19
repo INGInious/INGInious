@@ -5,6 +5,7 @@
 
 """ Factory for loading courses from disk """
 import logging
+import os
 
 from inginious.common.filesystems import FileSystemProvider
 from inginious.common.log import get_course_logger
@@ -75,20 +76,22 @@ class CourseFactory(object):
         :raise: InvalidNameException, CourseNotFoundException, CourseUnreadableException
         :return: the content of the dict that describes the course
         """
-        path = self._get_course_descriptor_path(courseid)
+        (_course_fs, path) = self._get_course_descriptor_path(courseid)
         return loads_json_or_yaml(path, self._filesystem.get(path).decode("utf-8"))
 
-    def update_course_descriptor_content(self, courseid, content):
+    def update_course_descriptor_content(self, courseid, content, msg: str=None, user: tuple[str,str]=None):
         """
         Updates the content of the dict that describes the course
         :param courseid: the course id of the course
         :param content: the new dict that replaces the old content
         :raise InvalidNameException, CourseNotFoundException
         """
-        path = self._get_course_descriptor_path(courseid)
-        self._filesystem.put(path, get_json_or_yaml(path, content))
+        (course_fs, path) = self._get_course_descriptor_path(courseid)
+        content = get_json_or_yaml(path, content)
+        (_head, course_descriptor) = os.path.split(path)
+        course_fs.put(course_descriptor, content, msg=msg, user=user)
 
-    def update_course_descriptor_element(self, courseid, key, value):
+    def update_course_descriptor_element(self, courseid, key, value, msg: str=None, user: tuple[str, str]=None):
         """
         Updates the value for the key in the dict that describes the course
         :param courseid: the course id of the course
@@ -98,7 +101,7 @@ class CourseFactory(object):
         """
         course_structure = self.get_course_descriptor_content(courseid)
         course_structure[key] = value
-        self.update_course_descriptor_content(courseid, course_structure)
+        self.update_course_descriptor_content(courseid, course_structure, msg=msg, user=user)
 
     def get_fs(self):
         """
@@ -138,12 +141,12 @@ class CourseFactory(object):
             raise InvalidNameException("Course with invalid name: " + courseid)
         course_fs = self.get_course_fs(courseid)
         if course_fs.exists("course.yaml"):
-            return courseid+"/course.yaml"
+            return (course_fs, courseid+"/course.yaml")
         if course_fs.exists("course.json"):
-            return courseid+"/course.json"
+            return (course_fs, courseid+"/course.json")
         raise CourseNotFoundException()
 
-    def create_course(self, courseid, init_content):
+    def create_course(self, courseid, init_content, user: tuple[str, str]):
         """
         Create a new course folder and set initial descriptor content, folder can already exist
         :param courseid: the course id of the course
@@ -159,7 +162,7 @@ class CourseFactory(object):
         if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
             raise CourseAlreadyExistsException("Course with id " + courseid + " already exists.")
         else:
-            course_fs.put("course.yaml", get_json_or_yaml("course.yaml", init_content))
+            course_fs.put("course.yaml", get_json_or_yaml("course.yaml", init_content), msg="Course created.", user=user)
 
         get_course_logger(courseid).info("Course %s created in the factory.", courseid)
 
@@ -191,7 +194,7 @@ class CourseFactory(object):
             return True
 
         try:
-            descriptor_name = self._get_course_descriptor_path(courseid)
+            (_course_fs, descriptor_name) = self._get_course_descriptor_path(courseid)
             last_update = {descriptor_name: self._filesystem.get_last_modification_time(descriptor_name)}
             translations_fs = self._filesystem.from_subfolder("$i18n")
             if translations_fs.exists():
@@ -216,7 +219,7 @@ class CourseFactory(object):
         :raise InvalidNameException, CourseNotFoundException, CourseUnreadableException
         """
         self._logger.info("Caching course {}".format(courseid))
-        path_to_descriptor = self._get_course_descriptor_path(courseid)
+        (_course_fs, path_to_descriptor) = self._get_course_descriptor_path(courseid)
         try:
             course_descriptor = loads_json_or_yaml(path_to_descriptor, self._filesystem.get(path_to_descriptor).decode("utf8"))
         except Exception as e:

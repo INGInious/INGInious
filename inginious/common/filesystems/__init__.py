@@ -53,6 +53,28 @@ class FileSystemProvider(metaclass=ABCMeta):
             raise FileNotFoundError()
 
     @abstractmethod
+    def try_stage(self, filepath: str) -> None:
+        """
+        For versioned filesystems, try staging `filepath` if it points to
+        modified content. Otherwise, do nothing.
+
+        :param filepath: The path towards items to stage if modified.
+        """
+
+    @abstractmethod
+    def try_commit(self, filepath: str, msg: str=None, user: tuple[str, str]=None):
+        """
+        For versioned filesystems, add `filepath` content to the history with
+        `msg` message from `user` author. Otherwise, do nothing.
+        If `user` is not provided, `filepath` content is only staged, if needed,
+        and not committed.
+
+        :param filepath: Path towards item(s) to commit.
+        :param msg: An optional commit message.
+        :param user: Optional authorship information for the commit.
+        """
+
+    @abstractmethod
     def from_subfolder(self, subfolder: str) -> FileSystemProvider:
         """
         :param subfolder: The prefix of the new FileSystemProvider.

@@ -37,6 +37,12 @@ class LocalFSProvider(FileSystemProvider):
         self._checkpath(subfolder)
         return LocalFSProvider(self.prefix + subfolder)
 
+    def try_stage(self, filepath: str):
+        pass
+
+    def try_commit(self, filepath: str, msg: str=None, user: tuple[str, str]=None):
+        pass
+
     def exists(self, path: str=None) -> bool:
         if path is None:
             path = self.prefix
