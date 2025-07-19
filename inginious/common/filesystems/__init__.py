@@ -73,7 +73,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """ Ensure that the current prefix exists. If it is not the case, creates the directory. """
 
     @abstractmethod
-    def put(self, filepath, content):
+    def put(self, filepath: str, content, msg: str=None, user: tuple[str, str]=None):
         """ Write `content` in `filepath`"""
 
     @abstractmethod
@@ -89,7 +89,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get(self, filepath, timestamp:datetime=None):
+    def get(self, filepath: str, timestamp:datetime=None):
         """ Get the content of a file.
             If timestamp is not None, it gives an indication to the cache that the file must have been retrieved from the (possibly distant)
             filesystem since the timestamp.

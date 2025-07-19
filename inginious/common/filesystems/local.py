@@ -48,7 +48,7 @@ class LocalFSProvider(FileSystemProvider):
         if not os.path.exists(self.prefix):
             os.makedirs(self.prefix)
 
-    def put(self, filepath, content):
+    def put(self, filepath, content, msg: str=None, user: tuple[str, str]=None):
         self._checkpath(filepath)
         fullpath = os.path.join(self.prefix, filepath)
         if "/" in fullpath:
@@ -56,7 +56,8 @@ class LocalFSProvider(FileSystemProvider):
 
         if isinstance(content, str):
             content = content.encode("utf-8")
-        open(fullpath, 'wb').write(content)
+        with open(fullpath, 'wb') as fd:
+            fd.write(content)
 
     def get_fd(self, filepath: str, timestamp=None):
         self._checkpath(filepath)
