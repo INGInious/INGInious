@@ -36,15 +36,14 @@ Simply run:
 
    $ docker compose up --build
 
-> Note that you can override the registry and containers version by setting the `REGISTRY` and
-> `VERSION` environment variables.
-
 And access http://localhost:9000 in your browser.
 
 *The default login and password are* ``superadmin``.
 
 The ``--build`` argument is optional, use it if you want to rebuild locally the core containers.
 If you want to simply pull them from the project's registry, this argument is not required.
+
+*Note that you can override the registry and containers version by setting the `REGISTRY` and `VERSION` environment variables.*
 
 Docker-compose will create a ``tasks`` folder if it does not exist already.
 
@@ -65,7 +64,16 @@ For example, the INGInious tutorial course is installed with the following comma
 
 *This can happen when the tasks directory is created by docker-compose.*
 
-Note that the `configuration.deploy.yaml` file provided is a sample configuration, the secret key **must** be changed by administrators in production deployments.
+Note that the ``configuration.deploy.yaml`` file provided is a sample configuration, the secret key **must** be changed by administrators in production deployments.
+
+.. _env-base: https://github.com/INGInious/INGInious/tree/main/base-containers/base
+.. _env-default: https://github.com/INGInious/INGInious/tree/main/base-containers/default
+
+The provided ``docker-compose.yaml`` file builds from sources the basic grading environments `env-base`_ and `env-default`_.
+It also pulls from the project's registry a basic ``python3`` grading environment.
+These three environments are sufficient for a simple INGInious deployment.
+
+Administrators can add grading environments to their instance either by adding them statically to the ``docker-compose.yaml`` file or by pulling them manually from the container registry.
 
 .. _Manual installation: https://docs.inginious.org/en/latest/admin_doc/install_doc/installation.html
 

@@ -1,5 +1,23 @@
 services:
 
+  env-base:
+    image: ${REGISTRY}/inginious/env-base:${VERSION}
+    build:
+      context: base-containers/base/
+    command: /bin/true
+
+  env-default:
+    image: ${REGISTRY}/inginious/env-default:${VERSION}
+    build:
+      context: base-containers/default/
+    depends_on:
+      - env-base
+    command: /bin/true
+
+  env-python3:
+    image: ${REGISTRY}/inginious/env-python3:${VERSION}
+    command: /bin/true
+
   base:
     image: ${REGISTRY}/inginious/core-base:${VERSION}
     build:
@@ -85,6 +103,8 @@ services:
       - backend
       - agent-docker
       - agent-mcq
+      - env-base
+      - env-default
     environment:
       - INGINIOUS_WEBAPP_HOST=0.0.0.0
     volumes:
