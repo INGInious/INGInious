@@ -16,7 +16,7 @@ Here is an example of Dockerfile:
    # DOCKER-VERSION 1.1.0
 
    # Inherit from the default container, which have all the needed script to launch tasks
-   FROM    ingi/inginious-c-base
+   FROM    ghcr.io/inginious/env-base
 
    # Set the environment name for tasks
    LABEL   org.inginious.grading.name="php"
@@ -31,7 +31,7 @@ As easily seen, this Dockerfile creates a new container image that can launch PH
 The syntax of these Dockerfiles is extensively described on the website of Docker_,
 but we will detail here the most important things to know.
 
-Each Dockerfile used on INGInious should begin with ```FROM inginious/ingi-c-base``` and
+Each Dockerfile used on INGInious should begin with ```FROM ghcr.io/inginious/env-base``` and
 ```LABEL org.inginious.grading.name="some_name"```. The first line indicates that you take as base for your new image
 the default image provided with INGInious. This default image is itself based on CentOS 7, and uses *yum* (*rpm*)
 as package manager. It is already provided with Python and basic commands, and with all the files needed by INGInious
@@ -47,7 +47,7 @@ Here is a little more advanced Dockerfile, that is used to provide Mozart/Oz in 
 
 ::
 
-    FROM    ingi/inginious-c-base
+    FROM    ghcr.io/inginious/env-base
     LABEL   org.inginious.grading.name="oz"
 
     ADD mozart2.rpm /mozart.rpm
@@ -55,7 +55,7 @@ Here is a little more advanced Dockerfile, that is used to provide Mozart/Oz in 
     RUN rpm -ivh /mozart.rpm
     RUN rm /mozart.rpm
 
-Again, it inherits from ```ingi/inginious-c-base``` and the environment name is set to ```oz```. Then, it
+Again, it inherits from ```ghcr.io/inginious/env-base``` and the environment name is set to ```oz```. Then, it
 uses the command ```ADD```, that takes a file in the current directory of the Dockerfile (here, ```mozart2.rpm```)
 and copy it inside the container image, here at the path ```/mozart.rpm```. It then uses three ```RUN``` commands to
 install the dependencies of Mozart, then install Mozart itself, and then removing the now uneeded rpm.
@@ -100,9 +100,9 @@ If you are running on a dev environment (cloned from the repository), from the m
 ::
 
     $ cd base-containers/base
-    $ docker build -t ingi/inginious-c-base ./
+    $ docker build -t ghcr.io/inginious/env-base ./
     $ cd ../default
-    $ docker build -t ingi/inginious-c-default ./
+    $ docker build -t ghcr.io/inginious/env-default ./
 
 Note, this manual building step should not be necessary for a teacher.
 Of course, if you rebuilt your images, you will have to restart inginious-webapp.
