@@ -51,7 +51,7 @@ def main():
         docker_connection = docker.from_env() 
         for image in docker_connection.images.list():
             for tag in image.attrs["RepoTags"]:
-                if re.match(r"^ingi/inginious-c-(base|default):v" + __version__, tag):
+                if re.match(r"^ghcr.io/inginious/env-(base|default):v" + __version__, tag):
                     stock_images.append(tag)
     except:
         print(FAIL + "Cannot connect to Docker!" + ENDC)
@@ -74,8 +74,8 @@ def main():
     elif len(stock_images) == 0:
         print(" You don't have local images compatible for the version " + __version__)
         if ask_boolean("Do you want to download images for version " + __version__ + " ?", "yes"):
-            docker_connection.images.pull("ingi/inginious-c-base:v" + __version__) 
-            docker_connection.images.pull("ingi/inginious-c-default:v" + __version__)
+            docker_connection.images.pull("ghcr.io/inginious/env-base:v" + __version__)
+            docker_connection.images.pull("ghcr.io/inginious/env-default:v" + __version__)
             print(INFO + "Images for version " + __version__ + " were successfully downloaded !" + ENDC)
             return
         print(INFO + "Nothing happened" + ENDC)
