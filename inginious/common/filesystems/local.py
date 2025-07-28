@@ -73,11 +73,15 @@ class LocalFSProvider(FileSystemProvider):
         return self.get_fd(filepath, timestamp).read()
 
     def list(self, folders: bool=True, files: bool=True, recursive: bool=False) -> list:
+
+        def _git_filter(path: str) -> bool:
+            return '.git' not in path
+
         if recursive:
             output = []
             for root, subdirs, listed_files in os.walk(self.prefix):
-                if folders:
-                    output += [root+"/"+d for d in subdirs]
+                if folders and _git_filter(root):
+                    output += [root+"/"+d for d in subdirs if _git_filter(d)]
                 if files:
                     output += [root+"/"+f for f in listed_files]
             output = [os.path.relpath(f, self.prefix) for f in output]
@@ -90,7 +94,7 @@ class LocalFSProvider(FileSystemProvider):
                 condition = lambda x: os.path.isdir(os.path.join(self.prefix, x))
             else:
                 return []
-            output = [f for f in os.listdir(self.prefix) if condition(f)]
+            output = [f for f in os.listdir(self.prefix) if condition(f) and _git_filter(f)]
         isdir = lambda x: '/' if os.path.isdir(os.path.join(self.prefix, x)) else ''
         return [f+isdir(f) for f in output]
 

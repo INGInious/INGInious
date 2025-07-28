@@ -78,6 +78,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         for entry in entries:
             if os.path.splitext(entry)[0] == "task" and os.path.splitext(entry)[1][1:] in task_factory.get_available_task_file_extensions():
                 continue
+            if '.git' in entry: continue
 
             data = entry.split("/")
             is_directory = False
