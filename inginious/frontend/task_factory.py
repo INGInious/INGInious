@@ -288,7 +288,7 @@ class TaskFactory(object):
             del self._cache[(courseid, tid)]
 
     def create_task(self, course, taskid, init_content, user: tuple[str, str]):
-        """ Create a new course folder and set initial descriptor content, folder can already exist
+        """ Create a new task folder and set initial descriptor content, folder can already exist.
         :param course: a Course object
         :param taskid: the task id of the task
         :param init_content: initial descriptor content

@@ -64,7 +64,7 @@ dependencies = [
     "zipstream==1.1.4",
     "pytidylib==0.3.2",
     "argon2-cffi == 23.1.0",
-    "GitPython==3.1.44"
+    "pygit2 == 1.18.1"
 ]
 
 

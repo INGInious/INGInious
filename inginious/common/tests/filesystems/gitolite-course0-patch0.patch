@@ -1,0 +1,28 @@
+commit cf6e57ad588b2ca61c832aa485698db664859453
+Author: superadmin <superadmin>
+Date:   Wed Jul 30 18:16:15 2025 +0200
+
+    Initial commit
+
+diff --git a/conf/gitolite.conf b/conf/gitolite.conf
+new file mode 100644
+index 0000000..424b094
+--- /dev/null
++++ b/conf/gitolite.conf
+@@ -0,0 +1,8 @@
++repo gitolite-admin
++    RW+     =   superadmin
++
++repo testing
++    RW+     =   @all
++@course_course0 = course0 course0/.common course0/task0
++repo @course_course0
++    RW+ = superadmin
+\ No newline at end of file
+diff --git a/keydir/superadmin.pub b/keydir/superadmin.pub
+new file mode 100644
+index 0000000..b7c8e35
+--- /dev/null
++++ b/keydir/superadmin.pub
+@@ -0,0 +1 @@
++ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOrsVMD7CQiR1ITjTR1afvzlIE6D9NvUSvqxVz2zLlr2 superadmin
