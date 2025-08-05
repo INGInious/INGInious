@@ -1,3 +1,7 @@
+from cryptography.hazmat.primitives.serialization import load_ssh_private_key
+import argparse
+import os
+
 from pymongo import MongoClient
 from gridfs import GridFS
 
@@ -37,6 +41,24 @@ if __name__ == '__main__':
     email = "superadmin@inginious.org"
     password = "superadmin"
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--key",
+        help="Path towards the superadmin's private SSH key.",
+        default=None
+    )
+    parser.add_argument("--ssh_pwd", help="The SSH key's password, if needed.", default=None)
+    args = parser.parse_args()
+
+    ssh_key = None
+    if args.key is None:
+        ssh_key = Ed25519PrivateKey.generate()
+    else:
+        if os.path.isfile(args.key):
+            with open(args.key, 'rb') as fd:
+                key = fd.read()
+            ssh_key = load_ssh_private_key(key, password=args.ssh_pwd.encode('utf-8'))
+
     print('Initial DB setup.')
 
     database = try_mongodb_opts('db')
@@ -47,5 +69,7 @@ if __name__ == '__main__':
                                "password": UserManager.hash_password(password),
                                "bindings": {},
                                "language": "en",
-                               "code_indentation": "4"})
+                               "code_indentation": "4",
+                               "ssh_key": ssh_key.private_bytes_raw()})
+
     print('Superadmin user added!')
