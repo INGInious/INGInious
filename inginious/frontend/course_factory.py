@@ -7,19 +7,18 @@
 import logging
 import os
 
-from inginious.common.filesystems import FileSystemProvider
+from inginious.common.filesystems import FileSystemProvider, FsType
 from inginious.common.log import get_course_logger
-from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
-from inginious.frontend.plugin_manager import PluginManager
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml, GitInfo
 from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException, CourseAlreadyExistsException
 
-from inginious.frontend.courses import Course
+from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.task_factory import TaskFactory
+from inginious.frontend.courses import Course
 
 
 class CourseFactory(object):
     """ Load courses from disk """
-    _logger = logging.getLogger("inginious.course_factory")
 
     def __init__(self, filesystem: FileSystemProvider, task_factory, plugin_manager, task_dispensers, database):
         self._filesystem = filesystem
@@ -79,7 +78,7 @@ class CourseFactory(object):
         (_course_fs, path) = self._get_course_descriptor_path(courseid)
         return loads_json_or_yaml(path, self._filesystem.get(path).decode("utf-8"))
 
-    def update_course_descriptor_content(self, courseid, content, msg: str=None, user: tuple[str,str]=None):
+    def update_course_descriptor_content(self, courseid, content, msg: str=None, user: GitInfo=None):
         """
         Updates the content of the dict that describes the course
         :param courseid: the course id of the course
@@ -109,14 +108,14 @@ class CourseFactory(object):
         """
         return self._filesystem
 
-    def get_course_fs(self, courseid):
+    def get_course_fs(self, courseid, user: GitInfo=None):
         """
         :param courseid: the course id of the course
         :return: a FileSystemProvider pointing to the directory of the course 
         """
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
-        return self._filesystem.from_subfolder(courseid)
+        return self._filesystem.from_subfolder(courseid, user)
 
     def get_all_courses(self):
         """
@@ -146,18 +145,19 @@ class CourseFactory(object):
             return (course_fs, courseid+"/course.json")
         raise CourseNotFoundException()
 
-    def create_course(self, courseid, init_content, user: tuple[str, str]):
+    def create_course(self, courseid, init_content, user: GitInfo):
         """
         Create a new course folder and set initial descriptor content, folder can already exist
         :param courseid: the course id of the course
         :param init_content: initial descriptor content
+        :param user: The user requesting the course creation.
         :raise: InvalidNameException or CourseAlreadyExistsException
         """
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
 
-        course_fs = self.get_course_fs(courseid)
-        course_fs.ensure_exists()
+        course_fs = self.get_course_fs(courseid, user)
+        course_fs.ensure_exists(FsType.course, user)
 
         if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
             raise CourseAlreadyExistsException("Course with id " + courseid + " already exists.")
@@ -218,7 +218,7 @@ class CourseFactory(object):
         :param courseid: the (valid) course id of the course
         :raise InvalidNameException, CourseNotFoundException, CourseUnreadableException
         """
-        self._logger.info("Caching course {}".format(courseid))
+        get_course_logger(courseid).info("Caching course.")
         (_course_fs, path_to_descriptor) = self._get_course_descriptor_path(courseid)
         try:
             course_descriptor = loads_json_or_yaml(path_to_descriptor, self._filesystem.get(path_to_descriptor).decode("utf8"))

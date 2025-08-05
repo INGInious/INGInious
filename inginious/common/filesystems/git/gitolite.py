@@ -1,8 +1,12 @@
+import logging
 import re
 
 from pygit2 import Signature
 
-from inginious.common.filesystems.git import MyRepo
+from inginious.common.filesystems.git.utils import MyRepo, get_rc
+from inginious.common.base import GitInfo
+
+logger = logging.getLogger("inginious.common.filesystems.git.gitolite")
 
 class Gitolite(MyRepo):
     """ A wrapper around a gitolite-admin repository.
@@ -79,17 +83,23 @@ class Gitolite(MyRepo):
         else:
             return '\n'.join(content)
    
-    def init_repo(self, user: tuple[str, str], courseid: str, taskid: str=None, push: bool=True) -> None:
+    def init_repo(self, user: GitInfo, courseid: str, taskid: str=None, push: bool=True) -> None:
         """ Initialize a new repository on the remote Gitolite instance.
+            :param user: The user initializing the repository.
             :param courseid: The course to initialize on the remote.
             :param taskid: Optionnal task to initialize within `courseid` course.
+            :param push: Whether the configuration should be pushed to the remote
+                Gitolite instance. Defaults to True, False is mainly used for tests.
         """
 
-        # TODO: Throw on error
+        logger.info(f"User <{user.username}> is initializing a remote repository for course <{courseid}>{' task <'+taskid+'>' if taskid is not None else ''}.")
+
+        (user_sig, rc) = get_rc(user)
+        if rc is None: logger.warning(f"Could not get credentials for User <{user.username}>, the repository will not be pushed to the remote.")
 
         # Early sanity check
         if 'gitolite-admin' in courseid or (taskid is not None and 'gitolite-admin' in taskid):
-            print('Something nasty is happening. Skipping.') 
+            logger.warn(f'Something nasty is happening, User <{user.username}> tries to modify the gitolite-admin repository. Skipping!')
             return
 
         # Build configuration file path.
@@ -99,17 +109,17 @@ class Gitolite(MyRepo):
         # Read old configuration and dump new configuration
         get_content = self.__class__._add_course_content if taskid is None else self.__class__._add_task_content
         with open(fp, 'r') as fd:
-            content = get_content(fd.read(), user[0], courseid, taskid)
+            content = get_content(fd.read(), user.username, courseid, taskid)
 
         # Sanity checks
         if content is None:
             # Configuration unchanged because the repo we are creating is already defined in the configuration.
-            print('Configuration unchanged. Skipping...')
+            logging.warning('Gitolite-admin configuration unchanged. Skipping!')
             return
 
         if 'gitolite-admin' not in content:
             # Ensure that gitolite administration repository has not been removed.
-            print('gitolite-admin is not present in configuration, something bad happened. Skipping...')
+            logger.error('gitolite-admin is not present in configuration, something bad happened. Skipping!')
             return
 
         # Write new configuration
@@ -117,12 +127,11 @@ class Gitolite(MyRepo):
             fd.write(content)
         self.index.add(conf)
         self.index.write()
-        tree = self.index.write_tree()
-        history = [commit.id for commit in self.walk(self.head.target)]
         added = '' if taskid is None else f': Task <{taskid}>'
-        s = Signature(user[0], user[1])
-        self.create_commit('HEAD', s, s, f'Course <{courseid}>{added} created.', tree, history)
+        msg = f'Course <{courseid}>{added} created.'
+        self._try_commit(user_sig, msg)
+        logger.info("New gitolite-admin configuration written.")
 
         # Push configuration to remote to actually create the remote repository.
-        if push:
-            self._try_push()
+        if push and rc is not None:
+            self._try_push('origin', rc, logger=logger)

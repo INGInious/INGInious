@@ -6,7 +6,7 @@ import os
 import shutil
 import zipstream
 
-from inginious.common.filesystems import FileSystemProvider
+from inginious.common.filesystems import FileSystemProvider, FsType
 
 
 class LocalFSProvider(FileSystemProvider):
@@ -50,7 +50,7 @@ class LocalFSProvider(FileSystemProvider):
             path = os.path.join(self.prefix, path)
         return os.path.exists(path)
 
-    def ensure_exists(self):
+    def ensure_exists(self, type: FsType=FsType.other, user=None):
         if not os.path.exists(self.prefix):
             os.makedirs(self.prefix)
 

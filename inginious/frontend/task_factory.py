@@ -7,9 +7,9 @@
 
 from re import sub
 from os.path import splitext
-from inginious.common.filesystems import FileSystemProvider
+from inginious.common.filesystems import FileSystemProvider, FsType
 from inginious.common.log import get_course_logger
-from inginious.common.base import id_checker, get_json_or_yaml
+from inginious.common.base import id_checker, get_json_or_yaml, GitInfo
 from inginious.common.task_file_readers.yaml_reader import TaskYAMLFileReader
 from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, \
     TaskUnreadableException, TaskReaderNotFoundException, TaskAlreadyExistsException
@@ -100,7 +100,7 @@ class TaskFactory(object):
             raise InvalidNameException("Task with invalid name: " + taskid)
         return self._filesystem.from_subfolder(courseid).from_subfolder(taskid)
 
-    def update_task_descriptor_content(self, courseid, taskid, content, force_extension=None, user: tuple[str, str]=None):
+    def update_task_descriptor_content(self, courseid, taskid, content, force_extension=None, user: GitInfo=None):
         """
         Update the task descriptor with the dict in content
         :param courseid: the course id of the course
@@ -298,7 +298,7 @@ class TaskFactory(object):
             raise InvalidNameException("Task with invalid name: " + taskid)
 
         task_fs = self.get_task_fs(course.get_id(), taskid)
-        task_fs.ensure_exists()
+        task_fs.ensure_exists(FsType.task)
 
         if task_fs.exists("task.yaml"):
             raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")

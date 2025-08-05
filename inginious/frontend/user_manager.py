@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 #
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
 """ Manages users data and session """
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 import logging
 import hashlib
 import flask
@@ -24,6 +26,8 @@ import re
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from flask.sessions import NullSession
+
+from inginious.common.base import GitInfo
 
 
 class AuthInvalidInputException(Exception):
@@ -74,7 +78,7 @@ class AuthMethod(object, metaclass=ABCMeta):
         return ""
 
 
-UserInfo = namedtuple("UserInfo", ["realname", "email", "username", "bindings", "language", "code_indentation", "activated"])
+UserInfo = namedtuple("UserInfo", ["realname", "email", "username", "bindings", "language", "code_indentation", "activated", "ssh_key"])
 
 
 class UserManager:
@@ -162,11 +166,21 @@ class UserManager:
             return None
         return self._session["realname"]
 
-    def session_git(self):
+    def session_ssh_key(self) -> Union[None, Ed25519PrivateKey]:
+        """ Returns the private SSH key of the current user in the session, if one is open.
+            Else, returns None.
+        """
+        if not self.session_logged_in(): return None
+        user_info = self.get_user_info(self.session_username())
+        import logging
+        logging.getLogger('user_manager').info(f"{user_info}")
+        return Ed25519PrivateKey.from_private_bytes(user_info.ssh_key)
+
+    def session_git(self) -> Union[None, GitInfo]:
         """ Returns the user information required for Git commit authorship. """
         if not self.session_logged_in():
             return None
-        return (self.session_realname(), self.session_email())
+        return GitInfo(self.session_realname(), self.session_email(), self.session_username(), self.session_ssh_key())
 
     def session_tos_signed(self):
         """ Returns True if the current user has signed the tos"""
@@ -426,7 +440,7 @@ class UserManager:
         infos = self._database.users.find(query).skip(skip).limit(limit)
 
         retval = {info["username"]: UserInfo(info["realname"], info["email"], info["username"], info["bindings"],
-                                             info["language"], info["code_indentation"], "activate" not in info)
+                                             info["language"], info["code_indentation"], "activate" not in info, info["ssh_key"])
                   for info in infos}
         return retval
 
@@ -610,7 +624,8 @@ class UserManager:
                                          "password": self.hash_password(values["password"]),
                                          "bindings": values["bindings"],
                                          "language": values["language"],
-                                         "code_indentation": values["code_indentation"]})
+                                         "code_indentation": values["code_indentation"],
+                                         "ssh_key": values["ssh_key"]})
         return None
 
     ##############################################
