@@ -53,10 +53,9 @@ class GitFSProvider(LocalFSProvider):
 
     def from_subfolder(self,
         subfolder: str,
-        user: GitInfo=None
     ) -> GitFSProvider:
         self._checkpath(subfolder)
-        return GitFSProvider(self.prefix + subfolder, self.remote, self.backend, self.initial_head, self.gitolite_path, self.gitolite_user, user)
+        return GitFSProvider(self.prefix + subfolder, self.remote, self.backend, self.initial_head, self.gitolite_path, self.gitolite_user)
 
     def __init__(self,
         prefix: str,
@@ -128,18 +127,27 @@ class GitFSProvider(LocalFSProvider):
                 self.repo = MyRepo(self.prefix)
 
                 # Third, we handle the $common submodule.
-                # If are creating a course, we initialize the course's $common.
-                # If we add a task to a course, we add the course's $common
-                # submodule to the task.
                 if type == FsType.course:
+                    # If are creating a course, we initialize the course's $common.
                     self._init_common(user, push=push)
                 elif type == FsType.task:
-                    course_prefix = os.path.dirname(self.prefix)
-                    course = GitFSProvider.init_from_args(course_prefix)
-                    if course._is_submodule(common_path):
-                        common = course.from_subfolder(common_path)
-                        if (url := common.repo.remotes.get('origin')) is not None:
-                            self.repo.submodules.add(url, common_path, callbacks=None)
+                    # If we add a task to a course, we add the course's $common
+                    # submodule to the task.
+                    course_prefix = os.path.dirname(self.prefix[:-1])
+                    course = self.__class__.init_from_args(
+                        course_prefix,
+                        remote=self.remote,
+                        gitolite_path=self.gitolite_path
+                    )
+                    taskid = self._id_from_prefix()
+                    logger.info(f'Adding $common submodule to task {taskid}.')
+                    if (common := course.repo.submodules.get('$common')) is not None:
+                        (_, rc) = get_rc(user)
+                        logger.info(common.url)
+                        self.repo.submodules.add(common.url, common_path, callbacks=rc)
+                        logger.info(f'$common submodule added to task {taskid}.')
+                    else:
+                        logger.warn('The expected  $common submodule has not been found. Skipping.')
 
                 # Fourth, if we are required, we push the new repository to the remote.
                 if push:
@@ -195,7 +203,8 @@ class GitFSProvider(LocalFSProvider):
 
             :return: True if `filepath` points to a submodule, else False.
         """
-        return len([sm for sm in self.repo.submodules if sm.name == filepath]) == 1
+        # return len([sm for sm in self.repo.submodules if sm.name == filepath]) == 1
+        return self.repo.submodules.get(filepath) is not None
 
     def _try_stage(self, filepath: str, should_stage: bool) -> None:
         """ Stage `filepath` if `should_stage` is True. Add tasks as course's
@@ -205,15 +214,13 @@ class GitFSProvider(LocalFSProvider):
             :param should_stage: Whether we should stage or not `filepath`.
         """
         if should_stage:
-                # common = self.from_subfolder('$common')
-                # common.ensure_exists()
-
             if self._is_task(filepath) and not self._is_submodule(filepath):
                 # Add newly created tasks as course submodule.
                 # There is a limitation with pygit2 which does not allow adding
                 # a local submodule, e.g., like `git submodule add localdir`.
                 # Therfore, we should first create the task, 
-                self.repo.submodules.add(name=filepath, path=filepath)
+                # self.repo.submodules.add(filepath, filepath, callbacks=None)
+                pass
             else:
                 self.repo.index.add(filepath)
                 self.repo.index.write()
@@ -221,7 +228,7 @@ class GitFSProvider(LocalFSProvider):
     def try_stage(self, filepath: str) -> None:
         self._try_stage(filepath, self._should_stage(filepath))
 
-    def try_commit(self, filepath: str, msg: str=None, user: GitInfo=None) -> None:
+    def try_commit(self, filepath: str, msg: str=None, user: GitInfo=None, push:bool=True) -> None:
         # Should we stage the descriptor?
         should_stage = self._should_stage(filepath)
         # If we have to stage `filepath` or if `filepath` is already staged, we commit.
@@ -234,7 +241,8 @@ class GitFSProvider(LocalFSProvider):
                 # changed.
                 (user_sig, rc) = get_rc(user)
                 self.repo._try_commit(user_sig, msg)
-                self.repo._try_push('origin', rc, logger)
+                if push and rc is not None:
+                    self.repo._try_push('origin', rc, logger)
 
     def _init_common(self, user: GitInfo, push: bool=True):
         # Initialize callbacks from user information.
@@ -246,14 +254,16 @@ class GitFSProvider(LocalFSProvider):
         prefix = TemporaryDirectory()
         common_path = f'{prefix.name}/{courseid}/.common'
         common_url = f'{origin_url}/.common' if (origin_url := self._origin_url()) is not None else None
-        if common_url is None: logger.warning("Remote URL is not specified, changes will not be pushed to the remote.")
+        if common_url is None:
+            logger.warning("Remote URL is not specified, changes will not be pushed to the remote.")
         common = init_repository(common_path, initial_head=DEFAULT_INITIAL_HEAD, origin_url=common_url)
         common = MyRepo(common_path)
 
         # Add .gitkeep so that $common can be added as a submodule.
-        with open(f'{common_path}/.gitkeep', 'wb') as fd: fd.write(b"")
+        with open(f'{common_path}/.gitkeep', 'wb') as fd:
+            fd.write(b"")
         common.index.add('.gitkeep')
-        common._try_commit(user_sig, f'$common repository created.')
+        common._try_commit(user_sig, '$common repository created.')
 
         # Add temporary $common as a local submodule and update url to remote.
         # This allows adding the $common submodule without having to interact
@@ -275,12 +285,12 @@ class GitFSProvider(LocalFSProvider):
         # Cleanup
         prefix.cleanup()
 
-    def put(self, filepath: str, content, msg: str=None, user: GitInfo=None) -> None:
+    def put(self, filepath: str, content, msg: str=None, user: GitInfo=None, push: bool=True) -> None:
         super().put(filepath, content)
         # This function is called each time the button 'save changes' is pressed
         # on the web GUI, even if the content is unchanged...
         # We check that content has indeed changed before trying to commit.
-        self.try_commit(filepath, msg, user)
+        self.try_commit(filepath, msg, user, push)
 
     def delete(self, filepath: str=None) -> None:
         super().delete(filepath)
@@ -290,7 +300,7 @@ class GitFSProvider(LocalFSProvider):
     def move(self, src, dest):
         super().move(src, dest)
         if self.repo is not None:
-            self.repo.index.add([src, dst])
+            self.repo.index.add([src, dest])
 
     def copy_to(self, src_disk, dest=None):
         super().copy_to(src_disk, dest)

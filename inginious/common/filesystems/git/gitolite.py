@@ -1,12 +1,10 @@
 import logging
 import re
 
-from pygit2 import Signature
-
 from inginious.common.filesystems.git.utils import MyRepo, get_rc
 from inginious.common.base import GitInfo
 
-logger = logging.getLogger("inginious.common.filesystems.git.gitolite")
+logger = logging.getLogger("inginious.fs.git.gitolite")
 
 class Gitolite(MyRepo):
     """ A wrapper around a gitolite-admin repository.
@@ -65,7 +63,8 @@ class Gitolite(MyRepo):
         # If course is already defined, we skip the update.
         if (content := cls._update_course_entry(
             config, lambda line, courseid, taskid: None, courseid, None
-        )) is None: return None
+        )) is None:
+            return None
         
         # Course not found, add it with default $common submodule.
         tasks = f'@course_{courseid} = {courseid} {courseid}/.common'
@@ -95,7 +94,8 @@ class Gitolite(MyRepo):
         logger.info(f"User <{user.username}> is initializing a remote repository for course <{courseid}>{' task <'+taskid+'>' if taskid is not None else ''}.")
 
         (user_sig, rc) = get_rc(user)
-        if rc is None: logger.warning(f"Could not get credentials for User <{user.username}>, the repository will not be pushed to the remote.")
+        if rc is None:
+            logger.warning(f"Could not get credentials for User <{user.username}>, the repository will not be pushed to the remote.")
 
         # Early sanity check
         if 'gitolite-admin' in courseid or (taskid is not None and 'gitolite-admin' in taskid):

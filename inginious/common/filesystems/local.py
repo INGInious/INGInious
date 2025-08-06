@@ -50,7 +50,7 @@ class LocalFSProvider(FileSystemProvider):
             path = os.path.join(self.prefix, path)
         return os.path.exists(path)
 
-    def ensure_exists(self, type: FsType=FsType.other, user=None):
+    def ensure_exists(self, type: FsType=FsType.other):
         if not os.path.exists(self.prefix):
             os.makedirs(self.prefix)
 

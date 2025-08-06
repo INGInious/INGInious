@@ -24,7 +24,7 @@ class MyRepo(Repository):
             logger.info(f"Trying to push to {remote}.")
         try:
             origin = self.remotes[remote]
-            origin.push(self.listall_references(), callbacks=rc)
+            origin.push([self.head.name], callbacks=rc)
             if logger is not None:
                 logger.info(f"Pushed to {remote}.")
         except KeyError:
@@ -38,24 +38,27 @@ class MyRepo(Repository):
                 logger.error(f"Unexpected error: {e}")
 
     def _try_commit(self, user: Signature, msg: str=None) -> None:
-        self.index.write()
         tree = self.index.write_tree()
         msg = f"Automated save from web GUI{'.' if msg is None else f': {msg}'}"
         try:
-            history = [commit.id for commit in self.walk(self.head.target)]
+            history = [self.head.target]
         except GitError:
             history = []
+        except Exception as e:
+            _logger.error(e)
+            raise e
+
         self.create_commit('HEAD', user, user, msg, tree, history)
             
 def get_rc(user: GitInfo=None) -> Union[tuple[None, None], tuple[Signature, RemoteCallbacks]]:
-    if user is None: return (None, None)
+    if user is None:
+        return (None, None)
     user_sig = Signature(user.realname, user.email)
     if user.key is not None:
         private = user.key.private_bytes(Encoding.PEM, PrivateFormat.OpenSSH, NoEncryption()).decode('utf-8')
         public = user.key.public_key().public_bytes(Encoding.OpenSSH, PublicFormat.OpenSSH).decode('utf-8')
         # TODO: Get gitolite username from config
         kp = KeypairFromMemory("admin", public, private, 'test')
-        # rc = RemoteCallbacks(credentials=lambda _url, usr, _t: kp if usr == kp.credential_tuple[0] else None)
         rc = RemoteCallbacks(credentials=lambda _url, _usr, _t: kp)
         rc.push_update_reference=lambda refname, msg: _logger.warning(f"Push failed: {msg}") if msg is not None else ''
     else:

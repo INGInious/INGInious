@@ -298,7 +298,7 @@ class TaskFactory(object):
             raise InvalidNameException("Task with invalid name: " + taskid)
 
         task_fs = self.get_task_fs(course.get_id(), taskid)
-        task_fs.ensure_exists(FsType.task)
+        task_fs.ensure_exists(FsType.task, user)
 
         if task_fs.exists("task.yaml"):
             raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
@@ -307,7 +307,8 @@ class TaskFactory(object):
 
         # Stage the task directory at the course level if we use a versionned FS.
         course_fs = course.get_fs()
-        task_prefix = sub(course_fs.prefix, '', task_fs.prefix)
+        # FIXME: issue in try_stage rather than the trailing '/' in prefix
+        task_prefix = sub(course_fs.prefix, '', task_fs.prefix)[:-1]
         course_fs.try_stage(task_prefix)
 
         get_course_logger(course.get_id()).info("Task %s created in the factory.", taskid)

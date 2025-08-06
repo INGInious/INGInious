@@ -108,14 +108,14 @@ class CourseFactory(object):
         """
         return self._filesystem
 
-    def get_course_fs(self, courseid, user: GitInfo=None):
+    def get_course_fs(self, courseid):
         """
         :param courseid: the course id of the course
         :return: a FileSystemProvider pointing to the directory of the course 
         """
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
-        return self._filesystem.from_subfolder(courseid, user)
+        return self._filesystem.from_subfolder(courseid)
 
     def get_all_courses(self):
         """
@@ -156,7 +156,7 @@ class CourseFactory(object):
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
 
-        course_fs = self.get_course_fs(courseid, user)
+        course_fs = self.get_course_fs(courseid)
         course_fs.ensure_exists(FsType.course, user)
 
         if course_fs.exists("course.yaml") or course_fs.exists("course.json"):

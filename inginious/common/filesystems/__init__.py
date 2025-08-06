@@ -83,7 +83,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def from_subfolder(self, subfolder: str, user: GitInfo=None) -> FileSystemProvider:
+    def from_subfolder(self, subfolder: str) -> FileSystemProvider:
         """
         :param subfolder: The prefix of the new FileSystemProvider.
 
