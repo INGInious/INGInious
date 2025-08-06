@@ -70,7 +70,7 @@ class Gitolite(MyRepo):
         # Course not found, add it with default $common submodule.
         tasks = f'@course_{courseid} = {courseid} {courseid}/.common'
         course_entry = f'repo @course_{courseid}\n    RW+ = {admin}'
-        return f'{'\n'.join(content)}\n{tasks}\n{course_entry}'
+        return f'{'\n'.join(content)}\n{tasks}\n{course_entry}\n'
 
     @classmethod
     def _add_task_content(cls, config: str, admin: str, courseid:str, taskid: str) -> str:
@@ -81,8 +81,8 @@ class Gitolite(MyRepo):
         if (content := cls._update_course_entry(config, _cb, courseid, taskid)) is None:
             return None
         else:
-            return '\n'.join(content)
-   
+            return '\n'.join(content) + '\n'
+
     def init_repo(self, user: GitInfo, courseid: str, taskid: str=None, push: bool=True) -> None:
         """ Initialize a new repository on the remote Gitolite instance.
             :param user: The user initializing the repository.

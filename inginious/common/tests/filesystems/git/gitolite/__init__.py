@@ -15,14 +15,15 @@ def default_cfg():
     """
     return """repo gitolite-admin
     RW+ = superadmin
-    """
+"""
 
 @pytest.fixture
 def course0(default_cfg):
     courseid = 'course0'
     content = default_cfg + f"""\n@course_{courseid} = {courseid} {courseid}/.common
 repo @course_{courseid}
-    RW+ = superadmin"""
+    RW+ = superadmin
+"""
     return (courseid, content)
 
 @pytest.fixture
@@ -31,11 +32,12 @@ def course0_task0(default_cfg):
     taskid = 'task0'
     content = default_cfg + f"""\n@course_{courseid} = {courseid} {courseid}/.common {courseid}/{taskid}
 repo @course_{courseid}
-    RW+ = superadmin"""
+    RW+ = superadmin
+"""
     return (courseid, taskid, content)
 
 def _init_repo(prefix, patch, admin):
-    from pygit2 import Repository, Diff, Signature, init_repository
+    from pygit2 import Diff, Signature, init_repository
     from pygit2.enums import ApplyLocation
 
     # Load patch

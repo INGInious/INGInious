@@ -65,7 +65,7 @@ def test_init_repo_course(gitolite_new_repo, user):
     assert len(history) == 2
 
     # 3. Ensure that latest commit content is correct.
-    check_commit(history[0], 'Automated save from web GUI: Course <course0> created.', user)
+    check_commit(history[0], 'Course <course0> created.', user)
     diff = r.diff(history[1], history[0])
     expected_diff = """@@ -3,3 +3,6 @@ repo gitolite-admin
  
@@ -73,12 +73,10 @@ def test_init_repo_course(gitolite_new_repo, user):
      RW+     =   @all
 +@course_course0 = course0 course0/.common
 +repo @course_course0
-+    RW+ = superadmin
-\\ No newline at end of file"""
++    RW+ = superadmin"""
     # Skip diff header that may change from run to run.
     assert '\n'.join(diff.patch.splitlines()[4:]) == expected_diff
 
-    
 def test_init_repo_course_double(admin, gitolite_course0_repo, user):
 
     from pygit2 import Repository
@@ -120,17 +118,16 @@ def test_init_repo_task(admin, gitolite_course0_repo, user):
     assert len(history) == 2
 
     # 3. Ensure that latest commit content is correct.
-    check_commit(history[0], 'Automated save from web GUI: Course <course0>: Task <task0> created.', user)
+    check_commit(history[0], 'Course <course0>: Task <task0> created.', user)
     diff = r.diff(history[1], history[0])
-    expected_diff = """@@ -3,6 +3,6 @@ repo gitolite-admin
- 
+    expected_diff = """@@ -4,6 +4,6 @@ repo gitolite-admin
  repo testing
      RW+     =   @all
+ 
 -@course_course0 = course0 course0/.common
 +@course_course0 = course0 course0/.common course0/task0
  repo @course_course0
-     RW+ = superadmin
-\\ No newline at end of file"""
+     RW+ = superadmin"""
     # Skip diff header that may change from run to run.
     assert '\n'.join(diff.patch.splitlines()[4:]) == expected_diff
 
