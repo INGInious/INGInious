@@ -14,6 +14,19 @@ services:
     networks:
       - inginious
 
+  gitolite:
+    build:
+      # When building the container, the public SSH key of the instance
+      # administrator is expected at deploy/gitolite.pub.
+      # See deploy/gitolite.containerfile for more details.
+      dockerfile: deploy/gitolite.containerfile
+    networks:
+      - inginious
+    volumes:
+      - ./gitolite:/home/admin/repositories
+    ports:
+      - 2222:22
+
   backend:
     image: ${REGISTRY}/inginious/core-backend:${VERSION}
     depends_on:

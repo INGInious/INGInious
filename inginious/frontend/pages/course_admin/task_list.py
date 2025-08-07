@@ -43,40 +43,54 @@ class CourseTaskListPage(INGIniousAdminPage):
             except Exception as e:
                 errors.append(_("Something wrong happened: ") + str(e))
         else:
-            try:
-                self.update_dispenser(course, json.loads(user_input["course_structure"]))
-            except Exception as e:
-                errors.append(_("Something wrong happened: ") + str(e))
+
+            user = self.user_manager.session_git()
+            msg = "Task(s) update.\n\nTask(s) created:\n"
 
             for taskid in json.loads(user_input.get("new_tasks", "[]")):
                 try:
                     self.task_factory.create_task(course, taskid, {
-                        "name": taskid, "problems": {}, "environment_type": "mcq"})
+                        "name": taskid, "problems": {}, "environment_type": "mcq"}, user)
+                    msg += f"- {taskid}\n"
                 except Exception as ex:
                     errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
+            msg += "Task(s) deleted:\n"
             for taskid in json.loads(user_input.get("deleted_tasks", "[]")):
                 try:
                     self.task_factory.delete_task(courseid, taskid)
+                    msg += f"- {taskid}\n"
                 except Exception as ex:
                     errors.append(_("Couldn't delete task {} : ").format(taskid) + str(ex))
+            msg += "Task(s) wiped:\n"
             for taskid in json.loads(user_input.get("wiped_tasks", "[]")):
                 try:
                     self.wipe_task(courseid, taskid)
+                    msg += f"- {taskid}\n"
                 except Exception as ex:
                     errors.append(_("Couldn't wipe task {} : ").format(taskid) + str(ex))
+
+            # Update task dispenser after tasks modifications.
+            # This enables committing the task repository update.
+            try:
+                self.update_dispenser(
+                    course, json.loads(user_input["course_structure"]), cmsg=msg
+                )
+            except Exception as e:
+                errors.append(_("Something wrong happened: ") + str(e))
 
         # don't forget to reload the modified course
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
         return self.page(course, errors, not errors)
 
-    def update_dispenser(self, course, dispenser_data):
+    def update_dispenser(self, course, dispenser_data, cmsg: str=None):
         """ Update the task dispenser based on dispenser_data """
         task_dispenser = course.get_task_dispenser()
         data, msg = task_dispenser.check_dispenser_data(dispenser_data)
         if data:
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'task_dispenser',
-                                                                 task_dispenser.get_id())
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'dispenser_data', data)
+            self.course_factory.update_course_descriptor_element(
+                course.get_id(), 'task_dispenser', task_dispenser.get_id()
+            )
+            self.course_factory.update_course_descriptor_element(course.get_id(), 'dispenser_data', data, msg=cmsg, user=self.user_manager.session_git())
         else:
             raise Exception(_("Invalid course structure: ") + msg)
 
@@ -87,7 +101,7 @@ class CourseTaskListPage(INGIniousAdminPage):
             descriptor = self.task_factory.get_task_descriptor_content(course.get_id(), taskid)
             for field in legacy_fields:
                 descriptor.pop(field, None)
-            self.task_factory.update_task_descriptor_content(course.get_id(), taskid, descriptor)
+            self.task_factory.update_task_descriptor_content(course.get_id(), taskid, descriptor, user=self.user_manager.session_git())
 
     def submission_url_generator(self, taskid):
         """ Generates a submission url """

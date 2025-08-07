@@ -5,10 +5,11 @@
 
 """ Factory for loading tasks from disk """
 
+from re import sub
 from os.path import splitext
-from inginious.common.filesystems import FileSystemProvider
+from inginious.common.filesystems import FileSystemProvider, FsType
 from inginious.common.log import get_course_logger
-from inginious.common.base import id_checker, get_json_or_yaml
+from inginious.common.base import id_checker, get_json_or_yaml, GitInfo
 from inginious.common.task_file_readers.yaml_reader import TaskYAMLFileReader
 from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, \
     TaskUnreadableException, TaskReaderNotFoundException, TaskAlreadyExistsException
@@ -16,7 +17,7 @@ from inginious.common.exceptions import InvalidNameException, TaskNotFoundExcept
 from inginious.frontend.tasks import Task
 
 class TaskFactory(object):
-    """ Load courses from disk """
+    """ Load tasks from disk """
 
     def __init__(self, filesystem: FileSystemProvider, plugin_manager, task_problem_types):
         self._filesystem = filesystem
@@ -99,7 +100,7 @@ class TaskFactory(object):
             raise InvalidNameException("Task with invalid name: " + taskid)
         return self._filesystem.from_subfolder(courseid).from_subfolder(taskid)
 
-    def update_task_descriptor_content(self, courseid, taskid, content, force_extension=None):
+    def update_task_descriptor_content(self, courseid, taskid, content, force_extension=None, user: GitInfo=None):
         """
         Update the task descriptor with the dict in content
         :param courseid: the course id of the course
@@ -122,7 +123,9 @@ class TaskFactory(object):
             raise TaskReaderNotFoundException()
 
         try:
-            self.get_task_fs(courseid, taskid).put(path_to_descriptor, descriptor_manager.dump(content))
+            self.get_task_fs(courseid, taskid).put(path_to_descriptor, descriptor_manager.dump(content), user=user)
+            course_fs = self._filesystem.from_subfolder(courseid)
+            course_fs.try_commit(taskid, msg=f'Bump task <{taskid}> version.', user=user)
         except:
             raise TaskNotFoundException()
 
@@ -284,8 +287,8 @@ class TaskFactory(object):
         for tid in to_drop:
             del self._cache[(courseid, tid)]
 
-    def create_task(self, course, taskid, init_content):
-        """ Create a new course folder and set initial descriptor content, folder can already exist
+    def create_task(self, course, taskid, init_content, user: tuple[str, str]):
+        """ Create a new task folder and set initial descriptor content, folder can already exist.
         :param course: a Course object
         :param taskid: the task id of the task
         :param init_content: initial descriptor content
@@ -295,12 +298,18 @@ class TaskFactory(object):
             raise InvalidNameException("Task with invalid name: " + taskid)
 
         task_fs = self.get_task_fs(course.get_id(), taskid)
-        task_fs.ensure_exists()
+        task_fs.ensure_exists(FsType.task, user)
 
         if task_fs.exists("task.yaml"):
             raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
         else:
-            task_fs.put("task.yaml", get_json_or_yaml("task.yaml", init_content))
+            task_fs.put("task.yaml", get_json_or_yaml("task.yaml", init_content), msg='Task created.', user=user)
+
+        # Stage the task directory at the course level if we use a versionned FS.
+        course_fs = course.get_fs()
+        # FIXME: issue in try_stage rather than the trailing '/' in prefix
+        task_prefix = sub(course_fs.prefix, '', task_fs.prefix)[:-1]
+        course_fs.try_stage(task_prefix)
 
         get_course_logger(course.get_id()).info("Task %s created in the factory.", taskid)
 

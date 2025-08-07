@@ -10,7 +10,15 @@ Abstract class for filesystems providers.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
+from enum import StrEnum
 
+from inginious.common.base import GitInfo
+
+
+class FsType(StrEnum):
+    course = 'course'
+    task = 'task'
+    other = 'other'
 
 class FileSystemProvider(metaclass=ABCMeta):
     """ Provides tools to access a given filesystem. The filesystem may be distant, and subclasses of FileSystemProvider should take care of
@@ -53,6 +61,28 @@ class FileSystemProvider(metaclass=ABCMeta):
             raise FileNotFoundError()
 
     @abstractmethod
+    def try_stage(self, filepath: str) -> None:
+        """
+        For versioned filesystems, try staging `filepath` if it points to
+        modified content. Otherwise, do nothing.
+
+        :param filepath: The path towards items to stage if modified.
+        """
+
+    @abstractmethod
+    def try_commit(self, filepath: str, msg: str=None, user: GitInfo=None):
+        """
+        For versioned filesystems, add `filepath` content to the history with
+        `msg` message from `user` author. Otherwise, do nothing.
+        If `user` is not provided, `filepath` content is only staged, if needed,
+        and not committed.
+
+        :param filepath: Path towards item(s) to commit.
+        :param msg: An optional commit message.
+        :param user: Optional authorship information for the commit.
+        """
+
+    @abstractmethod
     def from_subfolder(self, subfolder: str) -> FileSystemProvider:
         """
         :param subfolder: The prefix of the new FileSystemProvider.
@@ -69,11 +99,11 @@ class FileSystemProvider(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def ensure_exists(self) -> None:
+    def ensure_exists(self, type: FsType=FsType.other, user: GitInfo=None, push: bool=True) -> None:
         """ Ensure that the current prefix exists. If it is not the case, creates the directory. """
 
     @abstractmethod
-    def put(self, filepath, content):
+    def put(self, filepath: str, content, msg: str=None, user: GitInfo=None):
         """ Write `content` in `filepath`"""
 
     @abstractmethod
@@ -89,7 +119,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get(self, filepath, timestamp:datetime=None):
+    def get(self, filepath: str, timestamp:datetime=None):
         """ Get the content of a file.
             If timestamp is not None, it gives an indication to the cache that the file must have been retrieved from the (possibly distant)
             filesystem since the timestamp.
@@ -109,7 +139,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def delete(self, filepath: str=None):
+    def delete(self, filepath: str=None, msg: str=None, user: GitInfo=None, push: bool=True) -> None:
         """ Delete a path recursively. If filepath is None, then the prefix will be deleted.
 
         :param filepath: The prefix entry to delete.
@@ -122,7 +152,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """ Get a timestamp representing the time of the last modification of the file at filepath """
 
     @abstractmethod
-    def move(self, src, dest):
+    def move(self, src, dest, msg: str=None, user: GitInfo=None, push: bool=None) -> None:
         """ Move path src to path dest, recursively. """
 
     @abstractmethod

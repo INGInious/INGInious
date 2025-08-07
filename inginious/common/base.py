@@ -11,8 +11,10 @@ import hashlib
 import re
 
 import inginious.common.custom_yaml
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
+
+GitInfo = namedtuple("GitInfo", ["realname", "email", "username", "key"])
 
 def id_checker(id_to_test):
     """Checks if a id is correct"""

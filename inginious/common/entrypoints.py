@@ -8,10 +8,11 @@ import importlib.metadata
 import sys
 
 from inginious.common.filesystems.local import LocalFSProvider
+from inginious.common.filesystems.git import GitFSProvider
 
 def get_filesystems_providers():
     """ Returns a dictionnary of {"fs_name": fs_class}, for each usable FileSystemProvider"""
-    providers = {"local": LocalFSProvider}
+    providers = {"local": LocalFSProvider, "git": GitFSProvider}
     try:
         plugged_providers = importlib.metadata.entry_points(group="inginious.filesystems")
     except:  # < python3.10

@@ -5,6 +5,7 @@
 
 """ Admin index page"""
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from flask import request, jsonify
 
 from inginious.frontend.pages.utils import INGIniousAdministratorPage
@@ -58,6 +59,7 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
             realname = request.form.get("realname")
             email = request.form.get("email")
             password = request.form.get("password")
+            ssh_key = Ed25519PrivateKey.generate()
             feedback = self.user_manager.create_user({
                 "username": username,
                 "realname": realname,
@@ -65,7 +67,8 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
                 "password": password,
                 "bindings": {},
                 "language": "en",
-                "code_indentation": "4"})
+                "code_indentation": "4",
+                "ssh_key": ssh_key})
         else:
             feedback = _("Unknown action.")
         if feedback:

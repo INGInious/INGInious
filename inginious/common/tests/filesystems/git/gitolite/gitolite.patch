@@ -1,0 +1,24 @@
+commit 804af7d4009c54464a9915593b8a891238b88f22
+Author: superadmin <superadmin>
+Date:   Wed Jul 30 17:54:06 2025 +0200
+
+    Initial commit
+
+diff --git a/conf/gitolite.conf b/conf/gitolite.conf
+new file mode 100644
+index 0000000..2d0049d
+--- /dev/null
++++ b/conf/gitolite.conf
+@@ -0,0 +1,5 @@
++repo gitolite-admin
++    RW+     =   superadmin
++
++repo testing
++    RW+     =   @all
+diff --git a/keydir/superadmin.pub b/keydir/superadmin.pub
+new file mode 100644
+index 0000000..b7c8e35
+--- /dev/null
++++ b/keydir/superadmin.pub
+@@ -0,0 +1 @@
++ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOrsVMD7CQiR1ITjTR1afvzlIE6D9NvUSvqxVz2zLlr2 superadmin

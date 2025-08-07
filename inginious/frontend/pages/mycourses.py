@@ -26,7 +26,11 @@ class MyCoursesPage(INGIniousAuthPage):
         if "new_courseid" in user_input and self.user_manager.user_is_superadmin():
             try:
                 courseid = user_input["new_courseid"]
-                self.course_factory.create_course(courseid, {"name": courseid, "accessible": False})
+                self.course_factory.create_course(
+                    courseid,
+                    {"name": courseid, "accessible": False},
+                    user=self.user_manager.session_git()
+                )
                 success = True
             except:
                 success = False
