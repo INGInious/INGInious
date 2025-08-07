@@ -139,7 +139,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def delete(self, filepath: str=None):
+    def delete(self, filepath: str=None, msg: str=None, user: GitInfo=None, push: bool=True) -> None:
         """ Delete a path recursively. If filepath is None, then the prefix will be deleted.
 
         :param filepath: The prefix entry to delete.
@@ -152,7 +152,7 @@ class FileSystemProvider(metaclass=ABCMeta):
         """ Get a timestamp representing the time of the last modification of the file at filepath """
 
     @abstractmethod
-    def move(self, src, dest):
+    def move(self, src, dest, msg: str=None, user: GitInfo=None, push: bool=None) -> None:
         """ Move path src to path dest, recursively. """
 
     @abstractmethod

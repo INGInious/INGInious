@@ -89,12 +89,20 @@ class GitFSProvider(LocalFSProvider):
                 #     self.gitolite = clone_repository(f'{self.remote}/gitolite-admin', gitolite_path, callbacks=rc)
                 pass
 
+    def _courseid_from_prefix(self) -> str:
+        """ Should only be called if current fs represents a task.
+        """
+        return os.path.basename(os.path.dirname(self.prefix[:-1]))
+
     def _id_from_prefix(self) -> str:
         prefix = self.prefix if not self.prefix.endswith('/') else self.prefix[:-1]
         return os.path.basename(prefix)
 
-    def _origin_url(self) -> str:
-        return None if self.remote is None else f'{self.remote}/{self._id_from_prefix()}'
+    def _origin_url(self, type: FsType=FsType.course) -> str:
+        id = self._id_from_prefix()
+        if type == FsType.task:
+            id = f'{self._courseid_from_prefix()}/{id}'
+        return None if self.remote is None else f'{self.remote}/{id}'
 
     def ensure_exists(self, type: FsType=FsType.other, user: GitInfo=None, push: bool=True) -> None:
         # Sanity check, we only initialize repositories if needed.
@@ -115,14 +123,19 @@ class GitFSProvider(LocalFSProvider):
                 # FIXME: Extend this for additional backends, e.g., GitHub, Gitlab, ...
                 # This will probably require interactions through REST APIs.
                 if self.backend == GitBackend.gitolite:
-                    courseid = self._id_from_prefix()
-                    self.gitolite.init_repo(user, courseid, push=push)
+                    if type == FsType.task:
+                        courseid = self._courseid_from_prefix()
+                        taskid = self._id_from_prefix()
+                    else:
+                        courseid = self._id_from_prefix()
+                        taskid = None
+                    self.gitolite.init_repo(user, courseid, taskid, push=push)
 
                 # Second, we create the local copy of the repostory.
                 init_repository(
                     self.prefix,
                     initial_head=DEFAULT_INITIAL_HEAD,
-                    origin_url=self._origin_url()
+                    origin_url=self._origin_url(type)
                 )
                 self.repo = MyRepo(self.prefix)
 
@@ -162,7 +175,7 @@ class GitFSProvider(LocalFSProvider):
 
             :return: True if `filepath` must be staged, else False.
         """
-        return False if self.repo is None or (status := self.repo.status().get(filepath)) is None else status in [FileStatus.WT_NEW, FileStatus.WT_MODIFIED]
+        return False if self.repo is None or (status := self.repo.status().get(filepath)) is None else status in [FileStatus.WT_NEW, FileStatus.WT_MODIFIED, FileStatus.WT_DELETED]
 
     def _is_reserved(self, filepath: str, kind: str) -> bool:
         """ Determine whether the `filepath` points towards a reserved directory.
@@ -203,7 +216,6 @@ class GitFSProvider(LocalFSProvider):
 
             :return: True if `filepath` points to a submodule, else False.
         """
-        # return len([sm for sm in self.repo.submodules if sm.name == filepath]) == 1
         return self.repo.submodules.get(filepath) is not None
 
     def _try_stage(self, filepath: str, should_stage: bool) -> None:
@@ -292,15 +304,17 @@ class GitFSProvider(LocalFSProvider):
         # We check that content has indeed changed before trying to commit.
         self.try_commit(filepath, msg, user, push)
 
-    def delete(self, filepath: str=None) -> None:
+    def delete(self, filepath: str=None, msg: str=None, user: GitInfo=None, push: bool=True) -> None:
         super().delete(filepath)
         if self.repo is not None and filepath is not None:
-            self.repo.index.add([filepath])
+            self.try_commit(filepath, msg, user, push)
 
-    def move(self, src, dest):
+    def move(self, src, dest, msg: str=None, user: GitInfo=None, push: bool=None) -> None:
         super().move(src, dest)
         if self.repo is not None:
-            self.repo.index.add([src, dest])
+            # self.repo.index.add([src, dest])
+            self.try_stage(src)
+            self.try_commit(dest, msg, user, push)
 
     def copy_to(self, src_disk, dest=None):
         super().copy_to(src_disk, dest)

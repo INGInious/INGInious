@@ -148,7 +148,12 @@ class CourseTaskFiles(INGIniousAdminPage):
         if wanted_path is None:
             return json.dumps({"error": True})
         try:
-            self.task_factory.get_task_fs(courseid, taskid).put(wanted_path, content.encode("utf-8"))
+            self.task_factory.get_task_fs(courseid, taskid).put(
+                wanted_path,
+                content.encode("utf-8"),
+                f'File <{wanted_path}> saved.',
+                self.user_manager.session_git()
+            )
             return json.dumps({"ok": True})
         except:
             return json.dumps({"error": True})
@@ -165,7 +170,12 @@ class CourseTaskFiles(INGIniousAdminPage):
 
         task_fs = self.task_factory.get_task_fs(courseid, taskid)
         try:
-            task_fs.put(wanted_path, fileobj.read())
+            task_fs.put(
+                wanted_path,
+                fileobj.read(),
+                f'File <{wanted_path}> uploaded.',
+                self.user_manager.session_git()
+            )
         except:
             return self.show_tab_file(courseid, taskid, _("An error occurred while writing the file"))
         return self.show_tab_file(courseid, taskid)
@@ -187,7 +197,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         if want_directory:
             task_fs.from_subfolder(wanted_path).ensure_exists()
         else:
-            task_fs.put(wanted_path, b"")
+            task_fs.put(wanted_path, b"", f'File <{wanted_path}> added.', self.user_manager.session_git())
         return self.show_tab_file(courseid, taskid)
 
     def action_rename(self, courseid, taskid, path, new_path):
@@ -209,7 +219,12 @@ class CourseTaskFiles(INGIniousAdminPage):
             return self.show_tab_file(courseid, taskid, _("Invalid new path"))
 
         try:
-            self.task_factory.get_task_fs(courseid, taskid).move(old_path, wanted_path)
+            self.task_factory.get_task_fs(courseid, taskid).move(
+                old_path,
+                wanted_path,
+                f'Moved {old_path} to {wanted_path}.',
+                self.user_manager.session_git()
+            )
             return self.show_tab_file(courseid, taskid)
         except:
             return self.show_tab_file(courseid, taskid, _("An error occurred while moving the files"))
@@ -230,7 +245,11 @@ class CourseTaskFiles(INGIniousAdminPage):
             return self.show_tab_file(courseid, taskid, _("Internal error"))
 
         try:
-            self.task_factory.get_task_fs(courseid, taskid).delete(wanted_path)
+            self.task_factory.get_task_fs(courseid, taskid).delete(
+                wanted_path,
+                f'File {wanted_path} deleted.',
+                self.user_manager.session_git()
+            )
             return self.show_tab_file(courseid, taskid)
         except:
             return self.show_tab_file(courseid, taskid, _("An error occurred while deleting the files"))

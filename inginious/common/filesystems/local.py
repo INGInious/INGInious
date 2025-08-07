@@ -98,7 +98,7 @@ class LocalFSProvider(FileSystemProvider):
         isdir = lambda x: '/' if os.path.isdir(os.path.join(self.prefix, x)) else ''
         return [f+isdir(f) for f in output]
 
-    def delete(self, filepath: str=None):
+    def delete(self, filepath: str=None, msg: str=None, user: GitInfo=None, push: bool=True) -> None:
         if filepath is None:
             filepath = self.prefix
         else:
@@ -117,7 +117,7 @@ class LocalFSProvider(FileSystemProvider):
         except:
             raise FileNotFoundError()
 
-    def move(self, src, dest):
+    def move(self, src, dest, msg: str=None, user: GitInfo=None, push: bool=None) -> None:
         self._checkpath(src)
         self._checkpath(dest)
         if "/" in dest:
