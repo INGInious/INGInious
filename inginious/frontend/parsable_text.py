@@ -10,10 +10,10 @@ import gettext
 import flask
 import tidylib
 
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 from docutils import core, nodes
-from docutils.parsers.rst import directives, Directive
+from docutils.parsers.rst import directives, roles, Directive
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils.parsers.rst.directives.body import CodeBlock
 from docutils.statemachine import StringList
@@ -70,7 +70,7 @@ class HiddenUntilDirective(Directive, object):
         force_show = self.state.document.settings.force_show_hidden_until
         translation = _get_inginious_translation()
 
-        after_deadline = hidden_until <= datetime.now()
+        after_deadline = hidden_until <= datetime.now(timezone.utc)
         if after_deadline or force_show:
             output = []
 
@@ -78,8 +78,8 @@ class HiddenUntilDirective(Directive, object):
             if not after_deadline and force_show:
                 node = nodes.caution()
                 self.add_name(node)
-                text = translation.gettext("The feedback below will be hidden to the students until {}.").format(
-                    hidden_until.strftime("%d/%m/%Y %H:%M:%S"))
+                text = translation.gettext("The feedback below will be hidden to the students until :time:`{}`.").format(
+                    hidden_until.isoformat())
                 self.state.nested_parse(StringList(text.split("\n")), 0, node)
                 output.append(node)
 
@@ -95,7 +95,7 @@ class HiddenUntilDirective(Directive, object):
             self.add_name(node)
             text = translation.gettext(
                 "A part of this feedback is hidden until {}. Please come back later and reload the submission to see the full feedback.").format(
-                hidden_until.strftime("%d/%m/%Y %H:%M:%S"))
+                hidden_until.isoformat())
             self.state.nested_parse(StringList(text.split("\n")), 0, node)
             return [node]
 
@@ -234,6 +234,12 @@ class _CustomHTMLWriter(html4css1.Writer, object):
                 self.body.append('</div>\n')
             self.body.append('</div>\n')
 
+        def visit_time(self, node):
+            self.body.append(self.starttag(node, 'time', datetime=node.children[0]))
+
+        def depart_time(self, node):
+            self.body.append('</time>')
+
 class ParsableText(object):
     """Allow to parse a string with different parsers"""
 
@@ -309,11 +315,22 @@ class ParsableText(object):
                                    settings_overrides=overrides)
         return parts['body_pre_docinfo'] + parts['fragment']
 
+
 # override base directives
 def _gen_admonition_cls(cls):
     class GenAdm(CustomBaseAdmonition):
         node_class = cls
     return GenAdm
+
+
+class time(nodes.Inline, nodes.TextElement):
+    pass
+
+
+def time_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    node = time(rawtext, text, **options)
+    return [node], []
+
 
 directives.register_directive("admonition", CustomAdmonition)
 directives.register_directive("attention", _gen_admonition_cls(nodes.attention))
@@ -327,3 +344,4 @@ directives.register_directive("tip", _gen_admonition_cls(nodes.tip))
 directives.register_directive("warning", _gen_admonition_cls(nodes.warning))
 directives.register_directive("hidden-until", HiddenUntilDirective)
 directives.register_directive("code-block", EmptiableCodeBlock)
+roles.register_local_role("time", time_role)
