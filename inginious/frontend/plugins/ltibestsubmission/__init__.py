@@ -1,7 +1,7 @@
 from bson import ObjectId, json_util
 
 from werkzeug.exceptions import NotFound
-from inginious.common.tasks_problems import MultipleChoiceProblem, CodeProblem, MatchProblem, FileProblem
+from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
@@ -52,16 +52,16 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         question_answer_list = []
         for problem in task.get_problems():
             answer = best_sub["input"][problem.get_id()]
-            if isinstance(problem, MultipleChoiceProblem):
+            if isinstance(problem, DisplayableMultipleChoiceProblem):
                 answer_dict = problem.get_choice_with_index(int(answer))
                 has_succeeded = answer_dict['valid']
                 answer = problem.gettext(self.user_manager.session_language(), answer_dict['text'])
                 p_type = "mcq"
             else:
                 has_succeeded = best_sub.get('result', '') == "success"
-                if isinstance(problem, MatchProblem):
+                if isinstance(problem, DisplayableMatchProblem):
                     p_type = "match"
-                elif isinstance(problem, CodeProblem):
+                elif isinstance(problem, DisplayableCodeProblem):
                     p_type = "code"
                 else:
                     continue
