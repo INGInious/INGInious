@@ -17,21 +17,21 @@
 <div class="mt-3">{{ _("Submission limits") }}</div>
 <div class="form-group submission_limits">
     <label>
-        <input name="submission_limit" type="radio" value="none" class="submission_limit" /> {{ _("No limitation") }}
+        <input name="submission_limit" type="radio" value="none" class="submission_limit {%if grouped %}submission_limit_grouped{% endif %}" /> {{ _("No limitation") }}
     </label><br/>
     <div class="row">
         <div class="col-xs-12 col-lg-3">
             <label>
-                <input name="submission_limit" type="radio" value="hard" class="submission_limit" />
-                {{ _("Hard limit: {nbr_submissions} submission(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs" id="submission_limit_hard" style="height:20px;padding: 0 10px;"  placeholder="5"  type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
+                <input name="submission_limit" type="radio" value="hard" class="submission_limit {%if grouped %} submission_limit_grouped{% endif %}" />
+                {{ _("Hard limit: {nbr_submissions} submission(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_hard" style="height:20px;padding: 0 10px;"  placeholder="5"  type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
             </label>
         </div>
     </div>
     <div class="row">
         <div class="col-xs-12 col-lg-3">
             <label>
-                <input name="submission_limit" type="radio" value="soft" class="submission_limit" />
-                {{ _("Soft limit: {nbr_submissions} submission(s) every {nbr_hours} hour(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs" id="submission_limit_soft_0" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>', nbr_hours='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs" id="submission_limit_soft_1" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-1"><label>') | safe }}
+                <input name="submission_limit" type="radio" value="soft" class="submission_limit {%if grouped %}submission_limit_grouped{% endif %}" />
+                {{ _("Soft limit: {nbr_submissions} submission(s) every {nbr_hours} hour(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_soft_0" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>', nbr_hours='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_soft_1" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-1"><label>') | safe }}
             </label>
         </div>
     </div>
@@ -44,80 +44,46 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
-        if (!("submission_limit" in dispenser_config[taskid]))
-            return;
-        var sub_limit = dispenser_config[taskid]["submission_limit"];
-        var value;
+        let sub_limit = dispenser_config[taskid]["submission_limit"] ?? {'amount': -1, 'period': -1};
+        var value = 'none';
 
-        if (sub_limit['amount'] == -1 && sub_limit['period'] == -1) {
-            value = 'none';
-        } else if (sub_limit['period'] == -1) {
+        if (sub_limit['amount'] > -1 && sub_limit['period'] == -1) {
             value = 'hard';
             $(this).find("#submission_limit_hard").val(sub_limit['amount']);
-        } else {
+        } else if(sub_limit['amount'] > -1 && sub_limit['period'] > -1) {
             value = 'soft';
             $(this).find("#submission_limit_soft_0").val(sub_limit['amount']);
             $(this).find("#submission_limit_soft_1").val(sub_limit['period']);
         }
 
-        var field = $(this).find(".submission_limits input[value=" + value + "]");
-        field.prop("checked", true);
+        $(this).find(".submission_limits input[value=" + value + "]").prop("checked", true);
 
-    });
-
-    // Catch modal changes
-    $("#edit_task_modal .submission_limits input").change(function () {
-        var taskid = $("#edit_task_modal").data("taskid");
-        let action = $(this).attr("name");
-
-        if(action == "submission_limit") {
-            $("#task_" + taskid + " span.submission_limit").hide();
-            if($(this).val() == "none") {
-                $("#task_" + taskid + " .submission_limit-none").show();
-                dispenser_config[taskid]["submission_limit"]["amount"] = -1;
-                dispenser_config[taskid]["submission_limit"]["period"] = -1;
-            } else if($(this).val() == "hard")
-                $("#task_" + taskid + " .submission_limit-hard").show();
-            else
-                $("#task_" + taskid + " .submission_limit-soft").show();
-        } else {
-            let id = $(this).attr("id");
-            if (id == "submission_limit_hard") {
-                $("#task_" + taskid + " .submission_limit-hard span").text($(this).val());
-                dispenser_config[taskid]["submission_limit"]["amount"] = Number($(this).val());
-                dispenser_config[taskid]["submission_limit"]["period"] = -1;
-            } else if(id == "submission_limit_soft_0") {
-                $("#task_" + taskid + " .submission_limit-soft span.amount").text($(this).val());
-                dispenser_config[taskid]["submission_limit"]["amount"] = Number($(this).val());
-            } else {
-                $("#task_" + taskid + " .submission_limit-soft span.period").text($(this).val());
-                dispenser_config[taskid]["submission_limit"]["period"] = Number($(this).val());
-            }
-        }
     });
 
     // Catch grouped action changes
-    $("#grouped-actions-edit .submission_limits input").change(function () {
+    $(".submission_limits input").change(function () {
         let value = $(this).val();
         let action = $(this).attr("name");
         let id = $(this).attr("id");
-        $(".grouped-actions-task:checked").each(function () {
-            var taskid = $(this).data("taskid");
+        let grouped = $(this).hasClass("submission_limit_grouped");
+        let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
+
+        tasks.each(function () {
+            let taskid = $(this).data("taskid");
             if(action == "submission_limit") {
                 $("#task_" + taskid + " span.submission_limit").hide();
                 if(value == "none") {
                     $("#task_" + taskid + " .submission_limit-none").show();
-                    dispenser_config[taskid]["submission_limit"]["amount"] = -1;
-                    dispenser_config[taskid]["submission_limit"]["period"] = -1;
+                    dispenser_config[taskid]["submission_limit"] = {"amount": -1, "period": -1};
                 } else if(value == "hard")
                     $("#task_" + taskid + " .submission_limit-hard").show();
                 else
                     $("#task_" + taskid + " .submission_limit-soft").show();
             } else {
+                dispenser_config[taskid]["submission_limit"] = dispenser_config[taskid]["submission_limit"] ?? {"amount": -1, "period": -1};
                 if (id == "submission_limit_hard") {
                     $("#task_" + taskid + " .submission_limit-hard span").text(value);
-                    dispenser_config[taskid]["submission_limit"]["amount"] = Number(value);
-                    dispenser_config[taskid]["submission_limit"]["period"] = -1;
+                    dispenser_config[taskid]["submission_limit"]= {"amount": Number(value), "period": -1};
                 } else if(id == "submission_limit_soft_0") {
                     $("#task_" + taskid + " .submission_limit-soft span.amount").text(value);
                     dispenser_config[taskid]["submission_limit"]["amount"] = Number(value);

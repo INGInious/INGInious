@@ -12,16 +12,16 @@
     <div class="row">
         <div class="col-md-12">
             <label>
-            <input type="radio" value="false" name="group_submission_{{taskid}}" class="group_submission"
-                {{ 'checked="checked"'|safe if not group_submission }}/>
-            {{ _("Individually") }}
+                <input type="radio" value="false" name="group_submission_{{taskid}}" class="group_submission {% if grouped %}group_submissions_grouped{% endif %}"
+                    {{ 'checked="checked"'|safe if not group_submission }}/>
+                {{ _("Individually") }}
             </label>
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
             <label>
-                <input type="radio" value="true" name="group_submission_{{taskid}}" class="group_submission"
+                <input type="radio" value="true" name="group_submission_{{taskid}}" class="group_submission {% if grouped %}group_submissions_grouped{% endif %}"
                     {{ 'checked="checked"'|safe if group_submission }} />
                 {{_("Per group")}}
             </label>
@@ -42,24 +42,15 @@
         field.prop("checked", true);
     });
 
-    // Catch modal changes
-    $("#edit_task_modal .group_submissions input").change(function () {
-        var taskid = $("#edit_task_modal").data("taskid");
-        dispenser_config[taskid]["group_submission"] = Boolean($(this).val());
-
-        $("#task_" + taskid + " span.group_submission").hide();
-        if($(this).val() == "true")
-            $("#task_" + taskid + " .group_submission-true").show();
-        else
-            $("#task_" + taskid + " .group_submission-false").show();
-    });
-
-    // Catch grouped action changes
-    $("#grouped-actions-edit .group_submissions input").change(function () {
+    // Catch modals changes
+    $(".group_submissions input").change(function () {
         let value = $(this).val();
-        $(".grouped-actions-task:checked").each(function () {
+        let grouped = $(this).hasClass("group_submissions_grouped");
+        let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
+
+        tasks.each(function () {
             var taskid = $(this).data("taskid");
-            dispenser_config[taskid]["group_submission"] = Boolean(value);
+            dispenser_config[taskid]["group_submission"] = value == "true";
 
             $("#task_" + taskid + " span.group_submission").hide();
             if(value == "true")

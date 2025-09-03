@@ -11,13 +11,13 @@
 <div class="form-group evaluation_submission">
     <div class="row">
         <label class="col-md-12">
-            <input type="radio" value="best" class="evaluation_submission" name="evaluation_submission_{{taskid}}" checked />
+            <input type="radio" value="best" class="evaluation_submission {% if grouped %}evaluation_submission_grouped{% endif %}" name="evaluation_submission_{{taskid}}" checked />
             {{ _("Best submission") }}
         </label>
     </div>
     <div class="row">
         <label class="col-md-12">
-            <input type="radio" value="last" class="evaluation_submission" name="evaluation_submission_{{taskid}}" />
+            <input type="radio" value="last" class="evaluation_submission {% if grouped %}evaluation_submission_grouped{% endif %}" name="evaluation_submission_{{taskid}}" />
             {{ _("Last submission") }}
         </label>
     </div>
@@ -38,21 +38,12 @@
     });
 
     // Catch modal changes
-    $("#edit_task_modal .evaluation_submission input").change(function () {
-        var taskid = $("#edit_task_modal").data("taskid");
-        dispenser_config[taskid]["evaluation_mode"] = $(this).val();
-
-        $("#task_" + taskid + " span.evaluation_submission").hide();
-        if($(this).val() == "best")
-            $("#task_" + taskid + " .evaluation_submission-best").show();
-        else
-            $("#task_" + taskid + " .evaluation_submission-last").show();
-    });
-
-    // Catch grouped action changes
-    $("#grouped-actions-edit .evaluation_submission input").change(function () {
+    $(".evaluation_submission input").change(function () {
         let value = $(this).val();
-        $(".grouped-actions-task:checked").each(function () {
+        let grouped = $(this).hasClass("evaluation_submission_grouped");
+        let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
+
+        tasks.each(function () {
             var taskid = $(this).data("taskid");
             dispenser_config[taskid]["evaluation_mode"] = value;
 

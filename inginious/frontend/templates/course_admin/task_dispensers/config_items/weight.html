@@ -6,7 +6,7 @@
 {{ _("Grade weight (in comparison to other tasks)") }} : <span>{{ weight }}</span>
 {% else %}
 <div class="mt-3">{{ _("Grade weight (in comparison to other tasks)") }}</div>
-<input type="number" class="weight form-control" placeholder="1" {%if taskid %} name="{{taskid}}" {% endif %} />
+<input type="number" class="weight {% if grouped %}weight_grouped{% endif %} form-control" placeholder="1" {%if taskid %} name="{{taskid}}" {% endif %} />
 
 {% if not grouped %}
 <script>
@@ -16,21 +16,16 @@
         var taskid = button.data('taskid');
         if (!("weight" in dispenser_config[taskid]))
             return;
-        var field = $(this).find(".weight");
-        field.val(dispenser_config[taskid]["weight"]);
+        $(this).find(".weight").val(dispenser_config[taskid]["weight"]);
     });
 
-    // Catch modal changes
-    $("#edit_task_modal .weight").change(function () {
-        var taskid = $("#edit_task_modal").data("taskid");
-        dispenser_config[taskid]["weight"] = Number($(this).val());
-        $("#task_" + taskid + " .pills-weight span").text($(this).val());
-    });
-
-    // Catch grouped action changes
-    $("#grouped-actions-edit .weight").change(function () {
+    // Catch modals changes
+    $(".weight").change(function () {
         let value = $(this).val();
-        $(".grouped-actions-task:checked").each(function () {
+        let grouped = $(this).hasClass("weight_grouped");
+        let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
+
+        tasks.each(function () {
             var taskid = $(this).data("taskid");
             dispenser_config[taskid]["weight"] = Number(value);
             $("#task_" + taskid + " .pills-weight span").text(value);
