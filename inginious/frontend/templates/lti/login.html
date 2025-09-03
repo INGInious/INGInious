@@ -29,7 +29,7 @@
 <div class="row justify-content-center">
     <div class="col-md-4 p-0">
         <div class="card card-body bg-light">
-            {% set path = get_path('lti' + lti_version, 'bind') %}
+            {% set path = get_path('lti' + lti_version, 'bind').replace('session_id', 'lti_session_id')  %}
             <p class="mb-2"><a onclick="window.open('{{ path }}');" href="#">{{ _("Bind your INGInious account") }}</a></p>
             <p class="m-0"><a href="{{ get_path('lti' + lti_version, 'login') }}">{{ _("Refresh") }}</a></p>
         </div>

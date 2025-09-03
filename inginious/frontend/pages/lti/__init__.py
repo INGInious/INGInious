@@ -5,7 +5,7 @@
 
 """ LTI """
 
-from flask import redirect
+from flask import redirect, request
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
@@ -54,15 +54,11 @@ class LTIBindPage(INGIniousAuthPage):
         return False
 
     def _get_lti_session_data(self):
-        if not self.user_manager.session_is_lti():
-            return self.template_helper.render("lti/bind.html", success=False,
-                                               data=None, error=_("Missing LTI session id"))
-
-        data = self.user_manager.session_lti_info()
-        if data is None:
+        data = self.database.lti_sessions.find_one({'session_id': request.args['lti_session_id']}) if 'lti_session_id' in request.args else None
+        if data is None or data.get("lti", None) is None:
             return None, self.template_helper.render("lti/bind.html", success=False,
                                                      data=None, error=_("Invalid LTI session id"))
-        return data, None
+        return data.get("lti"), None
 
     def GET_AUTH(self):
         data, error = self._get_lti_session_data()

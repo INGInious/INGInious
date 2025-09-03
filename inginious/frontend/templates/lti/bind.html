@@ -39,7 +39,7 @@
 {%if success %}
     <script type="text/javascript">
         window.onload = function() {
-            window.opener.location.href = "{{ get_path('lti' + lti_version, 'login') }}";
+            window.opener.location.reload();
             window.close();
         }
     </script>
