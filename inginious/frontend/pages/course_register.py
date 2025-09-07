@@ -26,12 +26,14 @@ class CourseRegisterPage(INGIniousAuthPage):
         user_info = self.user_manager.get_user_info(username)
 
         if self.user_manager.course_is_user_registered(course, username) or not course.is_registration_possible(user_info):
-            return redirect(self.app.get_path("course", course.get_id()))
+            return course, None
 
         return course, username
 
     def GET_AUTH(self, courseid):
-        course, _ = self.basic_checks(courseid)
+        course, username = self.basic_checks(courseid)
+        if not username:
+            return redirect(self.app.get_path("course", course.get_id()))
         return self.template_helper.render("course_register.html", course=course, error=False)
 
     def POST_AUTH(self, courseid):
