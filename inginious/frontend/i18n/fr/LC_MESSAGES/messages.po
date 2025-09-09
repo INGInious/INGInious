@@ -3881,11 +3881,7 @@ msgstr "date limite atteinte"
 
 #: inginious/frontend/templates/task_dispensers/task_list.html:39
 msgid "Weight : "
-msgstr ""
-"Seul le nombre spécifié d'exercices sera affiché à l'utilisateur. Ceci "
-"est calculé sans état : modifier la quantité d'exercice par section, la "
-"position de la section, ou le titre de la section affectera le jeu "
-"d'exercices effectivement affiché à l'utilisateur."
+msgstr "Poids : "
 
 #: inginious/frontend/templates/tasks/file.html:7
 msgid "Click here to download the file you submitted previously"
