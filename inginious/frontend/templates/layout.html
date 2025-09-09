@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {#  more information about the licensing of this file. #}
+{% set static_ver = 1 %}
 <html lang="en">
 <head>
     {% block head %}
@@ -17,26 +18,26 @@
     <!-- Bootstrap -->
     <!-- CSS -->
     {% if  _("__is_rtl") == "true"%}
-        <link href="{{get_homepath()}}/static/css/bootstrap-rtl.min.css" rel="stylesheet">
+        <link href="{{get_homepath()}}/static/css/bootstrap-rtl.min.css?version=4.5.3" rel="stylesheet">
         <!-- INGInious Style -->
-        <link href="{{get_homepath()}}/static/css/INGInious-rtl.css?v2" rel="stylesheet">
+        <link href="{{get_homepath()}}/static/css/INGInious-rtl.css?version={{static_ver}}" rel="stylesheet">
     {% else %}
-        <link href="{{get_homepath()}}/static/css/bootstrap.min.css" rel="stylesheet">
+        <link href="{{get_homepath()}}/static/css/bootstrap.min.css?version=4.5.3" rel="stylesheet">
         <!-- INGInious Style -->
-        <link href="{{get_homepath()}}/static/css/INGInious.css?v2" rel="stylesheet">
+        <link href="{{get_homepath()}}/static/css/INGInious.css?version={{static_ver}}" rel="stylesheet">
     {% endif %}
-    <link href="{{get_homepath()}}/static/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <link href="{{get_homepath()}}/static/css/bootstrap-datetimepicker.min.css?version=5.0.1" rel="stylesheet">
 
     <!-- Font Awesome -->
-    <link href="{{get_homepath()}}/static/css/font-awesome.min.css" rel="stylesheet">
+    <link href="{{get_homepath()}}/static/css/font-awesome.min.css?version=4.7.0" rel="stylesheet">
 
 
 
     <!-- Codemirror Style -->
-    <link href="{{get_homepath()}}/static/css/codemirror.css" rel="stylesheet">
+    <link href="{{get_homepath()}}/static/css/codemirror.css?version=5.26" rel="stylesheet">
 
     <!-- selectize -->
-    <link href="{{get_homepath()}}/static/css/selectize.css" rel="stylesheet">
+    <link href="{{get_homepath()}}/static/css/selectize.css?version=0.13.0" rel="stylesheet">
 
     <!-- Icons -->
     <link rel="shortcut icon" href="{{get_homepath()}}/static/icons/favicon.ico">
@@ -58,7 +59,7 @@
     <meta name="msapplication-config" content="{{get_homepath()}}/static/icons/browserconfig.xml">
 
     {% if sentry_io_url %}
-    <script src="{{get_homepath()}}/static/js/libs/sentry-io-bundle.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/sentry-io-bundle.min.js?version=5.4.3" type="text/javascript" charset="utf-8"></script>
     <script>
         Sentry.init({ dsn: "{{sentry_io_url}}" });
         {% if user_manager is defined and user_manager.session_logged_in() %}
@@ -74,36 +75,36 @@
 
     {% if use_minified %}
         {% if  _("__is_rtl") == "true"%}
-            <script src="{{get_homepath()}}/static/js/all-minified-rtl.js"></script>
+            <script src="{{get_homepath()}}/static/js/all-minified-rtl.js?version={{static_ver}}"></script>
         {% else %}
-            <script src="{{get_homepath()}}/static/js/all-minified.js"></script>
+            <script src="{{get_homepath()}}/static/js/all-minified.js?version={{static_ver}}"></script>
         {% endif %}
     {% else %}
-    <script src="{{get_homepath()}}/static/js/libs/jquery.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/jquery.form.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/codemirror/codemirror.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/codemirror/mode/meta.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/popper.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/moment.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/moment-timezone-with-data.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/jquery.min.js?version=3.3.1" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/jquery.form.min.js?version=3.51.0" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/codemirror/codemirror.js?version=5.26" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/codemirror/mode/meta.js?version=5.26" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/popper.min.js?version=1.14.4" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/moment.min.js?version=2.30.1" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/moment-timezone-with-data.min.js?version=0.6.0" type="text/javascript" charset="utf-8"></script>
     {% if  _("__is_rtl") == "true"%}
-        <script src="{{ get_homepath() }}/static/js/libs/bootstrap-rtl.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="{{ get_homepath() }}/static/js/libs/bootstrap-rtl.min.js?version=4.5.3" type="text/javascript" charset="utf-8"></script>
     {% else %}
-        <script src="{{get_homepath()}}/static/js/libs/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="{{get_homepath()}}/static/js/libs/bootstrap.min.js?version=4.5.3" type="text/javascript" charset="utf-8"></script>
     {% endif %}
-    <script src="{{get_homepath()}}/static/js/libs/bootstrap-datetimepicker.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src='{{get_homepath()}}/static/js/libs/Sortable.min.js' type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/jquery.twbsPagination.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/selectize.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/checked-list-group.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/common.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/task.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/webapp.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/studio.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/audiences.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/groups.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/task_dispensers.js" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/admin.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/bootstrap-datetimepicker.min.js?version=5.0.1" type="text/javascript" charset="utf-8"></script>
+    <script src='{{get_homepath()}}/static/js/libs/Sortable.min.js?version=1.10.2' type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/jquery.twbsPagination.min.js?version=1.4.2" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/libs/selectize.min.js?version=0.13.0" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/checked-list-group.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/common.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/task.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/webapp.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/studio.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/audiences.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/groups.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/task_dispensers.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/admin.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
     {% endif %}
 
     <script type="text/javascript">
