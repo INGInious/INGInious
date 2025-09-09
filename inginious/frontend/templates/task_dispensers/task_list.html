@@ -27,16 +27,18 @@
                 <a href="{{ get_path('course', course.get_id(), taskid) }}" class="list-group-item list-group-item-action
                     {% if not accessibilities[user_manager.session_username()][taskid].is_open() %} disabled {% endif %}" style="pointer-events: auto;">
                     <div class="row">
-                        <div class="col-xs-12 col-md-7 pl-1">
+                        <div class="col-xs-12 col-md-6 pl-1">
                             <i style="color: {% if succeeded %}#468847{% else %}transparent{% endif %};" class="fa fa-check"></i>
                             {{ task.get_name(user_manager.session_language()) }}
                             {% if not accessibilities[user_manager.session_username()][taskid].is_open() %}
                                 - <b> {{ _("deadline reached") }} </b>
                             {% endif %}
                         </div>
-                        <div class="col-xs-12 col-md-5">
+                        <div class="col-xs-2 col-md-1 text-right">
+                            <span class="badge badge-pill badge-secondary">{{_("Weight : ")}} {{task_dispenser.get_weight(taskid)}}</span>
+                        </div>
+                        <div class="col-xs-10 col-md-5">
                             {% if registered %}
-                                <div type="button" class="fa fa-info" style="float: left; margin-top: 2px; margin-right: 5px;" data-toggle="tooltip" data-placement="bottom" title='{{_("Weight : ")}}{{course.get_task_dispenser().get_weight(taskid)}}'></div>
                                 <div class="progress">
                                     <div class="progress-bar bg-success" aria-valuenow="{{ completion | int }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ completion | int }}%">
                                         {% if completion.is_integer() %}{{ completion | int }}{% else %}{{ completion }}{% endif %} %
