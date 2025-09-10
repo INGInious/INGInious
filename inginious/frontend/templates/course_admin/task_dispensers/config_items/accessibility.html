@@ -4,13 +4,14 @@
 {% if short %}
     {% set at = config_item.get_value(dispenser_config.get(taskid,{})) %}
     {{_("Accessibility")}} :
+    {% from "layout.html" import show_time %}
     <span class="accessibility accessibility-never" {% if not at.is_never_accessible() %} style="display: none;" {% endif %}>{{_("Never")}}</span>
     <span class="accessibility accessibility-always" {% if not at.is_always_accessible() %} style="display: none;" {% endif %}>{{_("Always")}}</span>
     <span class="accessibility accessibility-custom" {% if at.is_always_accessible() or at.is_never_accessible() %} style="display: none;" {% endif %}>
-        {% set start_date = '<time datetime="' + at.get_std_start_date() + '">' + at.get_std_start_date() + '</time>' if at.get_std_start_date() else '' %}
-        {% set end_date = '<time datetime="' + at.get_std_end_date() + '">' + at.get_std_end_date() + '</time>' if at.get_std_end_date() else '' %}
-        {% set soft_end_date = '<time datetime="' + at.get_std_soft_end_date() + '">' + at.get_std_soft_end_date() + '</time>' if at.get_std_soft_end_date() else '' %}
-        {{ _("Custom, from: {} to: {}").format('<span class="accessibility-custom-start">' + start_date + '</span>', '<span class="accessibility-custom-end">' + end_date + '</span>') | safe}}
+        {% set start_date = show_time(at.get_start_date()) if at.get_std_start_date() else '' %}
+        {% set end_date = show_time(at.get_end_date()) if at.get_std_end_date() else '' %}
+        {% set soft_end_date = show_time(at.get_soft_end_date()) if at.get_std_soft_end_date() else '' %}
+        {{ _("Custom, from: {} to: {}").format('<span class="accessibility-custom-start">' | safe + start_date + '</span>' | safe, '<span class="accessibility-custom-end">' | safe + end_date + '</span>' | safe) | safe}}
         (<span class="accessibility-custom-soft-end">{{ soft_end_date | safe }}</span>)
     </span>
 {% else %}

@@ -27,8 +27,8 @@
 <div class="card card-body bg-light mb-3">
 	<div class="row">
         <div class="col-md-4" style="margin-top:2px;">
-            Contest starts: <time datetime="{{start.isoformat()}}">{{start.isoformat()}}</time><br/>
-            Contest ends: <time datetime="{{end.isoformat()}}">{{end.isoformat()}}</time><br/>
+            Contest starts: {{ show_time(start) }}</time><br/>
+            Contest ends: {{ show_time(end) }}</time><br/>
         </div>
         <div class="col-md-4" style="margin-top:2px;">
             {% if start > start.now().astimezone() %}
@@ -89,7 +89,7 @@
 	    <tr><th>Time</th><th>Contestant</th><th>Task</th><th>Result</th></tr>
 	    {% for a in activity %}
 	        <tr>
-	            <td><time datetime="{{a['when'].isoformat()}}">{{a['when'].isoformat()}}</time></td>
+	            <td>{{show_time(a['when'])}}</td>
 	            <td>{{a['user']}}</td>
 	            <td>{{a['taskid']}}</td>
 	            <td>

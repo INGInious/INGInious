@@ -103,7 +103,7 @@
                     <tbody>
                         {% for backup in backups %}
                             <tr>
-                                <td><time datetime="{{ backup['date'].isoformat() }}">{{ backup['date'].isoformat() }}</time></td>
+                                <td>{{ show_time(backup['date']) }}</td>
                                 <td>
                                     <div class="pull-right btn-group btn-group-sm">
 
