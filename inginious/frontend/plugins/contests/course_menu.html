@@ -1,6 +1,7 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
+{% from "layout.html" import show_time %}
 <h3>Contest</h3>
 <div class="list-group mb-3">
     <div class="list-group-item list-group-item-info">
@@ -9,8 +10,8 @@
                 <i class="fa fa-info fa-fw"></i>
             </div>
             <div class="col-sm-11" style="margin-left:-10px;">
-                Contest starts: <time datetime="{{ start.isoformat() }}">{{ start.isoformat() }}</time><br/>
-                Contest ends: <time datetime="{{ end.isoformat() }}">{{ end.isoformat() }}</time>
+                Contest starts: {{show_time(start) }}<br/>
+                Contest ends: {{ show_time(end) }}
             </div>
         </div>
     </div>

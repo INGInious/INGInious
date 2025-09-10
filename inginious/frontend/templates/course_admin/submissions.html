@@ -120,10 +120,10 @@
                 {% if "show_id" in old_params %}
                     <td>{{ submission["_id"] }}</td>
                 {% endif %}
-                <td><time datetime="{{ submission['submitted_on'].isoformat() }}">{{submission["submitted_on"].isoformat()}}</time></td>
+                <td>{{ show_time(submission['submitted_on'])}}</td>
                 <td>
                     {% if "last_replay" in submission %}
-                        <time datetime="{{submission['last_replay'].isoformat() }}">{{submission["last_replay"].isoformat() }}</time>
+                        {{show_time(submission['last_replay'])}}
                     {% else %}
                         -
                     {% endif %}
