@@ -6,7 +6,7 @@ import os
 import shutil
 import zipstream
 
-from inginious.common.filesystems import FileSystemProvider
+from inginious.common.filesystems import FileSystemProvider, FsType
 
 
 class LocalFSProvider(FileSystemProvider):
@@ -37,6 +37,12 @@ class LocalFSProvider(FileSystemProvider):
         self._checkpath(subfolder)
         return LocalFSProvider(self.prefix + subfolder)
 
+    def try_stage(self, filepath: str):
+        pass
+
+    def try_commit(self, filepath: str, msg: str=None, user: tuple[str, str]=None):
+        pass
+
     def exists(self, path: str=None) -> bool:
         if path is None:
             path = self.prefix
@@ -44,11 +50,11 @@ class LocalFSProvider(FileSystemProvider):
             path = os.path.join(self.prefix, path)
         return os.path.exists(path)
 
-    def ensure_exists(self):
+    def ensure_exists(self, type: FsType=FsType.other):
         if not os.path.exists(self.prefix):
             os.makedirs(self.prefix)
 
-    def put(self, filepath, content):
+    def put(self, filepath, content, msg: str=None, user: tuple[str, str]=None):
         self._checkpath(filepath)
         fullpath = os.path.join(self.prefix, filepath)
         if "/" in fullpath:
@@ -56,7 +62,8 @@ class LocalFSProvider(FileSystemProvider):
 
         if isinstance(content, str):
             content = content.encode("utf-8")
-        open(fullpath, 'wb').write(content)
+        with open(fullpath, 'wb') as fd:
+            fd.write(content)
 
     def get_fd(self, filepath: str, timestamp=None):
         self._checkpath(filepath)
@@ -66,11 +73,15 @@ class LocalFSProvider(FileSystemProvider):
         return self.get_fd(filepath, timestamp).read()
 
     def list(self, folders: bool=True, files: bool=True, recursive: bool=False) -> list:
+
+        def _git_filter(path: str) -> bool:
+            return '.git' not in path
+
         if recursive:
             output = []
             for root, subdirs, listed_files in os.walk(self.prefix):
-                if folders:
-                    output += [root+"/"+d for d in subdirs]
+                if folders and _git_filter(root):
+                    output += [root+"/"+d for d in subdirs if _git_filter(d)]
                 if files:
                     output += [root+"/"+f for f in listed_files]
             output = [os.path.relpath(f, self.prefix) for f in output]
@@ -83,11 +94,11 @@ class LocalFSProvider(FileSystemProvider):
                 condition = lambda x: os.path.isdir(os.path.join(self.prefix, x))
             else:
                 return []
-            output = [f for f in os.listdir(self.prefix) if condition(f)]
+            output = [f for f in os.listdir(self.prefix) if condition(f) and _git_filter(f)]
         isdir = lambda x: '/' if os.path.isdir(os.path.join(self.prefix, x)) else ''
         return [f+isdir(f) for f in output]
 
-    def delete(self, filepath: str=None):
+    def delete(self, filepath: str=None, msg: str=None, user: GitInfo=None, push: bool=True) -> None:
         if filepath is None:
             filepath = self.prefix
         else:
@@ -106,7 +117,7 @@ class LocalFSProvider(FileSystemProvider):
         except:
             raise FileNotFoundError()
 
-    def move(self, src, dest):
+    def move(self, src, dest, msg: str=None, user: GitInfo=None, push: bool=None) -> None:
         self._checkpath(src)
         self._checkpath(dest)
         if "/" in dest:

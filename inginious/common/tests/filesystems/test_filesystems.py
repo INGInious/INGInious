@@ -8,6 +8,7 @@ import hashlib
 import pytest
 
 from inginious.common.filesystems.local import LocalFSProvider
+from inginious.common.filesystems.git import GitFSProvider
 
 
 FS = {
@@ -23,7 +24,7 @@ def compare_files(filepath, content):
 def myhash(content: str) -> str:
     return hashlib.sha256(content).hexdigest()
 
-@pytest.fixture(params=[LocalFSProvider])
+@pytest.fixture(params=[LocalFSProvider, GitFSProvider])
 def init_tmp_dir(request):
     """ Create a temporary folder """
     dir_path = tempfile.mkdtemp()

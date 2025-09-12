@@ -21,7 +21,7 @@ jobs:
       # Ensure that each python version will be tested even if one of them fails.
       fail-fast: false
       matrix:
-        python_version: ["3.10", "3.11", "3.12", "3.13"]
+        python_version: ["3.12", "3.13"]
 
     runs-on: ubuntu-24.04
     services:

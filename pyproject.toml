@@ -64,7 +64,12 @@ dependencies = [
     "WsgiDAV==4.3.3",
     "zipstream==1.1.4",
     "pytidylib==0.3.2",
-    "argon2-cffi == 23.1.0"
+    "argon2-cffi == 23.1.0",
+    "bcrypt==4.3.0",
+    "cryptography==45.0.5",
+    "pygit2 @ git+https://github.com/nrybowski/pygit2.git@submodule_set_url"
+    # TODO: Restore official release when https://github.com/libgit2/pygit2/pull/1395 is available.
+    # "pygit2 == 1.18.1"
 ]
 
 
