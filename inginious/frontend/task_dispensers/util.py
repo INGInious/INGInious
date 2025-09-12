@@ -337,8 +337,8 @@ def check_toc(toc):
     try:
         result = SectionsList(toc)
     except Exception as ex:
-        return False, str(ex)
-    return True, "Valid TOC"
+        return None, str(ex)
+    return result, "Valid TOC"
 
 
 def parse_tasks_config(task_list, config_items, data):
@@ -367,12 +367,11 @@ def parse_tasks_config(task_list, config_items, data):
 
 def check_task_config(task_list, config_items, data):
     """
-
     :param data: the raw content of the task settings
     :return:  (True, '') if the settings are valid or (False, The error message) otherwise
     """
     try:
         parse_tasks_config(task_list, config_items, data)
-        return True, ''
+        return data, ''
     except Exception as ex:
-        return False, str(ex)
+        return None, str(ex)

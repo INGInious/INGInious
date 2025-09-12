@@ -125,12 +125,12 @@ class TableOfContents(TaskDispenser):
     def check_dispenser_data(self, dispenser_data):
         """ Checks the dispenser data as formatted by the form from render_edit function """
         new_toc = dispenser_data
-        valid, errors = check_toc(new_toc.get("toc", {}))
-        if valid:
-            valid, errors = check_task_config(self._task_list_func().keys(), self.config_items, new_toc.get("config", {}))
-        if valid and new_toc:
+        result, errors = check_toc(new_toc.get("toc", {}))
+        if result:
+            result, errors = check_task_config(result.get_tasks(), self.config_items, new_toc.get("config", {}))
+        if result and new_toc:
             new_toc["imported"] = dispenser_data.get("imported", False) or self._dispenser_data.get("imported", False)
-        return new_toc if valid else None, errors
+        return new_toc if result else None, errors
 
     def get_ordered_tasks(self):
         """ Returns a serialized version of the tasks structure as an OrderedDict"""
