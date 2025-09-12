@@ -55,9 +55,17 @@ class Contest(TableOfContents):
         return {"toc_data": data, "contest_settings": self._contest_settings} if data else None, errors
 
     def get_accessibilities(self, taskids, usernames): # pylint: disable=unused-argument
+        tasks_in_toc = self._toc.get_tasks()
         contest_data = self.get_contest_data()
         if contest_data['enabled']:
-            return {username: {taskid: AccessibleTime(contest_data['start'] + '/') for taskid in taskids} for username in usernames}
+            return {
+                username: {
+                    taskid: AccessibleTime(contest_data['start'] + '/')
+                    if taskid in tasks_in_toc else AccessibleTime(False)
+                    for taskid in taskids
+                }
+                for username in usernames
+            }
         else:
             return TableOfContents.get_accessibilities(self, taskids, usernames)
 
