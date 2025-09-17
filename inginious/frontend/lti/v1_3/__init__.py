@@ -61,7 +61,7 @@ class LTIGradeManager(LTIScorePublisher):
                 sc = Grade()
                 sc.set_score_given(grade) \
                     .set_score_maximum(100.0) \
-                    .set_timestamp(datetime.now().isoformat() + 'Z') \
+                    .set_timestamp(datetime.now().astimezone().isoformat()) \
                     .set_activity_progress('Completed') \
                     .set_grading_progress('FullyGraded') \
                     .set_user_id(launch_data['sub'])

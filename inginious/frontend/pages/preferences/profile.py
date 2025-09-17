@@ -5,12 +5,11 @@
 
 """ Profile page """
 import re
-
 import flask
+import zoneinfo
+
 from pymongo import ReturnDocument
 from werkzeug.exceptions import NotFound
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import UserManager
@@ -90,6 +89,16 @@ class ProfilePage(INGIniousAuthPage):
                 msg = _("Name is too short.")
                 return result, msg, error
 
+        # Check if updating timezones
+        if data["timezone"] != userdata.get("timezone", ""):
+            if data["timezone"] in zoneinfo.available_timezones():
+                profile_data_to_be_updated["timezone"] = data["timezone"]
+            else:
+                error = True
+                msg = _("Incorrect timezone.")
+                return result, msg, error
+
+
         # updating profile in DB
         if profile_data_to_be_updated:
             self.database.users.find_one_and_update({"username": self.user_manager.session_username()},
@@ -107,6 +116,8 @@ class ProfilePage(INGIniousAuthPage):
                     self.user_manager.set_session_code_indentation(profile_data_to_be_updated["code_indentation"])
                 if "realname" in profile_data_to_be_updated:
                     self.user_manager.set_session_realname(profile_data_to_be_updated["realname"])
+                if "timezone" in profile_data_to_be_updated:
+                    self.user_manager.set_session_timezone(profile_data_to_be_updated["timezone"])
 
         msg = _("Profile updated.")
 
@@ -120,20 +131,22 @@ class ProfilePage(INGIniousAuthPage):
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
         userdata = self.database.users.find_one({"email": self.user_manager.session_email()})
+        available_timezones = sorted(zoneinfo.available_timezones())
 
         if not userdata:
             raise NotFound(description=_("User unavailable."))
 
         return self.template_helper.render("preferences/profile.html", terms_page=self.app.terms_page,
+                                           available_timezones=available_timezones,
                                            privacy_page=self.app.privacy_page, msg="", error=False)
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
         userdata = self.database.users.find_one({"email": self.user_manager.session_email()})
+        available_timezones = sorted(zoneinfo.available_timezones())
 
         if not userdata:
             raise NotFound(description=_("User unavailable."))
-
 
         msg = ""
         error = False
@@ -142,4 +155,5 @@ class ProfilePage(INGIniousAuthPage):
             userdata, msg, error = self.save_profile(userdata, data)
 
         return self.template_helper.render("preferences/profile.html", terms_page=self.app.terms_page,
+                                           available_timezones=available_timezones,
                                            privacy_page=self.app.privacy_page, msg=msg, error=error)

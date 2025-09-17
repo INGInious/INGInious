@@ -12,6 +12,7 @@ import pymongo
 import logging
 import argparse
 import base64
+import tzlocal
 
 from pymongo import MongoClient
 from gridfs import GridFS
@@ -120,6 +121,27 @@ def main():
         print("Updating database to db_version 17")
         database.users.update_many({}, {"$set": {"code_indentation": "4"}})
         db_version = 17
+
+    if db_version < 18:
+        print("Updating database to db_version 18")
+        database.submissions.rename("old_submissions")
+        database.old_submissions.aggregate([
+            {"$set": {"submitted_on2": {"$dateToParts": {"date": "$submitted_on", "timezone": "UTC"}}}},
+            {"$set": {"submitted_on": {"$dateFromParts": {
+                "year": "$submitted_on2.year",
+                "month": "$submitted_on2.month",
+                "day": "$submitted_on2.day",
+                "hour": "$submitted_on2.hour",
+                "minute": "$submitted_on2.minute",
+                "second": "$submitted_on2.second",
+                "millisecond": "$submitted_on2.millisecond",
+                "timezone": tzlocal.get_localzone_name()
+            }}}},
+            {"$unset": "submitted_on2"},
+            {"$out": "submissions"}
+        ])
+        database.old_submissions.drop()
+        db_version = 18
 
     database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
         

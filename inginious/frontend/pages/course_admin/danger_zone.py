@@ -25,7 +25,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
     _logger = logging.getLogger("inginious.webapp.danger_zone")
 
     def wipe_course(self, courseid):
-        submissions = self.database.submissions.find({"courseid": courseid})
+        submissions = self.database.aware_submissions.find({"courseid": courseid})
         for submission in submissions:
             for key in ["input", "archive"]:
                 gridfs = self.submission_manager.get_gridfs()
@@ -36,7 +36,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self.database.audiences.delete_many({"courseid": courseid})
         self.database.groups.delete_many({"courseid": courseid})
         self.database.user_tasks.delete_many({"courseid": courseid})
-        self.database.submissions.delete_many({"courseid": courseid})
+        self.database.aware_submissions.delete_many({"courseid": courseid})
 
         self._logger.info("Course %s wiped.", courseid)
 
@@ -62,7 +62,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             zipf.writestr("user_tasks.json", bson.json_util.dumps(user_tasks), zipfile.ZIP_DEFLATED)
 
             # Fetching input data  while looping on submissions can trigger a mongo cursor timeout
-            submissions = self.database.submissions.find({"courseid": courseid}, no_cursor_timeout=True)
+            submissions = self.database.aware_submissions.find({"courseid": courseid}, no_cursor_timeout=True)
             erroneous_subs = set()
 
             for submission in submissions:
@@ -113,7 +113,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                         submission[key] = self.submission_manager.get_gridfs().put(zipf.read(key + "/" + str(submission[key]) + ".data"))
 
             if len(submissions) > 0:
-                self.database.submissions.insert_many(submissions)
+                self.database.aware_submissions.insert_many(submissions)
 
         self._logger.info("Course %s restored from backup directory.", courseid)
 
@@ -180,9 +180,9 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    dt = datetime.datetime.strptime(data["backupdate"], "%Y%m%d.%H%M%S")
+                    dt = datetime.datetime.strptime(data["backupdate"], "%Y%m%d.%H%M%S").astimezone()
                     self.restore_course(courseid, data["backupdate"])
-                    msg = _("Course restored to date : {}.").format(dt.strftime("%Y-%m-%d %H:%M:%S"))
+                    msg = _("Course restored to date : <time datetime='{dt}'>{dt}</time>.").format(dt=dt.isoformat())
                 except Exception as ex:
                     msg = _("An error occurred while restoring backup: {}").format(repr(ex))
                     error = True
@@ -208,7 +208,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             for backup in glob.glob(os.path.join(filepath, '*.zip')):
                 try:
                     basename = os.path.basename(backup)[0:-4]
-                    dt = datetime.datetime.strptime(basename, "%Y%m%d.%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+                    dt = datetime.datetime.strptime(basename, "%Y%m%d.%H%M%S").astimezone()
                     backups.append({"file": basename, "date": dt})
                 except:  # Wrong format
                     pass

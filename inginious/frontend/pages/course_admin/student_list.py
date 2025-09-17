@@ -134,7 +134,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                                                ("url", self.submission_url_generator_audience(audience['_id']))
                                                ])
 
-            data = list(self.database.submissions.aggregate(
+            data = list(self.database.aware_submissions.aggregate(
                 [
                     {
                         "$match":

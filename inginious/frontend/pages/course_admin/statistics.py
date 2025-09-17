@@ -7,6 +7,7 @@
 from collections import OrderedDict
 
 import flask
+import zoneinfo
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
@@ -14,7 +15,7 @@ from datetime import datetime, date, timedelta
 
 class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
     def _tasks_stats(self, tasks, filter, limit):
-        stats_tasks = self.database.submissions.aggregate(
+        stats_tasks = self.database.aware_submissions.aggregate(
             [{"$match": filter},
              {"$limit": limit},
              {"$project": {"taskid": "$taskid", "result": "$result"}},
@@ -31,7 +32,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         ]
 
     def _users_stats(self, filter, limit):
-        stats_users = self.database.submissions.aggregate([
+        stats_users = self.database.aware_submissions.aggregate([
             {"$match": filter},
             {"$limit": limit},
             {"$project": {"username": "$username", "result": "$result"}},
@@ -51,18 +52,20 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
     def _graph_stats(self, daterange, filter, limit):
         project = {
-            "year": {"$year": "$submitted_on"},
-            "month": {"$month": "$submitted_on"},
-            "day": {"$dayOfMonth": "$submitted_on"},
+            "year": {"$year": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
+            "month": {"$month": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
+            "day": {"$dayOfMonth": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
             "result": "$result"
         }
         groupby = {"year": "$year", "month": "$month", "day": "$day"}
 
         method = "day"
         if (daterange[1] - daterange[0]).days < 7:
-            project["hour"] = {"$hour": "$submitted_on"}
+            project["hour"] = {"$hour": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}}
             groupby["hour"] = "$hour"
             method = "hour"
+
+        tz = zoneinfo.ZoneInfo(self.user_manager.session_timezone())
 
         min_date = daterange[0].replace(minute=0, second=0, microsecond=0)
         max_date = daterange[1].replace(minute=0, second=0, microsecond=0)
@@ -72,9 +75,9 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
             max_date = max_date.replace(hour=0)
             delta1 = timedelta(days=1)
 
-        filter["submitted_on"] = {"$gte": min_date, "$lt": max_date+delta1}
+        filter["submitted_on"] = {"$gte": min_date, "$lt": max_date + delta1}
 
-        stats_graph = self.database.submissions.aggregate(
+        stats_graph = self.database.aware_submissions.aggregate(
             [{"$match": filter},
              {"$limit": limit},
              {"$project": project},
@@ -88,8 +91,8 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         all_submissions = {}
         valid_submissions = {}
 
-        cur = min_date
-        while cur <= max_date:
+        cur = min_date.replace(tzinfo=None)
+        while cur <= max_date.replace(tzinfo=None):
             all_submissions[cur] = 0
             valid_submissions[cur] = 0
             cur += increment
@@ -144,7 +147,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         return result
 
     def _global_stats(self, tasks, filter, limit, best_submissions_list, pond_stat):
-        submissions = self.database.submissions.find(filter)
+        submissions = self.database.aware_submissions.find(filter)
         if limit is not None:
             submissions.limit(limit)
 
@@ -183,20 +186,17 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
     def page(self, course, params):
         msgs = []
         daterange = [None, None]
-        try:
-            if params.get('date_before', ''):
-                daterange[1] = datetime.strptime(params["date_before"], "%Y-%m-%d %H:%M:%S")
-            if params.get('date_after', ''):
-                daterange[0] = datetime.strptime(params["date_after"], "%Y-%m-%d %H:%M:%S")
-        except ValueError:  # If match of datetime.strptime() fails
-            msgs.append(_("Invalid dates"))
+        if params.get('date_before', ''):
+            daterange[1] = datetime.fromisoformat(params["date_before"])
+        else:
+            daterange[1] = datetime.now(zoneinfo.ZoneInfo(self.user_manager.session_timezone()))
 
-        if daterange[0] is None or daterange[1] is None:
-            now = datetime.now().replace(minute=0, second=0, microsecond=0)
-            daterange = [now - timedelta(days=14), now]
+        if params.get('date_after', ''):
+            daterange[0] = datetime.fromisoformat(params["date_after"])
+        else:
+            daterange[0] = daterange[1].replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=14)
+            params["date_after"] = daterange[0].isoformat()
 
-        params["date_before"] = daterange[1].strftime("%Y-%m-%d %H:%M:%S")
-        params["date_after"] = daterange[0].strftime("%Y-%m-%d %H:%M:%S")
         display_hours = (daterange[1] - daterange[0]).days < 4
 
         users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, params)
@@ -209,7 +209,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
                                                  float(params["grade_min"]) if params.get('grade_min', '') else None,
                                                  float(params["grade_max"]) if params.get('grade_max', '') else None
                                              ],
-                                             submit_time_between=[x.strftime("%Y-%m-%d %H:%M:%S") for x in daterange],
+                                             submit_time_between=[x.isoformat() for x in daterange],
                                              keep_only_crashes="crashes_only" in params)
 
         stats_tasks = self._tasks_stats(tasks, filter, limit)

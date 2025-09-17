@@ -24,7 +24,7 @@
                             {{ "DEADLINE: "}}
                             <b>
                                 {% set accessibility = task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()) %}
-                                {{ accessibility.get_soft_end_date().strftime("%d/%m/%Y %H:%M:%S") }}
+                                {{ show_time(accessibility.get_soft_end_date()) }}
                             </b>
                         </div>
                         <div class="col-xs-12 col-md-5">

@@ -4,17 +4,20 @@
 {% if short %}
     {% set at = config_item.get_value(dispenser_config.get(taskid,{})) %}
     {{_("Accessibility")}} :
+    {% from "layout.html" import show_time %}
     <span class="accessibility accessibility-never" {% if not at.is_never_accessible() %} style="display: none;" {% endif %}>{{_("Never")}}</span>
     <span class="accessibility accessibility-always" {% if not at.is_always_accessible() %} style="display: none;" {% endif %}>{{_("Always")}}</span>
     <span class="accessibility accessibility-custom" {% if at.is_always_accessible() or at.is_never_accessible() %} style="display: none;" {% endif %}>
-        {{ _("Custom, from: {} to: {}").format('<span class="accessibility-custom-start">' + str(at.get_std_start_date()) + '</span>', '<span class="accessibility-custom-end">' + at.get_std_end_date() + '</span>') | safe}}
-        (<span class="accessibility-custom-soft-end">{{ at.get_std_soft_end_date() }}</span>)
+        {% set start_date = show_time(at.get_start_date()) if at.get_std_start_date() else '' %}
+        {% set end_date = show_time(at.get_end_date()) if at.get_std_end_date() else '' %}
+        {% set soft_end_date = show_time(at.get_soft_end_date()) if at.get_std_soft_end_date() else '' %}
+        {{ _("Custom, from: {} to: {}").format('<span class="accessibility-custom-start">' | safe + start_date + '</span>' | safe, '<span class="accessibility-custom-end">' | safe + end_date + '</span>' | safe) | safe}}
+        (<span class="accessibility-custom-soft-end">{{ soft_end_date | safe }}</span>)
     </span>
 {% else %}
 
 <div class="mt-3">{{_("Accessibility")}}</div>
 <div class="form-group row accessibility">
-
     <div class="col-md-12">
         <label>
             <input class="accessibility {% if grouped %}accessibility_grouped{% endif %}" type="radio" value="false" name="accessibility" />
@@ -36,18 +39,18 @@
         </div>
         <div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-4">
             <div class='input-group date_picker {% if grouped %}date_picker_grouped{% endif %}' id='accessibility_start_picker{% if grouped %}_grouped{% endif %}' data-target-input="#accessibility_start{% if grouped %}_grouped{% endif %}" data-target-span="accessibility-custom-start">
-                <input data-target="#accessibility_start_picker{% if grouped %}_grouped{% endif %}" id="accessibility_start{% if grouped %}_grouped{% endif %}" data-date-format="YYYY-MM-DD HH:mm:ss" placeholder="2014-06-29 10:00" type='text' class="form-control datetimepicker-input" />
+                <input data-target="#accessibility_start_picker{% if grouped %}_grouped{% endif %}" id="accessibility_start{% if grouped %}_grouped{% endif %}" type='text' class="form-control datetimepicker-input" />
                 <div class="input-group-append" data-target="#accessibility_start_picker{% if grouped %}_grouped{% endif %}" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                 </div>
             </div>
         </div>
         <div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-1"><label class="control-label">{{text[1]}}</label></div>
         <div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-4">
             <div class='input-group date_picker {% if grouped %}date_picker_grouped{% endif %}' id='accessibility_end_picker{% if grouped %}_grouped{% endif %}' data-target-input="#accessibility_end{% if grouped %}_grouped{% endif %}" data-target-span="accessibility-custom-end">
-                <input data-target='#accessibility_end_picker{% if grouped %}_grouped{% endif %}' id="accessibility_end{% if grouped %}_grouped{% endif %}" data-date-format="YYYY-MM-DD HH:mm:ss" placeholder="2014-06-29 10:00" type='text' class="form-control datetimepicker-input" />
+                <input data-target='#accessibility_end_picker{% if grouped %}_grouped{% endif %}' id="accessibility_end{% if grouped %}_grouped{% endif %}" type='text' class="form-control datetimepicker-input" />
                 <div class="input-group-append" data-target="#accessibility_end_picker{% if grouped %}_grouped{% endif %}" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                 </div>
             </div>
         </div>
@@ -61,18 +64,17 @@
         <div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-4">
             <div class="form-group">
                 <div class='input-group date_picker {% if grouped %}date_picker_grouped{% endif %}' id="accessibility_soft_end_picker{% if grouped %}_grouped{% endif %}" data-target-input="#accessibility_soft_end{% if grouped %}_grouped{% endif %}" data-target-span="accessibility-custom-soft-end">
-                        <input data-target="#accessibility_soft_end_picker{% if grouped %}_grouped{% endif %}" id="accessibility_soft_end{% if grouped %}_grouped{% endif %}" data-date-format="YYYY-MM-DD HH:mm:ss"  placeholder="2014-06-29 10:00" type="text" class="form-control datetimepicker-input" />
-                        <div class="input-group-append" data-target="#accessibility_soft_end_picker{% if grouped %}_grouped{% endif %}" data-toggle="datetimepicker">
-                                <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                        </div>
-
+                    <input data-target="#accessibility_soft_end_picker{% if grouped %}_grouped{% endif %}" id="accessibility_soft_end{% if grouped %}_grouped{% endif %}"  type="text" class="form-control datetimepicker-input" />
+                    <div class="input-group-append" data-target="#accessibility_soft_end_picker{% if grouped %}_grouped{% endif %}" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <script type="text/javascript">
         $(function() {
-           $('.date_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ss'});
+           $('.date_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
         });
     </script>
 </div>
@@ -140,7 +142,8 @@
 
         tasks.each(function () {
             let taskid = $(this).data("taskid");
-            $("#task_" + $(this).data("taskid") + " ." + targetSpan).empty().append(val);
+            let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
+            $("#task_" + $(this).data("taskid") + " ." + targetSpan).empty().append(time);
             dispenser_update_task_accessibility(grouped, taskid);
         });
     });
