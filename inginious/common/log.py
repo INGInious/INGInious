@@ -29,35 +29,14 @@ def init_logging(log_level=logging.DEBUG):
     oauthlib_log.setLevel(log_level)
     oauthlib_log.addHandler(ch)
 
+    # Set werkzeug dev server log to same format to improve reading
+    werkzeug_log = logging.getLogger("werkzeug")
+    werkzeug_log.setLevel(log_level)
+    werkzeug_log.addHandler(ch)
+
 def get_course_logger(coursename):
     """
     :param coursename: the course id
     :return: a logger object associated to a specific course
     """
     return logging.getLogger("inginious.course."+coursename)
-
-
-class CustomLogMiddleware:
-    """ WSGI middleware for logging the status in webpy"""
-
-    def __init__(self, app, logger):
-        self.app = app
-        self.logger = logger
-        self.format = '%s - - [%s] "%s %s %s" - %s'
-
-    def __call__(self, environ, start_response):
-        def xstart_response(status, response_headers, *args):
-            out = start_response(status, response_headers, *args)
-            self.log(status, environ)
-            return out
-
-        return self.app(environ, xstart_response)
-
-    def log(self, status, environ):
-        req = environ.get('PATH_INFO', '_')
-        protocol = environ.get('ACTUAL_SERVER_PROTOCOL', '-')
-        method = environ.get('REQUEST_METHOD', '-')
-        host = "%s:%s" % (environ.get('REMOTE_ADDR', '-'),
-                          environ.get('REMOTE_PORT', '-'))
-        msg = '%s - "%s %s %s" - %s' % (host, protocol, method, req, status)
-        self.logger.info(msg)
