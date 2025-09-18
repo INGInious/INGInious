@@ -19,7 +19,7 @@ from werkzeug.middleware.shared_data import SharedDataMiddleware
 # If INGInious files are not installed in Python path
 sys.path.append(os.path.dirname(__file__))
 
-from inginious.common.log import init_logging, CustomLogMiddleware
+from inginious.common.log import init_logging
 from inginious.common.base import load_json_or_yaml
 import inginious.frontend.app
 
@@ -83,7 +83,6 @@ def main():
     application = SharedDataMiddleware(application, [
         ('/static/', os.path.join(root_path, 'frontend', 'static'))
     ])
-    application = CustomLogMiddleware(application, logging.getLogger("inginious.webapp.requests"))
 
     # Launch the app
     run_simple(host, port, application, use_debugger=config.get("web_debug", False), threaded=True)
