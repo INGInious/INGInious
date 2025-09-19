@@ -182,16 +182,18 @@ class CodeProblem(Problem):
     @classmethod
     def parse_problem(self, problem_content):
         # Checking problem edit inputs
-        if len(problem_content["offset"]) == 0:
-            del problem_content["offset"]
-        else:
-            try:
-                offset = int(problem_content["offset"])
-                if offset < 1:
-                    raise Exception("Line offset must be positive!")
-                problem_content["offset"] = offset
-            except ValueError:
-                raise Exception("Line offset must be an integer!")
+        if "offset" in problem_content:
+            # Remove if empty value
+            if not problem_content["offset"]:
+                del problem_content["offset"]
+            else: # Parse value
+                try:
+                    offset = int(problem_content["offset"])
+                    if offset < 1:
+                        raise Exception("Line offset must be positive!")
+                    problem_content["offset"] = offset
+                except ValueError:
+                    raise Exception("Line offset must be an integer!")
 
         return Problem.parse_problem(problem_content)
 
