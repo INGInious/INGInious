@@ -26,10 +26,8 @@ class PluginManager(object):
         self._logger = logging.getLogger("inginious.frontend.plugin_manager")
         self._hooks = {}
         self._loaded = False
-        self._webpy_app = None
         self._flask_app = None
         self._task_factory = None
-        self._database = None
         self._user_manager = None
         self._submission_manager = None
 
@@ -68,11 +66,10 @@ class PluginManager(object):
                 kwargs = out
         return kwargs
 
-    def load(self, client, flask_app, course_factory, task_factory, database, user_manager, submission_manager, config):
+    def load(self, client, flask_app, course_factory, task_factory, user_manager, submission_manager, config):
         """ Loads the plugin manager. Must be done after the initialisation of the client """
         self._flask_app = flask_app
         self._task_factory = task_factory
-        self._database = database
         self._user_manager = user_manager
         self._submission_manager = submission_manager
         self._loaded = True
@@ -112,10 +109,6 @@ class PluginManager(object):
         if not self._loaded:
             raise PluginManagerNotLoadedException()
         self._user_manager.register_auth_method(auth_method)
-
-    def get_database(self):
-        """ Returns the frontend database"""
-        return self._database
 
     def get_submission_manager(self):
         """ Returns the submission manager"""

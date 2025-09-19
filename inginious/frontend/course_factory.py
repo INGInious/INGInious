@@ -20,13 +20,12 @@ class CourseFactory(object):
     """ Load courses from disk """
     _logger = logging.getLogger("inginious.course_factory")
 
-    def __init__(self, filesystem: FileSystemProvider, task_factory, plugin_manager, task_dispensers, database):
+    def __init__(self, filesystem: FileSystemProvider, task_factory, plugin_manager, task_dispensers):
         self._filesystem = filesystem
         self._task_factory = task_factory
         self._plugin_manager = plugin_manager
         self._task_dispensers = task_dispensers
         self._cache = {}
-        self._database = database
 
     def add_task_dispenser(self, task_dispenser):
         """
@@ -231,14 +230,14 @@ class CourseFactory(object):
                     last_modif["$i18n/" + lang + ".mo"] = translations_fs.get_last_modification_time(lang + ".mo")
 
         self._cache[courseid] = (
-            Course(courseid, course_descriptor, self.get_course_fs(courseid), self._task_factory, self._plugin_manager, self._task_dispensers, self._database),
+            Course(courseid, course_descriptor, self.get_course_fs(courseid), self._task_factory, self._plugin_manager, self._task_dispensers),
             last_modif
         )
 
         self._task_factory.update_cache_for_course(courseid)
 
 
-def create_factories(fs_provider, task_dispensers, task_problem_types, plugin_manager=None, database=None):
+def create_factories(fs_provider, task_dispensers, task_problem_types, plugin_manager=None):
     """
     Shorthand for creating Factories
     :param fs_provider: A FileSystemProvider leading to the courses
@@ -250,4 +249,4 @@ def create_factories(fs_provider, task_dispensers, task_problem_types, plugin_ma
         plugin_manager = PluginManager()
 
     task_factory = TaskFactory(fs_provider, plugin_manager, task_problem_types)
-    return CourseFactory(fs_provider, task_factory, plugin_manager, task_dispensers, database), task_factory
+    return CourseFactory(fs_provider, task_factory, plugin_manager, task_dispensers), task_factory

@@ -7,7 +7,7 @@ import re
 
 from flask import Response
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-
+from inginious.frontend import database
 
 class CourseAdminSearchUserPage(INGIniousAdminPage):
     """ Return users based on their username or realname """
@@ -18,7 +18,7 @@ class CourseAdminSearchUserPage(INGIniousAdminPage):
         self.get_course_and_check_rights(courseid, allow_all_staff=True)
 
         request = re.escape(request) # escape for safety. Maybe this is not needed...
-        users = list(self.database.users.find({"$and":[{ "activate": { "$exists": False } },
+        users = list(database.users.find({"$and":[{ "activate": { "$exists": False } },
                                                        {"username":{ "$ne": "" }},
                                                        {"$or": [{"username": {"$regex": ".*" + request + ".*", "$options": "i"}},
                                                        {"realname": {"$regex": ".*" + request + ".*", "$options": "i"}}

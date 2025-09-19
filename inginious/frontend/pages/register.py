@@ -17,6 +17,8 @@ from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.flask.mail import mail
 from inginious.frontend.user_manager import UserManager
 
+from inginious.frontend import database
+
 
 class RegistrationPage(INGIniousPage):
     """ Registration page for DB authentication """
@@ -47,7 +49,7 @@ class RegistrationPage(INGIniousPage):
         error = False
         reset = None
         msg = ""
-        user = self.database.users.find_one({"reset": data.get("reset", "")})
+        user = database.users.find_one({"reset": data.get("reset", "")})
         if user is None:
             error = True
             msg = "Invalid reset hash."
@@ -81,7 +83,7 @@ class RegistrationPage(INGIniousPage):
             msg = _("Please accept the Terms of Service and Data Privacy")
 
         if not error:
-            existing_user = self.database.users.find_one(
+            existing_user = database.users.find_one(
                 {"$or": [{"username": data["username"]}, {"email": email}]})
             if existing_user is not None:
                 error = True
@@ -92,7 +94,7 @@ class RegistrationPage(INGIniousPage):
             else:
                 passwd_hash = UserManager.hash_password(data["passwd"])
                 activate_hash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
-                self.database.users.insert_one({"username": data["username"],
+                database.users.insert_one({"username": data["username"],
                                                 "realname": data["realname"],
                                                 "email": email,
                                                 "password": passwd_hash,
@@ -116,7 +118,7 @@ To activate your account, please click on the following link :
                     msg = _("You are succesfully registered. An email has been sent to you for activation.")
                 except Exception as ex:
                     # Remove newly inserted user (do not add after to prevent email sending in case of failure)
-                    self.database.users.delete_one({"username": data["username"]})
+                    database.users.delete_one({"username": data["username"]})
                     error = True
                     msg = _("Something went wrong while sending you activation email. Please contact the administrator.")
                     self._logger.error("Couldn't send email : {}".format(str(ex)))
@@ -139,7 +141,7 @@ To activate your account, please click on the following link :
 
         if not error:
             reset_hash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
-            user = self.database.users.find_one_and_update({"email": data["recovery_email"]},
+            user = database.users.find_one_and_update({"email": data["recovery_email"]},
                                                            {"$set": {"reset": reset_hash}})
             if user is None:
                 error = True
@@ -181,7 +183,7 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
 
         if not error:
             passwd_hash = UserManager.hash_password(data["passwd"])
-            user = self.database.users.find_one_and_update({"reset": data["reset"]},
+            user = database.users.find_one_and_update({"reset": data["reset"]},
                                                            {"$set": {"password": passwd_hash},
                                                             "$unset": {"reset": True, "activate": True}})
             if user is None:

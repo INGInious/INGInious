@@ -9,12 +9,14 @@ import logging
 from lti import OutcomeRequest
 from inginious.frontend.lti import LTIScorePublisher
 
+from inginious.frontend import database
+
 
 class LTIOutcomeManager(LTIScorePublisher):
     _submission_tags = {"outcome_service_url": "outcome_service_url", "outcome_result_id": "outcome_result_id",
                         "outcome_consumer_key": "consumer_key"}
 
-    def __init__(self, database, user_manager, course_factory):
+    def __init__(self, user_manager, course_factory):
         self._logger = logging.getLogger("inginious.webapp.lti1_1.outcome_manager")
         super(LTIOutcomeManager, self).__init__(database.lis_outcome_queue, user_manager, course_factory)
 

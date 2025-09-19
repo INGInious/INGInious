@@ -11,6 +11,7 @@ from werkzeug.exceptions import Forbidden
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.pages.tasks import BaseTaskPage
 
+from inginious.frontend import database
 
 class LTITaskPage(INGIniousAuthPage):
     def is_lti_page(self):
@@ -54,7 +55,7 @@ class LTIBindPage(INGIniousAuthPage):
         return False
 
     def _get_lti_session_data(self):
-        data = self.database.lti_sessions.find_one({'session_id': request.args['lti_session_id']}) if 'lti_session_id' in request.args else None
+        data = database.lti_sessions.find_one({'session_id': request.args['lti_session_id']}) if 'lti_session_id' in request.args else None
         if data is None or data.get("lti", None) is None:
             return None, render_template("lti/bind.html", success=False,
                                                      data=None, error=_("Invalid LTI session id"))
@@ -79,13 +80,13 @@ class LTIBindPage(INGIniousAuthPage):
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
 
         if data:
-            user_profile = self.database.users.find_one({"username": self.user_manager.session_username()})
-            lti_user_profile = self.database.users.find_one(
+            user_profile = database.users.find_one({"username": self.user_manager.session_username()})
+            lti_user_profile = database.users.find_one(
                 {"ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]})
             if not user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data[self._field],
                                                                                     "") and not lti_user_profile:
                 # There is no binding yet, so bind LTI to this account
-                self.database.users.find_one_and_update({"username": self.user_manager.session_username()}, {"$set": {
+                database.users.find_one_and_update({"username": self.user_manager.session_username()}, {"$set": {
                     "ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]}})
             elif not (lti_user_profile and user_profile["username"] == lti_user_profile["username"]):
                 # There exists an LTI binding for another account, refuse auth!
@@ -126,7 +127,7 @@ class LTILoginPage(INGIniousPage):
             return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                session_id="", data=None, error="Invalid LTI data")
 
-        user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]})
+        user_profile = database.users.find_one({"ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]})
         if user_profile:
             self.user_manager.connect_user(user_profile)
 

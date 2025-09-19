@@ -22,6 +22,8 @@ from flask.sessions import SessionInterface
 from werkzeug.exceptions import HTTPException
 from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage
 
+from inginious.frontend import database
+
 
 class MongoDBSession(CallbackDict, SessionMixin):
     """Baseclass for server-side based sessions."""
@@ -38,9 +40,6 @@ class MongoDBSession(CallbackDict, SessionMixin):
 
 class MongoDBSessionInterface(SessionInterface):
     """A Session interface that uses mongodb as backend.
-    :param client: A ``pymongo.MongoClient`` instance.
-    :param db: The database you want to use.
-    :param collection: The collection you want to use.
     :param use_signer: Whether to sign the session id cookie or not.
     :param permanent: Whether to use permanent session or not.
     """
@@ -48,10 +47,8 @@ class MongoDBSessionInterface(SessionInterface):
     serializer = pickle
     session_class = MongoDBSession
 
-    def __init__(self, client, db, collection, use_signer=False,
-                 permanent=True):
-        self.client = client
-        self.store = client[db][collection]
+    def __init__(self, use_signer=False, permanent=True):
+        self.store = database.sessions
         self.store.create_index('expiration')  # ensure index
         self.use_signer = use_signer
         self.permanent = permanent

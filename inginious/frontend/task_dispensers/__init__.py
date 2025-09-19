@@ -4,16 +4,14 @@ from abc import ABCMeta, abstractmethod
 class TaskDispenser(metaclass=ABCMeta):
     legacy_fields = {}
 
-    def __init__(self, task_list_func, dispenser_data, database, course_id):
+    def __init__(self, task_list_func, dispenser_data, course_id):
         """
         Instantiate a new TaskDispenser
         :param task_list_func: A function returning the list of available course tasks from the task factory
         :param dispenser_data: The dispenser data structure/configuration
-        :param database: The MongoDB database
         :param course_id: A String that is the id of the course
         """
         self._task_list_func = task_list_func
-        self._database = database
         self._course_id = course_id
         self._dispenser_data = dispenser_data
 

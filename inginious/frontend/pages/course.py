@@ -9,6 +9,7 @@ from flask import redirect, render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend import database
 
 
 def handle_course_unavailable(get_path, user_manager, course):
@@ -72,7 +73,7 @@ class CoursePage(INGIniousAuthPage):
 
             # Compute course/tasks scores
             tasks_data = {taskid: {"succeeded": False, "grade": 0.0} for taskid in user_task_list}
-            user_tasks = self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": user_task_list}})
+            user_tasks = database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": user_task_list}})
 
             for user_task in user_tasks:
                 tasks_data[user_task["taskid"]]["succeeded"] = user_task["succeeded"]
