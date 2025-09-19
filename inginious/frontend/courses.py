@@ -35,7 +35,7 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_factory, plugin_manager, task_dispensers, database):
+    def __init__(self, courseid, content, course_fs, task_factory, plugin_manager, task_dispensers):
         self._id = courseid
         self._content = content
         self._fs = course_fs
@@ -87,7 +87,7 @@ class Course(object):
             # Here we use a lambda to encourage the task dispenser to pass by the task_factory to fetch course tasks
             # to avoid them to be cached along with the course object. Passing the task factory as argument
             # would require to pass the course too, and have a useless reference back.
-            self._task_dispenser = task_dispenser_class(lambda: self._task_factory.get_all_tasks(self), self._content.get("dispenser_data", ''), database, self.get_id())
+            self._task_dispenser = task_dispenser_class(lambda: self._task_factory.get_all_tasks(self), self._content.get("dispenser_data", ''), self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 

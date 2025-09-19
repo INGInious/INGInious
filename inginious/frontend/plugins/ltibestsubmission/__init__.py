@@ -3,7 +3,7 @@ from bson import ObjectId, json_util
 from werkzeug.exceptions import NotFound
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend import database
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
     _field = "consumer_key"
@@ -19,7 +19,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         courseid, taskid = data["task"]
 
         # get the INGInious username from the ToolConsumer-provided username
-        inginious_usernames = list(self.database.users.find(
+        inginious_usernames = list(database.users.find(
             {"ltibindings." + courseid + "." + data[self._field]: data["username"]}
         ))
 
@@ -29,7 +29,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         inginious_username = inginious_usernames[0]["username"]
 
         # get best submission from database
-        user_best_sub = list(self.database.user_tasks.find(
+        user_best_sub = list(database.user_tasks.find(
             {"username": inginious_username, "courseid": courseid, "taskid": taskid},
             {"submissionid": 1, "_id": 0}))
 
@@ -43,7 +43,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
             # no best submission
             return json_util.dumps({"status": "success", "submission": None})
 
-        best_sub = list(self.database.submissions.find({"_id": ObjectId(user_best_sub_id)}))[0]
+        best_sub = list(database.submissions.find({"_id": ObjectId(user_best_sub_id)}))[0]
 
         # attach the input to the submission
         best_sub = self.submission_manager.get_input_from_submission(best_sub)

@@ -13,6 +13,7 @@ from flask import render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend import database
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -77,7 +78,7 @@ class ScoreBoard(INGIniousAuthPage):
                 raise NotFound(description="Unknown task id "+taskid)
 
         # Get all submissions
-        results = self.database.submissions.find({
+        results = database.submissions.find({
             "courseid": courseid,
             "taskid": {"$in": list(scoreboard_content.keys())},
             "custom.score": {"$exists": True},

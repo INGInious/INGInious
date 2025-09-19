@@ -14,13 +14,15 @@ from inginious.frontend.task_dispensers.util import check_toc, parse_tasks_confi
     SubmissionLimit, Accessibility
 from inginious.frontend.task_dispensers import TaskDispenser
 
+from inginious.frontend import database
+
 
 class TableOfContents(TaskDispenser):
     config_items = [Weight, SubmissionStorage, EvaluationMode, GroupSubmission, Categories, SubmissionLimit, Accessibility]
     legacy_fields = {"weight": Weight, "submission_limit": SubmissionLimit, "stored_submissions": SubmissionStorage,
                      "groups": GroupSubmission, "evaluate": EvaluationMode, "accessible": Accessibility, "categories": Categories}
 
-    def __init__(self, task_list_func, dispenser_data, database, course_id):
+    def __init__(self, task_list_func, dispenser_data, course_id):
         # Check dispenser data structure
         dispenser_data = dispenser_data or {"toc": {}, "config": {}}
 
@@ -33,7 +35,7 @@ class TableOfContents(TaskDispenser):
         if not isinstance(dispenser_data, dict) or "toc" not in dispenser_data:
             raise Exception("Invalid dispenser data structure")
 
-        TaskDispenser.__init__(self, task_list_func, dispenser_data, database, course_id)
+        TaskDispenser.__init__(self, task_list_func, dispenser_data, course_id)
         self._toc = SectionsList(dispenser_data.get("toc", {}))
         self._task_config = dispenser_data.get("config", {})
         parse_tasks_config(self._task_list_func().keys(), self.config_items, self._task_config)
@@ -86,7 +88,7 @@ class TableOfContents(TaskDispenser):
         """ Returns the grade of a user for the current course"""
         taskids = list(self._task_list_func().keys())
         task_list = self.get_accessibilities(taskids, usernames)
-        user_tasks = self._database.user_tasks.find(
+        user_tasks = database.user_tasks.find(
             {"username": {"$in": usernames}, "courseid": self._course_id, "taskid": {"$in": taskids}})
 
         tasks_weight = {taskid: self.get_weight(taskid) for taskid in taskids}

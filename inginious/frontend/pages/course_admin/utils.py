@@ -17,7 +17,7 @@ from bson.objectid import ObjectId
 
 from inginious.common.base import id_checker
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend import database
 
 class INGIniousAdminPage(INGIniousAuthPage):
     """
@@ -198,7 +198,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
         elif only_audiences:
             list_audience_id = [ObjectId(o) for o in only_audiences]
             students = set()
-            for audience in self.database.audiences.find({"_id": {"$in": list_audience_id}}):
+            for audience in database.audiences.find({"_id": {"$in": list_audience_id}}):
                 students.update(audience["students"])
             if only_users:  # do the intersection
                 self._validate_list(only_users)
@@ -227,7 +227,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
             filter["result"] = {"$in": ["crash", "timeout"]}
 
         # Only evaluation submissions
-        user_tasks = self.database.user_tasks.find(base_filter)
+        user_tasks = database.user_tasks.find(base_filter)
         best_submissions_list = {user_task['submissionid'] for user_task in user_tasks if
                                  user_task['submissionid'] is not None}
 

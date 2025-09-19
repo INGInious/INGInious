@@ -17,6 +17,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
+from inginious.frontend import database
 
 
 class CourseDangerZonePage(INGIniousAdminPage):
@@ -24,18 +25,17 @@ class CourseDangerZonePage(INGIniousAdminPage):
     _logger = logging.getLogger("inginious.webapp.danger_zone")
 
     def wipe_course(self, courseid):
-        submissions = self.database.submissions.find({"courseid": courseid})
+        submissions = database.submissions.find({"courseid": courseid})
         for submission in submissions:
             for key in ["input", "archive"]:
-                gridfs = self.submission_manager.get_gridfs()
-                if key in submission and type(submission[key]) == bson.objectid.ObjectId and gridfs.exists(submission[key]):
-                    gridfs.delete(submission[key])
+                if key in submission and type(submission[key]) == bson.objectid.ObjectId and database.gridfs.exists(submission[key]):
+                    database.gridfs.delete(submission[key])
 
-        self.database.courses.update_one({"_id": courseid}, {"$set": {"students": []}})
-        self.database.audiences.delete_many({"courseid": courseid})
-        self.database.groups.delete_many({"courseid": courseid})
-        self.database.user_tasks.delete_many({"courseid": courseid})
-        self.database.submissions.delete_many({"courseid": courseid})
+        database.courses.update_one({"_id": courseid}, {"$set": {"students": []}})
+        database.audiences.delete_many({"courseid": courseid})
+        database.groups.delete_many({"courseid": courseid})
+        database.user_tasks.delete_many({"courseid": courseid})
+        database.submissions.delete_many({"courseid": courseid})
 
         self._logger.info("Course %s wiped.", courseid)
 
@@ -47,29 +47,28 @@ class CourseDangerZonePage(INGIniousAdminPage):
             os.makedirs(os.path.dirname(filepath))
 
         with zipfile.ZipFile(filepath, "w", allowZip64=True) as zipf:
-            course_obj = self.database.courses.find_one({"_id": courseid})
+            course_obj = database.courses.find_one({"_id": courseid})
             students = course_obj.get("students", []) if course_obj else []
             zipf.writestr("students.json", bson.json_util.dumps(students), zipfile.ZIP_DEFLATED)
 
-            audiences = self.database.audiences.find({"courseid": courseid})
+            audiences = database.audiences.find({"courseid": courseid})
             zipf.writestr("audiences.json", bson.json_util.dumps(audiences), zipfile.ZIP_DEFLATED)
 
-            groups = self.database.groups.find({"courseid": courseid})
+            groups = database.groups.find({"courseid": courseid})
             zipf.writestr("groups.json", bson.json_util.dumps(groups), zipfile.ZIP_DEFLATED)
 
-            user_tasks = self.database.user_tasks.find({"courseid": courseid})
+            user_tasks = database.user_tasks.find({"courseid": courseid})
             zipf.writestr("user_tasks.json", bson.json_util.dumps(user_tasks), zipfile.ZIP_DEFLATED)
 
             # Fetching input data  while looping on submissions can trigger a mongo cursor timeout
-            submissions = self.database.submissions.find({"courseid": courseid}, no_cursor_timeout=True)
+            submissions = database.submissions.find({"courseid": courseid}, no_cursor_timeout=True)
             erroneous_subs = set()
 
             for submission in submissions:
                 for key in ["input", "archive"]:
-                    gridfs = self.submission_manager.get_gridfs()
                     if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                        if gridfs.exists(submission[key]):
-                            infile = gridfs.get(submission[key])
+                        if database.gridfs.exists(submission[key]):
+                            infile = database.gridfs.get(submission[key])
                             zipf.writestr(key + "/" + str(submission[key]) + ".data", infile.read(), zipfile.ZIP_DEFLATED)
                         else:
                             self._logger.error("Missing {} in grifs, skipping submission {}".format(str(submission[key]), str(submission["_id"])))
@@ -91,28 +90,28 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
             students = bson.json_util.loads(zipf.read("students.json").decode("utf-8"))
             if len(students) > 0:
-                self.database.courses.update_one({"_id": courseid}, {"$set": {"students": students}}, upsert=True)
+                database.courses.update_one({"_id": courseid}, {"$set": {"students": students}}, upsert=True)
 
             audiences = bson.json_util.loads(zipf.read("audiences.json").decode("utf-8"))
             if len(audiences) > 0:
-                self.database.audiences.insert_many(audiences)
+                database.audiences.insert_many(audiences)
 
             groups = bson.json_util.loads(zipf.read("groups.json").decode("utf-8"))
             if len(groups) > 0:
-                self.database.groups.insert_many(groups)
+                database.groups.insert_many(groups)
 
             user_tasks = bson.json_util.loads(zipf.read("user_tasks.json").decode("utf-8"))
             if len(user_tasks) > 0:
-                self.database.user_tasks.insert_many(user_tasks)
+                database.user_tasks.insert_many(user_tasks)
 
             submissions = bson.json_util.loads(zipf.read("submissions.json").decode("utf-8"))
             for submission in submissions:
                 for key in ["input", "archive"]:
                     if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                        submission[key] = self.submission_manager.get_gridfs().put(zipf.read(key + "/" + str(submission[key]) + ".data"))
+                        submission[key] = database.gridfs.put(zipf.read(key + "/" + str(submission[key]) + ".data"))
 
             if len(submissions) > 0:
-                self.database.submissions.insert_many(submissions)
+                database.submissions.insert_many(submissions)
 
         self._logger.info("Course %s restored from backup directory.", courseid)
 

@@ -12,10 +12,12 @@ from flask import request, render_template
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
 
+from inginious.frontend import database
+
 
 class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
     def _tasks_stats(self, tasks, filter, limit):
-        stats_tasks = self.database.submissions.aggregate(
+        stats_tasks = database.submissions.aggregate(
             [{"$match": filter},
              {"$limit": limit},
              {"$project": {"taskid": "$taskid", "result": "$result"}},
@@ -32,7 +34,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         ]
 
     def _users_stats(self, filter, limit):
-        stats_users = self.database.submissions.aggregate([
+        stats_users = database.submissions.aggregate([
             {"$match": filter},
             {"$limit": limit},
             {"$project": {"username": "$username", "result": "$result"}},
@@ -77,7 +79,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
         filter["submitted_on"] = {"$gte": min_date, "$lt": max_date + delta1}
 
-        stats_graph = self.database.submissions.aggregate(
+        stats_graph = database.submissions.aggregate(
             [{"$match": filter},
              {"$limit": limit},
              {"$project": project},
@@ -111,7 +113,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         return "?tasks=" + taskid
 
     def _progress_stats(self, course):
-        data = list(self.database.user_tasks.aggregate(
+        data = list(database.user_tasks.aggregate(
             [
                 {
                     "$match":
@@ -147,7 +149,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         return result
 
     def _global_stats(self, tasks, filter, limit, best_submissions_list, pond_stat):
-        submissions = self.database.submissions.find(filter)
+        submissions = database.submissions.find(filter)
         if limit is not None:
             submissions.limit(limit)
 

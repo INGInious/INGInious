@@ -18,6 +18,7 @@ from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.frontend import database
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -32,8 +33,8 @@ def add_admin_menu(course): # pylint: disable=unused-argument
 
 class Contest(TableOfContents):
 
-    def __init__(self, task_list_func, dispenser_data, database, course_id):
-        TableOfContents.__init__(self, task_list_func, dispenser_data.get("toc_data", {}), database, course_id)
+    def __init__(self, task_list_func, dispenser_data, course_id):
+        TableOfContents.__init__(self, task_list_func, dispenser_data.get("toc_data", {}), course_id)
         self._contest_settings = dispenser_data.get(
             'contest_settings',
             {"enabled": False,
@@ -118,7 +119,7 @@ class ContestScoreboard(INGIniousAuthPage):
         users = self.user_manager.get_course_registered_users(course)
         tasks = list(course.get_tasks().keys())
 
-        db_results = self.database.submissions.find({
+        db_results = database.submissions.find({
             "username": {"$in": users},
             "courseid": courseid,
             "submitted_on": {"$gte": start, "$lt": blackout},

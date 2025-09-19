@@ -14,7 +14,7 @@ from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.lti.v1_3 import MongoLTILaunchDataStorage
-
+from inginious.frontend import database
 
 class LTI13JWKSPage(INGIniousPage):
     endpoint = 'ltijwkspage'
@@ -51,7 +51,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
             raise Exception('Missing "target_link_uri" param')
         taskid = target_link_uri.split('/')[-1]
 
-        launch_data_storage = MongoLTILaunchDataStorage(self.database, courseid, taskid)
+        launch_data_storage = MongoLTILaunchDataStorage(database, courseid, taskid)
         oidc_login = FlaskOIDCLogin(flask_request, course.lti_tool(), launch_data_storage=launch_data_storage)
         return oidc_login.enable_check_cookies().redirect(target_link_uri)
 
@@ -73,7 +73,7 @@ class LTI13LaunchPage(INGIniousPage):
             raise NotFound(description=_(str(ex)))
 
         tool_conf = course.lti_tool()
-        launch_data_storage = MongoLTILaunchDataStorage(self.database, courseid, taskid)
+        launch_data_storage = MongoLTILaunchDataStorage(database, courseid, taskid)
         flask_request = FlaskRequest()
         message_launch = FlaskMessageLaunch(flask_request, tool_conf, launch_data_storage=launch_data_storage)
 

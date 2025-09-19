@@ -7,7 +7,7 @@
 from flask import request, redirect, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend import database
 
 class BindingsPage(INGIniousAuthPage):
     """ Bindings page for DB-authenticated users"""
@@ -25,7 +25,7 @@ class BindingsPage(INGIniousAuthPage):
         msg = ""
         error = False
 
-        user_data = self.database.users.find_one({"username": self.user_manager.session_username()})
+        user_data = database.users.find_one({"username": self.user_manager.session_username()})
 
         if not user_data:
             raise self.app.notfound(message=_("User doesn't exist."))

@@ -10,7 +10,7 @@ from flask import request, Response, render_template
 from werkzeug.exceptions import NotFound, Forbidden
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
-
+from inginious.frontend import database
 
 class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
     """ Page that allow search, view, replay an download of submisssions done by students """
@@ -29,7 +29,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
         if "replay_submission" in user_input:
             # Replay a unique submission
-            submission = self.database.submissions.find_one({"_id": ObjectId(user_input["replay_submission"])})
+            submission = database.submissions.find_one({"_id": ObjectId(user_input["replay_submission"])})
             if submission is None:
                 raise NotFound(description=_("This submission doesn't exist."))
 
@@ -93,7 +93,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         user_input["org_categories"] = request.args.getlist("org_categories")
 
         if "download_submission" in user_input:
-            submission = self.database.submissions.find_one({"_id": ObjectId(user_input["download_submission"]),
+            submission = database.submissions.find_one({"_id": ObjectId(user_input["download_submission"]),
                                                              "courseid": course.get_id(),
                                                              "status": {"$in": ["done", "error"]}})
             if submission is None:
@@ -199,8 +199,8 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
                                                                     keep_only_evaluation_submissions=keep_only_evaluation_submissions,
                                                                     keep_only_crashes=keep_only_crashes)
 
-        submissions = self.database.submissions.find(filter)
-        submissions_count = self.database.submissions.count_documents(filter)
+        submissions = database.submissions.find(filter)
+        submissions_count = database.submissions.count_documents(filter)
 
         if sort_by[0] not in ["submitted_on", "username", "grade", "taskid"]:
             sort_by[0] = "submitted_on"

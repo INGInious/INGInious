@@ -23,6 +23,7 @@ from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundExc
 from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
+from inginious.frontend import database
 
 class BaseTaskPage(object):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
@@ -31,7 +32,6 @@ class BaseTaskPage(object):
         self.cp = calling_page
         self.submission_manager = self.cp.submission_manager
         self.user_manager = self.cp.user_manager
-        self.database = self.cp.database
         self.course_factory = self.cp.course_factory
         self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
         self.default_max_file_size = self.cp.default_max_file_size
@@ -120,7 +120,7 @@ class BaseTaskPage(object):
                 time.time() if task.regenerate_input_random() else ""))
             random_input_list = [random.random() for i in range(task.get_number_input_random())]
 
-            user_task = self.database.user_tasks.find_one_and_update(
+            user_task = database.user_tasks.find_one_and_update(
                 {
                     "courseid": task.get_course_id(),
                     "taskid": task.get_id(),
@@ -133,11 +133,11 @@ class BaseTaskPage(object):
             )
 
             submissionid = user_task.get('submissionid', None)
-            eval_submission = self.database.submissions.find_one({'_id': ObjectId(submissionid)}) if submissionid else None
+            eval_submission = database.submissions.find_one({'_id': ObjectId(submissionid)}) if submissionid else None
 
             students = [self.user_manager.session_username()]
             if course.get_task_dispenser().get_group_submission(taskid) and not self.user_manager.has_admin_rights_on_course(course, username):
-                group = self.database.groups.find_one({"courseid": task.get_course_id(),
+                group = database.groups.find_one({"courseid": task.get_course_id(),
                                                      "students": self.user_manager.session_username()})
                 if group is not None:
                     students = group["students"]
@@ -187,7 +187,7 @@ class BaseTaskPage(object):
                 return json.dumps({"status": "error", "title": _("Error"), "text": _("You are not allowed to submit for this task.")})
 
             # Retrieve input random and check still valid
-            random_input = self.database.user_tasks.find_one({"courseid": task.get_course_id(), "taskid": task.get_id(), "username": username}, { "random": 1 })
+            random_input = database.user_tasks.find_one({"courseid": task.get_course_id(), "taskid": task.get_id(), "username": username}, { "random": 1 })
             random_input = random_input["random"] if "random" in random_input else []
             for i in range(0, len(random_input)):
                 s = "@random_" + str(i)
@@ -251,7 +251,7 @@ class BaseTaskPage(object):
                 result = self.submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
 
                 # user_task always exists as we called user_saw_task before
-                user_task = self.database.user_tasks.find_one({
+                user_task = database.user_tasks.find_one({
                     "courseid":task.get_course_id(),
                     "taskid": task.get_id(),
                     "username": {"$in": result["username"]}

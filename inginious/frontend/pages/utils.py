@@ -9,7 +9,6 @@ import os
 from typing import List, Dict
 
 import flask
-from gridfs import GridFS
 from flask import redirect, render_template
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
@@ -23,8 +22,6 @@ from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.i18n import available_languages
-from pymongo.database import Database
-
 from inginious.frontend.course_factory import CourseFactory
 from inginious.frontend.task_factory import TaskFactory
 
@@ -95,16 +92,6 @@ class INGIniousPage(MethodView):
     def user_manager(self) -> UserManager:
         """ Returns the user manager singleton """
         return self.app.user_manager
-
-    @property
-    def database(self) -> Database:
-        """ Returns the database singleton """
-        return self.app.database
-
-    @property
-    def gridfs(self) -> GridFS:
-        """ Returns the GridFS singleton """
-        return self.app.gridfs
 
     @property
     def client(self) -> Client:
@@ -317,4 +304,3 @@ class INGIniousStaticPage(INGIniousPage):
         content = ParsableText.rst(filecontent["content"], initial_header_level=2)
 
         return render_template("static.html", pagetitle=title, content=content)
-

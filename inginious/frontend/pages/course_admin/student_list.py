@@ -16,6 +16,7 @@ from io import StringIO
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 
+from inginious.frontend import database
 
 class CourseStudentListPage(INGIniousAdminPage):
     """ Course administration page: list of registered students """
@@ -133,7 +134,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                                                ("url", self.submission_url_generator_audience(audience['_id']))
                                                ])
 
-            data = list(self.database.submissions.aggregate(
+            data = list(database.submissions.aggregate(
                 [
                     {
                         "$match":
@@ -171,15 +172,15 @@ class CourseStudentListPage(INGIniousAdminPage):
         if "remove_student" in data:
             try:
                 if data["type"] == "all":
-                    audiences = list(self.database.audiences.find({"courseid": course.get_id()}))
+                    audiences = list(database.audiences.find({"courseid": course.get_id()}))
                     for audience in audiences:
                         audience["students"] = []
-                        self.database.audiences.replace_one({"_id": audience["_id"]}, audience)
-                    groups = list(self.database.groups.find({"courseid": course.get_id()}))
+                        database.audiences.replace_one({"_id": audience["_id"]}, audience)
+                    groups = list(database.groups.find({"courseid": course.get_id()}))
                     for group in groups:
                         group["students"] = []
-                        self.database.groups.replace_one({"_id": group["_id"]}, group)
-                    self.database.courses.find_one_and_update({"_id": course.get_id()}, {"$set": {"students": []}})
+                        database.groups.replace_one({"_id": group["_id"]}, group)
+                    database.courses.find_one_and_update({"_id": course.get_id()}, {"$set": {"students": []}})
                 else:
                     self.user_manager.course_unregister_user(course.get_id(), data["username"])
             except:
@@ -193,7 +194,7 @@ class CourseStudentListPage(INGIniousAdminPage):
     def post_audiences(self, course, data, active_tab, msg, error):
         try:
             if 'audience' in data:
-                self.database.audiences.insert_one({"courseid": course.get_id(), "students": [],
+                database.audiences.insert_one({"courseid": course.get_id(), "students": [],
                                                     "tutors": [],
                                                     "description": data['audience']})
                 msg["audiences"] = _("New audience created.")
@@ -226,7 +227,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                     stud_list, aud_li, oth_stu, u_info = self.get_user_lists(course)
                     courseid = course.get_id()
                     # Fully remove previous audiences.
-                    self.database.audiences.delete_many({"courseid": courseid})
+                    database.audiences.delete_many({"courseid": courseid})
                     # read datas from CSV.
                     for user_id, field, role, description in csv_data:
                         user_id = user_id.strip()
@@ -242,7 +243,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                             msg["audiences"] = _("Unknown role: ") + role
                             error["audiences"] = True
                             continue
-                        user = self.database.users.find_one({field: user_id})
+                        user = database.users.find_one({field: user_id})
                         if user is not None:
                             user_id = user["username"]
                         else:
@@ -272,17 +273,17 @@ class CourseStudentListPage(INGIniousAdminPage):
                     new_students = list(set(stud_list).union(set(course_students)))
                     new_tutors = list(set(course.get_tutors()).union(set(course_tutors)))
 
-                    self.database.courses.update_one({"_id": courseid}, {"$set": {"students": new_students,
+                    database.courses.update_one({"_id": courseid}, {"$set": {"students": new_students,
                                                                                   "tutors": new_tutors}})
 
                     # this is done to avoid removing the audience id and impact the group audience filter.
                     for audience in audiences:
-                        existing_audience = self.database.audiences.find_one(
+                        existing_audience = database.audiences.find_one(
                             {"courseid": courseid, "description": audience["description"]})
                         if not existing_audience:
-                            self.database.audiences.insert_one(audience)
+                            database.audiences.insert_one(audience)
                         else:
-                            self.database.audiences.update_one({"courseid": courseid,
+                            database.audiences.update_one({"courseid": courseid,
                                                                 "description": audience["description"]},
                                                                {"$set": {"students": audience["students"],
                                                                          "tutors": audience["tutors"]}})
@@ -297,7 +298,7 @@ class CourseStudentListPage(INGIniousAdminPage):
     def get_requested_field_user_info(self, username, preferred_field):
         if preferred_field != "username":
             # query user
-            username = self.database.users.find_one({"username": username})[preferred_field]
+            username = database.users.find_one({"username": username})[preferred_field]
 
         return username
 
@@ -316,26 +317,26 @@ class CourseStudentListPage(INGIniousAdminPage):
 
             for classid in data["delete"]:
                 # Get the group
-                group = self.database.groups.find_one(
+                group = database.groups.find_one(
                     {"_id": ObjectId(classid), "courseid": course.get_id()}) if ObjectId.is_valid(classid) else None
 
                 if group is None:
                     msg["groups"] = ("group with id {} not found.").format(classid)
                     error["groups"] = True
                 else:
-                    self.database.groups.find_one_and_update({"courseid": course.get_id()},
+                    database.groups.find_one_and_update({"courseid": course.get_id()},
                                                              {"$push": {
                                                                  "students": {"$each": group["students"]}
                                                              }})
 
-                    self.database.groups.delete_one({"_id": ObjectId(classid)})
+                    database.groups.delete_one({"_id": ObjectId(classid)})
                     msg["groups"] = _("Audience updated.")
             active_tab = "tab_groups"
 
         if "upload_groups" in data or "groups" in data:
             try:
                 if "upload_groups" in data:
-                    self.database.groups.delete_many({"courseid": course.get_id()})
+                    database.groups.delete_many({"courseid": course.get_id()})
                     groups = custom_yaml.load(data["groupfile"].read())
                 else:
                     groups = json.loads(data["groups"])
@@ -371,7 +372,7 @@ class CourseStudentListPage(INGIniousAdminPage):
         student_list = self.user_manager.get_course_registered_users(course, False)
         users_info = self.user_manager.get_users_info(student_list)
 
-        groups_list = list(self.database.groups.aggregate([
+        groups_list = list(database.groups.aggregate([
             {"$match": {"courseid": course.get_id()}},
             {"$unwind": "$students"},
             {"$project": {
@@ -399,14 +400,14 @@ class CourseStudentListPage(INGIniousAdminPage):
             new_data["courseid"] = course.get_id()
 
             # Insert the new group
-            result = self.database.groups.insert_one(new_data)
+            result = database.groups.insert_one(new_data)
 
             # Retrieve new group id
             groupid = result.inserted_id
             new_data['_id'] = result.inserted_id
             group = new_data
         else:
-            group = self.database.groups.find_one({"_id": ObjectId(groupid), "courseid": course.get_id()})
+            group = database.groups.find_one({"_id": ObjectId(groupid), "courseid": course.get_id()})
 
         # Convert audience ids to ObjectId
         new_data["audiences"] = [ObjectId(s) for s in new_data["audiences"]]
@@ -420,7 +421,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                     set(audience_students.get(student, [])).intersection(new_data["audiences"]))
                 if student in student_list and (student_allowed_in_group or not new_data["audiences"]):
                     # Remove user from the other group
-                    self.database.groups.find_one_and_update({"courseid": course.get_id(), "students": student},
+                    database.groups.find_one_and_update({"courseid": course.get_id(), "students": student},
                                                              {"$pull": {"students": student}})
                     students.append(student)
                 else:
@@ -428,7 +429,7 @@ class CourseStudentListPage(INGIniousAdminPage):
 
         new_data["students"] = students
 
-        group = self.database.groups.find_one_and_update(
+        group = database.groups.find_one_and_update(
             {"_id": ObjectId(groupid)},
             {"$set": {"description": new_data["description"], "audiences": new_data["audiences"],
                       "size": new_data["size"],
@@ -448,14 +449,14 @@ class CourseStudentListPage(INGIniousAdminPage):
             new_data["courseid"] = course.get_id()
 
             # Insert the new audience
-            result = self.database.audiences.insert_one(new_data)
+            result = database.audiences.insert_one(new_data)
 
             # Retrieve new audience id
             audienceid = result.inserted_id
             new_data['_id'] = result.inserted_id
             audience = new_data
         else:
-            audience = self.database.audiences.find_one({"_id": ObjectId(audienceid), "courseid": course.get_id()})
+            audience = database.audiences.find_one({"_id": ObjectId(audienceid), "courseid": course.get_id()})
 
         # Check tutors
         new_data["tutors"] = [tutor for tutor in new_data["tutors"] if tutor in course.get_staff()]
@@ -476,12 +477,12 @@ class CourseStudentListPage(INGIniousAdminPage):
                     students.append(student)
 
         removed_students = [student for student in audience["students"] if student not in new_data["students"]]
-        self.database.audiences.find_one_and_update({"courseid": course.get_id()},
+        database.audiences.find_one_and_update({"courseid": course.get_id()},
                                                     {"$push": {"students": {"$each": removed_students}}})
 
         new_data["students"] = students
 
-        audience = self.database.audiences.find_one_and_update(
+        audience = database.audiences.find_one_and_update(
             {"_id": ObjectId(audienceid)},
             {"$set": {"description": new_data["description"],
                       "students": students, "tutors": new_data["tutors"]}}, return_document=ReturnDocument.AFTER)

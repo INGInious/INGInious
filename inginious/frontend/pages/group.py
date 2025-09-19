@@ -12,7 +12,7 @@ from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend import database
 
 class GroupPage(INGIniousAuthPage):
     """ Group page """
@@ -36,14 +36,14 @@ class GroupPage(INGIniousAuthPage):
         elif "register_group" in data:
             if course.can_students_choose_group():
 
-                group = self.database.groups.find_one(
+                group = database.groups.find_one(
                     {"courseid": course.get_id(), "students": username})
                 if group is not None:
                     group["students"].remove(username)
-                    self.database.groups.replace_one({"courseid": course.get_id(), "students": username}, group)
+                    database.groups.replace_one({"courseid": course.get_id(), "students": username}, group)
 
                 # Add student in the audience and unique group if group is not full
-                new_group = self.database.groups.find_one_and_update(
+                new_group = database.groups.find_one_and_update(
                     {"_id": ObjectId(data["register_group"]),
                      "$where": "this.students.length<this.size"},
                     {"$push": {"students": username}})
@@ -58,9 +58,9 @@ class GroupPage(INGIniousAuthPage):
                 msg = _("You are not allowed to change group.")
         elif "unregister_group" in data:
             if course.can_students_choose_group():
-                group = self.database.groups.find_one({"courseid": course.get_id(), "students": username})
+                group = database.groups.find_one({"courseid": course.get_id(), "students": username})
                 if group is not None:
-                    self.database.groups.find_one_and_update({"_id": group["_id"]}, {"$pull": {"students": username}})
+                    database.groups.find_one_and_update({"_id": group["_id"]}, {"$pull": {"students": username}})
                     self._logger.info("User %s unregistered from group %s/%s", username, courseid, group["description"])
                 else:
                     error = True
@@ -75,7 +75,7 @@ class GroupPage(INGIniousAuthPage):
             submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
 
         user_group = self.user_manager.get_course_user_group(course)
-        user_audiences = [audience["_id"] for audience in self.database.audiences.find({"courseid": courseid, "students": username})]
+        user_audiences = [audience["_id"] for audience in database.audiences.find({"courseid": courseid, "students": username})]
         groups = self.user_manager.get_course_groups(course)
 
         student_allowed_in_group = lambda group: any(set(user_audiences).intersection(group["audiences"])) or not group["audiences"]

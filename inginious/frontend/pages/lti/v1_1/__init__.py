@@ -17,7 +17,7 @@ from lti import ToolProvider
 from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
-
+from inginious.frontend import database
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -117,7 +117,7 @@ class LTI11LaunchPage(INGIniousPage):
 
         try:
             test = LTIFlaskToolProvider.from_flask_request()
-            validator = LTIValidator(self.database.nonce, course.lti_keys())
+            validator = LTIValidator(database.nonce, course.lti_keys())
             verified = test.is_valid_request(validator)
         except Exception as ex:
             self.logger.error("Error while parsing the LTI request : {}".format(str(post_input)))

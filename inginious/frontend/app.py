@@ -9,14 +9,10 @@ import os
 import sys
 import flask
 import jinja2
-import pymongo
 import oauthlib
 
-from gridfs import GridFS
 from binascii import hexlify
-from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
-from bson.codec_options import CodecOptions
 
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
@@ -26,7 +22,7 @@ from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
-from inginious import get_root_path, __version__, DB_VERSION
+from inginious import get_root_path, __version__
 from inginious.frontend.course_factory import create_factories
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems.local import LocalFSProvider
@@ -38,6 +34,8 @@ from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.flask.mapping import init_flask_mapping, init_flask_maintenance_mapping
 from inginious.frontend.flask.mongo_sessions import MongoDBSessionInterface
 from inginious.frontend.flask.mail import mail
+
+from inginious.frontend import database
 
 def _put_configuration_defaults(config):
     """
@@ -114,10 +112,10 @@ def get_path(*path_parts):
     return "/".join(path_parts)
 
 
-def _close_app(mongo_client, client):
+def _close_app(client):
     """ Ensures that the app is properly closed """
     client.close()
-    mongo_client.close()
+    database.close()
 
 
 def get_app(config):
@@ -128,37 +126,11 @@ def get_app(config):
     # First, disable debug. It will be enabled in the configuration, later.
 
     config = _put_configuration_defaults(config)
-    mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client.get_database(config.get('database', 'INGInious'), codec_options=CodecOptions(tz_aware=True))
-    gridfs = GridFS(database)
-
-    # Init database if needed
-    db_version = database.db_version.find_one({})
-    if db_version is None:
-        database.submissions.create_index([("username", pymongo.ASCENDING)])
-        database.submissions.create_index([("courseid", pymongo.ASCENDING)])
-        database.submissions.create_index([("courseid", pymongo.ASCENDING), ("taskid", pymongo.ASCENDING)])
-        database.submissions.create_index([("submitted_on", pymongo.DESCENDING)])  # sort speed
-        database.submissions.create_index([("status", pymongo.ASCENDING)]) # update_pending_jobs speedup
-        database.user_tasks.create_index(
-            [("username", pymongo.ASCENDING), ("courseid", pymongo.ASCENDING), ("taskid", pymongo.ASCENDING)],
-            unique=True)
-        database.user_tasks.create_index([("username", pymongo.ASCENDING), ("courseid", pymongo.ASCENDING)])
-        database.user_tasks.create_index([("courseid", pymongo.ASCENDING), ("taskid", pymongo.ASCENDING)])
-        database.user_tasks.create_index([("courseid", pymongo.ASCENDING)])
-        database.user_tasks.create_index([("username", pymongo.ASCENDING)])
-        database.db_version.insert_one({"db_version": DB_VERSION})
-    elif db_version.get("db_version", 0) != DB_VERSION:
-        raise Exception("Please update the database before running INGInious")
-
     flask_app = flask.Flask(__name__)
-
     flask_app.config.from_mapping(**config)
-    flask_app.session_interface = MongoDBSessionInterface(
-        mongo_client, config.get('mongo_opt', {}).get('database', 'INGInious'),
-        "sessions", config.get('SESSION_USE_SIGNER', False), True  # config.get('SESSION_PERMANENT', True)
-    )
+    database.init_app(config.get('mongo_opt', {}))
 
+    flask_app.session_interface = MongoDBSessionInterface(config.get('SESSION_USE_SIGNER', False), True)
     flask.request_finished.connect(UserManager._lti_session_save, flask_app)
 
     # available indentation types
@@ -193,18 +165,18 @@ def get_app(config):
 
     default_problem_types = get_default_displayable_problem_types()
 
-    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types, plugin_manager, database)
+    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types, plugin_manager)
 
-    user_manager = UserManager(database, config.get('superadmins', []))
+    user_manager = UserManager(config.get('superadmins', []))
 
-    update_pending_jobs(database)
+    update_pending_jobs()
 
     client = create_arch(config, fs_provider, zmq_context, course_factory)
 
-    lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager, course_factory),
-                            "1.3": LTIGradeManager(database, user_manager, course_factory)}
+    lti_score_publishers = {"1.1": LTIOutcomeManager(user_manager, course_factory),
+                            "1.3": LTIGradeManager(user_manager, course_factory)}
 
-    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
+    submission_manager = WebAppSubmissionManager(client, user_manager, plugin_manager, lti_score_publishers)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
@@ -261,8 +233,6 @@ def get_app(config):
     flask_app.task_factory = task_factory
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
-    flask_app.database = database
-    flask_app.gridfs = gridfs
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
@@ -286,9 +256,9 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, course_factory, task_factory, database, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, course_factory, task_factory, user_manager, submission_manager, config.get("plugins", []))
 
     # Start the inginious.backend
     client.start()
 
-    return flask_app.wsgi_app, lambda: _close_app(mongo_client, client)
+    return flask_app.wsgi_app, lambda: _close_app(client)

@@ -11,7 +11,7 @@ from flask import request, render_template
 from natsort import natsorted
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-
+from inginious.frontend import database
 
 class CourseTaskListPage(INGIniousAdminPage):
     """ List informations about all tasks """
@@ -96,14 +96,14 @@ class CourseTaskListPage(INGIniousAdminPage):
 
     def wipe_task(self, courseid, taskid):
         """ Wipe the data associated to the taskid from DB"""
-        submissions = self.database.submissions.find({"courseid": courseid, "taskid": taskid})
+        submissions = database.submissions.find({"courseid": courseid, "taskid": taskid})
         for submission in submissions:
             for key in ["input", "archive"]:
                 if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                    self.submission_manager.get_gridfs().delete(submission[key])
+                    database.gridfs.delete(submission[key])
 
-        self.database.user_tasks.delete_many({"courseid": courseid, "taskid": taskid})
-        self.database.submissions.delete_many({"courseid": courseid, "taskid": taskid})
+        database.user_tasks.delete_many({"courseid": courseid, "taskid": taskid})
+        database.submissions.delete_many({"courseid": courseid, "taskid": taskid})
 
         logging.getLogger("inginious.webapp.task_edit").info("Task %s/%s wiped.", courseid, taskid)
 
