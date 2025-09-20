@@ -308,7 +308,6 @@ def get_app(config):
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
-    flask_app.backup_dir = config.get("backup_directory", './backup')
     flask_app.webterm_link = config.get("webterm", None)
     flask_app.allow_registration = config.get("allow_registration", True)
     flask_app.allow_deletion = config.get("allow_deletion", True)
