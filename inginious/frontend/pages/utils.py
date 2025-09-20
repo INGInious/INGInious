@@ -128,11 +128,6 @@ class INGIniousPage(MethodView):
         return self.app.default_max_file_size
 
     @property
-    def backup_dir(self) -> str:
-        """ Backup directory """
-        return self.app.backup_dir
-
-    @property
     def environments(self) -> Dict[str, List[str]]:  # pylint: disable=invalid-sequence-index
         """ Available environments """
         return self.app.submission_manager.get_available_environments()
