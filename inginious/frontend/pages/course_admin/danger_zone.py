@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-import datetime
+from datetime import datetime, timezone
 import glob
 import logging
 import os
@@ -18,6 +18,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
+from inginious.common.exceptions import CourseNotFoundException
 
 
 class CourseDangerZonePage(INGIniousAdminPage):
@@ -41,47 +42,41 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self._logger.info("Course %s wiped.", courseid)
 
     def dump_course(self, courseid):
-        """ Create a zip file containing all information about a given course in database and then remove it from db"""
-        filepath = os.path.join(self.backup_dir, courseid, datetime.datetime.now().strftime("%Y%m%d.%H%M%S") + ".zip")
+        """
+            Creates a new course (backup course), gives it a course id resulting of the concatenation of the original id
+            and the archiving date. This backup course is marked as archived and given an archive date in its YAML descriptor.
+            The original course keeps their course id and all related submissions, user_tasks, audiences, courses and
+            groups are updated to point to the backup course.
+        """
 
-        if not os.path.exists(os.path.dirname(filepath)):
-            os.makedirs(os.path.dirname(filepath))
+        course_fs = self.course_factory.get_course(courseid).get_fs()
+        if not course_fs.exists():
+            raise CourseNotFoundException()
 
-        with zipfile.ZipFile(filepath, "w", allowZip64=True) as zipf:
-            course_obj = self.database.courses.find_one({"_id": courseid})
-            students = course_obj.get("students", []) if course_obj else []
-            zipf.writestr("students.json", bson.json_util.dumps(students), zipfile.ZIP_DEFLATED)
+        # Create backup course
+        backup_course_id = courseid + "_backup_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d.%H_%M_%S")
+        self.course_factory.create_course(backup_course_id, None)
+        self.course_factory.get_fs().copy_to(course_fs.prefix, backup_course_id)
 
-            audiences = self.database.audiences.find({"courseid": courseid})
-            zipf.writestr("audiences.json", bson.json_util.dumps(audiences), zipfile.ZIP_DEFLATED)
+        # Update backup YAML file
+        backup_course_content = self.course_factory.get_course(backup_course_id).get_descriptor()
+        backup_course_content["archived"] = True
+        backup_course_content["archive_date"] = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        backup_course_content["name"] = backup_course_content["name"] + " (archived on " + backup_course_content[
+            "archive_date"] + ")"
+        self.course_factory.update_course_descriptor_content(backup_course_id, backup_course_content)
 
-            groups = self.database.groups.find({"courseid": courseid})
-            zipf.writestr("groups.json", bson.json_util.dumps(groups), zipfile.ZIP_DEFLATED)
+        # Update course id in DB
+        self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
+        self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
+        self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
+        self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
+        old_course_students = self.database.courses.find_one({"_id": courseid})
+        if old_course_students:
+            old_course_students["_id"] = backup_course_id
+            self.database.courses.insert_one(old_course_students)
 
-            user_tasks = self.database.user_tasks.find({"courseid": courseid})
-            zipf.writestr("user_tasks.json", bson.json_util.dumps(user_tasks), zipfile.ZIP_DEFLATED)
-
-            # Fetching input data  while looping on submissions can trigger a mongo cursor timeout
-            submissions = self.database.submissions.find({"courseid": courseid}, no_cursor_timeout=True)
-            erroneous_subs = set()
-
-            for submission in submissions:
-                for key in ["input", "archive"]:
-                    gridfs = self.submission_manager.get_gridfs()
-                    if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                        if gridfs.exists(submission[key]):
-                            infile = gridfs.get(submission[key])
-                            zipf.writestr(key + "/" + str(submission[key]) + ".data", infile.read(), zipfile.ZIP_DEFLATED)
-                        else:
-                            self._logger.error("Missing {} in grifs, skipping submission {}".format(str(submission[key]), str(submission["_id"])))
-                            erroneous_subs.add(submission["_id"])
-
-            submissions.rewind()
-            submissions = [submission for submission in submissions if submission["_id"] not in erroneous_subs]
-            zipf.writestr("submissions.json", bson.json_util.dumps(submissions), zipfile.ZIP_DEFLATED)
-
-        self._logger.info("Course %s dumped to backup directory.", courseid)
-        self.wipe_course(courseid)
+        self._logger.info("Course %s backed up.", courseid)
 
     def restore_course(self, courseid, backup):
         """ Restores a course of given courseid to a date specified in backup (format : YYYYMMDD.HHMMSS) """
@@ -180,7 +175,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    dt = datetime.datetime.strptime(data["backupdate"], "%Y%m%d.%H%M%S").astimezone()
+                    dt = datetime.strptime(data["backupdate"], "%Y%m%d.%H%M%S").astimezone()
                     self.restore_course(courseid, data["backupdate"])
                     msg = _("Course restored to date : <time datetime='{dt}'>{dt}</time>.").format(dt=dt.isoformat())
                 except Exception as ex:
@@ -208,7 +203,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             for backup in glob.glob(os.path.join(filepath, '*.zip')):
                 try:
                     basename = os.path.basename(backup)[0:-4]
-                    dt = datetime.datetime.strptime(basename, "%Y%m%d.%H%M%S").astimezone()
+                    dt = datetime.strptime(basename, "%Y%m%d.%H%M%S").astimezone()
                     backups.append({"file": basename, "date": dt})
                 except:  # Wrong format
                     pass
