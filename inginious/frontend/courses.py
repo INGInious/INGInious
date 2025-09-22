@@ -12,6 +12,7 @@ import re
 from typing import Iterable, List
 from collections import OrderedDict
 from pylti1p3.tool_config import ToolConfDict
+from datetime import datetime
 
 from inginious.common.tags import Tag
 from inginious.frontend.accessible_time import AccessibleTime
@@ -78,6 +79,7 @@ class Course(object):
             self._allow_unregister = self._content.get('allow_unregister', True)
             self._allow_preview = self._content.get('allow_preview', False)
             self._is_lti = self._content.get('is_lti', False)
+            self._is_archive = self._content.get('archived', False)
             self._lti_url = self._content.get('lti_url', '')
             self._lti_keys = self._content.get('lti_keys', {})
             self._lti_config = self._content.get('lti_config', {})
@@ -274,3 +276,11 @@ class Course(object):
     def _build_ac_regex(self, list_ac):
         """ Build a regex for the AC list, allowing for fast matching. The regex is only used internally """
         return re.compile('|'.join(re.escape(x).replace("\\*", ".*") for x in list_ac))
+
+    def is_archive(self):
+        """ Returns true if the course is an archive"""
+        return self._is_archive
+
+    def get_archiving_date(self):
+        """ Returns the date at which the course was archived as a string (None if not archived)"""
+        return datetime.fromisoformat(self._content["archive_date"])
