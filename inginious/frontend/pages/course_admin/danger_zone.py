@@ -18,7 +18,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
-from inginious.common.exceptions import CourseNotFoundException
+from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
 
 
 class CourseDangerZonePage(INGIniousAdminPage):
@@ -49,7 +49,10 @@ class CourseDangerZonePage(INGIniousAdminPage):
             groups are updated to point to the backup course.
         """
 
-        course_fs = self.course_factory.get_course(courseid).get_fs()
+        course = self.course_factory.get_course(courseid)
+        course_fs = course.get_fs()
+        if course.is_archive():
+            raise CourseNotArchivable()
         if not course_fs.exists():
             raise CourseNotFoundException()
 

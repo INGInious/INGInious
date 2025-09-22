@@ -51,6 +51,11 @@
                 <div class="card-header bg-warning text-white">
                     {{ _("Archive course data") }}
                 </div>
+                {% if course.is_archive() %}
+                    <div class="alert alert-danger m-3" role="alert">
+                        {{ _("This course is already an archive course. You cannot archive it again.") }}
+                    </div>
+                {% else %}
                 <div class="card-body">
                     {{ _("<p>This will reset and backup all course data (submissions, audiences, groups, user statistics) from the database. The backup will be stored as a new course.</p><p>To confirm your will, please type the course id below :</p>") | safe }}
                     <form class="form-horizontal" method="post">
@@ -65,6 +70,7 @@
                         </div>
                     </form>
                 </div>
+                {% endif %}
             </div>
         </div>
         <div role="tabpanel" class="tab-pane card-body" id="tab_delete_course">
