@@ -15,6 +15,7 @@ from inginious.common.base import dict_from_prefix, id_checker
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
+from inginious.frontend.user_manager import user_manager
 
 class CourseSettingsPage(INGIniousAdminPage):
     """ Couse settings """
@@ -38,7 +39,7 @@ class CourseSettingsPage(INGIniousAdminPage):
             errors.append(_('Invalid name'))
         course_content['description'] = data['description']
         course_content['admins'] = list(map(str.strip, data['admins'].split(','))) if data['admins'].strip() else []
-        if not self.user_manager.user_is_superadmin() and self.user_manager.session_username() not in course_content['admins']:
+        if not user_manager.user_is_superadmin() and user_manager.session_username() not in course_content['admins']:
             errors.append(_('You cannot remove yourself from the administrators of this course'))
         course_content['tutors'] = list(map(str.strip, data['tutors'].split(','))) if data['tutors'].strip() else []
         if len(course_content['tutors']) == 1 and course_content['tutors'][0].strip() == "":

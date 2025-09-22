@@ -7,7 +7,7 @@
 
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
 from inginious.frontend.parsable_text import ParsableText
-
+from inginious.frontend.user_manager import user_manager
 
 class APITasks(APIAuthenticatedPage):
     r"""
@@ -65,7 +65,7 @@ class APITasks(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        if not self.user_manager.course_is_open_to_user(course, lti=False):
+        if not user_manager.course_is_open_to_user(course, lti=False):
             raise APIForbidden("You are not registered to this course")
 
         if taskid is None:
@@ -78,16 +78,16 @@ class APITasks(APIAuthenticatedPage):
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(self.user_manager.session_username(), task.get_course_id(), task.get_id())
+            task_cache = user_manager.get_task_cache(user_manager.session_username(), task.get_course_id(), task.get_id())
 
             data = {
                 "id": taskid,
-                "name": task.get_name(self.user_manager.session_language()),
-                "authors": task.get_authors(self.user_manager.session_language()),
-                "contact_url": task.get_contact_url(self.user_manager.session_language()),
+                "name": task.get_name(user_manager.session_language()),
+                "authors": task.get_authors(user_manager.session_language()),
+                "contact_url": task.get_contact_url(user_manager.session_language()),
                 "status": "notviewed" if task_cache is None else "notattempted" if task_cache["tried"] == 0 else "succeeded" if task_cache["succeeded"] else "failed",
                 "grade": task_cache.get("grade", 0.0) if task_cache is not None else 0.0,
-                "context": task.get_context(self.user_manager.session_language()).original_content(),
+                "context": task.get_context(user_manager.session_language()).original_content(),
                 "problems": []
             }
 

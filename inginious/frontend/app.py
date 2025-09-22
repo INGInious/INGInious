@@ -20,7 +20,6 @@ from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
-from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__
 from inginious.frontend.course_factory import create_factories
@@ -36,6 +35,7 @@ from inginious.frontend.flask.mongo_sessions import MongoDBSessionInterface
 from inginious.frontend.flask.mail import mail
 
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 def _put_configuration_defaults(config):
     """
@@ -131,7 +131,15 @@ def get_app(config):
     database.init_app(config.get('mongo_opt', {}))
 
     flask_app.session_interface = MongoDBSessionInterface(config.get('SESSION_USE_SIGNER', False), True)
-    flask.request_finished.connect(UserManager._lti_session_save, flask_app)
+
+    def _lti_session_save(app, response):
+        """ Saves in database the LTI session. This function is a Flask event receiver. """
+        if user_manager.session_is_lti():
+            lti_session_id = flask.request.args.get('session_id', flask.g.get('lti_session_id'))
+            database.lti_sessions.find_one_and_update({'session_id': lti_session_id}, {'$set': flask.g.lti_session},
+                                                      upsert=True)
+        # TODO(mp): Find whether the session should be dropped instead?
+    flask.request_finished.connect(_lti_session_save, flask_app)
 
     # available indentation types
     available_indentation_types = {
@@ -167,16 +175,14 @@ def get_app(config):
 
     course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types, plugin_manager)
 
-    user_manager = UserManager(config.get('superadmins', []))
+    user_manager.init_app(config.get('superadmins', []))
 
     update_pending_jobs()
 
     client = create_arch(config, fs_provider, zmq_context, course_factory)
 
-    lti_score_publishers = {"1.1": LTIOutcomeManager(user_manager, course_factory),
-                            "1.3": LTIGradeManager(user_manager, course_factory)}
-
-    submission_manager = WebAppSubmissionManager(client, user_manager, plugin_manager, lti_score_publishers)
+    lti_score_publishers = {"1.1": LTIOutcomeManager(course_factory), "1.3": LTIGradeManager(course_factory)}
+    submission_manager = WebAppSubmissionManager(client, plugin_manager, lti_score_publishers)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
@@ -232,7 +238,6 @@ def get_app(config):
     flask_app.course_factory = course_factory
     flask_app.task_factory = task_factory
     flask_app.submission_manager = submission_manager
-    flask_app.user_manager = user_manager
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
@@ -256,7 +261,7 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, course_factory, task_factory, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, course_factory, task_factory, submission_manager, config.get("plugins", []))
 
     # Start the inginious.backend
     client.start()

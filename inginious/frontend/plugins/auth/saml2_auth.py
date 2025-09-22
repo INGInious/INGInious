@@ -18,7 +18,7 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from inginious.frontend.pages.utils import INGIniousPage
-from inginious.frontend.user_manager import AuthMethod
+from inginious.frontend.user_manager import AuthMethod, user_manager
 
 settings = None
 
@@ -154,7 +154,7 @@ def prepare_request(settings):
 
 class MetadataPage(INGIniousPage):
     def GET(self, id):
-        settings = self.user_manager.get_auth_method(id).get_settings()
+        settings = user_manager.get_auth_method(id).get_settings()
         auth = OneLogin_Saml2_Auth(prepare_request(settings), settings)
         metadata = auth.get_settings().get_sp_metadata()
         errors = auth.get_settings().validate_metadata(metadata)

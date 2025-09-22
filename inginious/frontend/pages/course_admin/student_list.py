@@ -17,6 +17,7 @@ from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class CourseStudentListPage(INGIniousAdminPage):
     """ Course administration page: list of registered students """
@@ -30,7 +31,7 @@ class CourseStudentListPage(INGIniousAdminPage):
             audiences = []
             si = StringIO()
             cw = csv.writer(si)
-            for audience in self.user_manager.get_course_audiences(course):
+            for audience in user_manager.get_course_audiences(course):
                 for student in audience["students"]:
                     field_value = self.get_requested_field_user_info(student, preferred_field)
                     audiences.append([field_value, preferred_field, "student", audience["description"]])
@@ -48,7 +49,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                        "students": group["students"],
                        "size": group["size"],
                        "audiences": [str(c) for c in group["audiences"]]} for group in
-                      self.user_manager.get_course_groups(course)]
+                      user_manager.get_course_groups(course)]
             response = Response(response=yaml.dump(groups), content_type='text/x-yaml')
             response.headers['Content-Disposition'] = 'attachment; filename="groups.yaml"'
             return response
@@ -89,7 +90,7 @@ class CourseStudentListPage(INGIniousAdminPage):
 
         split_audiences, audiences = self.get_audiences_params(course)
         user_data = self.get_student_list_params(course)
-        groups = self.user_manager.get_course_groups(course)
+        groups = user_manager.get_course_groups(course)
         student_list, audience_list, other_students, users_info = self.get_user_lists(course)
 
         if "csv_audiences" in request.args:
@@ -106,10 +107,10 @@ class CourseStudentListPage(INGIniousAdminPage):
 
     def get_student_list_params(self, course):
         users = sorted(list(
-            self.user_manager.get_users_info(self.user_manager.get_course_registered_users(course, False)).items()),
+            user_manager.get_users_info(user_manager.get_course_registered_users(course, False)).items()),
             key=lambda k: k[1].realname if k[1] is not None else "")
 
-        users = OrderedDict(sorted(list(self.user_manager.get_users_info(course.get_staff()).items()),
+        users = OrderedDict(sorted(list(user_manager.get_users_info(course.get_staff()).items()),
                                    key=lambda k: k[1].realname if k[1] is not None else "") + users)
 
         user_data = OrderedDict([(username, {
@@ -118,7 +119,7 @@ class CourseStudentListPage(INGIniousAdminPage):
             "task_grades": {"answer": 0, "match": 0}, "task_succeeded": 0, "task_tried": 0, "total_tries": 0,
             "grade": 0, "url": self.submission_url_generator_user(username)}) for username, user in users.items()])
 
-        for username, data in self.user_manager.get_course_caches(list(users.keys()), course).items():
+        for username, data in user_manager.get_course_caches(list(users.keys()), course).items():
             user_data[username].update(data if data is not None else {})
 
         return user_data
@@ -127,7 +128,7 @@ class CourseStudentListPage(INGIniousAdminPage):
         audiences = OrderedDict()
         taskids = list(course.get_tasks().keys())
 
-        for audience in self.user_manager.get_course_audiences(course):
+        for audience in user_manager.get_course_audiences(course):
             audiences[audience['_id']] = dict(list(audience.items()) +
                                               [("tried", 0),
                                                ("done", 0),
@@ -161,7 +162,7 @@ class CourseStudentListPage(INGIniousAdminPage):
 
         my_audiences, other_audiences = [], []
         for audience in audiences.values():
-            if self.user_manager.session_username() in audience["tutors"]:
+            if user_manager.session_username() in audience["tutors"]:
                 my_audiences.append(audience)
             else:
                 other_audiences.append(audience)
@@ -182,12 +183,12 @@ class CourseStudentListPage(INGIniousAdminPage):
                         database.groups.replace_one({"_id": group["_id"]}, group)
                     database.courses.find_one_and_update({"_id": course.get_id()}, {"$set": {"students": []}})
                 else:
-                    self.user_manager.course_unregister_user(course.get_id(), data["username"])
+                    user_manager.course_unregister_user(course.get_id(), data["username"])
             except:
                 pass
         elif "register_student" in data:
             try:
-                self.user_manager.course_register_user(course, data["username"].strip(), '', True)
+                user_manager.course_register_user(course, data["username"].strip(), '', True)
             except:
                 pass
 
@@ -306,7 +307,7 @@ class CourseStudentListPage(INGIniousAdminPage):
         if course.is_lti():
             return active_tab
 
-        audience_list = self.user_manager.get_course_audiences(course)
+        audience_list = user_manager.get_course_audiences(course)
         audience_students = {}
         for audience in audience_list:
             for stud in audience["students"]:
@@ -366,11 +367,11 @@ class CourseStudentListPage(INGIniousAdminPage):
 
     def get_user_lists(self, course):
         """ Get the available student list for group edition"""
-        audience_list = self.user_manager.get_course_audiences(course)
+        audience_list = user_manager.get_course_audiences(course)
         audience_list = {audience["_id"]: audience for audience in audience_list}
 
-        student_list = self.user_manager.get_course_registered_users(course, False)
-        users_info = self.user_manager.get_users_info(student_list)
+        student_list = user_manager.get_course_registered_users(course, False)
+        users_info = user_manager.get_users_info(student_list)
 
         groups_list = list(database.groups.aggregate([
             {"$match": {"courseid": course.get_id()}},
@@ -391,7 +392,7 @@ class CourseStudentListPage(INGIniousAdminPage):
     def update_group(self, course, groupid, new_data, audience_students):
         """ Update group and returns a list of errored students"""
 
-        student_list = self.user_manager.get_course_registered_users(course, False)
+        student_list = user_manager.get_course_registered_users(course, False)
 
         # If group is new
         if groupid == 'None':
@@ -440,7 +441,7 @@ class CourseStudentListPage(INGIniousAdminPage):
     def update_audience(self, course, audienceid, new_data):
         """ Update audience and returns a list of errored students"""
 
-        student_list = self.user_manager.get_course_registered_users(course, False)
+        student_list = user_manager.get_course_registered_users(course, False)
 
         # If audience is new
         if audienceid == 'None':
@@ -469,11 +470,11 @@ class CourseStudentListPage(INGIniousAdminPage):
                 students.append(student)
             else:
                 # Check if user can be registered
-                user_info = self.user_manager.get_user_info(student)
+                user_info = user_manager.get_user_info(student)
                 if user_info is None or student in audience["tutors"]:
                     errored_students.append(student)
                 else:
-                    self.user_manager.course_register_user(course, student, force=True)
+                    user_manager.course_register_user(course, student, force=True)
                     students.append(student)
 
         removed_students = [student for student in audience["students"] if student not in new_data["students"]]

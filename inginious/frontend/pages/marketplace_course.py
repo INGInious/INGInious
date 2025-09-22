@@ -11,7 +11,7 @@ from inginious.common.exceptions import ImportCourseException
 from inginious.frontend.marketplace_courses import get_marketplace_course
 from inginious.frontend.pages.marketplace import import_course
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend.user_manager import user_manager
 
 class MarketplaceCoursePage(INGIniousAuthPage):
     """ Course marketplace """
@@ -28,7 +28,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         # Change to teacher privilege when created
-        if not self.user_manager.user_is_superadmin():
+        if not user_manager.user_is_superadmin():
             raise Forbidden(description=_("You're not allowed to do that"))
 
         course = self.get_course(courseid)
@@ -37,7 +37,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ POST request """
         # Change to teacher privilege when created
-        if not self.user_manager.user_is_superadmin():
+        if not user_manager.user_is_superadmin():
             raise Forbidden(description=_("You're not allowed to do that"))
 
         course = self.get_course(courseid)
@@ -46,7 +46,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
         if "new_courseid" in user_input:
             new_courseid = user_input["new_courseid"]
             try:
-                import_course(course, new_courseid, self.user_manager.session_username(), self.course_factory)
+                import_course(course, new_courseid, user_manager.session_username(), self.course_factory)
             except ImportCourseException as e:
                 errors.append(str(e))
             if not errors:

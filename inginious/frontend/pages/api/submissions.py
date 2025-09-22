@@ -10,9 +10,10 @@ import gettext
 import flask
 
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.user_manager import user_manager
 
 
-def _get_submissions(course_factory, submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
+def _get_submissions(course_factory, submission_manager, courseid, taskid, with_input, submissionid=None):
     """
         Helper for the GET methods of the two following classes
     """
@@ -110,7 +111,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.course_factory, self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
+        return _get_submissions(self.course_factory, self.submission_manager, courseid, taskid, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -151,7 +152,7 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.course_factory, self.submission_manager, self.user_manager, courseid, taskid, with_input)
+        return _get_submissions(self.course_factory, self.submission_manager, courseid, taskid, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -171,9 +172,9 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        username = self.user_manager.session_username()
+        username = user_manager.session_username()
 
-        if not self.user_manager.course_is_open_to_user(course, username, False):
+        if not user_manager.course_is_open_to_user(course, username, False):
             raise APIForbidden("You are not registered to this course")
 
         try:
@@ -181,10 +182,10 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Task not found")
 
-        self.user_manager.user_saw_task(username, courseid, taskid)
+        user_manager.user_saw_task(username, courseid, taskid)
 
         # Verify rights
-        if not self.user_manager.task_can_user_submit(task, username, False):
+        if not user_manager.task_can_user_submit(task, username, False):
             raise APIForbidden("You are not allowed to submit for this task")
 
         user_input = flask.request.form.copy()
@@ -203,7 +204,7 @@ class APISubmissions(APIAuthenticatedPage):
             raise APIInvalidArguments()
 
         # Get debug info if the current user is an admin
-        debug = self.user_manager.has_admin_rights_on_course(course, username)
+        debug = user_manager.has_admin_rights_on_course(course, username)
 
 
         # Start the submission

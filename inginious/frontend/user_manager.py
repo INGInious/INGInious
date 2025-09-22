@@ -79,17 +79,19 @@ class AuthMethod(object, metaclass=ABCMeta):
 
 UserInfo = namedtuple("UserInfo", ["realname", "email", "username", "bindings", "language", "code_indentation", "activated"])
 
-
 class UserManager:
-    def __init__(self, superadmins):
-        """
-        :type superadmins: list(str)
-        :param superadmins: list of the super-administrators' usernames
-        """
+    def __init__(self):
+
         self._flask_session = flask.session
-        self._superadmins = superadmins
+        self._superadmins = []
         self._auth_methods = OrderedDict()
         self._logger = logging.getLogger("inginious.webapp.users")
+
+    def init_app(self, superadmins : list[str]):
+        """
+        :param superadmins: list of the super-administrators' usernames
+        """
+        self._superadmins = superadmins
 
     @classmethod
     def sanitize_email(cls, email: str) -> str:
@@ -126,15 +128,6 @@ class UserManager:
         if 'lti_session' not in flask.g or not flask.g.lti_session:
             flask.g.lti_session = {}
         return flask.g.lti_session
-
-    @staticmethod
-    def _lti_session_save(app, response):
-        """ Saves in database the LTI session. This function is a Flask event receiver. """
-        if app.user_manager.session_is_lti():
-            lti_session_id = flask.request.args.get('session_id', flask.g.get('lti_session_id'))
-            app.user_manager._database.lti_sessions.find_one_and_update({'session_id': lti_session_id},
-                                                                        {'$set': flask.g.lti_session}, upsert=True)
-        # TODO(mp): Find whether the session should be dropped instead?
 
     @property
     def _session(self):
@@ -1129,3 +1122,5 @@ class UserManager:
         latest_method = "argon2id"
 
         return latest_method + "-" + methods[latest_method](content)
+
+user_manager = UserManager()

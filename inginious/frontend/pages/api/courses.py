@@ -6,7 +6,7 @@
 """ Courses """
 
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
-
+from inginious.frontend.user_manager import user_manager
 
 class APICourses(APIAuthenticatedPage):
     r"""
@@ -52,20 +52,20 @@ class APICourses(APIAuthenticatedPage):
             except:
                 raise APINotFound("Course not found")
 
-        username = self.user_manager.session_username()
-        user_info = self.user_manager.get_user_info(username)
+        username = user_manager.session_username()
+        user_info = user_manager.get_user_info(username)
 
         for courseid, course in courses.items():
-            if self.user_manager.course_is_open_to_user(course, username, False) or course.is_registration_possible(user_info):
+            if user_manager.course_is_open_to_user(course, username, False) or course.is_registration_possible(user_info):
                 data = {
                     "id": courseid,
-                    "name": course.get_name(self.user_manager.session_language()),
+                    "name": course.get_name(user_manager.session_language()),
                     "require_password": course.is_password_needed_for_registration(),
-                    "is_registered": self.user_manager.course_is_open_to_user(course, username, False)
+                    "is_registered": user_manager.course_is_open_to_user(course, username, False)
                 }
-                if self.user_manager.course_is_open_to_user(course, username, False):
-                    data["tasks"] = {taskid: task.get_name(self.user_manager.session_language()) for taskid, task in course.get_tasks().items()}
-                    data["grade"] = self.user_manager.get_course_cache(username, course)["grade"]
+                if user_manager.course_is_open_to_user(course, username, False):
+                    data["tasks"] = {taskid: task.get_name(user_manager.session_language()) for taskid, task in course.get_tasks().items()}
+                    data["grade"] = user_manager.get_course_cache(username, course)["grade"]
                 output.append(data)
 
         return 200, output

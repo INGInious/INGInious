@@ -13,7 +13,7 @@ from ldap3.core.exceptions import LDAPException
 from ldap3.utils.conv import escape_filter_chars
 
 from inginious.frontend.pages.social import AuthenticationPage
-from inginious.frontend.user_manager import AuthMethod
+from inginious.frontend.user_manager import AuthMethod, user_manager
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -56,12 +56,12 @@ class LdapAuthMethod(AuthMethod):
 
 class LDAPAuthenticationPage(AuthenticationPage):
     def GET(self, id):
-        settings = self.user_manager.get_auth_method(id).get_settings()
+        settings = user_manager.get_auth_method(id).get_settings()
         return render_template("ldap_auth/custom_auth_form.html", settings=settings, error=False)
 
     def POST(self, id):
         # Get configuration
-        settings = self.user_manager.get_auth_method(id).get_settings()
+        settings = user_manager.get_auth_method(id).get_settings()
         login_data = request.form
         login = login_data["login"].strip().lower()
         password = login_data["password"]
@@ -118,10 +118,10 @@ class LDAPAuthenticationPage(AuthenticationPage):
             finally:
                 conn.unbind()
 
-            if not self.user_manager.bind_user(id, (username, realname, email, {})):
+            if not user_manager.bind_user(id, (username, realname, email, {})):
                 return redirect("/signin?binderror")
             
-            auth_storage = self.user_manager.session_auth_storage().setdefault(id, {})
+            auth_storage = user_manager.session_auth_storage().setdefault(id, {})
             return redirect(auth_storage.get("redir_url", "/"))
         else:
             logger.debug('Auth Failed')

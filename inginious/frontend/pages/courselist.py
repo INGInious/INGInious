@@ -9,6 +9,7 @@ from flask import render_template
 
 from inginious.frontend.pages.utils import INGIniousPage
 
+from inginious.frontend.user_manager import user_manager
 
 class CourseListPage(INGIniousPage):
     """ Index page """
@@ -23,12 +24,12 @@ class CourseListPage(INGIniousPage):
 
     def show_page(self):
         """  Display main course list page """
-        username = self.user_manager.session_username()
-        user_info = self.user_manager.get_user_info(username)
+        username = user_manager.session_username()
+        user_info = user_manager.get_user_info(username)
         all_courses = self.course_factory.get_all_courses()
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items() if course.is_open_to_non_staff()}
-        open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
+        open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(user_manager.session_language())))
 
         return render_template("courselist.html", open_courses=open_courses, user_info=user_info)

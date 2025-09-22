@@ -10,7 +10,7 @@ from werkzeug.exceptions import NotFound, Forbidden
 from bson.errors import InvalidId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-
+from inginious.frontend.user_manager import user_manager
 
 class SubmissionPage(INGIniousAdminPage):
     """ List information about a task done by a student """
@@ -37,7 +37,7 @@ class SubmissionPage(INGIniousAdminPage):
 
     def POST_AUTH(self, submissionid):  # pylint: disable=arguments-differ
         course, task, submission = self.fetch_submission(submissionid)
-        is_admin = self.user_manager.has_admin_rights_on_course(course)
+        is_admin = user_manager.has_admin_rights_on_course(course)
 
         webinput = request.form
         if "replay" in webinput and is_admin:
@@ -59,7 +59,7 @@ class SubmissionPage(INGIniousAdminPage):
         to_display = {
             problem.get_id(): {
                 "id": problem.get_id(),
-                "name": problem.get_name(self.user_manager.session_language()),
+                "name": problem.get_name(user_manager.session_language()),
                 "defined": True
             } for problem in task.get_problems()
         }

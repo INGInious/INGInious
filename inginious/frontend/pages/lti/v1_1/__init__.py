@@ -18,6 +18,7 @@ from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -167,8 +168,8 @@ class LTI11LaunchPage(INGIniousPage):
                 "tool_url": tool_url
             }
 
-            self.user_manager.create_lti_session(session_id, session_dict)
-            loggedin = self.user_manager.attempt_lti_login()
+            user_manager.create_lti_session(session_id, session_dict)
+            loggedin = user_manager.attempt_lti_login()
 
             return session_id, loggedin
         else:

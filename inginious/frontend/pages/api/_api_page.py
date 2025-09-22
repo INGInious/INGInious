@@ -11,6 +11,7 @@ from flask import Response
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
+from inginious.frontend.user_manager import user_manager
 
 
 class APIPage(INGIniousPage):
@@ -107,7 +108,7 @@ class APIAuthenticatedPage(APIPage):
 
     def _verify_authentication(self, handler, args, kwargs):
         """ Verify that the user is authenticated """
-        if not self.user_manager.session_logged_in():
+        if not user_manager.session_logged_in():
             raise APIForbidden()
         return handler(*args, **kwargs)
 

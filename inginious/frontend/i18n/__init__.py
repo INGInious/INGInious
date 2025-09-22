@@ -8,9 +8,10 @@ import flask
 import builtins
 
 from inginious import get_root_path
+from inginious.frontend.user_manager import user_manager
 
 def gettext(text):
-    language = flask.current_app.user_manager.session_language(default="") if flask.has_app_context() else ""
+    language = user_manager.session_language(default="") if flask.has_app_context() else ""
     return _translations.get(language, _gettext.NullTranslations()).gettext(text) if text else ""
 
 _available_translations = {

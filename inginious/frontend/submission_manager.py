@@ -23,22 +23,21 @@ from pymongo.collection import ReturnDocument
 import inginious.common.custom_yaml
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 
 class WebAppSubmissionManager:
     """ Manages submissions. Communicates with the database and the client. """
 
-    def __init__(self, client, user_manager, plugin_manager, lti_score_publishers):
+    def __init__(self, client, plugin_manager, lti_score_publishers):
         """
         :type client: inginious.client.client.AbstractClient
-        :type user_manager: inginious.frontend.user_manager.UserManager
         :type database: pymongo.database.Database
         :type gridfs: gridfs.GridFS
         :type plugin_manager: inginious.frontend.plugin_manager.PluginManager
         :return:
         """
         self._client = client
-        self._user_manager = user_manager
         self._plugin_manager = plugin_manager
         self._logger = logging.getLogger("inginious.webapp.submissions")
         self._lti_score_publishers = lti_score_publishers
@@ -83,7 +82,7 @@ class WebAppSubmissionManager:
             )
 
             for username in submission["username"]:
-                self._user_manager.update_user_stats(username, task, submission, result[0], grade, state, newsub, task_dispenser)
+                user_manager.update_user_stats(username, task, submission, result[0], grade, state, newsub, task_dispenser)
 
         # Check for size as it also takes the MongoDB command into consideration
         except pymongo.errors.DocumentTooLarge:
@@ -111,17 +110,17 @@ class WebAppSubmissionManager:
         :param debug: True, False or "ssh". See add_job.
         :param obj: the new document that will be inserted
         """
-        username = self._user_manager.session_username()
+        username = user_manager.session_username()
         course = task.get_course()
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
-        if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
+        if is_group_task and not user_manager.has_staff_rights_on_course(course, username):
             group = database.groups.find_one({"courseid": course.get_id(), "students": username})
             obj.update({"username": group["students"]})
         else:
             obj.update({"username": [username]})
 
-        lti_info = self._user_manager.session_lti_info()
+        lti_info = user_manager.session_lti_info()
         if lti_info is not None and course.lti_send_back_grade():
             lti_score_publisher = self._lti_score_publishers.get(lti_info["version"], None)
             if lti_score_publisher:
@@ -130,8 +129,8 @@ class WebAppSubmissionManager:
 
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
-            username = self._user_manager.session_username()
-            if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
+            username = user_manager.session_username()
+            if is_group_task and not user_manager.has_staff_rights_on_course(course, username):
                 group = database.groups.find_one({"courseid": course.get_id(), "students": username})
                 users = database.users.find({"username": {"$in": group["students"]}})
                 inputdata["@username"] = ','.join(group["students"])
@@ -147,7 +146,7 @@ class WebAppSubmissionManager:
                 :param submissionid: submission id of the submission
                 """
 
-        return self._delete_exceeding_submissions(self._user_manager.session_username(), task, task_dispenser)
+        return self._delete_exceeding_submissions(user_manager.session_username(), task, task_dispenser)
 
     def replay_job(self, task, submission, task_dispenser, copy=False, debug=False):
         """
@@ -156,7 +155,7 @@ class WebAppSubmissionManager:
         :param copy: If copy is true, the submission will be copied to admin submissions before replay
         :param debug: If debug is true, more debug data will be saved
         """
-        if not self._user_manager.session_logged_in():
+        if not user_manager.session_logged_in():
             raise Exception("A user must be logged in to submit an object")
 
         # Don't enable ssh debug
@@ -174,7 +173,7 @@ class WebAppSubmissionManager:
                 database.gridfs.delete(submission["archive"])
         else:
             del submission["_id"]
-            username = self._user_manager.session_username()
+            username = user_manager.session_username()
             submission["username"] = [username]
             submission["submitted_on"] = datetime.now(tz=timezone.utc)
             my_user_task = database.user_tasks.find_one(
@@ -183,8 +182,8 @@ class WebAppSubmissionManager:
             tried_count = my_user_task["tried"]
             inputdata["@attempts"] = str(tried_count + 1)
             inputdata["@username"] = username
-            inputdata["@email"] = self._user_manager.session_email()
-            inputdata["@lang"] = self._user_manager.session_language()
+            inputdata["@email"] = user_manager.session_email()
+            inputdata["@lang"] = user_manager.session_language()
             submission["input"] = database.gridfs.put(bson.BSON.encode(inputdata))
             submission["tests"] = {}  # Be sure tags are reinitialized
             submission["user_ip"] = flask.request.remote_addr
@@ -216,7 +215,7 @@ class WebAppSubmissionManager:
         else:
             self._logger.info("Copying submission %s - %s - %s - %s as %s", submission["username"],
                               submission["courseid"],
-                              submission["taskid"], submission["_id"], self._user_manager.session_username())
+                              submission["taskid"], submission["_id"], user_manager.session_username())
 
     def get_available_environments(self) -> Dict[str, List[str]]:
         """:return a list of available environments """
@@ -240,10 +239,10 @@ class WebAppSubmissionManager:
         :type debug: bool or string
         :returns: the new submission id and the removed submission id
         """
-        if not self._user_manager.session_logged_in():
+        if not user_manager.session_logged_in():
             raise Exception("A user must be logged in to submit an object")
 
-        username = self._user_manager.session_username()
+        username = user_manager.session_username()
 
         # Prevent student from submitting several submissions together
         waiting_submission = database.submissions.find_one({
@@ -268,8 +267,8 @@ class WebAppSubmissionManager:
         # Send additional data to the client in inputdata. For now, the username and the language. New fields can be added with the
         # new_submission hook
         inputdata["@username"] = username
-        inputdata["@email"] = self._user_manager.session_email()
-        inputdata["@lang"] = self._user_manager.session_language()
+        inputdata["@email"] = user_manager.session_email()
+        inputdata["@lang"] = user_manager.session_language()
         inputdata["@time"] = str(obj["submitted_on"])
         my_user_task = database.user_tasks.find_one(
             {"courseid": task.get_course_id(), "taskid": task.get_id(), "username": username}, {"tried": 1, "_id": 0})
@@ -283,7 +282,7 @@ class WebAppSubmissionManager:
         inputdata["@state"] = states["state"] if "state" in states else ""
 
         # Send LTI information to the client except "consumer_key"
-        lti_info = self._user_manager.session_lti_info()
+        lti_info = user_manager.session_lti_info()
         if lti_info:
             for key in lti_info:
                 if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
@@ -313,8 +312,8 @@ class WebAppSubmissionManager:
             {"$set": {"jobid": jobid}}
         )
 
-        self._logger.info("New submission from %s - %s - %s/%s - %s", self._user_manager.session_username(),
-                          self._user_manager.session_email(), task.get_course_id(), task.get_id(),
+        self._logger.info("New submission from %s - %s - %s/%s - %s", user_manager.session_username(),
+                          user_manager.session_email(), task.get_course_id(), task.get_id(),
                           flask.request.remote_addr)
 
         return submissionid, to_remove
@@ -451,17 +450,17 @@ class WebAppSubmissionManager:
 
     def user_is_submission_owner(self, submission):
         """ Returns true if the current user is the owner of this jobid, false else """
-        if not self._user_manager.session_logged_in():
+        if not user_manager.session_logged_in():
             raise Exception("A user must be logged in to verify if he owns a jobid")
 
-        return self._user_manager.session_username() in submission["username"]
+        return user_manager.session_username() in submission["username"]
 
     def get_user_submissions(self, task):
         """ Get all the user's submissions for a given task """
-        if not self._user_manager.session_logged_in():
+        if not user_manager.session_logged_in():
             raise Exception("A user must be logged in to get his submissions")
 
-        cursor = database.submissions.find({"username": self._user_manager.session_username(),
+        cursor = database.submissions.find({"username": user_manager.session_username(),
                                                   "taskid": task.get_id(), "courseid": task.get_course_id()})
         cursor.sort([("submitted_on", -1)])
         return list(cursor)
@@ -471,7 +470,7 @@ class WebAppSubmissionManager:
         if mongo_request is None:
             mongo_request = {}
 
-        mongo_request.update({"username": self._user_manager.session_username()})
+        mongo_request.update({"username": user_manager.session_username()})
 
         # Before, submissions were first sorted by submission date, then grouped
         # and then resorted by submission date before limiting. Actually, grouping
@@ -536,7 +535,7 @@ class WebAppSubmissionManager:
         """
 
         if "audience" in sub_folders:
-            student_audiences = self._user_manager.get_course_audiences_per_student(course)
+            student_audiences = user_manager.get_course_audiences_per_student(course)
 
         def generate_paths(sub, path, remaining_sub_folders):
             if len(remaining_sub_folders) == 0:

@@ -9,6 +9,7 @@ from collections import OrderedDict
 from flask import request, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.user_manager import user_manager
 
 
 class MyCoursesPage(INGIniousAuthPage):
@@ -24,7 +25,7 @@ class MyCoursesPage(INGIniousAuthPage):
         user_input = request.form
         success = None
 
-        if "new_courseid" in user_input and self.user_manager.user_is_superadmin():
+        if "new_courseid" in user_input and user_manager.user_is_superadmin():
             try:
                 courseid = user_input["new_courseid"]
                 self.course_factory.create_course(courseid, {"name": courseid, "accessible": False})
@@ -36,16 +37,16 @@ class MyCoursesPage(INGIniousAuthPage):
 
     def show_page(self, success):
         """  Display main course list page """
-        username = self.user_manager.session_username()
-        user_info = self.user_manager.get_user_info(username)
+        username = user_manager.session_username()
+        user_info = user_manager.get_user_info(username)
 
         all_courses = self.course_factory.get_all_courses()
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items()
-                        if self.user_manager.course_is_open_to_user(course, username, False) and
-                        self.user_manager.course_is_user_registered(course, username)}
-        open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
+                        if user_manager.course_is_open_to_user(course, username, False) and
+                        user_manager.course_is_user_registered(course, username)}
+        open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(user_manager.session_language())))
 
         last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
         except_free_last_submissions = []
@@ -57,10 +58,10 @@ class MyCoursesPage(INGIniousAuthPage):
                 pass
 
         registerable_courses = {courseid: course for courseid, course in all_courses.items() if
-                                not self.user_manager.course_is_user_registered(course, username) and
+                                not user_manager.course_is_user_registered(course, username) and
                                 course.is_registration_possible(user_info)}
 
-        registerable_courses = OrderedDict(sorted(iter(registerable_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
+        registerable_courses = OrderedDict(sorted(iter(registerable_courses.items()), key=lambda x: x[1].get_name(user_manager.session_language())))
 
         return render_template("mycourses.html",
                                            open_courses=open_courses,

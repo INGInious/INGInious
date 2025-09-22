@@ -20,6 +20,8 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend import database
 
+from inginious.frontend.user_manager import user_manager
+
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
 def add_admin_menu(course): # pylint: disable=unused-argument
@@ -116,7 +118,7 @@ class ContestScoreboard(INGIniousAuthPage):
         end = datetime.fromisoformat(contest_data['end']).astimezone()
         blackout = end - timedelta(hours=contest_data['blackout'])
 
-        users = self.user_manager.get_course_registered_users(course)
+        users = user_manager.get_course_registered_users(course)
         tasks = list(course.get_tasks().keys())
 
         db_results = database.submissions.find({
@@ -127,7 +129,7 @@ class ContestScoreboard(INGIniousAuthPage):
             {"username": True, "_id": False, "taskid": True, "result": True, "submitted_on": True}).sort([("submitted_on", pymongo.ASCENDING)])
 
         task_status = {taskid: {"status": "NA", "tries": 0} for taskid in tasks}
-        results = {username: {"name": self.user_manager.get_user_realname(username), "tasks": copy.deepcopy(task_status)} for username in users}
+        results = {username: {"name": user_manager.get_user_realname(username), "tasks": copy.deepcopy(task_status)} for username in users}
         activity = []
 
         # Compute stats for each submission

@@ -24,6 +24,7 @@ from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class BaseTaskPage(object):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
@@ -31,7 +32,6 @@ class BaseTaskPage(object):
     def __init__(self, calling_page):
         self.cp = calling_page
         self.submission_manager = self.cp.submission_manager
-        self.user_manager = self.cp.user_manager
         self.course_factory = self.cp.course_factory
         self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
         self.default_max_file_size = self.cp.default_max_file_size
@@ -47,7 +47,7 @@ class BaseTaskPage(object):
 
     def GET(self, courseid, taskid, is_LTI):
         """ GET request """
-        username = self.user_manager.session_username()
+        username = user_manager.session_username()
 
         # Fetch the course
         try:
@@ -55,17 +55,17 @@ class BaseTaskPage(object):
         except CourseNotFoundException as ex:
             raise NotFound(description=str(ex))
 
-        if is_LTI and not self.user_manager.course_is_user_registered(course):
-            self.user_manager.course_register_user(course, force=True)
+        if is_LTI and not user_manager.course_is_user_registered(course):
+            user_manager.course_register_user(course, force=True)
 
-        if not self.user_manager.course_is_open_to_user(course, username, is_LTI):
-            return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
+        if not user_manager.course_is_open_to_user(course, username, is_LTI):
+            return handle_course_unavailable(self.cp.app.get_path, user_manager, course)
 
-        is_staff = self.user_manager.has_staff_rights_on_course(course, username)
+        is_staff = user_manager.has_staff_rights_on_course(course, username)
 
         try:
             task = course.get_task(taskid)
-            if not self.user_manager.task_is_visible_by_user(task, username, is_LTI):
+            if not user_manager.task_is_visible_by_user(task, username, is_LTI):
                 return render_template("task_unavailable.html")
         except TaskNotFoundException:
             raise NotFound()
@@ -83,9 +83,9 @@ class BaseTaskPage(object):
             previous_taskid = ordered_task_list[index - 1] if index > 0 else None
             next_taskid = ordered_task_list[index + 1] if index < len(ordered_task_list) - 1 else None
 
-        self.user_manager.user_saw_task(username, courseid, taskid)
+        user_manager.user_saw_task(username, courseid, taskid)
 
-        is_staff = self.user_manager.has_staff_rights_on_course(course, username)
+        is_staff = user_manager.has_staff_rights_on_course(course, username)
 
         userinput = flask.request.args
         if "submissionid" in userinput and "questionid" in userinput:
@@ -124,7 +124,7 @@ class BaseTaskPage(object):
                 {
                     "courseid": task.get_course_id(),
                     "taskid": task.get_id(),
-                    "username": self.user_manager.session_username()
+                    "username": user_manager.session_username()
                 },
                 {
                     "$set": {"random": random_input_list}
@@ -135,21 +135,21 @@ class BaseTaskPage(object):
             submissionid = user_task.get('submissionid', None)
             eval_submission = database.submissions.find_one({'_id': ObjectId(submissionid)}) if submissionid else None
 
-            students = [self.user_manager.session_username()]
-            if course.get_task_dispenser().get_group_submission(taskid) and not self.user_manager.has_admin_rights_on_course(course, username):
+            students = [user_manager.session_username()]
+            if course.get_task_dispenser().get_group_submission(taskid) and not user_manager.has_admin_rights_on_course(course, username):
                 group = database.groups.find_one({"courseid": task.get_course_id(),
-                                                     "students": self.user_manager.session_username()})
+                                                     "students": user_manager.session_username()})
                 if group is not None:
                     students = group["students"]
                 # we don't care for the other case, as the student won't be able to submit.
 
-            submissions = self.submission_manager.get_user_submissions(task) if self.user_manager.session_logged_in() else []
-            user_info = self.user_manager.get_user_info(username)
+            submissions = self.submission_manager.get_user_submissions(task) if user_manager.session_logged_in() else []
+            user_info = user_manager.get_user_info(username)
 
             # Visible tags
             course_tags = course.get_tags()
             visible_tags = [tags for _,tags in course_tags.items() if
-                tags.is_visible_for_student() or self.user_manager.has_staff_rights_on_course(course)]
+                tags.is_visible_for_student() or user_manager.has_staff_rights_on_course(course)]
 
             # Problem dict
             pdict = {problem.get_id(): problem.get_type() for problem in task.get_problems()}
@@ -165,25 +165,25 @@ class BaseTaskPage(object):
 
     def POST(self, courseid, taskid, isLTI):
         """ POST a new submission """
-        username = self.user_manager.session_username()
+        username = user_manager.session_username()
 
         course = self.course_factory.get_course(courseid)
-        if not self.user_manager.course_is_open_to_user(course, username, isLTI):
-            return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
+        if not user_manager.course_is_open_to_user(course, username, isLTI):
+            return handle_course_unavailable(self.cp.app.get_path, user_manager, course)
 
-        is_staff = self.user_manager.has_staff_rights_on_course(course, username)
-        is_admin = self.user_manager.has_admin_rights_on_course(course, username)
+        is_staff = user_manager.has_staff_rights_on_course(course, username)
+        is_admin = user_manager.has_admin_rights_on_course(course, username)
 
         task = course.get_task(taskid)
-        if not self.user_manager.task_is_visible_by_user(task, username, isLTI):
+        if not user_manager.task_is_visible_by_user(task, username, isLTI):
             return render_template("task_unavailable.html")
 
-        self.user_manager.user_saw_task(username, courseid, taskid)
+        user_manager.user_saw_task(username, courseid, taskid)
 
         userinput = flask.request.form
         if "@action" in userinput and userinput["@action"] == "submit":
             # Verify rights
-            if not self.user_manager.task_can_user_submit(task, username, lti=isLTI):
+            if not user_manager.task_can_user_submit(task, username, lti=isLTI):
                 return json.dumps({"status": "error", "title": _("Error"), "text": _("You are not allowed to submit for this task.")})
 
             # Retrieve input random and check still valid
@@ -414,8 +414,8 @@ class TaskPageStaticDownload(INGIniousPage):
         """ GET request """
         try:
             course = self.course_factory.get_course(courseid)
-            if not self.user_manager.course_is_open_to_user(course):
-                return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
+            if not user_manager.course_is_open_to_user(course):
+                return handle_course_unavailable(self.cp.app.get_path, user_manager, course)
 
             path_norm = posixpath.normpath(urllib.parse.unquote(path))
 
@@ -424,7 +424,7 @@ class TaskPageStaticDownload(INGIniousPage):
             else:
 
                 task = course.get_task(taskid)
-                if not self.user_manager.task_is_visible_by_user(task):  # ignore LTI check here
+                if not user_manager.task_is_visible_by_user(task):  # ignore LTI check here
                     return render_template("task_unavailable.html")
 
                 public_folder = task.get_fs().from_subfolder("public")

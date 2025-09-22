@@ -18,7 +18,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend import database
-
+from inginious.frontend.user_manager import user_manager
 
 class CourseDangerZonePage(INGIniousAdminPage):
     """ Course administration page: list of audiences """
@@ -158,7 +158,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         error = False
 
         data = request.form
-        if not data.get("token", "") == self.user_manager.session_token():
+        if not data.get("token", "") == user_manager.session_token():
             msg = _("Operation aborted due to invalid token.")
             error = True
         elif "wipeall" in data:
@@ -216,7 +216,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
     def page(self, course, msg="", error=False):
         """ Get all data and display the page """
         thehash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
-        self.user_manager.set_session_token(thehash)
+        user_manager.set_session_token(thehash)
 
         backups = self.get_backup_list(course)
 
