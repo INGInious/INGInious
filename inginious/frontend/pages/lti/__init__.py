@@ -12,13 +12,14 @@ from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.pages.tasks import BaseTaskPage
 
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class LTITaskPage(INGIniousAuthPage):
     def is_lti_page(self):
         return True
 
     def GET_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = user_manager.session_lti_info()
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, taskid) = data['task']
@@ -26,7 +27,7 @@ class LTITaskPage(INGIniousAuthPage):
         return BaseTaskPage(self).GET(courseid, taskid, True)
 
     def POST_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = user_manager.session_lti_info()
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, taskid) = data['task']
@@ -39,7 +40,7 @@ class LTIAssetPage(INGIniousAuthPage):
         return True
 
     def GET_AUTH(self, asset_url):
-        data = self.user_manager.session_lti_info()
+        data = user_manager.session_lti_info()
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, _) = data['task']
@@ -80,13 +81,13 @@ class LTIBindPage(INGIniousAuthPage):
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
 
         if data:
-            user_profile = database.users.find_one({"username": self.user_manager.session_username()})
+            user_profile = database.users.find_one({"username": user_manager.session_username()})
             lti_user_profile = database.users.find_one(
                 {"ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]})
             if not user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data[self._field],
                                                                                     "") and not lti_user_profile:
                 # There is no binding yet, so bind LTI to this account
-                database.users.find_one_and_update({"username": self.user_manager.session_username()}, {"$set": {
+                database.users.find_one_and_update({"username": user_manager.session_username()}, {"$set": {
                     "ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]}})
             elif not (lti_user_profile and user_profile["username"] == lti_user_profile["username"]):
                 # There exists an LTI binding for another account, refuse auth!
@@ -115,7 +116,7 @@ class LTILoginPage(INGIniousPage):
             Checks if user is authenticated and calls POST_AUTH or performs login and calls GET_AUTH.
             Otherwise, returns the login template.
         """
-        data = self.user_manager.session_lti_info()
+        data = user_manager.session_lti_info()
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
 
@@ -129,9 +130,9 @@ class LTILoginPage(INGIniousPage):
 
         user_profile = database.users.find_one({"ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]})
         if user_profile:
-            self.user_manager.connect_user(user_profile)
+            user_manager.connect_user(user_profile)
 
-        if self.user_manager.session_logged_in():
+        if user_manager.session_logged_in():
             return redirect(self.app.get_path("lti", "task"))
 
         return render_template("lti/login.html", lti_version=self._lti_version)

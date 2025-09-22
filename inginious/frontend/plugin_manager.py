@@ -13,7 +13,7 @@ from jinja2 import  FileSystemLoader
 from inginious.frontend.user_manager import AuthMethod
 from inginious.frontend.task_problems import get_displayable_problem_types
 from inginious.common.tasks_problems import get_problem_types
-
+from inginious.frontend.user_manager import user_manager
 
 class PluginManagerNotLoadedException(Exception):
     pass
@@ -28,7 +28,6 @@ class PluginManager(object):
         self._loaded = False
         self._flask_app = None
         self._task_factory = None
-        self._user_manager = None
         self._submission_manager = None
 
     def _exception_free_callback(self, callback, *args, **kwargs):
@@ -66,11 +65,10 @@ class PluginManager(object):
                 kwargs = out
         return kwargs
 
-    def load(self, client, flask_app, course_factory, task_factory, user_manager, submission_manager, config):
+    def load(self, client, flask_app, course_factory, task_factory, submission_manager, config):
         """ Loads the plugin manager. Must be done after the initialisation of the client """
         self._flask_app = flask_app
         self._task_factory = task_factory
-        self._user_manager = user_manager
         self._submission_manager = submission_manager
         self._loaded = True
         for entry in config:
@@ -108,15 +106,11 @@ class PluginManager(object):
         """
         if not self._loaded:
             raise PluginManagerNotLoadedException()
-        self._user_manager.register_auth_method(auth_method)
+        user_manager.register_auth_method(auth_method)
 
     def get_submission_manager(self):
         """ Returns the submission manager"""
         return self._submission_manager
-
-    def get_user_manager(self):
-        """ Returns the user manager"""
-        return self._user_manager
 
     def add_template_prefix(self, prefix : str, folder : str):
         """

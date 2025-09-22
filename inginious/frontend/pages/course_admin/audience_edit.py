@@ -13,6 +13,7 @@ from bson.objectid import ObjectId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class CourseEditAudience(INGIniousAdminPage):
     """ Edit a task """
@@ -20,8 +21,8 @@ class CourseEditAudience(INGIniousAdminPage):
     def get_user_lists(self, course, audienceid=''):
         """ Get the available student and tutor lists for audience edition"""
         tutor_list = course.get_staff()
-        student_list = self.user_manager.get_course_registered_users(course, False)
-        users_info = self.user_manager.get_users_info(student_list + tutor_list)
+        student_list = user_manager.get_course_registered_users(course, False)
+        users_info = user_manager.get_users_info(student_list + tutor_list)
 
         audiences_list = list(database.audiences.aggregate([
             {"$match": {"courseid": course.get_id()}},
@@ -90,7 +91,7 @@ class CourseEditAudience(INGIniousAdminPage):
                 return redirect(self.app.get_path("admin", courseid, "students?audiences"))
         else:
             audiences_dict = json.loads(data["audiences"])
-            student_list = self.user_manager.get_course_registered_users(course, False)
+            student_list = user_manager.get_course_registered_users(course, False)
             for username in audiences_dict[0]["students"]:
                 userdata = database.users.find_one({"username": username})
                 if userdata is None:
@@ -99,7 +100,7 @@ class CourseEditAudience(INGIniousAdminPage):
                     # Display the page
                     return self.display_page(course, audienceid, msg, error)
                 elif username not in student_list:
-                    self.user_manager.course_register_user(course, username, force=True)
+                    user_manager.course_register_user(course, username, force=True)
             database.audiences.update_one(
                 {"_id": ObjectId(audiences_dict[0]["_id"])},
                 {"$set": {"students": audiences_dict[0]["students"],

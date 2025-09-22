@@ -9,6 +9,7 @@ from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class DeletePage(INGIniousAuthPage):
     """ Delete account page for DB-authenticated users"""
@@ -18,19 +19,19 @@ class DeletePage(INGIniousAuthPage):
         error = False
         msg = ""
 
-        username = self.user_manager.session_username()
-        result = self.user_manager.delete_user(username, data.get("delete_email", ""))
+        username = user_manager.session_username()
+        result = user_manager.delete_user(username, data.get("delete_email", ""))
 
         if not result:
             error = True
             msg = _("The specified email is incorrect.")
         else:
-            self.user_manager.disconnect_user()
+            user_manager.disconnect_user()
         return msg, error
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
-        userdata = database.users.find_one({"username": self.user_manager.session_username()})
+        userdata = database.users.find_one({"username": user_manager.session_username()})
 
         if not userdata or not self.app.allow_deletion:
             raise Forbidden(description=_("User unavailable or deletion is forbidden."))
@@ -39,7 +40,7 @@ class DeletePage(INGIniousAuthPage):
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
-        userdata = database.users.find_one({"username": self.user_manager.session_username()})
+        userdata = database.users.find_one({"username": user_manager.session_username()})
 
         if not userdata or not self.app.allow_deletion:
             raise Forbidden(description=_("User unavailable or deletion forbidden."))

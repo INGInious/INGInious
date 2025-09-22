@@ -10,7 +10,7 @@ from werkzeug.exceptions import NotFound
 from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend.user_manager import user_manager
 
 class CourseRegisterPage(INGIniousAuthPage):
     """ Registers a user to a course """
@@ -21,10 +21,10 @@ class CourseRegisterPage(INGIniousAuthPage):
         except (InvalidNameException, CourseNotFoundException, CourseUnreadableException) as e:
             raise NotFound(description=_("This course doesn't exist."))
 
-        username = self.user_manager.session_username()
-        user_info = self.user_manager.get_user_info(username)
+        username = user_manager.session_username()
+        user_info = user_manager.get_user_info(username)
 
-        if self.user_manager.course_is_user_registered(course, username) or not course.is_registration_possible(user_info):
+        if user_manager.course_is_user_registered(course, username) or not course.is_registration_possible(user_info):
             return course, None
 
         return course, username
@@ -38,7 +38,7 @@ class CourseRegisterPage(INGIniousAuthPage):
     def POST_AUTH(self, courseid):
         course, username = self.basic_checks(courseid)
         user_input = request.form
-        success = self.user_manager.course_register_user(course, username, user_input.get("register_password", None))
+        success = user_manager.course_register_user(course, username, user_input.get("register_password", None))
 
         if success:
             return redirect(self.app.get_path("course", course.get_id()))

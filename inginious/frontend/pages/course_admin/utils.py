@@ -18,6 +18,7 @@ from bson.objectid import ObjectId
 from inginious.common.base import id_checker
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class INGIniousAdminPage(INGIniousAuthPage):
     """
@@ -36,10 +37,10 @@ class INGIniousAdminPage(INGIniousAuthPage):
         try:
             course = self.course_factory.get_course(courseid)
             if allow_all_staff:
-                if not self.user_manager.has_staff_rights_on_course(course):
+                if not user_manager.has_staff_rights_on_course(course):
                     raise Forbidden(description=_("You don't have staff rights on this course."))
             else:
-                if not self.user_manager.has_admin_rights_on_course(course):
+                if not user_manager.has_admin_rights_on_course(course):
                     raise Forbidden(description=_("You don't have admin rights on this course."))
 
             if taskid is None:
@@ -57,14 +58,14 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
 
     def get_course_params(self, course, params):
         users = self.get_users(course)
-        audiences = self.user_manager.get_course_audiences(course)
+        audiences = user_manager.get_course_audiences(course)
         tasks = course.get_tasks(True)
 
         tutored_audiences = [str(audience["_id"]) for audience in audiences if
-                             self.user_manager.session_username() in audience["tutors"]]
+                             user_manager.session_username() in audience["tutors"]]
         tutored_users = []
         for audience in audiences:
-            if self.user_manager.session_username() in audience["tutors"]:
+            if user_manager.session_username() in audience["tutors"]:
                 tutored_users += audience["students"]
 
         limit = params.get("limit", 50) if params.get("limit", 50) > 0 else 50
@@ -72,14 +73,14 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
         return users, tutored_users, audiences, tutored_audiences, tasks, limit
 
     def get_users(self, course):
-        user_ids = self.user_manager.get_course_registered_users(course)
-        users_info = self.user_manager.get_users_info(user_ids)
+        user_ids = user_manager.get_course_registered_users(course)
+        users_info = user_manager.get_users_info(user_ids)
         users = {user: users_info[user].realname if users_info[user] else '' for user in user_ids}
         return OrderedDict(sorted(users.items(), key=lambda x: x[1]))
 
     def get_input_params(self, user_input, course, limit=50):
         users = self.get_users(course)
-        audiences = self.user_manager.get_course_audiences(course)
+        audiences = user_manager.get_course_audiences(course)
         tasks = course.get_tasks()
 
         # Sanitise user
@@ -335,7 +336,7 @@ class CourseRedirectPage(INGIniousAdminPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
-        if self.user_manager.session_username() in course.get_tutors():
+        if user_manager.session_username() in course.get_tutors():
             return redirect(self.app.get_path("admin", courseid, "tasks"))
         else:
             return redirect(self.app.get_path("admin", courseid, "settings"))

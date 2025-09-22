@@ -9,6 +9,7 @@ from flask import request, render_template
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class CourseStudentInfoPage(INGIniousAdminPage):
     """ List information about a student """
@@ -23,7 +24,7 @@ class CourseStudentInfoPage(INGIniousAdminPage):
         taskid = data["taskid"]
         course, __ = self.get_course_and_check_rights(courseid)
 
-        self.user_manager.reset_user_task_state(courseid, taskid, username)
+        user_manager.reset_user_task_state(courseid, taskid, username)
 
         return self.page(course, username)
 
@@ -37,7 +38,7 @@ class CourseStudentInfoPage(INGIniousAdminPage):
 
         tasks = course.get_tasks(True)
         user_task_list = course.get_task_dispenser().get_user_task_list([username])[username]
-        result = OrderedDict([(taskid, {"taskid": taskid, "name": tasks[taskid].get_name(self.user_manager.session_language()),
+        result = OrderedDict([(taskid, {"taskid": taskid, "name": tasks[taskid].get_name(user_manager.session_language()),
                                  "tried": 0, "status": "notviewed", "grade": 0, "visible": False,
                                  "url": self.submission_url_generator(username, taskid)}) for taskid in tasks])
 

@@ -6,15 +6,16 @@
 import gettext
 import flask
 
+from inginious.frontend.user_manager import user_manager
+
 class L10nManager:
 
-    def __init__(self, user_manager):
+    def __init__(self):
         self.translations = {}
-        self._user_manager = user_manager
 
     def get_translation_obj(self, lang=None):
         if lang is None:
-            lang = self._user_manager.session_language(default="") if flask.has_app_context() else ""
+            lang = user_manager.session_language(default="") if flask.has_app_context() else ""
         return self.translations.get(lang, gettext.NullTranslations())
 
     def gettext(self, text):

@@ -12,6 +12,7 @@ from flask import request, send_from_directory, render_template
 
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -52,14 +53,14 @@ class UpComingTasksBoard(INGIniousAuthPage):
 
     def page(self, time_planner):
         """ General main method called for GET and POST """
-        username = self.user_manager.session_username()
+        username = user_manager.session_username()
         all_courses = self.course_factory.get_all_courses()
         time_planner = self.time_planner_conversion(time_planner)
 
         # Get the courses id
         open_courses = {courseid: course for courseid, course in all_courses.items()
-                        if self.user_manager.course_is_open_to_user(course, username, False) and
-                        self.user_manager.course_is_user_registered(course, username)}
+                        if user_manager.course_is_open_to_user(course, username, False) and
+                        user_manager.course_is_user_registered(course, username)}
 
         # Get last submissions for left panel
         last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})

@@ -13,6 +13,8 @@ from inginious.common.exceptions import ImportCourseException
 from inginious.common.log import get_course_logger
 from inginious.frontend.marketplace_courses import get_all_marketplace_courses, get_marketplace_course
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.user_manager import user_manager
+
 
 if sys.platform == 'win32':
     import pbs
@@ -27,14 +29,14 @@ class MarketplacePage(INGIniousAuthPage):
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
         # Change to teacher privilege when created
-        if not self.user_manager.user_is_superadmin():
+        if not user_manager.user_is_superadmin():
             raise Forbidden(description=_("You don't have superadmin rights on this course."))
         return self.show_page()
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
         # Change to teacher privilege when created
-        if not self.user_manager.user_is_superadmin():
+        if not user_manager.user_is_superadmin():
             raise Forbidden(description=_("You're not allowed to do that"))
 
         user_input = request.form
@@ -43,7 +45,7 @@ class MarketplacePage(INGIniousAuthPage):
             new_courseid = user_input["new_courseid"]
             try:
                 course = get_marketplace_course(user_input["courseid"])
-                import_course(course, new_courseid, self.user_manager.session_username(), self.course_factory)
+                import_course(course, new_courseid, user_manager.session_username(), self.course_factory)
             except ImportCourseException as e:
                 errors.append(str(e))
             except:

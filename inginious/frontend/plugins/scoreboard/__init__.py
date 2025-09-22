@@ -14,6 +14,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -73,7 +74,7 @@ class ScoreBoard(INGIniousAuthPage):
         task_names = {}
         for taskid in scoreboard_content:
             try:
-                task_names[taskid] = course.get_task(taskid).get_name(self.user_manager.session_language())
+                task_names[taskid] = course.get_task(taskid).get_name(user_manager.session_language())
             except:
                 raise NotFound(description="Unknown task id "+taskid)
 
@@ -123,7 +124,7 @@ class ScoreBoard(INGIniousAuthPage):
 
         # Get user names
         users_realname = {}
-        for username, userinfo in self.user_manager.get_users_info(list(users)).items():
+        for username, userinfo in user_manager.get_users_info(list(users)).items():
             users_realname[username] = userinfo.realname if userinfo else username
 
         # Compute overall result per user, and sort them

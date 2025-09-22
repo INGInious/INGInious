@@ -9,7 +9,7 @@ from flask import request, render_template
 from datetime import datetime
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend.user_manager import user_manager
 
 class QueuePage(INGIniousAuthPage):
     """ Page allowing to view the status of the backend job queue """
@@ -21,7 +21,7 @@ class QueuePage(INGIniousAuthPage):
                                            from_timestamp=lambda x: datetime.fromtimestamp(x).astimezone())
 
     def POST_AUTH(self, *args, **kwargs):
-        if self.user_manager.user_is_superadmin():
+        if user_manager.user_is_superadmin():
             inputs = request.form
             jobid = inputs["jobid"]
             self.client.kill_job(jobid)

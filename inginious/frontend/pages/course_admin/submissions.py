@@ -11,6 +11,7 @@ from werkzeug.exceptions import NotFound, Forbidden
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
     """ Page that allow search, view, replay an download of submisssions done by students """
@@ -62,7 +63,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
                     return self.page(course, params, msgs=msgs)
 
             elif "replay" in user_input:
-                if not self.user_manager.has_admin_rights_on_course(course):
+                if not user_manager.has_admin_rights_on_course(course):
                     raise Forbidden(description=_("You don't have admin rights on this course."))
 
                 tasks = course.get_tasks()

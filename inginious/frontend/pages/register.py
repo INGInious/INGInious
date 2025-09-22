@@ -18,7 +18,7 @@ from inginious.frontend.flask.mail import mail
 from inginious.frontend.user_manager import UserManager
 
 from inginious.frontend import database
-
+from inginious.frontend.user_manager import user_manager
 
 class RegistrationPage(INGIniousPage):
     """ Registration page for DB authentication """
@@ -27,7 +27,7 @@ class RegistrationPage(INGIniousPage):
 
     def GET(self):
         """ Handles GET request """
-        if self.user_manager.session_logged_in() or not self.app.allow_registration:
+        if user_manager.session_logged_in() or not self.app.allow_registration:
             raise Forbidden(description=_("You're not allow to register."))
 
         error = False
@@ -36,7 +36,7 @@ class RegistrationPage(INGIniousPage):
         data = flask.request.args
 
         if "activate" in data:
-            error = self.user_manager.activate_user(data["activate"])
+            error = user_manager.activate_user(data["activate"])
             msg = _("Invalid activation hash.") if error else _("User successfully activated.")
         elif "reset" in data:
             msg, error, reset = self.get_reset_data(data)
@@ -100,7 +100,7 @@ class RegistrationPage(INGIniousPage):
                                                 "password": passwd_hash,
                                                 "activate": activate_hash,
                                                 "bindings": {},
-                                                "language": self.user_manager._session.get("language", "en"),
+                                                "language": user_manager._session.get("language", "en"),
                                                 "code_indentation": "4",
                                                 "tos_accepted": True
                                                 })
@@ -196,7 +196,7 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
 
     def POST(self):
         """ Handles POST request """
-        if self.user_manager.session_logged_in() or not self.app.allow_registration:
+        if user_manager.session_logged_in() or not self.app.allow_registration:
             raise Forbidden(description=_("You're not allow to register."))
 
         reset = None

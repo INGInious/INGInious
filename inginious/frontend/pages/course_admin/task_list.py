@@ -12,6 +12,7 @@ from natsort import natsorted
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend import database
+from inginious.frontend.user_manager import user_manager
 
 class CourseTaskListPage(INGIniousAdminPage):
     """ List informations about all tasks """
@@ -124,7 +125,7 @@ class CourseTaskListPage(INGIniousAdminPage):
             except Exception as ex:
                 tasks_errors[taskid] = str(ex)
 
-        tasks_data = natsorted([(taskid, {"name": tasks[taskid].get_name(self.user_manager.session_language()),
+        tasks_data = natsorted([(taskid, {"name": tasks[taskid].get_name(user_manager.session_language()),
                                        "url": self.submission_url_generator(taskid)}) for taskid in tasks],
                             key=lambda x: x[1]["name"])
         tasks_data = OrderedDict(tasks_data)

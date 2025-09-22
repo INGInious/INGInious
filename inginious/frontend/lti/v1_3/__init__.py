@@ -43,9 +43,9 @@ class MongoLTILaunchDataStorage(LaunchDataStorage):
 class LTIGradeManager(LTIScorePublisher):
     _submission_tags = {"message_launch_id": "message_launch_id"}
 
-    def __init__(self, user_manager, course_factory):
+    def __init__(self, course_factory):
         self._logger = logging.getLogger("inginious.webapp.lti1_3.grade_manager")
-        super(LTIGradeManager, self).__init__(database.lti_grade_queue, user_manager, course_factory)
+        super(LTIGradeManager, self).__init__(database.lti_grade_queue, course_factory)
 
     def process(self, mongo_entry, grade):
         courseid, taskid, message_launch_id = (mongo_entry["courseid"], mongo_entry["taskid"], mongo_entry["message_launch_id"])

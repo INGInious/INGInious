@@ -10,7 +10,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
-
+from inginious.frontend.user_manager import user_manager
 
 def handle_course_unavailable(get_path, user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
@@ -45,7 +45,7 @@ class CoursePage(INGIniousAuthPage):
 
         user_input = flask.request.form
         if "unregister" in user_input and course.allow_unregister():
-            self.user_manager.course_unregister_user(courseid, self.user_manager.session_username())
+            user_manager.course_unregister_user(courseid, user_manager.session_username())
             return redirect(self.app.get_path('mycourses'))
 
         return self.show_page(course)
@@ -57,9 +57,9 @@ class CoursePage(INGIniousAuthPage):
 
     def show_page(self, course):
         """ Prepares and shows the course page """
-        username = self.user_manager.session_username()
-        if not self.user_manager.course_is_open_to_user(course, lti=False):
-            return handle_course_unavailable(self.app.get_path, self.user_manager, course)
+        username = user_manager.session_username()
+        if not user_manager.course_is_open_to_user(course, lti=False):
+            return handle_course_unavailable(self.app.get_path, user_manager, course)
         else:
             tasks = course.get_tasks()
 
@@ -68,7 +68,7 @@ class CoursePage(INGIniousAuthPage):
             # Get 5 last submissions
             last_submissions = []
             for submission in self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid": {"$in": user_task_list}}):
-                submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
+                submission["taskname"] = tasks[submission['taskid']].get_name(user_manager.session_language())
                 last_submissions.append(submission)
 
             # Compute course/tasks scores
@@ -85,7 +85,7 @@ class CoursePage(INGIniousAuthPage):
             categories = course.get_task_dispenser().get_all_categories()
 
             # Get user info
-            user_info = self.user_manager.get_user_info(username)
+            user_info = user_manager.get_user_info(username)
 
             return render_template("course.html", user_info=user_info,
                                                course=course,
