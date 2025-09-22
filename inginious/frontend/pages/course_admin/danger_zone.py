@@ -61,9 +61,8 @@ class CourseDangerZonePage(INGIniousAdminPage):
         # Update backup YAML file
         backup_course_content = self.course_factory.get_course(backup_course_id).get_descriptor()
         backup_course_content["archived"] = True
-        backup_course_content["archive_date"] = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        backup_course_content["name"] = backup_course_content["name"] + " (archived on " + backup_course_content[
-            "archive_date"] + ")"
+        backup_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
+        backup_course_content["name"] = backup_course_content["name"]
         self.course_factory.update_course_descriptor_content(backup_course_id, backup_course_content)
 
         # Update course id in DB
