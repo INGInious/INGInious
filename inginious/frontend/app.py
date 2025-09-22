@@ -142,6 +142,20 @@ def get_app(config):
         "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
     }
 
+    available_translations = {
+        "de": "Deutsch",
+        "el": "ελληνικά",
+        "es": "Español",
+        "fr": "Français",
+        "he": "עִבְרִית",
+        "nl": "Nederlands",
+        "nb_NO": "Norsk (bokmål)",
+        "pt": "Português",
+        "vi": "Tiếng Việt"
+    }
+    available_languages = {"en": "English"}
+    available_languages.update(available_translations)
+
     default_allowed_file_extensions = config['allowed_file_extensions']
     default_max_file_size = config['max_file_size']
 
@@ -182,23 +196,7 @@ def get_app(config):
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
     # Init gettext
-    available_translations = {
-        "de": "Deutsch",
-        "el": "ελληνικά",
-        "es": "Español",
-        "fr": "Français",
-        "he": "עִבְרִית",
-        "nl": "Nederlands",
-        "nb_NO": "Norsk (bokmål)",
-        "pt": "Português",
-        "vi": "Tiếng Việt"
-    }
-
-    available_languages = {"en": "English"}
-    available_languages.update(available_translations)
-
     l10n_manager = L10nManager(user_manager)
-
     l10n_manager.translations["en"] = gettext.NullTranslations()  # English does not need translation ;-)
     for lang in available_translations.keys():
         l10n_manager.translations[lang] = gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
