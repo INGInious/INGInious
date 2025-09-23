@@ -23,6 +23,8 @@ from inginious.common.exceptions import TaskNotFoundException
 from inginious.frontend.pages.course_admin.task_edit_file import CourseTaskFiles
 from inginious.frontend.tasks import Task
 
+from inginious.frontend.plugin_manager import plugin_manager
+
 
 class CourseEditTask(INGIniousAdminPage):
     """ Edit a task """
@@ -53,7 +55,8 @@ class CourseEditTask(INGIniousAdminPage):
             pass
         available_filetypes = self.task_factory.get_available_task_file_extensions()
 
-        additional_tabs = self.plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
+
+        additional_tabs = plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
                                                         task_data=task_data)
 
         return render_template("course_admin/task_edit.html", course=course, taskid=taskid,
@@ -164,7 +167,7 @@ class CourseEditTask(INGIniousAdminPage):
         task_fs.ensure_exists()
 
         # Call plugins and return the first error
-        plugin_results = self.plugin_manager.call_hook('task_editor_submit', course=course, taskid=taskid,
+        plugin_results = plugin_manager.call_hook('task_editor_submit', course=course, taskid=taskid,
                                                        task_data=data, task_fs=task_fs)
 
         # Retrieve the first non-null element
@@ -173,7 +176,7 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            Task(course, taskid, data, self.course_factory.get_fs(), self.plugin_manager, self.task_factory.get_problem_types())
+            Task(course, taskid, data, self.course_factory.get_fs(), self.task_factory.get_problem_types())
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 

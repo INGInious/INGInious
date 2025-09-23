@@ -7,6 +7,7 @@
 from flask import redirect
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.plugin_manager import plugin_manager
 
 
 class PrefRedirectPage(INGIniousAuthPage):

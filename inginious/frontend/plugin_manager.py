@@ -112,6 +112,7 @@ class PluginManager(object):
         """ Returns the submission manager"""
         return self._submission_manager
 
+
     def add_template_prefix(self, prefix : str, folder : str):
         """
         Adds a template folder served for all templates prefixed by indicated prefix
@@ -119,3 +120,7 @@ class PluginManager(object):
         :param folder: abolute path to the template folder.
         """
         self._flask_app.jinja_loader.loaders[1].mapping[prefix] = FileSystemLoader(folder)
+
+# Init the different parts of the app
+plugin_manager = PluginManager()
+
