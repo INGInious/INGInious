@@ -6,10 +6,11 @@
 """ Factory for loading courses from disk """
 import logging
 
-from inginious.common.filesystems import FileSystemProvider
 from inginious.common.log import get_course_logger
 from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException, CourseAlreadyExistsException
+
+from inginious.frontend.fs_provider import get_fs_provider
 
 from inginious.frontend.courses import Course
 from inginious.frontend.task_factory import TaskFactory
@@ -18,8 +19,8 @@ class CourseFactory(object):
     """ Load courses from disk """
     _logger = logging.getLogger("inginious.course_factory")
 
-    def __init__(self, filesystem: FileSystemProvider, task_factory, task_dispensers):
-        self._filesystem = filesystem
+    def __init__(self, task_factory, task_dispensers):
+        self._filesystem = get_fs_provider()
         self._task_factory = task_factory
         self._task_dispensers = task_dispensers
         self._cache = {}
@@ -234,7 +235,7 @@ class CourseFactory(object):
         self._task_factory.update_cache_for_course(courseid)
 
 
-def create_factories(fs_provider, task_dispensers, task_problem_types):
+def create_factories(task_dispensers, task_problem_types):
     """
     Shorthand for creating Factories
     :param fs_provider: A FileSystemProvider leading to the courses
@@ -242,5 +243,5 @@ def create_factories(fs_provider, task_dispensers, task_problem_types):
     :return: a tuple with two objects: the first being of type CourseFactory, the second of type TaskFactory
     """
 
-    task_factory = TaskFactory(fs_provider, task_problem_types)
-    return CourseFactory(fs_provider, task_factory, task_dispensers), task_factory
+    task_factory = TaskFactory(task_problem_types)
+    return CourseFactory(task_factory, task_dispensers), task_factory
