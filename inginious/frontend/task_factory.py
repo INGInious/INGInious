@@ -6,20 +6,20 @@
 """ Factory for loading tasks from disk """
 
 from os.path import splitext
-from inginious.common.filesystems import FileSystemProvider
 from inginious.common.log import get_course_logger
 from inginious.common.base import id_checker, get_json_or_yaml
 from inginious.common.task_file_readers.yaml_reader import TaskYAMLFileReader
 from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, \
     TaskUnreadableException, TaskReaderNotFoundException, TaskAlreadyExistsException
 
+from inginious.frontend.fs_provider import get_fs_provider
 from inginious.frontend.tasks import Task
 
 class TaskFactory(object):
     """ Load courses from disk """
 
-    def __init__(self, filesystem: FileSystemProvider, task_problem_types):
-        self._filesystem = filesystem
+    def __init__(self, task_problem_types):
+        self._filesystem = get_fs_provider()
         self._cache = {}
         self._task_file_managers = {}
         self._task_problem_types = task_problem_types

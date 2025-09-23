@@ -22,8 +22,6 @@ from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__
 from inginious.frontend.course_factory import create_factories
-from inginious.common.entrypoints import filesystem_from_config_dict
-from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.lti.v1_3 import LTIGradeManager
 from inginious.frontend.task_problems import get_default_displayable_problem_types
@@ -32,6 +30,8 @@ from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.flask.mapping import init_flask_mapping, init_flask_maintenance_mapping
 from inginious.frontend.flask.mongo_sessions import MongoDBSessionInterface
 from inginious.frontend.flask.mail import mail
+
+from inginious.frontend.fs_provider import init_fs_provider, get_fs_provider
 
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
@@ -123,13 +123,23 @@ def get_app(config):
     :param config: the configuration dict
     :return: A new app
     """
-    # First, disable debug. It will be enabled in the configuration, later.
-
+    # Load configuration
     config = _put_configuration_defaults(config)
-    flask_app = flask.Flask(__name__)
-    flask_app.config.from_mapping(**config)
+
+    # Init database
     database.init_app(config.get('mongo_opt', {}))
 
+    # Init user_manager
+    user_manager.init_app(config.get('superadmins', []))
+
+    # Init the filesystem provider
+    if "fs" not in config:
+        config["fs"] = {"module": "local", "location": config["tasks_directory"]}
+    init_fs_provider(config["fs"])
+
+    # Init flask app
+    flask_app = flask.Flask(__name__)
+    flask_app.config.from_mapping(**config)
     flask_app.session_interface = MongoDBSessionInterface(config.get('SESSION_USE_SIGNER', False), True)
 
     def _lti_session_save(app, response):
@@ -139,6 +149,7 @@ def get_app(config):
             database.lti_sessions.find_one_and_update({'session_id': lti_session_id}, {'$set': flask.g.lti_session},
                                                       upsert=True)
         # TODO(mp): Find whether the session should be dropped instead?
+
     flask.request_finished.connect(_lti_session_save, flask_app)
 
     # available indentation types
@@ -157,26 +168,17 @@ def get_app(config):
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
     register_base_env_types()
 
-    # Create the FS provider
-    if "fs" in config:
-        fs_provider = filesystem_from_config_dict(config["fs"])
-    else:
-        task_directory = config["tasks_directory"]
-        fs_provider = LocalFSProvider(task_directory)
-
     default_task_dispensers = {
         task_dispenser.get_id(): task_dispenser for task_dispenser in [TableOfContents, CombinatoryTest]
     }
 
     default_problem_types = get_default_displayable_problem_types()
 
-    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types)
-
-    user_manager.init_app(config.get('superadmins', []))
+    course_factory, task_factory = create_factories(default_task_dispensers, default_problem_types)
 
     update_pending_jobs()
 
-    client = create_arch(config, fs_provider, zmq_context, course_factory)
+    client = create_arch(config, zmq_context, default_problem_types)
 
     lti_score_publishers = {"1.1": LTIOutcomeManager(course_factory), "1.3": LTIGradeManager(course_factory)}
     submission_manager = WebAppSubmissionManager(client, lti_score_publishers)
