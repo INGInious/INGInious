@@ -43,10 +43,10 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
     def dump_course(self, courseid):
         """
-            Creates a new course (backup course), gives it a course id resulting of the concatenation of the original id
-            and the archiving date. This backup course is marked as archived and given an archive date in its YAML descriptor.
+            Creates a new course (Archive course), gives it a course id resulting of the concatenation of the original id
+            and the archiving date. This archive course is marked as archived and given an archive date in its YAML descriptor.
             The original course keeps their course id and all related submissions, user_tasks, audiences, courses and
-            groups are updated to point to the backup course.
+            groups are updated to point to the archive course.
         """
 
         course = self.course_factory.get_course(courseid)
@@ -56,29 +56,28 @@ class CourseDangerZonePage(INGIniousAdminPage):
         if not course_fs.exists():
             raise CourseNotFoundException()
 
-        # Create backup course
-        backup_course_id = courseid + "_backup_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d.%H_%M_%S")
-        self.course_factory.create_course(backup_course_id, None)
-        self.course_factory.get_fs().copy_to(course_fs.prefix, backup_course_id)
+        # Create archive course
+        archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
+        self.course_factory.create_course(archive_course_id, None)
+        self.course_factory.get_fs().copy_to(course_fs.prefix, archive_course_id)
 
-        # Update backup YAML file
-        backup_course_content = self.course_factory.get_course(backup_course_id).get_descriptor()
-        backup_course_content["archived"] = True
-        backup_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
-        backup_course_content["name"] = backup_course_content["name"]
-        self.course_factory.update_course_descriptor_content(backup_course_id, backup_course_content)
+        # Update archive YAML file
+        archive_course_content = self.course_factory.get_course(archive_course_id).get_descriptor()
+        archive_course_content["archived"] = True
+        archive_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
+        self.course_factory.update_course_descriptor_content(archive_course_id, archive_course_content)
 
         # Update course id in DB
-        self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
-        self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
-        self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
-        self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": backup_course_id}})
+        self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         old_course_students = self.database.courses.find_one({"_id": courseid})
         if old_course_students:
-            old_course_students["_id"] = backup_course_id
+            old_course_students["_id"] = archive_course_id
             self.database.courses.insert_one(old_course_students)
 
-        self._logger.info("Course %s backed up.", courseid)
+        self._logger.info("Course %s archived.", courseid)
 
     def delete_course(self, courseid):
         """ Erase all course data """

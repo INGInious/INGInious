@@ -994,7 +994,7 @@ class UserManager:
         if lti == "auto":
             lti = self.session_lti_info() is not None
 
-        if self.has_staff_rights_on_course(course, username):
+        if self.has_staff_rights_on_course(course, username) or course.is_open_to_non_staff():
             return True
 
         if not course.get_accessibility().is_open():

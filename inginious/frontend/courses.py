@@ -147,11 +147,11 @@ class Course(object):
 
     def is_open_to_non_staff(self):
         """ Returns true if the course is accessible by users that are not administrator of this course """
-        return self.get_accessibility().is_open()
+        return self.get_accessibility().is_open() and not self.is_archive()
 
     def is_registration_possible(self, user_info: UserInfo):
         """ Returns true if users can register for this course """
-        return self.get_accessibility().is_open() and self._registration.is_open() and self.is_user_accepted_by_access_control(user_info)
+        return self.get_accessibility().is_open() and self._registration.is_open() and self.is_user_accepted_by_access_control(user_info) and not self.is_archive()
 
     def is_password_needed_for_registration(self):
         """ Returns true if a password is needed for registration """
@@ -163,11 +163,15 @@ class Course(object):
 
     def get_accessibility(self, plugin_override=True):
         """ Return the AccessibleTime object associated with the accessibility of this course """
+        if self.is_archive():
+            return AccessibleTime(False)
         vals = self._plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
         return vals[0] if len(vals) and plugin_override else self._accessible
 
     def get_registration_accessibility(self):
         """ Return the AccessibleTime object associated with the registration """
+        if self.is_archive():
+            return AccessibleTime(False)
         return self._registration
 
     def get_tasks(self, ordered=False):
@@ -248,10 +252,12 @@ class Course(object):
         return at_least_one if self.get_access_control_accept() else not at_least_one
 
     def allow_preview(self):
-        return self._allow_preview
+        return self._allow_preview and not self.is_archive()
 
     def allow_unregister(self, plugin_override=True):
         """ Returns True if students can unregister from course """
+        if self.is_archive():
+            return False
         vals = self._plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
         return vals[0] if len(vals) and plugin_override else self._allow_unregister
 
