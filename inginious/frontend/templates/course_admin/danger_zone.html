@@ -72,6 +72,31 @@
                 </div>
                 {% endif %}
             </div>
+
+            {% if not course.is_archive() %}
+                <div class="card-header">
+                    {{ _("Archives") }}
+                </div>
+                <table class="table mb-0">
+                    <thead>
+                    <tr>
+                        <th>{{ _("Archived courses") }}</th>
+                        <th>{{ _("Archived on") }}</th>
+                    </thead>
+                    <tbody>
+                    {% for archive in archives %}
+                        <tr>
+                            <td><a href="{{get_path('course', archive.get_id())}}">{{archive.get_name(user_manager.session_language())}}</td></a>
+                            <td>{{show_time(archive.get_archiving_date())}}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {%else%}
+                <div>
+                {{ _("This course is an archive course archived from ") }} <a href="{{get_path('course', original_course.get_id())}}">{{original_course.get_id()}}</a>
+                </div>
+            {% endif %}
         </div>
         <div role="tabpanel" class="tab-pane card-body" id="tab_delete_course">
             <div class="card border-danger">

@@ -61,6 +61,9 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self.course_factory.create_course(backup_course_id, None)
         self.course_factory.get_fs().copy_to(course_fs.prefix, backup_course_id)
 
+        # store link between archive and course in DB
+        self.database.archives.insert_one({"original" : courseid, "archive" : backup_course_id})
+
         # Update backup YAML file
         backup_course_content = self.course_factory.get_course(backup_course_id).get_descriptor()
         backup_course_content["archived"] = True
@@ -90,6 +93,14 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self.course_factory.delete_course(courseid)
 
         self._logger.info("Course %s files erased.", courseid)
+
+    def remove_old_archive_links(self, course):
+        """ Remove all archive links in DB for a course that has been deleted manually """
+        for archive_id in course.get_archives_ids():
+            if archive_id not in self.course_factory.get_all_courses():
+                self.database.archives.delete_many({"archive": archive_id})
+                self._logger.info("Archive link for course %s removed from database.", archive_id)
+
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
@@ -139,5 +150,10 @@ class CourseDangerZonePage(INGIniousAdminPage):
         thehash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
         self.user_manager.set_session_token(thehash)
 
+        self.remove_old_archive_links(course)
+        archives = [self.course_factory.get_course(archive_id) for archive_id in course.get_archives_ids()]
+        original_course_id = course.get_original_course_id()
+        original_course = self.course_factory.get_course(original_course_id["original"]) if  original_course_id else None
+
         return self.template_helper.render("course_admin/danger_zone.html", course=course, thehash=thehash,
-                                        msg=msg, error=error)
+                                           archives=archives, original_course=original_course, msg=msg, error=error)

@@ -90,6 +90,7 @@ class Course(object):
             # to avoid them to be cached along with the course object. Passing the task factory as argument
             # would require to pass the course too, and have a useless reference back.
             self._task_dispenser = task_dispenser_class(lambda: self._task_factory.get_all_tasks(self), self._content.get("dispenser_data", ''), database, self.get_id())
+            self._database = database
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
@@ -284,3 +285,16 @@ class Course(object):
     def get_archiving_date(self):
         """ Returns the date at which the course was archived as a string (None if not archived)"""
         return datetime.fromisoformat(self._content["archive_date"])
+
+    def get_archives_ids(self):
+        """ Returns a list of all archive courses archived from this course """
+        archive_list_id = [archive["archive"] for archive in self._database.archives.find({"original": self.get_id()})] \
+            if not self.is_archive() else []
+
+        return archive_list_id
+
+    def get_original_course_id(self):
+        """ If this course is an archive, returns the original course it was archived from (None if not archived) """
+        original_course_id = self._database.archives.find_one({"archive": self.get_id()}) if self.is_archive() else None
+
+        return original_course_id
