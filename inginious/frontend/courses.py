@@ -286,15 +286,3 @@ class Course(object):
         """ Returns the date at which the course was archived as a string (None if not archived)"""
         return datetime.fromisoformat(self._content["archive_date"])
 
-    def get_archives_ids(self):
-        """ Returns a list of all archive courses archived from this course """
-        archive_list_id = [archive["archive"] for archive in self._database.archives.find({"original": self.get_id()})] \
-            if not self.is_archive() else []
-
-        return archive_list_id
-
-    def get_original_course_id(self):
-        """ If this course is an archive, returns the original course it was archived from (None if not archived) """
-        original_course_id = self._database.archives.find_one({"archive": self.get_id()}) if self.is_archive() else None
-
-        return original_course_id
