@@ -21,7 +21,6 @@ from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__
-from inginious.frontend.course_factory import create_factories
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.lti.v1_3 import LTIGradeManager
 from inginious.frontend.task_problems import get_default_displayable_problem_types
@@ -31,11 +30,14 @@ from inginious.frontend.flask.mapping import init_flask_mapping, init_flask_main
 from inginious.frontend.flask.mongo_sessions import MongoDBSessionInterface
 from inginious.frontend.flask.mail import mail
 
+from inginious.common.tasks_problems import register_problem_types
+
 from inginious.frontend.fs_provider import init_fs_provider, get_fs_provider
 
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.plugin_manager import plugin_manager
+from inginious.frontend.course_factory import course_factory
 
 def _put_configuration_defaults(config):
     """
@@ -168,19 +170,16 @@ def get_app(config):
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
     register_base_env_types()
 
-    default_task_dispensers = {
-        task_dispenser.get_id(): task_dispenser for task_dispenser in [TableOfContents, CombinatoryTest]
-    }
+    for task_dispenser in [TableOfContents, CombinatoryTest]:
+        course_factory.add_task_dispenser(task_dispenser)
 
-    default_problem_types = get_default_displayable_problem_types()
-
-    course_factory, task_factory = create_factories(default_task_dispensers, default_problem_types)
+    register_problem_types(get_default_displayable_problem_types())
 
     update_pending_jobs()
 
-    client = create_arch(config, zmq_context, default_problem_types)
+    client = create_arch(config, zmq_context)
 
-    lti_score_publishers = {"1.1": LTIOutcomeManager(course_factory), "1.3": LTIGradeManager(course_factory)}
+    lti_score_publishers = {"1.1": LTIOutcomeManager(), "1.3": LTIGradeManager()}
     submission_manager = WebAppSubmissionManager(client, lti_score_publishers)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
@@ -233,8 +232,6 @@ def get_app(config):
 
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
-    flask_app.course_factory = course_factory
-    flask_app.task_factory = task_factory
     flask_app.submission_manager = submission_manager
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
@@ -259,7 +256,7 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, course_factory, task_factory, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, submission_manager, config.get("plugins", []))
 
     # Start the inginious.backend
     client.start()

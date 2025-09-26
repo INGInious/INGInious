@@ -17,6 +17,7 @@ from inginious.common.entrypoints import get_args_and_filesystem
 from inginious.agent.mcq_agent import MCQAgent
 from inginious.common.tasks_problems import MultipleChoiceProblem, MatchProblem
 
+from inginious.common.tasks_problems import register_problem_types
 
 def import_class(name):
     m = name.split('.')
@@ -59,6 +60,7 @@ def main():
             except:
                 logger.exception("Cannot load %s, exiting", ptype_loc)
                 exit(1)
+    register_problem_types({problem_type.get_type(): problem_type for problem_type in ptypes})
 
     closing = False
     while not closing:
@@ -70,7 +72,7 @@ def main():
         context = Context()
 
         # Create agent
-        agent = MCQAgent(context, args.backend, args.friendly_name, 1, fsprovider, {problem_type.get_type(): problem_type for problem_type in ptypes})
+        agent = MCQAgent(context, args.backend, args.friendly_name, 1, fsprovider)
 
         # Run!
         try:

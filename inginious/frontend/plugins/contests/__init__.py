@@ -21,6 +21,7 @@ from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend import database
 
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -107,7 +108,7 @@ class ContestScoreboard(INGIniousAuthPage):
     """ Displays the scoreboard of the contest """
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        course = self.course_factory.get_course(courseid)
+        course = course_factory.get_course(courseid)
         task_dispenser = course.get_task_dispenser()
         if not task_dispenser.get_id() == Contest.get_id():
             raise NotFound()
@@ -203,9 +204,9 @@ class ContestAdmin(INGIniousAdminPage):
 
     def save_contest_data(self, course, contest_data):
         """ Saves updated contest data for the course """
-        course_content = self.course_factory.get_course_descriptor_content(course.get_id())
+        course_content = course_factory.get_course_descriptor_content(course.get_id())
         course_content["dispenser_data"]["contest_settings"] = contest_data
-        self.course_factory.update_course_descriptor_content(course.get_id(), course_content)
+        course_factory.update_course_descriptor_content(course.get_id(), course_content)
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request: simply display the form """
@@ -268,7 +269,7 @@ class ContestAdmin(INGIniousAdminPage):
             return render_template("contests/admin.html", course=course, data=contest_data, errors=errors, saved=False)
 
 
-def init(plugin_manager, course_factory, client, config):  # pylint: disable=unused-argument
+def init(plugin_manager, client, config):  # pylint: disable=unused-argument
     """
         Init the contest plugin.
         Available configuration:

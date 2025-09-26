@@ -11,6 +11,7 @@ from flask import request, render_template
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import user_manager
 
+from inginious.frontend.course_factory import course_factory
 
 class MyCoursesPage(INGIniousAuthPage):
     """ Index page """
@@ -28,7 +29,7 @@ class MyCoursesPage(INGIniousAuthPage):
         if "new_courseid" in user_input and user_manager.user_is_superadmin():
             try:
                 courseid = user_input["new_courseid"]
-                self.course_factory.create_course(courseid, {"name": courseid, "accessible": False})
+                course_factory.create_course(courseid, {"name": courseid, "accessible": False})
                 success = True
             except:
                 success = False
@@ -40,7 +41,7 @@ class MyCoursesPage(INGIniousAuthPage):
         username = user_manager.session_username()
         user_info = user_manager.get_user_info(username)
 
-        all_courses = self.course_factory.get_all_courses()
+        all_courses = course_factory.get_all_courses()
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items()

@@ -14,6 +14,7 @@ from bson.objectid import ObjectId
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class GroupPage(INGIniousAuthPage):
     """ Group page """
@@ -23,7 +24,7 @@ class GroupPage(INGIniousAuthPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
 
-        course = self.course_factory.get_course(courseid)
+        course = course_factory.get_course(courseid)
         username = user_manager.session_username()
 
         error = False

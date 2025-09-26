@@ -13,6 +13,8 @@ from natsort import natsorted
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import  course_factory
+from inginious.frontend.task_factory import task_factory
 
 class CourseTaskListPage(INGIniousAdminPage):
     """ List informations about all tasks """
@@ -30,10 +32,10 @@ class CourseTaskListPage(INGIniousAdminPage):
         user_input = request.form
         if "task_dispenser" in user_input:
             selected_task_dispenser = user_input.get("task_dispenser", "toc")
-            task_dispenser_class = self.course_factory.get_task_dispensers().get(selected_task_dispenser, None)
+            task_dispenser_class = course_factory.get_task_dispensers().get(selected_task_dispenser, None)
             if task_dispenser_class:
-                self.course_factory.update_course_descriptor_element(courseid, 'task_dispenser', task_dispenser_class.get_id())
-                self.course_factory.update_course_descriptor_element(courseid, 'dispenser_data', {})
+                course_factory.update_course_descriptor_element(courseid, 'task_dispenser', task_dispenser_class.get_id())
+                course_factory.update_course_descriptor_element(courseid, 'dispenser_data', {})
             else:
                 errors.append(_("Invalid task dispenser"))
         elif "migrate_tasks" in user_input:
@@ -52,13 +54,13 @@ class CourseTaskListPage(INGIniousAdminPage):
 
             for taskid in json.loads(user_input.get("new_tasks", "[]")):
                 try:
-                    self.task_factory.create_task(course, taskid, {
+                    task_factory.create_task(course, taskid, {
                         "name": taskid, "problems": {}, "environment_type": "mcq"})
                 except Exception as ex:
                     errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
             for taskid in json.loads(user_input.get("deleted_tasks", "[]")):
                 try:
-                    self.task_factory.delete_task(courseid, taskid)
+                    task_factory.delete_task(courseid, taskid)
                 except Exception as ex:
                     errors.append(_("Couldn't delete task {} : ").format(taskid) + str(ex))
             for taskid in json.loads(user_input.get("wiped_tasks", "[]")):
@@ -76,9 +78,9 @@ class CourseTaskListPage(INGIniousAdminPage):
         task_dispenser = course.get_task_dispenser()
         data, msg = task_dispenser.check_dispenser_data(dispenser_data)
         if data:
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'task_dispenser',
+            course_factory.update_course_descriptor_element(course.get_id(), 'task_dispenser',
                                                                  task_dispenser.get_id())
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'dispenser_data', data)
+            course_factory.update_course_descriptor_element(course.get_id(), 'dispenser_data', data)
         else:
             raise Exception(_("Invalid course structure: ") + msg)
 
@@ -86,10 +88,10 @@ class CourseTaskListPage(INGIniousAdminPage):
         task_dispenser = course.get_task_dispenser()
         legacy_fields = task_dispenser.legacy_fields.keys()
         for taskid in course.get_tasks():
-            descriptor = self.task_factory.get_task_descriptor_content(course.get_id(), taskid)
+            descriptor = task_factory.get_task_descriptor_content(course.get_id(), taskid)
             for field in legacy_fields:
                 descriptor.pop(field, None)
-            self.task_factory.update_task_descriptor_content(course.get_id(), taskid, descriptor)
+            task_factory.update_task_descriptor_content(course.get_id(), taskid, descriptor)
 
     def submission_url_generator(self, taskid):
         """ Generates a submission url """
@@ -112,7 +114,7 @@ class CourseTaskListPage(INGIniousAdminPage):
         """ Get all data and display the page """
 
         # Load tasks and verify exceptions
-        files = self.task_factory.get_readable_tasks(course)
+        files = task_factory.get_readable_tasks(course)
 
         tasks = {}
         if errors is None:
@@ -130,7 +132,7 @@ class CourseTaskListPage(INGIniousAdminPage):
                             key=lambda x: x[1]["name"])
         tasks_data = OrderedDict(tasks_data)
 
-        task_dispensers = self.course_factory.get_task_dispensers()
+        task_dispensers = course_factory.get_task_dispensers()
 
         return render_template("course_admin/task_list.html", course=course,
                                            task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,

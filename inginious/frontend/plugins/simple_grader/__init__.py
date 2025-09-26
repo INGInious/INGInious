@@ -12,9 +12,9 @@ from flask import Response
 from inginious.client.client_buffer import ClientBuffer
 from inginious.client.client_sync import ClientSync
 from inginious.frontend.pages.utils import INGIniousPage
+from inginious.frontend.course_factory import course_factory
 
-
-def init(plugin_manager, course_factory, client, config):
+def init(plugin_manager, client, config):
     """
         Init the external grader plugin. This simple grader allows only anonymous requests, and submissions are not stored in database.
 

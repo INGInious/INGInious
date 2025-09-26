@@ -19,7 +19,10 @@ from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
 
+from inginious.frontend.fs_provider import get_fs_provider
+
 from inginious.frontend.plugin_manager import plugin_manager
+from inginious.frontend.task_factory import task_factory
 
 def _migrate_from_v_0_6(content, task_list):
     if 'task_dispenser' not in content:
@@ -36,14 +39,12 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_factory, task_dispensers):
+    def __init__(self, courseid, content, task_dispensers):
         self._id = courseid
         self._content = content
-        self._fs = course_fs
-        self._task_factory = task_factory
 
         self._translations = {}
-        translations_fs = self._fs.from_subfolder("$i18n")
+        translations_fs = get_fs_provider().from_subfolder(courseid).from_subfolder("$i18n")
         if translations_fs.exists():
             for f in translations_fs.list(folders=False, files=True, recursive=False):
                 lang = f[0:len(f) - 3]
@@ -60,7 +61,7 @@ class Course(object):
         if self._content.get('nofrontend', False):
             raise Exception("That course is not allowed to be displayed directly in the webapp")
 
-        _migrate_from_v_0_6(content, self._task_factory.get_all_tasks(self))
+        _migrate_from_v_0_6(content, task_factory.get_all_tasks(self))
 
         try:
             self._admins = self._content.get('admins', [])
@@ -87,7 +88,7 @@ class Course(object):
             # Here we use a lambda to encourage the task dispenser to pass by the task_factory to fetch course tasks
             # to avoid them to be cached along with the course object. Passing the task factory as argument
             # would require to pass the course too, and have a useless reference back.
-            self._task_dispenser = task_dispenser_class(lambda: self._task_factory.get_all_tasks(self), self._content.get("dispenser_data", ''), self.get_id())
+            self._task_dispenser = task_dispenser_class(lambda: task_factory.get_all_tasks(self), self._content.get("dispenser_data", ''), self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
@@ -121,11 +122,11 @@ class Course(object):
 
     def get_fs(self):
         """ Returns a FileSystemProvider which points to the folder of this course """
-        return self._fs
+        return get_fs_provider().from_subfolder(self._id)
 
     def get_task(self, taskid):
         """ Returns a Task object """
-        return self._task_factory.get_task(self, taskid)
+        return task_factory.get_task(self, taskid)
 
     def get_descriptor(self):
         """ Get (a copy) the description of the course """
@@ -169,7 +170,7 @@ class Course(object):
         return self._registration
 
     def get_tasks(self, ordered=False):
-        return self._task_dispenser.get_ordered_tasks() if ordered else self._task_factory.get_all_tasks(self)
+        return self._task_dispenser.get_ordered_tasks() if ordered else task_factory.get_all_tasks(self)
 
     def get_access_control_method(self):
         """ Returns either None, "username", "binding", or "email", depending on the method used to verify that users can register to the course """

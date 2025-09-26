@@ -12,9 +12,11 @@ from inginious.common.messages import BackendNewJob, BackendKillJob
 import os.path
 import builtins
 
+from inginious.common.tasks_problems import get_problem_types
+
 
 class MCQAgent(Agent):
-    def __init__(self, context, backend_addr, friendly_name, concurrency, tasks_filesystem, problem_types):
+    def __init__(self, context, backend_addr, friendly_name, concurrency, tasks_filesystem):
         """
         :param context: ZeroMQ context for this process
         :param backend_addr: address of the backend (for example, "tcp://127.0.0.1:2222")
@@ -24,7 +26,6 @@ class MCQAgent(Agent):
         """
         super().__init__(context, backend_addr, friendly_name, concurrency, tasks_filesystem)
         self._logger = logging.getLogger("inginious.agent.mcq")
-        self._problem_types = problem_types
 
         # Init gettext
         self._translations = {"en": gettext.NullTranslations()}
@@ -97,7 +98,7 @@ class MCQAgent(Agent):
         task_problems= msg.task_problems
         problems = []
         for problemid, problem_content in task_problems.items():
-            problem_class = self._problem_types.get(problem_content.get('type', ""))
+            problem_class = get_problem_types().get(problem_content.get('type', ""))
             problems.append(problem_class(problemid, problem_content, translations, task_fs))
 
         result, need_emul, text, problems, error_count, mcq_error_count, state = self.check_answer(problems, msg.inputdata, language)

@@ -19,6 +19,7 @@ from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -112,7 +113,7 @@ class LTI11LaunchPage(INGIniousPage):
         self.logger.debug('_parse_lti_data:' + str(post_input))
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = course_factory.get_course(courseid)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 

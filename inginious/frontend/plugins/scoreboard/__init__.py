@@ -15,6 +15,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -23,7 +24,7 @@ class ScoreBoardCourse(INGIniousAuthPage):
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = course_factory.get_course(courseid)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:
@@ -51,7 +52,7 @@ class ScoreBoard(INGIniousAuthPage):
 
     def GET_AUTH(self, courseid, scoreboardid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = course_factory.get_course(courseid)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:
@@ -207,7 +208,7 @@ def task_menu(course, task):
         return None
 
 
-def init(plugin_manager, _, _2, _3):
+def init(plugin_manager, _2, _3):
     """
         Init the plugin.
         Available configuration in configuration.yaml:

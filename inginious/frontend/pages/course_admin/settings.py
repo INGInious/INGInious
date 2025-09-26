@@ -16,6 +16,7 @@ from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class CourseSettingsPage(INGIniousAdminPage):
     """ Couse settings """
@@ -33,7 +34,7 @@ class CourseSettingsPage(INGIniousAdminPage):
         course_content = {}
 
         data = flask.request.form
-        course_content = self.course_factory.get_course_descriptor_content(courseid)
+        course_content = course_factory.get_course_descriptor_content(courseid)
         course_content['name'] = data['name']
         if course_content['name'] == "":
             errors.append(_('Invalid name'))
@@ -139,7 +140,7 @@ class CourseSettingsPage(INGIniousAdminPage):
 
 
         if len(errors) == 0:
-            self.course_factory.update_course_descriptor_content(courseid, course_content)
+            course_factory.update_course_descriptor_content(courseid, course_content)
             errors = None
             course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)  # don't forget to reload the modified course
 
@@ -170,7 +171,7 @@ class CourseSettingsPage(INGIniousAdminPage):
             del tag["id"]
 
         course_content["tags"] = tags
-        self.course_factory.update_course_descriptor_content(course.get_id(), course_content)
+        course_factory.update_course_descriptor_content(course.get_id(), course_content)
 
     def prepare_datas(self, data, prefix: str):
         # prepare dict

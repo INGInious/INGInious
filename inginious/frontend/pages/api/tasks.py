@@ -8,6 +8,7 @@
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class APITasks(APIAuthenticatedPage):
     r"""
@@ -61,7 +62,7 @@ class APITasks(APIAuthenticatedPage):
         """
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = course_factory.get_course(courseid)
         except:
             raise APINotFound("Course not found")
 

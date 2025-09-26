@@ -11,6 +11,8 @@ from inginious.frontend.pages.utils import INGIniousPage
 
 from inginious.frontend.user_manager import user_manager
 
+from inginious.frontend.course_factory import course_factory
+
 class CourseListPage(INGIniousPage):
     """ Index page """
 
@@ -26,7 +28,7 @@ class CourseListPage(INGIniousPage):
         """  Display main course list page """
         username = user_manager.session_username()
         user_info = user_manager.get_user_info(username)
-        all_courses = self.course_factory.get_all_courses()
+        all_courses = course_factory.get_all_courses()
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items() if course.is_open_to_non_staff()}

@@ -17,14 +17,13 @@ from inginious.frontend.user_manager import user_manager
 class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
     _submission_tags = {}
 
-    def __init__(self, mongo_collection, course_factory):
+    def __init__(self, mongo_collection):
         super(LTIScorePublisher, self).__init__()
         self.daemon = True
         self._queue = queue.Queue()
         self._stopped = False
 
         self._mongo_collection = mongo_collection
-        self._course_factory = course_factory
 
         self.start()
 
