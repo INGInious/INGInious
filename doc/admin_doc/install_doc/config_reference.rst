@@ -327,7 +327,7 @@ associated to a course (See :ref:`course`). For instance:
 This defines three scoreboards for the course. The first one will create a scoreboard for task id ``taskid1`` and will
 be displayed as ``Scoreboard task 1``. The second one will create a scoreboard for ``taskid2`` and ``taskid3`` where
 both scores are added. The last one is more complex and will create a reversed scoreboard for task ``taskid4`` and
-``taskid5`` where both scores are wieghted by factor ``2`` and ``3``, respectively.
+``taskid5`` where both scores are weighted by factor ``2`` and ``3``, respectively.
 
 The score used by this plugin for each task must be generated via a key/value custom feedback
 (see :ref:`feedback-custom`) using the ``score`` key. Only the *succeeded* tasks are taken into account.
