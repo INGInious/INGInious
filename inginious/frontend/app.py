@@ -4,7 +4,6 @@
 # more information about the licensing of this file.
 
 """ Starts the webapp """
-import builtins
 import os
 import sys
 import flask
@@ -18,7 +17,6 @@ import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.submission_manager import WebAppSubmissionManager
-from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
@@ -144,6 +142,7 @@ def get_app(config):
     flask_app.config.from_mapping(**config)
     flask_app.session_interface = MongoDBSessionInterface(config.get('SESSION_USE_SIGNER', False), True)
 
+    # LTI session save hook
     def _lti_session_save(app, response):
         """ Saves in database the LTI session. This function is a Flask event receiver. """
         if user_manager.session_is_lti():
@@ -154,20 +153,7 @@ def get_app(config):
 
     flask.request_finished.connect(_lti_session_save, flask_app)
 
-    # available indentation types
-    available_indentation_types = {
-        "2": {"text": "2 spaces", "indent": 2, "indentWithTabs": False},
-        "3": {"text": "3 spaces", "indent": 3, "indentWithTabs": False},
-        "4": {"text": "4 spaces", "indent": 4, "indentWithTabs": False},
-        "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
-    }
-
-    default_allowed_file_extensions = config['allowed_file_extensions']
-    default_max_file_size = config['max_file_size']
-
-    zmq_context, __ = start_asyncio_and_zmq(config.get('debug_asyncio', False))
-
-    # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
+    # Register default env types, problem types and task_dispensers
     register_base_env_types()
 
     for task_dispenser in [TableOfContents, CombinatoryTest]:
@@ -175,17 +161,27 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    update_pending_jobs()
-
+    # Init job queue client
+    zmq_context, __ = start_asyncio_and_zmq(config.get('debug_asyncio', False))
     client = create_arch(config, zmq_context)
 
+    # Init submission manager
     lti_score_publishers = {"1.1": LTIOutcomeManager(), "1.3": LTIGradeManager()}
     submission_manager = WebAppSubmissionManager(client, lti_score_publishers)
 
-    is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
-
     # Init web mail
     mail.init_app(flask_app)
+
+    # Additional config elements
+    available_indentation_types = {
+        "2": {"text": "2 spaces", "indent": 2, "indentWithTabs": False},
+        "3": {"text": "3 spaces", "indent": 3, "indentWithTabs": False},
+        "4": {"text": "4 spaces", "indent": 4, "indentWithTabs": False},
+        "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
+    }
+    is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
+    default_allowed_file_extensions = config['allowed_file_extensions']
+    default_max_file_size = config['max_file_size']
 
     # Add some helpers for the templates
     flask_app.jinja_loader = jinja2.ChoiceLoader([flask_app.jinja_loader, jinja2.PrefixLoader({})])
@@ -221,14 +217,15 @@ def get_app(config):
         return flask.render_template("forbidden.html", message=e.description), 403
     flask_app.register_error_handler(403, flask_forbidden)
 
+    # Internal error page
+    def flask_internalerror(e):
+        return flask.render_template("internalerror.html", message=e.description), 500
+    flask_app.register_error_handler(InternalServerError, flask_internalerror)
+
     # Enable debug mode if needed
     web_debug = config.get('web_debug', False)
     flask_app.debug = web_debug
     oauthlib.set_debug(web_debug)
-
-    def flask_internalerror(e):
-        return flask.render_template("internalerror.html", message=e.description), 500
-    flask_app.register_error_handler(InternalServerError, flask_internalerror)
 
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path

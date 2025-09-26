@@ -40,6 +40,11 @@ class WebAppSubmissionManager:
         self._client = client
         self._logger = logging.getLogger("inginious.webapp.submissions")
         self._lti_score_publishers = lti_score_publishers
+        # Updates the submissions that are waiting with the status error, as the server restarted
+        database.submissions.update_many({'status': 'waiting'},
+                                         {"$unset": {'jobid': ""},
+                                          "$set": {'status': 'error', 'grade': 0.0,
+                                                   'text': 'Internal error. Server restarted'}})
 
     def _job_done_callback(self, submissionid, task, result, grade, problems, tests, custom, state, archive, stdout,
                            stderr, task_dispenser,  newsub=True):
@@ -695,12 +700,3 @@ class WebAppSubmissionManager:
         Else, returns None
         """
         return self._client.get_job_queue_info(jobid)
-
-
-def update_pending_jobs():
-    """ Updates pending jobs status in the database """
-
-    # Updates the submissions that are waiting with the status error, as the server restarted
-    database.submissions.update_many({'status': 'waiting'},
-                                {"$unset": {'jobid': ""},
-                                 "$set": {'status': 'error', 'grade': 0.0, 'text': 'Internal error. Server restarted'}})
