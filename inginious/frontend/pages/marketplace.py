@@ -14,7 +14,7 @@ from inginious.common.log import get_course_logger
 from inginious.frontend.marketplace_courses import get_all_marketplace_courses, get_marketplace_course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import user_manager
-
+from inginious.frontend.course_factory import course_factory
 
 if sys.platform == 'win32':
     import pbs
@@ -45,7 +45,7 @@ class MarketplacePage(INGIniousAuthPage):
             new_courseid = user_input["new_courseid"]
             try:
                 course = get_marketplace_course(user_input["courseid"])
-                import_course(course, new_courseid, user_manager.session_username(), self.course_factory)
+                import_course(course, new_courseid, user_manager.session_username())
             except ImportCourseException as e:
                 errors.append(str(e))
             except:
@@ -62,10 +62,10 @@ class MarketplacePage(INGIniousAuthPage):
         return render_template("marketplace.html", courses=courses, errors=errors)
 
 
-def import_course(course, new_courseid, username, course_factory):
+def import_course(course, new_courseid, username):
     if not id_checker(new_courseid):
         raise ImportCourseException("Course with invalid name: " + new_courseid)
-    course_fs = course_factory.get_course_fs(new_courseid)
+    course_fs = course_factory._get_course_fs(new_courseid)
 
     if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
         raise ImportCourseException("Course with id " + new_courseid + " already exists.")

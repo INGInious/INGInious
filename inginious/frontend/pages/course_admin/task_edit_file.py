@@ -12,7 +12,10 @@ from werkzeug.exceptions import  NotFound
 
 from inginious.common.base import id_checker
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.course_factory import course_factory
+from inginious.common.task_file_readers import get_task_file_managers
 
+from inginious.frontend.task_factory import task_factory
 
 class CourseTaskFiles(INGIniousAdminPage):
     """ Edit a task """
@@ -58,9 +61,9 @@ class CourseTaskFiles(INGIniousAdminPage):
     def show_tab_file(self, courseid, taskid, error=None):
         """ Return the file tab """
         return render_template("course_admin/edit_tabs/files.html",
-                                           course=self.course_factory.get_course(courseid),
+                                           course=course_factory.get_course(courseid),
                                            taskid=taskid,
-                                           file_list=self.get_task_filelist(self.task_factory, courseid, taskid),
+                                           file_list=self.get_task_filelist(task_factory, courseid, taskid),
                                            error=error)
 
     @classmethod
@@ -75,7 +78,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         tmp_out = {}
         entries = task_fs.list(True, True, True)
         for entry in entries:
-            if os.path.splitext(entry)[0] == "task" and os.path.splitext(entry)[1][1:] in task_factory.get_available_task_file_extensions():
+            if os.path.splitext(entry)[0] == "task" and os.path.splitext(entry)[1][1:] in get_task_file_managers().keys():
                 continue
 
             data = entry.split("/")
@@ -106,7 +109,7 @@ class CourseTaskFiles(INGIniousAdminPage):
 
     def verify_path(self, courseid, taskid, path, new_path=False):
         """ Return the real wanted path (relative to the INGInious root) or None if the path is not valid/allowed """
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
+        task_fs = task_factory.get_task_fs(courseid, taskid)
         # verify that the dir exists
         if not task_fs.exists():
             return None
@@ -124,7 +127,7 @@ class CourseTaskFiles(INGIniousAdminPage):
 
         # do not allow touching the task.* file
         if os.path.splitext(path)[0] == "task" and os.path.splitext(path)[1][1:] in \
-                self.task_factory.get_available_task_file_extensions():
+                get_task_file_managers().keys():
             return None
 
         return path
@@ -135,7 +138,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         if wanted_path is None:
             return "Internal error"
         try:
-            content = self.task_factory.get_task_fs(courseid, taskid).get(wanted_path).decode("utf-8")
+            content = task_factory.get_task_fs(courseid, taskid).get(wanted_path).decode("utf-8")
             return json.dumps({"content": content})
         except:
             return json.dumps({"error": "not-readable"})
@@ -146,7 +149,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         if wanted_path is None:
             return json.dumps({"error": True})
         try:
-            self.task_factory.get_task_fs(courseid, taskid).put(wanted_path, content.encode("utf-8"))
+            task_factory.get_task_fs(courseid, taskid).put(wanted_path, content.encode("utf-8"))
             return json.dumps({"ok": True})
         except:
             return json.dumps({"error": True})
@@ -161,7 +164,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         if wanted_path is None:
             return self.show_tab_file(courseid, taskid, _("Invalid new path"))
 
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
+        task_fs = task_factory.get_task_fs(courseid, taskid)
         try:
             task_fs.put(wanted_path, fileobj.read())
         except:
@@ -181,7 +184,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         if wanted_path is None:
             return self.show_tab_file(courseid, taskid, _("Invalid new path"))
 
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
+        task_fs = task_factory.get_task_fs(courseid, taskid)
         if want_directory:
             task_fs.from_subfolder(wanted_path).ensure_exists()
         else:
@@ -207,7 +210,7 @@ class CourseTaskFiles(INGIniousAdminPage):
             return self.show_tab_file(courseid, taskid, _("Invalid new path"))
 
         try:
-            self.task_factory.get_task_fs(courseid, taskid).move(old_path, wanted_path)
+            task_factory.get_task_fs(courseid, taskid).move(old_path, wanted_path)
             return self.show_tab_file(courseid, taskid)
         except:
             return self.show_tab_file(courseid, taskid, _("An error occurred while moving the files"))
@@ -228,7 +231,7 @@ class CourseTaskFiles(INGIniousAdminPage):
             return self.show_tab_file(courseid, taskid, _("Internal error"))
 
         try:
-            self.task_factory.get_task_fs(courseid, taskid).delete(wanted_path)
+            task_factory.get_task_fs(courseid, taskid).delete(wanted_path)
             return self.show_tab_file(courseid, taskid)
         except:
             return self.show_tab_file(courseid, taskid, _("An error occurred while deleting the files"))
@@ -240,7 +243,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         if wanted_path is None:
             raise NotFound(description=_("This path doesn't exist."))
 
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
+        task_fs = task_factory.get_task_fs(courseid, taskid)
         (method, mimetype_or_none, file_or_url) = task_fs.distribute(wanted_path)
 
         if method == "local":

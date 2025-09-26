@@ -7,23 +7,22 @@
 
 from abc import ABCMeta, abstractmethod
 from random import Random
-
 from flask import render_template
 
 from inginious.common.tasks_problems import Problem, CodeProblem, CodeSingleLineProblem, \
-    MatchProblem, MultipleChoiceProblem, FileProblem,  _get_problem_types
+    MatchProblem, MultipleChoiceProblem, FileProblem,  _inspect_problem_types
 
 
 from inginious.frontend.parsable_text import ParsableText
 
 
-def get_displayable_problem_types(name: str) -> dict:
+def inspect_displayable_problem_types(name: str) -> dict:
     """ Get the mapping of DisplayableProblem types available by inspecting a given module.
 
         :param  name:   The name of the module to inspect.
         :return:        The mapping of problem name and problem class.
     """
-    raw = _get_problem_types(name, DisplayableProblem)
+    raw = _inspect_problem_types(name, DisplayableProblem)
     return {pbl_name: pbl_cls for pbl_name, pbl_cls in raw.items() if pbl_name is not None}
 
 def get_default_displayable_problem_types() -> dict:
@@ -32,7 +31,7 @@ def get_default_displayable_problem_types() -> dict:
 
         :return:    The mapping of problem name and problem class.
     """
-    return get_displayable_problem_types(__name__)
+    return inspect_displayable_problem_types(__name__)
 
 
 class DisplayableProblem(Problem, metaclass=ABCMeta):

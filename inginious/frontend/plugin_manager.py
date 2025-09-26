@@ -11,9 +11,10 @@ import bisect
 from jinja2 import  FileSystemLoader
 
 from inginious.frontend.user_manager import AuthMethod
-from inginious.frontend.task_problems import get_displayable_problem_types
-from inginious.common.tasks_problems import get_problem_types
+from inginious.frontend.task_problems import inspect_displayable_problem_types
+from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.user_manager import user_manager
+from inginious.common.task_file_readers import add_custom_task_file_manager
 
 class PluginManagerNotLoadedException(Exception):
     pass
@@ -27,7 +28,6 @@ class PluginManager(object):
         self._hooks = {}
         self._loaded = False
         self._flask_app = None
-        self._task_factory = None
         self._submission_manager = None
 
     def _exception_free_callback(self, callback, *args, **kwargs):
@@ -65,26 +65,21 @@ class PluginManager(object):
                 kwargs = out
         return kwargs
 
-    def load(self, client, flask_app, course_factory, task_factory, submission_manager, config):
+    def load(self, client, flask_app, submission_manager, config):
         """ Loads the plugin manager. Must be done after the initialisation of the client """
         self._flask_app = flask_app
-        self._task_factory = task_factory
         self._submission_manager = submission_manager
         self._loaded = True
         for entry in config:
             module_name = entry["plugin_module"]
             module = importlib.import_module(module_name)
 
-            """ Load Problem sub-classes """
-            pbl_types = get_problem_types(module_name)
-            self._task_factory.set_problem_types(pbl_types)
-
             """ Load DisplayableProblem sub-classes """
-            displayable_pbl_types = get_displayable_problem_types(module_name)
-            self._task_factory.set_problem_types(displayable_pbl_types)
+            displayable_pbl_types = inspect_displayable_problem_types(module_name)
+            register_problem_types(displayable_pbl_types)
 
             """ Initialize the module """
-            module.init(self, course_factory, client, entry)
+            module.init(self, client, entry)
 
     def add_page(self, pattern, classname_or_viewfunc):
         """ Add a new page to the web application. Only available after that the Plugin Manager is loaded """
@@ -97,7 +92,7 @@ class PluginManager(object):
         """ Add a task file manager. Only available after that the Plugin Manager is loaded """
         if not self._loaded:
             raise PluginManagerNotLoadedException()
-        self._task_factory.add_custom_task_file_manager(task_file_manager)
+        add_custom_task_file_manager(task_file_manager)
 
     def register_auth_method(self, auth_method: AuthMethod):
         """

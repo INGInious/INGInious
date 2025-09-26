@@ -23,7 +23,11 @@ from inginious.common.exceptions import TaskNotFoundException
 from inginious.frontend.pages.course_admin.task_edit_file import CourseTaskFiles
 from inginious.frontend.tasks import Task
 
+from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.plugin_manager import plugin_manager
+from inginious.frontend.course_factory import course_factory
+from inginious.frontend.task_factory import task_factory
+from inginious.common.task_file_readers import get_task_file_managers
 
 
 class CourseEditTask(INGIniousAdminPage):
@@ -38,7 +42,7 @@ class CourseEditTask(INGIniousAdminPage):
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
         try:
-            task_data = self.task_factory.get_task_descriptor_content(courseid, taskid)
+            task_data = task_factory.get_task_descriptor_content(courseid, taskid)
         except TaskNotFoundException:
             raise NotFound()
 
@@ -50,23 +54,23 @@ class CourseEditTask(INGIniousAdminPage):
 
         current_filetype = None
         try:
-            current_filetype = self.task_factory.get_task_descriptor_extension(courseid, taskid)
+            current_filetype = task_factory.get_task_descriptor_extension(courseid, taskid)
         except:
             pass
-        available_filetypes = self.task_factory.get_available_task_file_extensions()
+        available_filetypes = list(get_task_file_managers().keys())
 
 
         additional_tabs = plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
                                                         task_data=task_data)
 
         return render_template("course_admin/task_edit.html", course=course, taskid=taskid,
-                                           problem_types=self.task_factory.get_problem_types(), task_data=task_data,
+                                           problem_types=get_problem_types(), task_data=task_data,
                                            environment_types=environment_types, environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),
                                            contains_is_html=self.contains_is_html(task_data),
                                            current_filetype=current_filetype,
                                            available_filetypes=available_filetypes,
-                                           file_list=CourseTaskFiles.get_task_filelist(self.task_factory, courseid, taskid),
+                                           file_list=CourseTaskFiles.get_task_filelist(task_factory, courseid, taskid),
                                            additional_tabs=additional_tabs)
 
     @classmethod
@@ -82,7 +86,7 @@ class CourseEditTask(INGIniousAdminPage):
     def parse_problem(self, problem_content):
         """ Parses a problem, modifying some data """
         del problem_content["@order"]
-        return self.task_factory.get_problem_types().get(problem_content["type"]).parse_problem(problem_content)
+        return get_problem_types().get(problem_content["type"]).parse_problem(problem_content)
 
     def POST_AUTH(self, courseid, taskid):  # pylint: disable=arguments-differ
         """ Edit a task """
@@ -116,7 +120,7 @@ class CourseEditTask(INGIniousAdminPage):
             data["environment_id"] = environment_id # we do this after having removed all the environment_id[something] entries
 
             # Determines the task filetype
-            if data["@filetype"] not in self.task_factory.get_available_task_file_extensions():
+            if data["@filetype"] not in get_task_file_managers().keys():
                 return json.dumps({"status": "error", "message": _("Invalid file type: {}").format(str(data["@filetype"]))})
             file_ext = data["@filetype"]
             del data["@filetype"]
@@ -152,18 +156,18 @@ class CourseEditTask(INGIniousAdminPage):
 
         # Get the course
         try:
-            course = self.course_factory.get_course(courseid)
+            course = course_factory.get_course(courseid)
         except:
             return json.dumps({"status": "error", "message": _("Error while reading course's informations")})
 
         # Get original data
         try:
-            orig_data = self.task_factory.get_task_descriptor_content(courseid, taskid)
+            orig_data = task_factory.get_task_descriptor_content(courseid, taskid)
             data["order"] = orig_data["order"]
         except:
             pass
 
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
+        task_fs = task_factory.get_task_fs(courseid, taskid)
         task_fs.ensure_exists()
 
         # Call plugins and return the first error
@@ -176,7 +180,7 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            Task(course, taskid, data, self.course_factory.get_fs(), self.task_factory.get_problem_types())
+            Task(course, taskid, data)
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 
@@ -194,7 +198,7 @@ class CourseEditTask(INGIniousAdminPage):
                         {"status": "error", "message": _("There was a problem while extracting the zip archive. Some files may have been modified")})
                 task_fs.copy_to(tmpdirname)
 
-        self.task_factory.delete_all_possible_task_files(courseid, taskid)
-        self.task_factory.update_task_descriptor_content(courseid, taskid, data, force_extension=file_ext)
+        task_factory.delete_all_possible_task_files(courseid, taskid)
+        task_factory.update_task_descriptor_content(courseid, taskid, data, force_extension=file_ext)
 
         return json.dumps({"status": "ok"})

@@ -5,6 +5,7 @@ from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, D
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
     _field = "consumer_key"
@@ -49,7 +50,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         # attach the input to the submission
         best_sub = self.submission_manager.get_input_from_submission(best_sub)
 
-        task = self.course_factory.get_task(courseid, taskid)
+        task = course_factory.get_task(courseid, taskid)
         question_answer_list = []
         for problem in task.get_problems():
             answer = best_sub["input"][problem.get_id()]

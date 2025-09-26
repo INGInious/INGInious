@@ -19,6 +19,8 @@ from inginious.common.base import id_checker
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
+
 
 class INGIniousAdminPage(INGIniousAuthPage):
     """
@@ -35,7 +37,7 @@ class INGIniousAdminPage(INGIniousAuthPage):
         """
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = course_factory.get_course(courseid)
             if allow_all_staff:
                 if not user_manager.has_staff_rights_on_course(course):
                     raise Forbidden(description=_("You don't have staff rights on this course."))
@@ -47,7 +49,8 @@ class INGIniousAdminPage(INGIniousAuthPage):
                 return course, None
             else:
                 return course, course.get_task(taskid)
-        except:
+        except Exception as e:
+            self.logger.error(str(e))
             raise Forbidden(description=_("This course is unreachable"))
 
 

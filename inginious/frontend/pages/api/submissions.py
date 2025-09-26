@@ -11,6 +11,7 @@ import flask
 
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 def _get_submissions(course_factory, submission_manager, translations, courseid, taskid, with_input, submissionid=None):
     """
@@ -111,7 +112,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.course_factory, self.submission_manager, self.app.l10n_manager.translations, courseid, taskid, with_input, submissionid)
+        return _get_submissions(course_factory, self.submission_manager, self.app.l10n_manager.translations, courseid, taskid, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -152,7 +153,7 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.course_factory, self.submission_manager, user_manager, self.app.l10n_manager.translations, courseid, taskid, with_input)
+        return _get_submissions(course_factory, self.submission_manager, user_manager, self.app.l10n_manager.translations, courseid, taskid, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -168,7 +169,7 @@ class APISubmissions(APIAuthenticatedPage):
         """
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = course_factory.get_course(courseid)
         except:
             raise APINotFound("Course not found")
 

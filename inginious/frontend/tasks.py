@@ -14,6 +14,8 @@ from inginious.frontend.accessible_time import AccessibleTime
 
 from inginious.frontend.plugin_manager import plugin_manager
 
+from inginious.common.tasks_problems import get_problem_types
+
 def _migrate_from_v_0_6(content):
     """ Migrate a v0.6 task description to a v0.7+ task description, if needed """
     if "environment" in content:
@@ -35,7 +37,7 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, course, taskid, content, filesystem, task_problem_types):
+    def __init__(self, course, taskid, content):
         # We load the descriptor of the task here to allow plugins to modify settings of the task before it is read by the Task constructor
         if not id_checker(taskid):
             raise Exception("Task with invalid id: " + course.get_id() + "/" + taskid)
@@ -44,7 +46,7 @@ class Task(object):
 
         self._course = course
         self._taskid = taskid
-        self._fs = filesystem
+        self._fs = course.get_fs()
         self._data = content
 
         if "problems" not in self._data:
@@ -79,7 +81,7 @@ class Task(object):
         self._problems = []
         for problemid in self._data['problems']:
             self._problems.append(
-                self._create_task_problem(problemid, self._data['problems'][problemid], task_problem_types))
+                self._create_task_problem(problemid, self._data['problems'][problemid]))
 
         # Env type
         self._environment_id = self._data.get('environment_id', 'default')
@@ -174,8 +176,10 @@ class Task(object):
         """ Return the translation_fs parameter for this task"""
         return self._translations_fs
 
-    def _create_task_problem(self, problemid, problem_content, task_problem_types):
+    def _create_task_problem(self, problemid, problem_content):
         """Creates a new instance of the right class for a given problem."""
+        task_problem_types = get_problem_types()
+
         # Basic checks
         if not id_checker(problemid):
             raise Exception("Invalid problem _id: " + problemid)

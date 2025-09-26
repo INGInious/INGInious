@@ -7,6 +7,7 @@
 
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class APICourses(APIAuthenticatedPage):
     r"""
@@ -45,10 +46,10 @@ class APICourses(APIAuthenticatedPage):
         output = []
 
         if courseid is None:
-            courses = self.course_factory.get_all_courses()
+            courses = course_factory.get_all_courses()
         else:
             try:
-                courses = {courseid: self.course_factory.get_course(courseid)}
+                courses = {courseid: course_factory.get_course(courseid)}
             except:
                 raise APINotFound("Course not found")
 

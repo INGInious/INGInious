@@ -11,13 +11,14 @@ from inginious.common.exceptions import InvalidNameException, CourseNotFoundExce
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class CourseRegisterPage(INGIniousAuthPage):
     """ Registers a user to a course """
 
     def basic_checks(self, courseid):
         try:
-            course = self.course_factory.get_course(courseid)
+            course = course_factory.get_course(courseid)
         except (InvalidNameException, CourseNotFoundException, CourseUnreadableException) as e:
             raise NotFound(description=_("This course doesn't exist."))
 

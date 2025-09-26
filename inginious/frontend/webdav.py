@@ -4,7 +4,6 @@
 # more information about the licensing of this file.
 
 import os
-from pymongo import MongoClient
 
 from wsgidav import util, wsgidav_app
 from wsgidav.dav_error import DAVError, HTTP_NOT_FOUND, HTTP_FORBIDDEN
@@ -12,66 +11,65 @@ from wsgidav.dc.base_dc import BaseDomainController
 from wsgidav.dav_provider import DAVProvider
 from wsgidav.fs_dav_provider import FolderResource, FileResource
 
-from inginious.frontend.course_factory import create_factories
-from inginious.common.filesystems.local import LocalFSProvider
-from inginious.frontend.user_manager import UserManager
+from inginious.frontend import database
+from inginious.frontend.fs_provider import init_fs_provider
+from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
-def get_dc(course_factory, user_manager, filesystem):
 
-    class INGIniousDAVDomainController(BaseDomainController):
-        """ Authenticates users using the API key and their username """
-        def __init__(self, wsgidav_app, config):
-            super(INGIniousDAVDomainController, self).__init__(wsgidav_app, config)
+class INGIniousDAVDomainController(BaseDomainController):
+    """ Authenticates users using the API key and their username """
+    def __init__(self, wsgidav_app, config):
+        super(INGIniousDAVDomainController, self).__init__(wsgidav_app, config)
 
-        def __repr__(self):
-            return self.__class__.__name__
+    def __repr__(self):
+        return self.__class__.__name__
 
-        def get_domain_realm(self, pathinfo, environ):
-            """Resolve a relative url to the  appropriate realm name."""
-            # we don't get the realm here, its already been resolved in
-            # request_resolver
-            if pathinfo.startswith("/"):
-                pathinfo = pathinfo[1:]
-            parts = pathinfo.split("/")
-            return parts[0]
+    def get_domain_realm(self, pathinfo, environ):
+        """Resolve a relative url to the  appropriate realm name."""
+        # we don't get the realm here, its already been resolved in
+        # request_resolver
+        if pathinfo.startswith("/"):
+            pathinfo = pathinfo[1:]
+        parts = pathinfo.split("/")
+        return parts[0]
 
-        def require_authentication(self, realm, environ):
-            """Return True if this realm requires authentication or False if it is
-            available for general access."""
-            return True
+    def require_authentication(self, realm, environ):
+        """Return True if this realm requires authentication or False if it is
+        available for general access."""
+        return True
 
-        def supports_http_digest_auth(self):
-            # We have access to a plaintext password (or stored hash)
-            return True
+    def supports_http_digest_auth(self):
+        # We have access to a plaintext password (or stored hash)
+        return True
 
-        def is_user_realm_admin(self, realm, user_name):
-            try:
-                course = course_factory.get_course(realm)
-            except Exception as ex:
-                return True  # Not a course: static file,...
+    def is_user_realm_admin(self, realm, user_name):
+        try:
+            course = course_factory.get_course(realm)
+        except Exception as ex:
+            return True  # Not a course: static file,...
 
-            return user_manager.has_admin_rights_on_course(course, username=user_name)
+        return user_manager.has_admin_rights_on_course(course, username=user_name)
 
-        def basic_auth_user(self, realm, user_name, password, environ):
-            if not self.is_user_realm_admin(realm, user_name):
-                return False
-            apikey = user_manager.get_user_api_key(user_name, create=True)
-            return apikey is not None and password == apikey
+    def basic_auth_user(self, realm, user_name, password, environ):
+        if not self.is_user_realm_admin(realm, user_name):
+            return False
+        apikey = user_manager.get_user_api_key(user_name, create=True)
+        return apikey is not None and password == apikey
 
-        def digest_auth_user(self, realm, user_name, environ):
-            """Computes digest hash A1 part."""
-            if not self.is_user_realm_admin(realm, user_name):
-                return False
-            password = user_manager.get_user_api_key(user_name, create=True) or ''
-            return self._compute_http_digest_a1(realm, user_name, password)
+    def digest_auth_user(self, realm, user_name, environ):
+        """Computes digest hash A1 part."""
+        if not self.is_user_realm_admin(realm, user_name):
+            return False
+        password = user_manager.get_user_api_key(user_name, create=True) or ''
+        return self._compute_http_digest_a1(realm, user_name, password)
 
-    return INGIniousDAVDomainController
+
 
 class INGIniousDAVCourseFile(FileResource):
     """ Protects the course description file. """
-    def __init__(self, path, environ, filePath, course_factory, course_id):
+    def __init__(self, path, environ, filePath, course_id):
         super(INGIniousDAVCourseFile, self).__init__(path, environ, filePath)
-        self._course_factory = course_factory
         self._course_id = course_id
 
     def delete(self):
@@ -118,7 +116,7 @@ class INGIniousDAVCourseFile(FileResource):
 
             # Now we check if we can still load the course...
             try:
-                self._course_factory.get_course(self._course_id)
+                course_factory.get_course(self._course_id)
                 # Everything ok, let's leave things as-is
             except:
                 # We can't load the new file, rollback!
@@ -131,11 +129,8 @@ class INGIniousDAVCourseFile(FileResource):
 
 class INGIniousFilesystemProvider(DAVProvider):
     """ A DAVProvider adapted to the structure of INGInious """
-    def __init__(self, course_factory, task_factory):
+    def __init__(self):
         super(INGIniousFilesystemProvider, self).__init__()
-
-        self.course_factory = course_factory
-        self.task_factory = task_factory
         self.readonly = False
 
     def _get_course_id(self, path):
@@ -158,7 +153,7 @@ class INGIniousFilesystemProvider(DAVProvider):
     def _loc_to_file_path(self, path, environ=None):
         course_id = self._get_course_id(path)
         try:
-            course = self.course_factory.get_course(course_id)
+            course = course_factory.get_course(course_id)
         except:
             raise DAVError(HTTP_NOT_FOUND, "Unknown course {}".format(course_id))
 
@@ -192,27 +187,22 @@ class INGIniousFilesystemProvider(DAVProvider):
         # course.yaml needs a special protection
         inner_path = self._get_inner_path(path)
         if len(inner_path) == 1 and inner_path[0] in ["course.yaml", "course.json"]:
-            return INGIniousDAVCourseFile(path, environ, fp, self.course_factory, self._get_course_id(path))
+            return INGIniousDAVCourseFile(path, environ, fp, self._get_course_id(path))
 
         return FileResource(path, environ, fp)
 
 
 def get_app(config):
     """ Init the webdav app """
-    mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client[config.get('mongo_opt', {}).get('database', 'INGInious')]
+    database.init_app(config.get('mongo_opt', {}))
+    if "fs" not in config:
+        config["fs"] = {"module": "local", "location": config["tasks_directory"]}
+    init_fs_provider(config["fs"])
 
-    # Create the FS provider
-    if "tasks_directory" not in config:
-        raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
-
-    fs_provider = LocalFSProvider(config["tasks_directory"])
-    course_factory, task_factory = create_factories(fs_provider, {}, {}, None)
-    user_manager = UserManager(database, config.get('superadmins', []))
-
+    user_manager.init_app(config.get('superadmins', []))
     config = dict(wsgidav_app.DEFAULT_CONFIG)
-    config["provider_mapping"] = {"/": INGIniousFilesystemProvider(course_factory, task_factory)}
-    config["http_authenticator"]["domain_controller"] = get_dc(course_factory, user_manager, fs_provider)
+    config["provider_mapping"] = {"/": INGIniousFilesystemProvider()}
+    config["http_authenticator"]["domain_controller"] = INGIniousDAVDomainController
     config["verbose"] = 0
 
     app = wsgidav_app.WsgiDAVApp(config)

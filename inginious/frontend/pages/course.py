@@ -11,6 +11,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 def handle_course_unavailable(get_path, user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
@@ -33,7 +34,7 @@ class CoursePage(INGIniousAuthPage):
     def get_course(self, courseid):
         """ Return the course """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = course_factory.get_course(courseid)
         except:
             raise NotFound(description=_("Course not found."))
 

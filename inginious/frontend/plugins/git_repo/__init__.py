@@ -94,7 +94,7 @@ class SubmissionGitSaver(threading.Thread):
         self.git.commit('-m', title)
 
 
-def init(plugin_manager, _, _2, config):
+def init(plugin_manager, _2, config):
     """
         Init the plugin
 

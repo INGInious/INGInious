@@ -13,6 +13,7 @@ from flask import request, send_from_directory, render_template
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -54,7 +55,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
     def page(self, time_planner):
         """ General main method called for GET and POST """
         username = user_manager.session_username()
-        all_courses = self.course_factory.get_all_courses()
+        all_courses = course_factory.get_all_courses()
         time_planner = self.time_planner_conversion(time_planner)
 
         # Get the courses id
@@ -119,7 +120,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
                                            submissions=except_free_last_submissions)
 
 
-def init(plugin_manager, _, _2, config):
+def init(plugin_manager, _2, config):
     """ Init the plugin """
     plugin_manager.add_page('/coming_tasks', UpComingTasksBoard.as_view("upcomingtasksboardpage"))
     plugin_manager.add_page('/plugins/coming_tasks/static/<path:path>', StaticMockPage.as_view("upcomingtasksstaticmockpage"))

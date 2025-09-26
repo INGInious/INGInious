@@ -13,16 +13,14 @@ from inginious.common.exceptions import InvalidNameException, CourseNotFoundExce
 from inginious.frontend.fs_provider import get_fs_provider
 
 from inginious.frontend.courses import Course
-from inginious.frontend.task_factory import TaskFactory
+from inginious.frontend.task_factory import task_factory
 
 class CourseFactory(object):
     """ Load courses from disk """
     _logger = logging.getLogger("inginious.course_factory")
 
-    def __init__(self, task_factory, task_dispensers):
-        self._filesystem = get_fs_provider()
-        self._task_factory = task_factory
-        self._task_dispensers = task_dispensers
+    def __init__(self):
+        self._task_dispensers = {}
         self._cache = {}
 
     def add_task_dispenser(self, task_dispenser):
@@ -60,12 +58,6 @@ class CourseFactory(object):
         """
         return self.get_course(courseid).get_task(taskid)
 
-    def get_task_factory(self):
-        """
-        :return: the associated task factory
-        """
-        return self._task_factory
-
     def get_course_descriptor_content(self, courseid):
         """
         :param courseid: the course id of the course
@@ -73,7 +65,7 @@ class CourseFactory(object):
         :return: the content of the dict that describes the course
         """
         path = self._get_course_descriptor_path(courseid)
-        return loads_json_or_yaml(path, self._filesystem.get(path).decode("utf-8"))
+        return loads_json_or_yaml(path, get_fs_provider().get(path).decode("utf-8"))
 
     def update_course_descriptor_content(self, courseid, content):
         """
@@ -83,7 +75,7 @@ class CourseFactory(object):
         :raise InvalidNameException, CourseNotFoundException
         """
         path = self._get_course_descriptor_path(courseid)
-        self._filesystem.put(path, get_json_or_yaml(path, content))
+        get_fs_provider().put(path, get_json_or_yaml(path, content))
 
     def update_course_descriptor_element(self, courseid, key, value):
         """
@@ -97,26 +89,20 @@ class CourseFactory(object):
         course_structure[key] = value
         self.update_course_descriptor_content(courseid, course_structure)
 
-    def get_fs(self):
-        """
-        :return: a FileSystemProvider pointing to the task directory
-        """
-        return self._filesystem
-
-    def get_course_fs(self, courseid):
+    def _get_course_fs(self, courseid):
         """
         :param courseid: the course id of the course
         :return: a FileSystemProvider pointing to the directory of the course 
         """
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
-        return self._filesystem.from_subfolder(courseid)
+        return get_fs_provider().from_subfolder(courseid)
 
     def get_all_courses(self):
         """
         :return: a table containing courseid=>Course pairs
         """
-        course_ids = [f[0:len(f)-1] for f in self._filesystem.list(folders=True, files=False, recursive=False)]  # remove trailing "/"
+        course_ids = [f[0:len(f)-1] for f in get_fs_provider().list(folders=True, files=False, recursive=False)]  # remove trailing "/"
         output = {}
         for courseid in course_ids:
             try:
@@ -133,7 +119,7 @@ class CourseFactory(object):
         """
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
-        course_fs = self.get_course_fs(courseid)
+        course_fs = self._get_course_fs(courseid)
         if course_fs.exists("course.yaml"):
             return courseid+"/course.yaml"
         if course_fs.exists("course.json"):
@@ -150,7 +136,7 @@ class CourseFactory(object):
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
 
-        course_fs = self.get_course_fs(courseid)
+        course_fs = self._get_course_fs(courseid)
         course_fs.ensure_exists()
 
         if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
@@ -169,7 +155,7 @@ class CourseFactory(object):
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
 
-        course_fs = self.get_course_fs(courseid)
+        course_fs = self._get_course_fs(courseid)
 
         if not course_fs.exists():
             raise CourseNotFoundException()
@@ -189,8 +175,8 @@ class CourseFactory(object):
 
         try:
             descriptor_name = self._get_course_descriptor_path(courseid)
-            last_update = {descriptor_name: self._filesystem.get_last_modification_time(descriptor_name)}
-            translations_fs = self._filesystem.from_subfolder("$i18n")
+            last_update = {descriptor_name: get_fs_provider().get_last_modification_time(descriptor_name)}
+            translations_fs = get_fs_provider().from_subfolder("$i18n")
             if translations_fs.exists():
                 for f in translations_fs.list(folders=False, files=True, recursive=False):
                     lang = f[0:len(f) - 3]
@@ -215,12 +201,12 @@ class CourseFactory(object):
         self._logger.info("Caching course {}".format(courseid))
         path_to_descriptor = self._get_course_descriptor_path(courseid)
         try:
-            course_descriptor = loads_json_or_yaml(path_to_descriptor, self._filesystem.get(path_to_descriptor).decode("utf8"))
+            course_descriptor = loads_json_or_yaml(path_to_descriptor, get_fs_provider().get(path_to_descriptor).decode("utf8"))
         except Exception as e:
             raise CourseUnreadableException(str(e))
 
-        last_modif = {path_to_descriptor: self._filesystem.get_last_modification_time(path_to_descriptor)}
-        translations_fs = self._filesystem.from_subfolder("$i18n")
+        last_modif = {path_to_descriptor: get_fs_provider().get_last_modification_time(path_to_descriptor)}
+        translations_fs = get_fs_provider().from_subfolder("$i18n")
         if translations_fs.exists():
             for f in translations_fs.list(folders=False, files=True, recursive=False):
                 lang = f[0:len(f) - 3]
@@ -228,20 +214,10 @@ class CourseFactory(object):
                     last_modif["$i18n/" + lang + ".mo"] = translations_fs.get_last_modification_time(lang + ".mo")
 
         self._cache[courseid] = (
-            Course(courseid, course_descriptor, self.get_course_fs(courseid), self._task_factory, self._task_dispensers),
+            Course(courseid, course_descriptor, self._task_dispensers),
             last_modif
         )
 
-        self._task_factory.update_cache_for_course(courseid)
+        task_factory.update_cache_for_course(courseid)
 
-
-def create_factories(task_dispensers, task_problem_types):
-    """
-    Shorthand for creating Factories
-    :param fs_provider: A FileSystemProvider leading to the courses
-    :param task_class:
-    :return: a tuple with two objects: the first being of type CourseFactory, the second of type TaskFactory
-    """
-
-    task_factory = TaskFactory(task_problem_types)
-    return CourseFactory(task_factory, task_dispensers), task_factory
+course_factory = CourseFactory()

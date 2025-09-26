@@ -19,6 +19,7 @@ from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class CourseDangerZonePage(INGIniousAdminPage):
     """ Course administration page: list of audiences """
@@ -121,7 +122,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self.wipe_course(courseid)
 
         # Deletes the course from the factory (entire folder)
-        self.course_factory.delete_course(courseid)
+        course_factory.delete_course(courseid)
 
         # Removes backup
         filepath = os.path.join(self.backup_dir, courseid)

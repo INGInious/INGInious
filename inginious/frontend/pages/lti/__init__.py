@@ -13,6 +13,7 @@ from inginious.frontend.pages.tasks import BaseTaskPage
 
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.course_factory import course_factory
 
 class LTITaskPage(INGIniousAuthPage):
     def is_lti_page(self):
@@ -74,7 +75,7 @@ class LTIBindPage(INGIniousAuthPage):
             return error
 
         try:
-            course = self.course_factory.get_course(data["task"][0])
+            course = course_factory.get_course(data["task"][0])
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:
@@ -121,7 +122,7 @@ class LTILoginPage(INGIniousPage):
             raise Forbidden(description=_("No LTI data available."))
 
         try:
-            course = self.course_factory.get_course(data["task"][0])
+            course = course_factory.get_course(data["task"][0])
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:
