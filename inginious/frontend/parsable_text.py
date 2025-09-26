@@ -5,8 +5,6 @@
 
 """ Tools to parse text """
 import html
-import re
-import gettext
 import flask
 import tidylib
 
@@ -20,20 +18,13 @@ from docutils.statemachine import StringList
 from docutils.writers import html4css1
 
 from inginious.frontend.accessible_time import parse_date
-
-
-def _get_inginious_translation():
-    # If we are on a webpage, or even anywhere in the app, this should be defined
-    if flask.has_app_context():
-        return flask.current_app.l10n_manager.get_translation_obj()
-    else:
-        return gettext.NullTranslations()
+from inginious.frontend.l10n_manager import l10n_manager
 
 
 class EmptiableCodeBlock(CodeBlock):
     def run(self):
         if not self.content:
-            translation = _get_inginious_translation()
+            translation = l10n_manager.get_translation_obj()
             self.content = [translation.gettext("[no content]")]
         return super(EmptiableCodeBlock, self).run()
 
@@ -68,7 +59,7 @@ class HiddenUntilDirective(Directive, object):
                              '%s' % (self.name, hidden_until))
 
         force_show = self.state.document.settings.force_show_hidden_until
-        translation = _get_inginious_translation()
+        translation = l10n_manager.get_translation_obj()
 
         after_deadline = hidden_until <= datetime.now(timezone.utc)
         if after_deadline or force_show:
@@ -243,7 +234,7 @@ class _CustomHTMLWriter(html4css1.Writer, object):
 class ParsableText(object):
     """Allow to parse a string with different parsers"""
 
-    def __init__(self, content, mode="rst", show_everything=False, translation=gettext.NullTranslations()):
+    def __init__(self, content, mode="rst", show_everything=False):
         """
             content             The string to be parsed.
             mode                The parser to be used. Currently, only rst(reStructuredText) and HTML are supported.
@@ -254,7 +245,6 @@ class ParsableText(object):
             raise Exception("Unknown text parser: " + mode)
         self._content = content
         self._parsed = None
-        self._translation = translation
         self._mode = mode
         self._show_everything = show_everything
 
@@ -267,14 +257,14 @@ class ParsableText(object):
         if self._parsed is None:
             try:
                 if self._mode == "html":
-                    self._parsed = self.html(self._content, self._show_everything, self._translation)
+                    self._parsed = self.html(self._content, self._show_everything)
                 else:
-                    self._parsed = self.rst(self._content, self._show_everything, self._translation, debug=debug)
+                    self._parsed = self.rst(self._content, self._show_everything, debug=debug)
             except Exception as e:
                 if debug:
                     raise BaseException("Parsing failed") from e
                 else:
-                    self._parsed = self._translation.gettext("<b>Parsing failed</b>: <pre>{}</pre>").format(
+                    self._parsed = l10n_manager.get_translation_obj().gettext("<b>Parsing failed</b>: <pre>{}</pre>").format(
                         html.escape(self._content))
         return self._parsed
 
@@ -287,14 +277,13 @@ class ParsableText(object):
         return self.parse()
 
     @classmethod
-    def html(cls, string, show_everything=False,
-             translation=gettext.NullTranslations()):  # pylint: disable=unused-argument
+    def html(cls, string, show_everything=False):  # pylint: disable=unused-argument
         """Parses HTML"""
         out, _ = tidylib.tidy_fragment(string)
         return out
 
     @classmethod
-    def rst(cls, string, show_everything=False, translation=gettext.NullTranslations(), initial_header_level=3,
+    def rst(cls, string, show_everything=False, initial_header_level=3,
             debug=False):
         """Parses reStructuredText"""
         overrides = {
@@ -302,7 +291,6 @@ class ParsableText(object):
             'doctitle_xform': False,
             'syntax_highlight': 'none',
             'force_show_hidden_until': show_everything,
-            'translation': translation,
             'raw_enabled': True,
             'file_insertion_enabled': False,
             'math_output': 'MathJax /this/does/not/need/to/exist.js',

@@ -11,6 +11,7 @@ from bson.errors import InvalidId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.l10n_manager import l10n_manager
 
 class SubmissionPage(INGIniousAdminPage):
     """ List information about a task done by a student """
@@ -54,11 +55,7 @@ class SubmissionPage(INGIniousAdminPage):
     def page(self, course, task, submission):
         """ Get all data and display the page """
         submission = self.submission_manager.get_input_from_submission(submission)
-        submission = self.submission_manager.get_feedback_from_submission(
-            submission,
-            show_everything=True,
-            translation=self.app.l10n_manager.get_translation_obj()
-        )
+        submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=True)
 
         to_display = {
             problem.get_id(): {

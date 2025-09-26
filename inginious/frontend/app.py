@@ -20,7 +20,7 @@ from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
-from inginious.frontend.l10n_manager import L10nManager
+from inginious.frontend.l10n_manager import available_languages
 from inginious import get_root_path, __version__
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.lti.v1_3 import LTIGradeManager
@@ -163,20 +163,6 @@ def get_app(config):
         "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
     }
 
-    available_translations = {
-        "de": "Deutsch",
-        "el": "ελληνικά",
-        "es": "Español",
-        "fr": "Français",
-        "he": "עִבְרִית",
-        "nl": "Nederlands",
-        "nb_NO": "Norsk (bokmål)",
-        "pt": "Português",
-        "vi": "Tiếng Việt"
-    }
-    available_languages = {"en": "English"}
-    available_languages.update(available_translations)
-
     default_allowed_file_extensions = config['allowed_file_extensions']
     default_max_file_size = config['max_file_size']
 
@@ -198,14 +184,6 @@ def get_app(config):
     submission_manager = WebAppSubmissionManager(client, lti_score_publishers)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
-
-    # Init gettext
-    l10n_manager = L10nManager()
-    l10n_manager.translations["en"] = gettext.NullTranslations()  # English does not need translation ;-)
-    for lang in available_translations.keys():
-        l10n_manager.translations[lang] = gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
-
-    builtins.__dict__['_'] = l10n_manager.gettext
 
     # Init web mail
     mail.init_app(flask_app)
@@ -256,7 +234,6 @@ def get_app(config):
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
     flask_app.submission_manager = submission_manager
-    flask_app.l10n_manager = l10n_manager
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size

@@ -21,6 +21,7 @@ from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.parsable_text import ParsableText
 
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.l10n_manager import l10n_manager
 
 class INGIniousPage(MethodView):
     """
@@ -40,11 +41,10 @@ class INGIniousPage(MethodView):
 
     def _pre_check(self):
         """ Checks for language. """
-        if "lang" in flask.request.args and flask.request.args["lang"] in self.app.l10n_manager.translations.keys():
+        if "lang" in flask.request.args and flask.request.args["lang"] in l10n_manager.translations.keys():
             user_manager.set_session_language(flask.request.args["lang"])
         elif not user_manager.session_language(default=None):
-            best_lang = flask.request.accept_languages.best_match(self.app.l10n_manager.translations.keys(),
-                                                                  default="en")
+            best_lang = flask.request.accept_languages.best_match(l10n_manager.translations.keys(), default="en")
             user_manager.set_session_language(best_lang)
 
     def GET(self, *args, **kwargs):
