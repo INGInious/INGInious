@@ -56,29 +56,22 @@ class CourseDangerZonePage(INGIniousAdminPage):
         if not course_fs.exists():
             raise CourseNotFoundException()
 
-        # Create archive course
+        # Create archive course by duplicating it's folder in the FS
         archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d.%H_%M_%S")
-        self.course_factory.create_course(archive_course_id, None)
         self.course_factory.get_fs().copy_to(course_fs.prefix, archive_course_id)
 
-        # store link between archive and course in DB
-        self.database.archives.insert_one({"original" : courseid, "archive" : archive_course_id})
-
-        # Update archive YAML file
-        archive_course_content = self.course_factory.get_course(archive_course_id).get_descriptor()
-        archive_course_content["archived"] = True
-        archive_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
-        self.course_factory.update_course_descriptor_content(archive_course_id, archive_course_content)
+        # Create archive course entry in DB
+        old_course_students = self.database.courses.find_one({"_id": courseid})
+        self.database.courses.insert_one({"_id": archive_course_id,
+                                          "archived_from": courseid,
+                                          "archive_date": datetime.now(tz=timezone.utc),
+                                          "students": old_course_students.get("students", []) if old_course_students else []})
 
         # Update course id in DB
         self.database.aware_submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
-        old_course_students = self.database.courses.find_one({"_id": courseid})
-        if old_course_students:
-            old_course_students["_id"] = archive_course_id
-            self.database.courses.insert_one(old_course_students)
 
         self._logger.info("Course %s backed up.", courseid)
 
@@ -95,11 +88,12 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
     def remove_old_archive_links(self, course):
         """ Remove all archive links in DB for a course that has been deleted manually """
-        archive_list_id = [archive["archive"] for archive in self.database.archives.find({"original": course.get_id()})] \
+        archive_list_id = [archive["_id"] for archive in self.database.courses.find({"archived_from": course.get_id()})] \
             if not course.is_archive() else []
+        courses_in_fs = self.course_factory.get_all_courses()
         for archive_id in archive_list_id:
-            if archive_id not in self.course_factory.get_all_courses():
-                self.database.archives.delete_many({"archive": archive_id})
+            if archive_id not in courses_in_fs :
+                self.database.courses.delete_many({"_id": archive_id})
                 self._logger.info("Archive link for course %s removed from database.", archive_id)
 
 
@@ -153,12 +147,12 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         self.remove_old_archive_links(course)
 
-        archive_list_id = [archive["archive"] for archive in self.database.archives.find({"original": course.get_id()})] \
+        archive_list_id = [archive["_id"] for archive in self.database.courses.find({"archived_from": course.get_id()})] \
             if not course.is_archive() else []
         archives = [self.course_factory.get_course(archive_id) for archive_id in archive_list_id]
 
-        original_course_id = self.database.archives.find_one({"archive": course.get_id()}) if course.is_archive() else None
-        original_course = self.course_factory.get_course(original_course_id["original"]) if  original_course_id else None
+        original_course_id = self.database.courses.find_one({"_id": course.get_id()}) if course.is_archive() else None
+        original_course = self.course_factory.get_course(original_course_id["archived_from"]) if  original_course_id else None
 
         return self.template_helper.render("course_admin/danger_zone.html", course=course, thehash=thehash,
                                            archives=archives, original_course=original_course, msg=msg, error=error)

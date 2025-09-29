@@ -150,8 +150,7 @@ def get_app(config):
         database.user_tasks.create_index([("courseid", pymongo.ASCENDING), ("taskid", pymongo.ASCENDING)])
         database.user_tasks.create_index([("courseid", pymongo.ASCENDING)])
         database.user_tasks.create_index([("username", pymongo.ASCENDING)])
-        database.archives.create_index([("original", pymongo.ASCENDING)])
-        database.archives.create_index([("archive", pymongo.ASCENDING)], unique=True)
+        database.courses.create_index([("archived_from", pymongo.ASCENDING)])
         database.db_version.insert_one({"db_version": DB_VERSION})
     elif db_version.get("db_version", 0) != DB_VERSION:
         raise Exception("Please update the database before running INGInious")

@@ -79,7 +79,8 @@ class Course(object):
             self._allow_unregister = self._content.get('allow_unregister', True)
             self._allow_preview = self._content.get('allow_preview', False)
             self._is_lti = self._content.get('is_lti', False)
-            self._is_archive = self._content.get('archived', False)
+            db_course = database.courses.find_one({"_id": courseid})
+            self._is_archive = bool(db_course.get("archived_from")) if db_course else False
             self._lti_url = self._content.get('lti_url', '')
             self._lti_keys = self._content.get('lti_keys', {})
             self._lti_config = self._content.get('lti_config', {})
@@ -148,11 +149,11 @@ class Course(object):
 
     def is_open_to_non_staff(self):
         """ Returns true if the course is accessible by users that are not administrator of this course """
-        return self.get_accessibility().is_open()
+        return self.get_accessibility().is_open() and not self.is_archive()
 
     def is_registration_possible(self, user_info: UserInfo):
         """ Returns true if users can register for this course """
-        return self.get_accessibility().is_open() and self._registration.is_open() and self.is_user_accepted_by_access_control(user_info)
+        return self.get_accessibility().is_open() and self._registration.is_open() and self.is_user_accepted_by_access_control(user_info) and not self.is_archive()
 
     def is_password_needed_for_registration(self):
         """ Returns true if a password is needed for registration """
@@ -164,11 +165,15 @@ class Course(object):
 
     def get_accessibility(self, plugin_override=True):
         """ Return the AccessibleTime object associated with the accessibility of this course """
+        if self.is_archive():
+            return AccessibleTime(False)
         vals = self._plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
         return vals[0] if len(vals) and plugin_override else self._accessible
 
     def get_registration_accessibility(self):
         """ Return the AccessibleTime object associated with the registration """
+        if self.is_archive():
+            return AccessibleTime(False)
         return self._registration
 
     def get_tasks(self, ordered=False):
@@ -249,10 +254,12 @@ class Course(object):
         return at_least_one if self.get_access_control_accept() else not at_least_one
 
     def allow_preview(self):
-        return self._allow_preview
+        return self._allow_preview and not self.is_archive()
 
     def allow_unregister(self, plugin_override=True):
         """ Returns True if students can unregister from course """
+        if self.is_archive():
+            return False
         vals = self._plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
         return vals[0] if len(vals) and plugin_override else self._allow_unregister
 
@@ -284,5 +291,4 @@ class Course(object):
 
     def get_archiving_date(self):
         """ Returns the date at which the course was archived as a string (None if not archived)"""
-        return datetime.fromisoformat(self._content["archive_date"])
-
+        return self._database.courses.find_one({"_id": self.get_id()}).get("archive_date")
