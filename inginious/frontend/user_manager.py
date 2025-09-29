@@ -733,6 +733,33 @@ class UserManager:
                                                                "submissionid": None, "state": ""}},
                                              upsert=True)
 
+
+    def get_user_pinned_courses(self, username):
+        data = self._database.users.find_one({"username": username})
+        return data.get("pinned_courses", []) if data else []
+
+    def pin_course(self, username, courseid):
+        data = self._database.users.find_one({"username": username})
+        if data:
+            pinned_courses = data.get("pinned_courses", [])
+            if courseid not in pinned_courses:
+                pinned_courses.append(courseid)
+                self._database.users.update_one({"username": username}, {"$set": {"pinned_courses": pinned_courses}})
+                return True
+        return False
+
+
+    def unpin_course(self, username, courseid):
+        data = self._database.users.find_one({"username": username})
+        if data:
+            pinned_courses = data.get("pinned_courses", [])
+            if courseid in pinned_courses:
+                pinned_courses.remove(courseid)
+                self._database.users.update_one({"username": username}, {"$set": {"pinned_courses": pinned_courses}})
+                return True
+        return False
+
+
     def update_user_stats(self, username, task, submission, result_str, grade, state, newsub, task_dispenser):
         """ Update stats with a new submission """
         self.user_saw_task(username, submission["courseid"], submission["taskid"])
