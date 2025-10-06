@@ -734,9 +734,10 @@ class UserManager:
                                              upsert=True)
 
 
-    def get_user_pinned_courses(self, username):
+    def get_user_pinned_courses_ids(self, username):
         data = self._database.users.find_one({"username": username})
-        return data.get("pinned_courses", []) if data else []
+        course_ids = data.get("pinned_courses", []) if data else []
+        return course_ids
 
     def pin_course(self, username, courseid):
         data = self._database.users.find_one({"username": username})
