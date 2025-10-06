@@ -109,6 +109,9 @@
         </div>
         <div role="tabpanel" class="card-body tab-pane" id="tab_all_courses">
             <h2>{{ _("My courses") }}</h2>
+            <div class="pin_alert alert alert-danger" role="alert" hidden>
+                {{ _("Something went wrong when pinning/unpinning your course. If the issue persists please contact an administrator.") }}
+            </div>
             <div class="list-group">
                 {%if open_courses %}
                     {% set username = user_manager.session_username() %}
@@ -125,7 +128,15 @@
                                 <div class="col-xs-12 col-md-8">
                                     {{ course.get_name(user_manager.session_language()) }}
                                 </div>
-                                <div class="col-xs-12 col-md-4">
+                                <div class="col-xs-12 col-md-1">
+                                    <div class="btn-group-toggle" data-toggle="buttons">
+                                        <label class="btn btn-outline-warning active" >
+                                            <input type="checkbox" class="course_pin" name="course_pinning" data-courseid="{{courseid}}" {% if courseid in pinned_courses %}checked{% endif %}>
+                                            <i class="fa fa-thumb-tack fa-fw"></i>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-md-3">
                                     <i class="pull-right">
                                         {% if course.is_lti() %}
                                             {{ _("LTI course") }} -
@@ -177,4 +188,20 @@
         </div>
     </div>
 </div>
+
+<script>
+    $(document).on('change', '.course_pin', function() {
+        $.ajax({
+            type: "POST",
+            url: "/mycourses",
+            data: "pinning_courseid=" + $(this).data("courseid"),
+            success: function(data) {
+                 console.log("success");
+            },
+            error: function(data) {
+                 $(".pin_alert").removeAttr("hidden");
+            }
+        });
+    });
+</script>
 {% endblock %}

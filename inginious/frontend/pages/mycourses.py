@@ -30,6 +30,13 @@ class MyCoursesPage(INGIniousAuthPage):
                 success = True
             except:
                 success = False
+        elif "pinning_courseid" in user_input:
+            pinned_courses = self.user_manager.get_user_pinned_courses_ids(self.user_manager.session_username())
+            courseid = user_input["pinning_courseid"]
+            if courseid not in pinned_courses:
+                self.user_manager.pin_course(self.user_manager.session_username(), courseid)
+            else:
+                self.user_manager.unpin_course(self.user_manager.session_username(), courseid)
 
         return self.show_page(success)
 
