@@ -45,6 +45,8 @@ class MyCoursesPage(INGIniousAuthPage):
                         if self.user_manager.course_is_open_to_user(course, username, False) and
                         self.user_manager.course_is_user_registered(course, username)}
         open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
+        pinned_courses_ids = self.user_manager.get_user_pinned_courses_ids(username)
+        pinned_courses = {courseid: self.course_factory.get_course(courseid) for courseid in pinned_courses_ids if courseid in open_courses}
 
         last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid__in": list(open_courses.keys())})
         except_free_last_submissions = []
@@ -63,6 +65,7 @@ class MyCoursesPage(INGIniousAuthPage):
 
         return render_template("mycourses.html",
                                            open_courses=open_courses,
+                                           pinned_courses=pinned_courses,
                                            registrable_courses=registerable_courses,
                                            submissions=except_free_last_submissions,
                                            success=success)

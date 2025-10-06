@@ -51,70 +51,130 @@
 {% endblock %}
 
 {% block content %}
-<h2>{{ _("My courses") }}</h2>
-<div class="list-group">
-	{%if open_courses %}
-        {% set username = user_manager.session_username() %}
-        {% for courseid, course in open_courses.items() %}
-            <a href="{{ get_path('course', courseid) }}" class="list-group-item list-group-item-action
-                {% if course.is_lti() %}
-                    list-group-item-info
-                {% elif course.is_archive() %}
-                    list-group-item-dark
-                {% elif not course.is_open_to_non_staff() %}
-                    list-group-item-warning
-                {% endif %}">
-                <div class="row">
-                    <div class="col-xs-12 col-md-8">
-                        {{ course.get_name(user_manager.session_language()) }}
-                    </div>
-                    <div class="col-xs-12 col-md-4">
-                        <i class="pull-right">
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+            <li role="presentation" class="nav-item">
+                <a href="#tab_pinned_courses" class="active nav-link" role="tab" data-toggle="tab"><i class="fa fa-thumb-tack fa-fw"></i> {{ _("Pinned courses") }}</a>
+            </li>
+            <li role="presentation" class="nav-item">
+                <a href="#tab_all_courses" class="nav-link" role="tab" data-toggle="tab"><i class="fa fa-list-ul fa-fw"></i> {{ _("All your courses") }}</a>
+            </li>
+        </ul>
+    </div>
+    <div class="tab-content">
+        <div role="tabpanel" class="card-body tab-pane active" id="tab_pinned_courses">
+            <h2>{{ _("My pinned courses") }}</h2>
+            <div class="list-group">
+                {%if pinned_courses %}
+                    {% for courseid, course in pinned_courses.items() %}
+                    <div class="card m-2">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        {% if course.is_lti() %}
+                                            {% if course.lti_url() %}
+                                                <a target="_blank" href="{{ course.lti_url() }}">
+                                            {% endif %}
+                                            {{course.get_name(user_manager.session_language())}}
+                                            {% if course.lti_url() %}
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
+                                        {% endif %}
+                                    </h5>
+                                    <div class="card-text card-trunc">
+                                        {{ course.get_description(user_manager.session_language()) | safe }}
+                                    </div>
+                                </div>
+                            </div>
+                    {# Resizing logic #}
+                        {% if loop.index % 2 == 0 %}
+                            <div class="w-100 d-none d-sm-block d-md-none"><!-- wrap every 2 on sm--></div>
+                        {% endif %}
+                        {% if loop.index % 3 == 0 %}
+                            <div class="w-100 d-none d-md-block d-lg-none"><!-- wrap every 3 on md--></div>
+                        {% endif %}
+                        {% if loop.index % 4 == 0 %}
+                            <div class="w-100 d-none d-lg-block d-xl-none"><!-- wrap every 4 on lg--></div>
+                        {% endif %}
+                        {% if loop.index % 5 == 0 %}
+                            <div class="w-100 d-none d-xl-block"><!-- wrap every 5 on xl--></div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-primary">{{ _("You have no pinned courses. Go to the full course list to pin some.") }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div role="tabpanel" class="card-body tab-pane" id="tab_all_courses">
+            <h2>{{ _("My courses") }}</h2>
+            <div class="list-group">
+                {%if open_courses %}
+                    {% set username = user_manager.session_username() %}
+                    {% for courseid, course in open_courses.items() %}
+                        <a href="{{ get_path('course', courseid) }}" class="list-group-item list-group-item-action
                             {% if course.is_lti() %}
-                                {{ _("LTI course") }} -
+                                list-group-item-info
                             {% elif course.is_archive() %}
-                                {{ _("Archive") }} - {{show_time(course.get_archiving_date())}}
+                                list-group-item-dark
                             {% elif not course.is_open_to_non_staff() %}
-                                {{ _("Hidden course") }} -
-                            {% endif %}
+                                list-group-item-warning
+                            {% endif %}">
+                            <div class="row">
+                                <div class="col-xs-12 col-md-8">
+                                    {{ course.get_name(user_manager.session_language()) }}
+                                </div>
+                                <div class="col-xs-12 col-md-4">
+                                    <i class="pull-right">
+                                        {% if course.is_lti() %}
+                                            {{ _("LTI course") }} -
+                                        {% elif course.is_archive() %}
+                                            {{ _("Archive") }} - {{show_time(course.get_archiving_date())}}
+                                        {% elif not course.is_open_to_non_staff() %}
+                                            {{ _("Hidden course") }} -
+                                        {% endif %}
 
-                            {% if username in course.get_admins() or user_manager.user_is_superadmin() %}
-                                {{ _("Administrator") }}
-                            {% elif username in course.get_tutors() %}
-                                {{ _("Tutor") }}
-                            {% elif user_manager.course_is_user_registered(course) %}
-                                {{ _("Student") }}
-                            {% endif %}
-                        </i>
+                                        {% if username in course.get_admins() or user_manager.user_is_superadmin() %}
+                                            {{ _("Administrator") }}
+                                        {% elif username in course.get_tutors() %}
+                                            {{ _("Tutor") }}
+                                        {% elif user_manager.course_is_user_registered(course) %}
+                                            {{ _("Student") }}
+                                        {% endif %}
+                                    </i>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <a href="#register" class="list-group-item list-group-item-action disabled">{{ _("You are not registered to any course") }}</a>
+                {% endif %}
+            </div>
+            {% if user_manager.user_is_superadmin() %}
+                <hr/>
+                {% if success == True %}
+                    <div class="alert alert-success alert-dismissable" role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        {{ _("Course created.") }}
                     </div>
-                </div>
-            </a>
-        {% endfor %}
-    {% else %}
-        <a href="#register" class="list-group-item list-group-item-action disabled">{{ _("You are not registered to any course") }}</a>
-    {% endif %}
+                {% elif success == False %}
+                    <div class="alert alert-danger alert-dismissable" role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        {{ _("Failed to create the course.") }}
+                    </div>
+                {% endif %}
+                <form class="form row" role="form" method="post">
+                    <div class="form-group col-sm-8">
+                        <label class="sr-only" for="new_courseid">{{ _("Course") }}</label>
+                        <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder="{{ _('New course id') }}">
+                    </div>
+                    <div class="form-group col-sm-4">
+                        <button type="submit" class="btn btn-block btn-primary">{{ _("Create new course") }}</button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
 </div>
-{% if user_manager.user_is_superadmin() %}
-    <hr/>
-    {% if success == True %}
-        <div class="alert alert-success alert-dismissable" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            {{ _("Course created.") }}
-        </div>
-    {% elif success == False %}
-        <div class="alert alert-danger alert-dismissable" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            {{ _("Failed to create the course.") }}
-        </div>
-    {% endif %}
-    <form class="form row" role="form" method="post">
-        <div class="form-group col-sm-8">
-            <label class="sr-only" for="new_courseid">{{ _("Course") }}</label>
-            <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder="{{ _('New course id') }}">
-        </div>
-        <div class="form-group col-sm-4">
-            <button type="submit" class="btn btn-block btn-primary">{{ _("Create new course") }}</button>
-        </div>
-    </form>
-{% endif %}
 {% endblock %}
