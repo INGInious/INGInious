@@ -196,7 +196,11 @@ class BaseTaskPage(object):
                     return json.dumps({"status": "error", "title": _("Error"), "text": _("Your task has been regenerated. This current task is outdated.")})
 
             # Reparse user input with array for multiple choices and files
-            task_input = {}
+            # TODO: use to_dict(flat=False) produces lists for every key
+            # Here we use to_dict() and then fetch list or dicts when needed
+            # Ideally, task_input should be {} before doing this but some
+            # plugins rely on additional keys that would not be copied.
+            task_input = flask.request.form.to_dict()
             for problem in task.get_problems():
                 pid = problem.get_id()
                 if problem.input_type() == list:
@@ -216,11 +220,14 @@ class BaseTaskPage(object):
                                               "you want to upload. Your responses were not tested.")
                                 }))
 
+            del task_input["@action"]
+
             # Get debug info if the current user is an admin
             debug = is_admin
             if "@debug-mode" in userinput:
                 if userinput["@debug-mode"] == "ssh" and debug:
                     debug = "ssh"
+                del task_input["@debug-mode"]
 
             # Start the submission
             try:
