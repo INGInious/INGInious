@@ -65,7 +65,7 @@ class PluginManager(object):
                 kwargs = out
         return kwargs
 
-    def load(self, client, flask_app, submission_manager, config):
+    def load(self, flask_app, submission_manager, config):
         """ Loads the plugin manager. Must be done after the initialisation of the client """
         self._flask_app = flask_app
         self._submission_manager = submission_manager
@@ -79,7 +79,7 @@ class PluginManager(object):
             register_problem_types(displayable_pbl_types)
 
             """ Initialize the module """
-            module.init(self, client, entry)
+            module.init(self, entry)
 
     def add_page(self, pattern, classname_or_viewfunc):
         """ Add a new page to the web application. Only available after that the Plugin Manager is loaded """

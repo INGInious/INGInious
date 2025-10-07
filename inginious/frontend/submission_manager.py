@@ -25,19 +25,19 @@ from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.plugin_manager import plugin_manager
+from inginious.frontend.arch_helper import get_client
 
 
 class WebAppSubmissionManager:
     """ Manages submissions. Communicates with the database and the client. """
 
-    def __init__(self, client, lti_score_publishers):
+    def __init__(self, lti_score_publishers):
         """
         :type client: inginious.client.client.AbstractClient
         :type database: pymongo.database.Database
         :type gridfs: gridfs.GridFS
         :return:
         """
-        self._client = client
         self._logger = logging.getLogger("inginious.webapp.submissions")
         self._lti_score_publishers = lti_score_publishers
         # Updates the submissions that are waiting with the status error, as the server restarted
@@ -201,7 +201,7 @@ class WebAppSubmissionManager:
                         "custom": ""}
              })
 
-        jobid = self._client.new_job(1, task, inputdata,
+        jobid = get_client().new_job(1, task, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, task, result, grade, problems, tests,
                                                               custom, state, archive, stdout, stderr, task_dispenser, copy)),
@@ -223,7 +223,7 @@ class WebAppSubmissionManager:
 
     def get_available_environments(self) -> Dict[str, List[str]]:
         """:return a list of available environments """
-        return self._client.get_available_environments()
+        return get_client().get_available_environments()
 
     def get_submission(self, submissionid, user_check=True):
         """ Get a submission from the database """
@@ -305,7 +305,7 @@ class WebAppSubmissionManager:
 
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
 
-        jobid = self._client.new_job(0, task, inputdata,
+        jobid = get_client().new_job(0, task, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, task, result, grade, problems, tests,
                                                               custom, state, archive, stdout, stderr, task_dispenser, True)),
@@ -449,7 +449,7 @@ class WebAppSubmissionManager:
             self._logger.warning("Was asked to kill submission with id %s, but it does not seem to be running", str(submissionid))
             return False
 
-        self._client.kill_job(submission["jobid"])
+        get_client().kill_job(submission["jobid"])
         return True
 
     def user_is_submission_owner(self, submission):
@@ -690,7 +690,7 @@ class WebAppSubmissionManager:
             - max_time the maximum time that can be used, or -1 if no timeout is set
 
         """
-        return self._client.get_job_queue_snapshot()
+        return get_client().get_job_queue_snapshot()
 
     def get_job_queue_info(self, jobid):
         """Get job queue info
@@ -699,4 +699,4 @@ class WebAppSubmissionManager:
         :return: If the submission is in the queue, then returns a tuple (nb tasks before running (or ``-1`` if running), approx wait time in seconds)
         Else, returns None
         """
-        return self._client.get_job_queue_info(jobid)
+        return get_client().get_job_queue_info(jobid)

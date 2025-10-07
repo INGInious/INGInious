@@ -15,7 +15,7 @@ from werkzeug.exceptions import InternalServerError
 
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
-from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
+from inginious.frontend.arch_helper import init_client, get_client
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__
@@ -112,9 +112,9 @@ def get_path(*path_parts):
     return "/".join(path_parts)
 
 
-def _close_app(client):
+def _close_app():
     """ Ensures that the app is properly closed """
-    client.close()
+    get_client().close()
     database.close()
 
 
@@ -162,12 +162,11 @@ def get_app(config):
     register_problem_types(get_default_displayable_problem_types())
 
     # Init job queue client
-    zmq_context, __ = start_asyncio_and_zmq(config.get('debug_asyncio', False))
-    client = create_arch(config, zmq_context)
+    init_client(config)
 
     # Init submission manager
     lti_score_publishers = {"1.1": LTIOutcomeManager(), "1.3": LTIGradeManager()}
-    submission_manager = WebAppSubmissionManager(client, lti_score_publishers)
+    submission_manager = WebAppSubmissionManager(lti_score_publishers)
 
     # Init web mail
     mail.init_app(flask_app)
@@ -230,7 +229,6 @@ def get_app(config):
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
     flask_app.submission_manager = submission_manager
-    flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
     flask_app.backup_dir = config.get("backup_directory", './backup')
@@ -253,9 +251,6 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, submission_manager, config.get("plugins", []))
+    plugin_manager.load(flask_app, submission_manager, config.get("plugins", []))
 
-    # Start the inginious.backend
-    client.start()
-
-    return flask_app.wsgi_app, lambda: _close_app(client)
+    return flask_app.wsgi_app, _close_app

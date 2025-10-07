@@ -269,7 +269,7 @@ class ContestAdmin(INGIniousAdminPage):
             return render_template("contests/admin.html", course=course, data=contest_data, errors=errors, saved=False)
 
 
-def init(plugin_manager, client, config):  # pylint: disable=unused-argument
+def init(plugin_manager, config):  # pylint: disable=unused-argument
     """
         Init the contest plugin.
         Available configuration:

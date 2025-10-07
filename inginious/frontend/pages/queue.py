@@ -10,6 +10,7 @@ from datetime import datetime
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.arch_helper import get_client
 
 class QueuePage(INGIniousAuthPage):
     """ Page allowing to view the status of the backend job queue """
@@ -24,5 +25,5 @@ class QueuePage(INGIniousAuthPage):
         if user_manager.user_is_superadmin():
             inputs = request.form
             jobid = inputs["jobid"]
-            self.client.kill_job(jobid)
+            get_client().kill_job(jobid)
         return self.GET_AUTH()

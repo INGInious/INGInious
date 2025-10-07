@@ -71,11 +71,6 @@ class INGIniousPage(MethodView):
         return self.app.submission_manager
 
     @property
-    def client(self) -> Client:
-        """ Returns the INGInious client """
-        return self.app.client
-
-    @property
     def default_allowed_file_extensions(self) -> List[str]:  # pylint: disable=invalid-sequence-index
         """ List of allowed file extensions """
         return self.app.default_allowed_file_extensions
