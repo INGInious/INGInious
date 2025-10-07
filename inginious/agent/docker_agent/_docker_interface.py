@@ -220,14 +220,12 @@ class DockerInterface(object):  # pragma: no cover
     def attach_to_container(self, container_id):
         """ A socket attached to the stdin/stdout of a container. The object returned contains a get_socket() function to get a socket.socket
         object and  close_socket() to close the connection """
-        sock = self._docker.containers.get(container_id).attach_socket(params={
+        return self._docker.containers.get(container_id).attach_socket(params={
             'stdin': 1,
             'stdout': 1,
             'stderr': 0,
             'stream': 1,
         })
-        # fix a problem with docker-py; we must keep a reference of sock at every time
-        return FixDockerSocket(sock)
 
     def get_logs(self, container_id):
         """ Return the full stdout/stderr of a container"""
@@ -274,30 +272,3 @@ class DockerInterface(object):  # pragma: no cover
         :return: dict of runtime: path_to_runtime
         """
         return {name: x["path"] for name, x in self._docker.info()["Runtimes"].items()}
-
-class FixDockerSocket():  # pragma: no cover
-    """
-    Fix the API inconsistency of docker-py with attach_socket
-    """
-    def __init__(self, docker_py_sock):
-        self.docker_py_sock = docker_py_sock
-
-    def get_socket(self):
-        """
-        Returns a valid socket.socket object
-        """
-        try:
-            return self.docker_py_sock._sock  # pylint: disable=protected-access
-        except AttributeError:
-            return self.docker_py_sock
-
-    def close_socket(self):
-        """
-        Correctly closes the socket
-        :return:
-        """
-        try:
-            self.docker_py_sock._sock.close()  # pylint: disable=protected-access
-        except AttributeError:
-            pass
-        self.docker_py_sock.close()
