@@ -120,7 +120,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
                                            submissions=except_free_last_submissions)
 
 
-def init(plugin_manager, _2, config):
+def init(plugin_manager, config):
     """ Init the plugin """
     plugin_manager.add_page('/coming_tasks', UpComingTasksBoard.as_view("upcomingtasksboardpage"))
     plugin_manager.add_page('/plugins/coming_tasks/static/<path:path>', StaticMockPage.as_view("upcomingtasksstaticmockpage"))

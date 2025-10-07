@@ -208,7 +208,7 @@ def task_menu(course, task):
         return None
 
 
-def init(plugin_manager, _2, _3):
+def init(plugin_manager, _3):
     """
         Init the plugin.
         Available configuration in configuration.yaml:

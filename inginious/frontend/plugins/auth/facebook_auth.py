@@ -59,7 +59,7 @@ class FacebookAuthMethod(AuthMethod):
         return '<i class="fa fa-facebook-square" style="font-size:50px; color:#4267b2;"></i>'
 
 
-def init(plugin_manager, client, conf):
+def init(plugin_manager, conf):
 
     if conf.get("debug", False):
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
