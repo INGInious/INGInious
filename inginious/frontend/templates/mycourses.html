@@ -112,7 +112,10 @@
             <div class="pin_alert alert alert-danger" role="alert" hidden>
                 {{ _("Something went wrong when pinning/unpinning your course. If the issue persists please contact an administrator.") }}
             </div>
-            <div class="list-group">
+            <div class="form-group">
+                <input class="form-control" id="course_search" type="text" placeholder="Search a course by its name">
+            </div>
+            <div class="course_list list-group">
                 {%if open_courses %}
                     {% set username = user_manager.session_username() %}
                     {% for courseid, course in open_courses.items() %}
@@ -125,7 +128,7 @@
                                 list-group-item-warning
                             {% endif %}">
                             <div class="row">
-                                <div class="col-xs-12 col-md-8">
+                                <div class="course_name col-xs-12 col-md-8">
                                     {{ course.get_name(user_manager.session_language()) }}
                                 </div>
                                 <div class="col-xs-12 col-md-1">
@@ -201,6 +204,14 @@
             error: function(data) {
                  $(".pin_alert").removeAttr("hidden");
             }
+        });
+    });
+
+    $(document).on("keyup", "#course_search", function() {
+    console.log("filtering");
+        var value = $(this).val().toLowerCase();
+        $(".course_list a").filter(function() {
+            $(this).toggle($(this).find(".course_name").text().toLowerCase().indexOf(value) > -1)
         });
     });
 </script>
