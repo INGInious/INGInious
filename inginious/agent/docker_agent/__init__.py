@@ -542,7 +542,12 @@ class DockerAgent(Agent):
 
     async def read_stream(self, reader_stream, buffer):
         """Helper to read a read and put data on a buffer"""
-        msg_header = await reader_stream.readexactly(8)
+        msg_header = await reader_stream.read(8)
+        # Newer implementations feed EOL AFTER the last data block and not at the end of it.
+        # It can then only be detected by reading the next stream byte. This is retrocompatible.
+        if reader_stream.at_eof():
+            return buffer
+
         outtype, length = struct.unpack_from('>BxxxL',
                                              msg_header)  # format imposed by docker in the attach endpoint
         if length != 0:
@@ -636,7 +641,7 @@ class DockerAgent(Agent):
         """ Talk with a container. Sends the initial input. Allows to start student containers """
         sock = await self._docker.attach_to_container(info.container_id)
         try:
-            reader_stream, write_stream = await asyncio.open_connection(sock=sock.get_socket())
+            reader_stream, write_stream = await asyncio.open_connection(sock=sock._sock)
         except asyncio.CancelledError:
             raise
         except:
@@ -746,14 +751,14 @@ class DockerAgent(Agent):
             self._logger.debug("Container output ended with an IncompleteReadError; It was probably killed.")
         except asyncio.CancelledError:
             write_stream.close()
-            sock.close_socket()
+            sock._sock.close()
             future_results.set_result(result)
             raise
         except:
             self._logger.exception("Exception while reading container %s output", info.container_id)
 
         write_stream.close()
-        sock.close_socket()
+        sock._sock.close()
         future_results.set_result(result)
 
         if not result:
@@ -761,8 +766,7 @@ class DockerAgent(Agent):
 
     async def open_student_stream(self, student_container_id):
         student_sock = await self._docker.attach_to_container(student_container_id)
-        student_reader_stream, student_write_stream = await asyncio.open_connection(
-            sock=student_sock.get_socket())
+        student_reader_stream, student_write_stream = await asyncio.open_connection(sock=student_sock._sock)
         stream = (student_reader_stream, student_write_stream)
         return stream
 
