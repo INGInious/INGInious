@@ -6,7 +6,7 @@
 {% block title %}{{ _("Submissions") }}{% endblock %}
 
 {% block column %}
-{{ template_helper.call('course_admin_menu',course=course,current='submissions') | safe }}
+    {% with current='submissions' %}{% include 'course_admin/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}

@@ -6,7 +6,7 @@
 {% block title %} {{ course.get_name(user_manager.session_language()) }} - {{ _("Settings") }} {% endblock %}
 
 {% block column %}
-    {{ template_helper.call('course_admin_menu',course=course,current='settings') | safe }}
+    {% with current='settings' %}{% include 'course_admin/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}
