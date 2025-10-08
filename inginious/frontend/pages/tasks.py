@@ -26,15 +26,14 @@ from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.plugin_manager import plugin_manager
-
 from inginious.frontend.course_factory import course_factory
+from inginious.frontend.submission_manager import submission_manager
 
 class BaseTaskPage(object):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
 
     def __init__(self, calling_page):
         self.cp = calling_page
-        self.submission_manager = self.cp.submission_manager
         self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
         self.default_max_file_size = self.cp.default_max_file_size
         self.webterm_link = self.cp.webterm_link
@@ -91,10 +90,10 @@ class BaseTaskPage(object):
         userinput = flask.request.args
         if "submissionid" in userinput and "questionid" in userinput:
             # Download a previously submitted file
-            submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
+            submission = submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
             if submission is None:
                 raise self.cp.app.notfound(message=_("Submission doesn't exist."))
-            sinput = self.submission_manager.get_input_from_submission(submission, True)
+            sinput = submission_manager.get_input_from_submission(submission, True)
             if userinput["questionid"] not in sinput:
                 raise NotFound()
 
@@ -144,7 +143,7 @@ class BaseTaskPage(object):
                     students = group["students"]
                 # we don't care for the other case, as the student won't be able to submit.
 
-            submissions = self.submission_manager.get_user_submissions(task) if user_manager.session_logged_in() else []
+            submissions = submission_manager.get_user_submissions(task) if user_manager.session_logged_in() else []
             user_info = user_manager.get_user_info(username)
 
             # Visible tags
@@ -231,7 +230,7 @@ class BaseTaskPage(object):
 
             # Start the submission
             try:
-                submissionid, oldsubids = self.submission_manager.add_job(task, task_input, course.get_task_dispenser(), debug)
+                submissionid, oldsubids = submission_manager.add_job(task, task_input, course.get_task_dispenser(), debug)
                 return Response(content_type='application/json', response=json.dumps({
                     "status": "ok", "submissionid": str(submissionid), "remove": oldsubids,
                     "text": _("<b>Your submission has been sent...</b>")
@@ -242,14 +241,14 @@ class BaseTaskPage(object):
                 }))
 
         elif "@action" in userinput and userinput["@action"] == "check" and "submissionid" in userinput:
-            result = self.submission_manager.get_submission(userinput['submissionid'], user_check=not is_staff)
+            result = submission_manager.get_submission(userinput['submissionid'], user_check=not is_staff)
             if result is None:
                 return Response(content_type='application/json', response=json.dumps({
                     'status': "error",  "title": _("Error"), "text": _("Internal error")
                 }))
-            elif self.submission_manager.is_done(result, user_check=not is_staff):
-                result = self.submission_manager.get_input_from_submission(result)
-                result = self.submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
+            elif submission_manager.is_done(result, user_check=not is_staff):
+                result = submission_manager.get_input_from_submission(result)
+                result = submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
 
                 # user_task always exists as we called user_saw_task before
                 user_task = database.user_tasks.find_one({
@@ -274,9 +273,9 @@ class BaseTaskPage(object):
                 ))
 
         elif "@action" in userinput and userinput["@action"] == "load_submission_input" and "submissionid" in userinput:
-            submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
-            submission = self.submission_manager.get_input_from_submission(submission)
-            submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=is_staff)
+            submission = submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
+            submission = submission_manager.get_input_from_submission(submission)
+            submission = submission_manager.get_feedback_from_submission(submission, show_everything=is_staff)
             if not submission:
                 raise NotFound(description=_("Submission doesn't exist."))
 
@@ -285,7 +284,7 @@ class BaseTaskPage(object):
             ))
 
         elif "@action" in userinput and userinput["@action"] == "kill" and "submissionid" in userinput:
-            self.submission_manager.kill_running_submission(userinput["submissionid"])  # ignore return value
+            submission_manager.kill_running_submission(userinput["submissionid"])  # ignore return value
             return Response(content_type='application/json', response=json.dumps({'status': 'done'}))
         else:
             raise NotFound()
@@ -307,7 +306,7 @@ class BaseTaskPage(object):
             })
 
         # Here we are waiting. Let's send some useful information.
-        waiting_data = self.submission_manager.get_job_queue_info(data["jobid"]) if "jobid" in data else None
+        waiting_data = submission_manager.get_job_queue_info(data["jobid"]) if "jobid" in data else None
         if waiting_data is not None and not reloading:
             nb_tasks_before, approx_wait_time = waiting_data
             wait_time = round(approx_wait_time)

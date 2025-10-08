@@ -12,6 +12,7 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import user_manager
 
 from inginious.frontend.course_factory import course_factory
+from inginious.frontend.submission_manager import submission_manager
 
 class MyCoursesPage(INGIniousAuthPage):
     """ Index page """
@@ -49,7 +50,7 @@ class MyCoursesPage(INGIniousAuthPage):
                         user_manager.course_is_user_registered(course, username)}
         open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(user_manager.session_language())))
 
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
+        last_submissions = submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
         except_free_last_submissions = []
         for submission in last_submissions:
             try:

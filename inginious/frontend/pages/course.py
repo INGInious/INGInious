@@ -12,6 +12,7 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.course_factory import course_factory
+from inginious.frontend.submission_manager import submission_manager
 
 def handle_course_unavailable(get_path, user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
@@ -68,7 +69,7 @@ class CoursePage(INGIniousAuthPage):
 
             # Get 5 last submissions
             last_submissions = []
-            for submission in self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid": {"$in": user_task_list}}):
+            for submission in submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid": {"$in": user_task_list}}):
                 submission["taskname"] = tasks[submission['taskid']].get_name(user_manager.session_language())
                 last_submissions.append(submission)
 

@@ -15,6 +15,7 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.course_factory import course_factory
+from inginious.frontend.submission_manager import submission_manager
 
 class GroupPage(INGIniousAuthPage):
     """ Group page """
@@ -72,7 +73,7 @@ class GroupPage(INGIniousAuthPage):
                 msg = _("You are not allowed to change group.")
 
         tasks = course.get_tasks()
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": courseid, "taskid": {"$in": list(tasks.keys())}})
+        last_submissions = submission_manager.get_user_last_submissions(5, {"courseid": courseid, "taskid": {"$in": list(tasks.keys())}})
         for submission in last_submissions:
             submission["taskname"] = tasks[submission['taskid']].get_name(user_manager.session_language())
 
