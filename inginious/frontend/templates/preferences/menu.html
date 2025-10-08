@@ -2,7 +2,18 @@
 {# more information about the licensing of this file. #}
 
 <div class="list-group">
-    {% for link, name in entries %}
+    <a href="{{ get_path('preferences', 'profile') }}" class="list-group-item list-group-item-action {% if current == 'profile' %}active{% endif %}">
+        <i class='fa fa-user fa-fw mr-2'></i>{{ _("My profile") }}
+    </a>
+    <a href="{{ get_path('preferences', 'bindings') }}" class="list-group-item list-group-item-action {% if current == 'bindings' %}active{% endif %}">
+        <i class='fa fa-id-card-o fa-fw mr-2'></i>{{ _("Authentication bindings") }}
+    </a>
+    {% if allow_deletion %}
+    <a href="{{ get_path('preferences', 'delete') }}" class="list-group-item list-group-item-action list-group-item-danger {% if current == 'delete' %}active{% endif %}">
+        <i class='fa fa-user-times fa-fw mr-2'></i>{{ _("Delete my account") }}
+    </a>
+    {% endif %}
+    {% for link, name in plugin_manager.call_hook('prefs_menu') %}
         <a href="{{ get_path('preferences', link) }}" class="list-group-item list-group-item-action
         {% if link=='delete' %}list-group-item-danger{% endif %}
         {% if current == link %}active{% endif %}">{{ name | safe }}</a>

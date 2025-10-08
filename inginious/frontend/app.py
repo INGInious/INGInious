@@ -257,16 +257,13 @@ def get_app(config):
     template_helper.add_to_template_globals("get_path", get_path)
     template_helper.add_to_template_globals("pkg_version", __version__)
     template_helper.add_to_template_globals("allow_registration", config.get("allow_registration", True))
+    template_helper.add_to_template_globals("allow_deletion", config.get("allow_deletion", True))
     template_helper.add_to_template_globals("sentry_io_url", config.get("sentry_io_url"))
     template_helper.add_to_template_globals("user_manager", user_manager)
     template_helper.add_to_template_globals("default_allowed_file_extensions", default_allowed_file_extensions)
     template_helper.add_to_template_globals("default_max_file_size", default_max_file_size)
     template_helper.add_to_template_globals("is_tos_defined", is_tos_defined)
     template_helper.add_to_template_globals("privacy_page", config.get("privacy_page", None))
-    template_helper.add_other("preferences_menu",
-                              lambda current: preferences_utils.get_menu(config.get("allow_deletion", True),
-                                                                         current, template_helper.render,
-                                                                         plugin_manager, user_manager))
 
     # Not found page
     def flask_not_found(e):
