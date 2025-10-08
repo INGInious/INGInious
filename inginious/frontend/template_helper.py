@@ -13,16 +13,12 @@ import inginious
 class TemplateHelper(object):
     """ Class accessible from templates that calls function defined in the Python part of the code. """
 
-    def __init__(self, plugin_manager, user_manager, use_minified=True):
+    def __init__(self, plugin_manager, use_minified=True):
         """
         Init the Template Helper
         :param plugin_manager: an instance of a PluginManager
-        :param user_manager: an instance of UserManager.
-        :param default_template_dir: the path to the template dir. If it is not absolute, it will be taken from the root of the inginious package.
-        :param default_layout: the path to the layout. If it is not absolute, it will be taken from the root of the inginious package.
         :param use_minified: weither to use minified js/css or not. Use True in production, False in dev envs.
         """
-
         self._base_helpers = {"header_hook": (lambda **kwargs: self._generic_hook('header_html', **kwargs)),
                               "main_menu": (lambda **kwargs: self._generic_hook('main_menu', **kwargs)),
                               "course_menu": (lambda **kwargs: self._generic_hook('course_menu', **kwargs)),
@@ -35,18 +31,12 @@ class TemplateHelper(object):
                               "css": (lambda **_: self._css_helper())}
         self._plugin_manager = plugin_manager
         self._template_dir = 'frontend/templates'
-        self._user_manager = user_manager # can be None!
         self._template_globals = {}
         self._ctx = {"javascript": {"footer": [], "header": []}, "css": []}
 
         self.add_to_template_globals("template_helper", self)
         self.add_to_template_globals("plugin_manager", plugin_manager)
         self.add_to_template_globals("use_minified", use_minified)
-        self.add_to_template_globals("is_lti", self.is_lti)
-
-    def is_lti(self):
-        """ True if the current session is an LTI one """
-        return self._user_manager is not None and self._user_manager.session_lti_info() is not None
 
     def add_to_template_globals(self, name, value):
         """ Add a variable to will be accessible in the templates """
