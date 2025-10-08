@@ -12,7 +12,7 @@
         type="file"
         name="{{inputId}}"
         data-max-size="{{max_size}}"
-        data-allowed-exts="{{ json(allowed_exts) }}"
+        data-allowed-exts="{{ allowed_exts | tojson | forceescape }}"
         /><br/>
 
 <object id="download-input-file-pdf-{{inputId}}" data="" type="application/pdf" style="display:none; width: 100%; min-height: 800px;">
