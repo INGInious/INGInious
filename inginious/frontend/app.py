@@ -18,7 +18,6 @@ from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
 from bson.codec_options import CodecOptions
 
-import inginious.frontend.pages.course_admin.utils as course_admin_utils
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
@@ -264,9 +263,6 @@ def get_app(config):
     template_helper.add_to_template_globals("default_max_file_size", default_max_file_size)
     template_helper.add_to_template_globals("is_tos_defined", is_tos_defined)
     template_helper.add_to_template_globals("privacy_page", config.get("privacy_page", None))
-    template_helper.add_other("course_admin_menu",
-                              lambda course, current: course_admin_utils.get_menu(course, current, template_helper.render,
-                                                                                  plugin_manager, user_manager))
     template_helper.add_other("preferences_menu",
                               lambda current: preferences_utils.get_menu(config.get("allow_deletion", True),
                                                                          current, template_helper.render,

@@ -6,7 +6,7 @@
 {% block title %}{{ _("Edit {}").format(taskid) }}{% endblock %}
 
 {% block column %}
-    {{ template_helper.call('course_admin_menu',course=course,current='tasks') | safe }}
+    {% with current='tasks' %}{% include 'course_admin/menu.html' %}{% endwith %}
     <button class="btn btn-primary btn-block mt-3 task_edit_submit_button" type="button" onclick="studio_submit()"><i class="fa fa-save"></i> {{ _("Save changes") }}</button>
 {% endblock %}
 
