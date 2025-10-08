@@ -22,7 +22,6 @@ import inginious.frontend.pages.course_admin.utils as course_admin_utils
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
-from inginious.frontend.pages.utils import register_utils
 from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
@@ -220,8 +219,6 @@ def get_app(config):
 
     submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
     template_helper = TemplateHelper(plugin_manager, user_manager, config.get('use_minified_js', True))
-
-    register_utils(database, user_manager, template_helper)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 

@@ -9,8 +9,6 @@ from functools import lru_cache
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import inginious
-import json
-
 
 class TemplateHelper(object):
     """ Class accessible from templates that calls function defined in the Python part of the code. """
@@ -38,7 +36,6 @@ class TemplateHelper(object):
         self._plugin_manager = plugin_manager
         self._template_dir = 'frontend/templates'
         self._user_manager = user_manager # can be None!
-        self._layout_old = 'frontend/templates/layout_old'
         self._template_globals = {}
         self._ctx = {"javascript": {"footer": [], "header": []}, "css": []}
 
@@ -46,7 +43,6 @@ class TemplateHelper(object):
         self.add_to_template_globals("plugin_manager", plugin_manager)
         self.add_to_template_globals("use_minified", use_minified)
         self.add_to_template_globals("is_lti", self.is_lti)
-        self.add_to_template_globals("json", self._json_safe_dump)
 
     def is_lti(self):
         """ True if the current session is an LTI one """
@@ -90,11 +86,11 @@ class TemplateHelper(object):
 
     def add_javascript(self, link, position="footer"):
         """ Add a javascript file to load. Position can either be "header" or "footer" """
-        self._get_ctx()["javascript"][position].append(link)
+        self._ctx["javascript"][position].append(link)
 
     def add_css(self, link):
         """ Add a css file to load """
-        self._get_ctx()["css"].append(link)
+        self._ctx["css"].append(link)
 
     def add_other(self, name, func):
         """ Add another callback to the template helper """
@@ -111,7 +107,7 @@ class TemplateHelper(object):
         else:
             entries = [entry for entry in self._plugin_manager.call_hook("javascript_footer") if entry is not None]
         # Load javascript for the current page
-        entries += self._get_ctx()["javascript"][position]
+        entries += self._ctx["javascript"][position]
         entries = ["<script src='" + entry + "' type='text/javascript' charset='utf-8'></script>" for entry in entries]
         return "\n".join(entries)
 
@@ -119,22 +115,11 @@ class TemplateHelper(object):
         """ Add CSS links for the current page and for the plugins """
         entries = [entry for entry in self._plugin_manager.call_hook("css") if entry is not None]
         # Load javascript for the current page
-        entries += self._get_ctx()["css"]
+        entries += self._ctx["css"]
         entries = ["<link href='" + entry + "' rel='stylesheet'>" for entry in entries]
         return "\n".join(entries)
-
-    def _get_ctx(self):
-        """ Get web.ctx object for the Template helper """
-        return self._ctx
 
     def _generic_hook(self, name, **kwargs):
         """ A generic hook that links the TemplateHelper with PluginManager """
         entries = [entry for entry in self._plugin_manager.call_hook(name, **kwargs) if entry is not None]
         return "\n".join(entries)
-
-    def _json_safe_dump(self, data):
-        """ Make a json dump of `data`, that can be used directly in a `<script>` tag. Available as json() inside templates """
-        return json.dumps(data).replace(u'<', u'\\u003c') \
-            .replace(u'>', u'\\u003e') \
-            .replace(u'&', u'\\u0026') \
-            .replace(u"'", u'\\u0027')
