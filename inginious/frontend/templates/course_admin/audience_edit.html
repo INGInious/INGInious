@@ -52,7 +52,9 @@
                         </div>
                         <div class="col-md-9">
                             <div class="col-sm-10">
-                                {{ user_selection_box(course_id=course.get_id(), current_users=[], name="registered_students", id="registered_students", placeholder=_("Enter something here to search for a user")) | safe }}
+                                {% with course_id=course.get_id(), current_users=[], name="registered_students", id="registered_students", placeholder=_("Enter something here to search for a user") %}
+                                    {% include "course_admin/user_selection_box.html" %}
+                                {% endwith %}
                             </div>
                         </div>
                     </div>
