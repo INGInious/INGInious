@@ -10,7 +10,7 @@
 {% block title %} {{task.get_name(user_manager.session_language()) }} - {{ user_realname }} - {{ course.get_name(user_manager.session_language()) }} {% endblock %}
 
 {% block column %}
-{{ template_helper.call('course_admin_menu',course=course,current='submissions') | safe }}
+    {% with current='submissions' %}{% include 'course_admin/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}
