@@ -217,7 +217,7 @@ def get_app(config):
                             "1.3": LTIGradeManager(database, user_manager, course_factory)}
 
     submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
-    template_helper = TemplateHelper(plugin_manager, user_manager, config.get('use_minified_js', True))
+    template_helper = TemplateHelper(plugin_manager, config.get('use_minified_js', True))
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
