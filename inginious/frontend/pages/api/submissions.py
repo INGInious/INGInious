@@ -12,9 +12,10 @@ import flask
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.course_factory import course_factory
+from inginious.frontend.submission_manager import submission_manager
 
 
-def _get_submissions(submission_manager, courseid, taskid, with_input, submissionid=None):
+def _get_submissions(courseid, taskid, with_input, submissionid=None):
     """
         Helper for the GET methods of the two following classes
     """
@@ -112,7 +113,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, courseid, taskid, with_input, submissionid)
+        return _get_submissions(courseid, taskid, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -153,7 +154,7 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, courseid, taskid, with_input)
+        return _get_submissions(courseid, taskid, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -210,7 +211,7 @@ class APISubmissions(APIAuthenticatedPage):
 
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(task, user_input, course.get_task_dispenser(), debug)
+            submissionid, _ = submission_manager.add_job(task, user_input, course.get_task_dispenser(), debug)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))

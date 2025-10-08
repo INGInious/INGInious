@@ -28,6 +28,8 @@ from inginious.frontend.plugin_manager import plugin_manager
 from inginious.frontend.course_factory import course_factory
 from inginious.frontend.task_factory import task_factory
 from inginious.common.task_file_readers import get_task_file_managers
+from inginious.frontend.environment_types import get_all_env_types
+from inginious.frontend.submission_manager import submission_manager
 
 
 class CourseEditTask(INGIniousAdminPage):
@@ -49,8 +51,8 @@ class CourseEditTask(INGIniousAdminPage):
         # Ensure retrocompatibility
         task_data = _migrate_from_v_0_6(task_data)
 
-        environment_types = self.environment_types
-        environments = self.environments
+        environment_types = get_all_env_types()
+        environments = submission_manager.get_available_environments()
 
         current_filetype = None
         try:

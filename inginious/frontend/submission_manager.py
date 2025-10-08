@@ -5,7 +5,6 @@
 
 """ Manages submissions """
 import io
-import gettext
 import logging
 import os.path
 import tarfile
@@ -26,12 +25,14 @@ from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.plugin_manager import plugin_manager
 from inginious.frontend.arch_helper import get_client
+from inginious.frontend.lti.v1_1 import LTIOutcomeManager
+from inginious.frontend.lti.v1_3 import LTIGradeManager
 
 
 class WebAppSubmissionManager:
     """ Manages submissions. Communicates with the database and the client. """
 
-    def __init__(self, lti_score_publishers):
+    def __init__(self):
         """
         :type client: inginious.client.client.AbstractClient
         :type database: pymongo.database.Database
@@ -39,7 +40,11 @@ class WebAppSubmissionManager:
         :return:
         """
         self._logger = logging.getLogger("inginious.webapp.submissions")
-        self._lti_score_publishers = lti_score_publishers
+        self._lti_score_publishers = {}
+
+    def init_app(self):
+        self._lti_score_publishers = {"1.1": LTIOutcomeManager(), "1.3": LTIGradeManager()}
+
         # Updates the submissions that are waiting with the status error, as the server restarted
         database.submissions.update_many({'status': 'waiting'},
                                          {"$unset": {'jobid': ""},
@@ -700,3 +705,6 @@ class WebAppSubmissionManager:
         Else, returns None
         """
         return get_client().get_job_queue_info(jobid)
+
+
+submission_manager = WebAppSubmissionManager()

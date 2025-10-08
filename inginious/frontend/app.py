@@ -16,11 +16,10 @@ from werkzeug.exceptions import InternalServerError
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import init_client, get_client
-from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.i18n import available_languages, gettext
+from inginious.frontend.submission_manager import submission_manager
 from inginious import get_root_path, __version__
-from inginious.frontend.lti.v1_1 import LTIOutcomeManager
-from inginious.frontend.lti.v1_3 import LTIGradeManager
+
 from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
@@ -165,8 +164,7 @@ def get_app(config):
     init_client(config)
 
     # Init submission manager
-    lti_score_publishers = {"1.1": LTIOutcomeManager(), "1.3": LTIGradeManager()}
-    submission_manager = WebAppSubmissionManager(lti_score_publishers)
+    submission_manager.init_app()
 
     # Init web mail
     mail.init_app(flask_app)
@@ -228,7 +226,6 @@ def get_app(config):
 
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
-    flask_app.submission_manager = submission_manager
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
     flask_app.backup_dir = config.get("backup_directory", './backup')
@@ -251,6 +248,6 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(flask_app, submission_manager, config.get("plugins", []))
+    plugin_manager.load(flask_app, config.get("plugins", []))
 
     return flask_app.wsgi_app, _close_app

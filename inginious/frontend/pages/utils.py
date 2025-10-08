@@ -13,20 +13,14 @@ from flask import redirect, render_template
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
-from inginious.client.client import Client
 from inginious.common import custom_yaml
-from inginious.frontend.environment_types import get_all_env_types
-from inginious.frontend.environment_types.env_type import FrontendEnvType
-from inginious.frontend.submission_manager import WebAppSubmissionManager
-from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.i18n import available_languages
-
+from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import user_manager
 
 class INGIniousPage(MethodView):
     """
     A base for all the pages of the INGInious webapp.
-    Contains references to the PluginManager, the CourseFactory, and the SubmissionManager
     """
 
     @property
@@ -66,11 +60,6 @@ class INGIniousPage(MethodView):
         return self.POST(*args, **kwargs)
 
     @property
-    def submission_manager(self) -> WebAppSubmissionManager:
-        """ Returns the submission manager singleton"""
-        return self.app.submission_manager
-
-    @property
     def default_allowed_file_extensions(self) -> List[str]:  # pylint: disable=invalid-sequence-index
         """ List of allowed file extensions """
         return self.app.default_allowed_file_extensions
@@ -84,16 +73,6 @@ class INGIniousPage(MethodView):
     def backup_dir(self) -> str:
         """ Backup directory """
         return self.app.backup_dir
-
-    @property
-    def environments(self) -> Dict[str, List[str]]:  # pylint: disable=invalid-sequence-index
-        """ Available environments """
-        return self.app.submission_manager.get_available_environments()
-
-    @property
-    def environment_types(self) -> Dict[str, FrontendEnvType]:
-        """ Available environment types """
-        return get_all_env_types()
 
     @property
     def webterm_link(self) -> str:

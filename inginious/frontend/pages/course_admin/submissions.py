@@ -12,6 +12,7 @@ from werkzeug.exceptions import NotFound, Forbidden
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.submission_manager import submission_manager
 
 class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
     """ Page that allow search, view, replay an download of submisssions done by students """
@@ -34,7 +35,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
             if submission is None:
                 raise NotFound(description=_("This submission doesn't exist."))
 
-            self.submission_manager.replay_job(course.get_task(submission["taskid"]), submission, course.get_task_dispenser())
+            submission_manager.replay_job(course.get_task(submission["taskid"]), submission, course.get_task_dispenser())
             return Response(response=json.dumps({"status": "waiting"}), content_type='application/json')
 
         elif "csv" in user_input or "download" in user_input or "replay" in user_input:
@@ -53,7 +54,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
                     sub_folders = list(download_type.split('/'))
                 else:
                     sub_folders = list(download_type.split('/')) + ["submissiondateid"]
-                archive, error = self.submission_manager.get_submission_archive(course, data, sub_folders, simplify="simplify" in user_input)
+                archive, error = submission_manager.get_submission_archive(course, data, sub_folders, simplify="simplify" in user_input)
                 if not error:
                     response = Response(response=archive, content_type='application/x-gzip')
                     response.headers['Content-Disposition'] = 'attachment; filename="submissions.tgz"'
@@ -68,7 +69,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
                 tasks = course.get_tasks()
                 for submission in data:
-                    self.submission_manager.replay_job(tasks[submission["taskid"]], submission, course.get_task_dispenser())
+                    submission_manager.replay_job(tasks[submission["taskid"]], submission, course.get_task_dispenser())
                 msgs.append(_("{0} selected submissions were set for replay.").format(str(len(data))))
                 return self.page(course, params, msgs=msgs)
 
@@ -102,7 +103,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
             self._logger.info("Downloading submission %s - %s - %s - %s", submission['_id'], submission['courseid'],
                               submission['taskid'], submission['username'])
-            archive, error = self.submission_manager.get_submission_archive(course, [submission], [])
+            archive, error = submission_manager.get_submission_archive(course, [submission], [])
             if not error:
                 response = Response(response=archive, content_type='application/x-gzip')
                 response.headers['Content-Disposition'] = 'attachment; filename="submissions.tgz"'

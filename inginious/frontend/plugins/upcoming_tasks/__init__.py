@@ -14,6 +14,7 @@ from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend import database
 from inginious.frontend.user_manager import user_manager
 from inginious.frontend.course_factory import course_factory
+from inginious.frontend.submission_manager import submission_manager
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -64,7 +65,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
                         user_manager.course_is_user_registered(course, username)}
 
         # Get last submissions for left panel
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
+        last_submissions = submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
         except_free_last_submissions = []
         for submission in last_submissions:
             try:

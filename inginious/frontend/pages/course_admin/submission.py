@@ -11,6 +11,7 @@ from bson.errors import InvalidId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import user_manager
+from inginious.frontend.submission_manager import submission_manager
 
 class SubmissionPage(INGIniousAdminPage):
     """ List information about a task done by a student """
@@ -18,7 +19,7 @@ class SubmissionPage(INGIniousAdminPage):
 
     def fetch_submission(self, submissionid):
         try:
-            submission = self.submission_manager.get_submission(submissionid, False)
+            submission = submission_manager.get_submission(submissionid, False)
             if not submission:
                 raise NotFound(description=_("This submission doesn't exist."))
         except InvalidId as ex:
@@ -41,20 +42,20 @@ class SubmissionPage(INGIniousAdminPage):
 
         webinput = request.form
         if "replay" in webinput and is_admin:
-            self.submission_manager.replay_job(task, submission, course.get_task_dispenser())
+            submission_manager.replay_job(task, submission, course.get_task_dispenser())
         elif "replay-copy" in webinput:  # Authorized for tutors
-            self.submission_manager.replay_job(task, submission, course.get_task_dispenser(), True)
+            submission_manager.replay_job(task, submission, course.get_task_dispenser(), True)
             return redirect(self.app.get_path("course", course.get_id(), task.get_id()))
         elif "replay-debug" in webinput and is_admin:
-            self.submission_manager.replay_job(task, submission, course.get_task_dispenser(), True, "ssh")
+            submission_manager.replay_job(task, submission, course.get_task_dispenser(), True, "ssh")
             return redirect(self.app.get_path("course", course.get_id(), task.get_id()))
 
         return self.page(course, task, submission)
 
     def page(self, course, task, submission):
         """ Get all data and display the page """
-        submission = self.submission_manager.get_input_from_submission(submission)
-        submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=True)
+        submission = submission_manager.get_input_from_submission(submission)
+        submission = submission_manager.get_feedback_from_submission(submission, show_everything=True)
 
         to_display = {
             problem.get_id(): {

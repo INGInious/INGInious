@@ -28,7 +28,6 @@ class PluginManager(object):
         self._hooks = {}
         self._loaded = False
         self._flask_app = None
-        self._submission_manager = None
 
     def _exception_free_callback(self, callback, *args, **kwargs):
         """ A wrapper that remove all exceptions raised from hooks """
@@ -65,10 +64,9 @@ class PluginManager(object):
                 kwargs = out
         return kwargs
 
-    def load(self, flask_app, submission_manager, config):
+    def load(self, flask_app, config):
         """ Loads the plugin manager. Must be done after the initialisation of the client """
         self._flask_app = flask_app
-        self._submission_manager = submission_manager
         self._loaded = True
         for entry in config:
             module_name = entry["plugin_module"]
@@ -103,9 +101,6 @@ class PluginManager(object):
             raise PluginManagerNotLoadedException()
         user_manager.register_auth_method(auth_method)
 
-    def get_submission_manager(self):
-        """ Returns the submission manager"""
-        return self._submission_manager
 
 
     def add_template_prefix(self, prefix : str, folder : str):
