@@ -5,7 +5,7 @@
 {% block title %}{{ _("My profile") }}{% endblock %}
 
 {% block column %}
-{{ template_helper.call('preferences_menu',current='profile') | safe }}
+{% with current='profile' %}{% include 'preferences/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}
