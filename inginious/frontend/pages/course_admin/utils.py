@@ -329,30 +329,6 @@ def make_csv(data):
     return response
 
 
-def get_menu(course, current, renderer, plugin_manager, user_manager):
-    """ Returns the HTML of the menu used in the administration. ```current``` is the current page of section """
-    default_entries = []
-    if user_manager.has_admin_rights_on_course(course):
-        default_entries += [("settings", "<i class='fa fa-cogs fa-fw'></i>&nbsp; " + _("Course settings"))]
-
-    default_entries += [("stats", "<i class='fa fa-area-chart fa-fw'></i>&nbsp; " + _("Statistics")),
-                        ("students", "<i class='fa fa-user fa-fw'></i>&nbsp; " + _("User management"))]
-
-    if user_manager.has_admin_rights_on_course(course):
-        default_entries += [("tasks", "<i class='fa fa-tasks fa-fw'></i>&nbsp; " + _("Tasks"))]
-
-    default_entries += [("submissions", "<i class='fa fa-file-code-o fa-fw'></i>&nbsp; " + _("Submissions"))]
-
-    if user_manager.has_admin_rights_on_course(course):
-        default_entries += [("danger", "<i class='fa fa-bomb fa-fw'></i>&nbsp; " + _("Danger zone"))]
-
-    # Hook should return a tuple (link,name) where link is the relative link from the index of the course administration.
-    additional_entries = [entry for entry in plugin_manager.call_hook('course_admin_menu', course=course) if entry is not None]
-
-    return renderer("course_admin/menu.html", course=course,
-                    entries=default_entries + additional_entries, current=current)
-
-
 class CourseRedirectPage(INGIniousAdminPage):
     """ Redirect admins to /settings and tutors to /task """
 
