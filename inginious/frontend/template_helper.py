@@ -50,6 +50,8 @@ class TemplateHelper(object):
         :param tpl_kwargs: named args sent to the template
         :return: the rendered template, as a str
         """
+        env = self._get_jinja_renderer(template_folder)
+        env.globals.update(dict(self._plugin_manager.call_hook("template_helper")))
         return self._get_jinja_renderer(template_folder).get_template(path).render(**tpl_kwargs)
 
     @lru_cache(None)
@@ -68,7 +70,7 @@ class TemplateHelper(object):
         return env
 
     def call(self, name, **kwargs):
-        helpers = dict(list(self._base_helpers.items()) + self._plugin_manager.call_hook("template_helper"))
+        helpers = dict(list(self._base_helpers.items()))
         if helpers.get(name, None) is None:
             return ""
         else:
