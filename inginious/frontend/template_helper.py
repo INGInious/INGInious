@@ -19,8 +19,7 @@ class TemplateHelper(object):
         :param plugin_manager: an instance of a PluginManager
         :param use_minified: weither to use minified js/css or not. Use True in production, False in dev envs.
         """
-        self._base_helpers = {"header_hook": (lambda **kwargs: self._generic_hook('header_html', **kwargs)),
-                              "course_menu": (lambda **kwargs: self._generic_hook('course_menu', **kwargs)),
+        self._base_helpers = {"course_menu": (lambda **kwargs: self._generic_hook('course_menu', **kwargs)),
                               "submission_admin_menu": (lambda **kwargs: self._generic_hook('submission_admin_menu', **kwargs)),
                               "task_list_item": (lambda **kwargs: self._generic_hook('task_list_item', **kwargs)),
                               "task_menu": (lambda **kwargs: self._generic_hook('task_menu', **kwargs))}
