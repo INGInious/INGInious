@@ -114,8 +114,12 @@
         CodeMirror.modeURL = "{{get_homepath()}}/static/js/codemirror/mode/%N/%N.js";
     </script>
 
-    {{ template_helper.call('css') | safe }}
-    {{ template_helper.call('javascript_header') | safe }}
+    {% for entry in plugin_manager.call_hook("css") %}
+        <link href="{{ entry }}" rel='stylesheet'>
+    {% endfor %}
+    {% for entry in plugin_manager.call_hook("javascript_header") %}
+        <script src="{{ entry }}" type='text/javascript' charset='utf-8'></script>
+    {% endfor %}
     {{ template_helper.call('header_hook') | safe }}
     {% endblock %}
 </head>
@@ -213,7 +217,9 @@
 
     <!-- Placed at the end of the document so the pages load faster -->
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    {{ template_helper.call('javascript_footer') | safe }}
+    {% for entry in plugin_manager.call_hook("javascript_footer") %}
+        <script src="{{ entry }}" type='text/javascript' charset='utf-8'></script>
+    {% endfor %}
     <script>
         user_indentation_type = {{ available_indentation_types[user_manager.session_code_indentation()] | tojson }};
         dtf = new Intl.DateTimeFormat({{ user_manager.session_language() | tojson }}, {

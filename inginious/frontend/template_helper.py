@@ -25,14 +25,10 @@ class TemplateHelper(object):
                               "submission_admin_menu": (lambda **kwargs: self._generic_hook('submission_admin_menu', **kwargs)),
                               "task_list_item": (lambda **kwargs: self._generic_hook('task_list_item', **kwargs)),
                               "task_menu": (lambda **kwargs: self._generic_hook('task_menu', **kwargs)),
-                              "welcome_text": (lambda **kwargs: self._generic_hook('welcome_text', **kwargs)),
-                              "javascript_header": (lambda **_: self._javascript_helper("header")),
-                              "javascript_footer": (lambda **_: self._javascript_helper("footer")),
-                              "css": (lambda **_: self._css_helper())}
+                              "welcome_text": (lambda **kwargs: self._generic_hook('welcome_text', **kwargs))}
         self._plugin_manager = plugin_manager
         self._template_dir = 'frontend/templates'
         self._template_globals = {}
-        self._ctx = {"javascript": {"footer": [], "header": []}, "css": []}
 
         self.add_to_template_globals("template_helper", self)
         self.add_to_template_globals("plugin_manager", plugin_manager)
@@ -76,40 +72,9 @@ class TemplateHelper(object):
         else:
             return helpers[name](**kwargs)
 
-    def add_javascript(self, link, position="footer"):
-        """ Add a javascript file to load. Position can either be "header" or "footer" """
-        self._ctx["javascript"][position].append(link)
-
-    def add_css(self, link):
-        """ Add a css file to load """
-        self._ctx["css"].append(link)
-
     def add_other(self, name, func):
         """ Add another callback to the template helper """
         self._base_helpers[name] = func
-
-    def _javascript_helper(self, position):
-        """ Add javascript links for the current page and for the plugins """
-        if position not in ["header", "footer"]:
-            position = "footer"
-
-        # Load javascript files from plugins
-        if position == "header":
-            entries = [entry for entry in self._plugin_manager.call_hook("javascript_header") if entry is not None]
-        else:
-            entries = [entry for entry in self._plugin_manager.call_hook("javascript_footer") if entry is not None]
-        # Load javascript for the current page
-        entries += self._ctx["javascript"][position]
-        entries = ["<script src='" + entry + "' type='text/javascript' charset='utf-8'></script>" for entry in entries]
-        return "\n".join(entries)
-
-    def _css_helper(self):
-        """ Add CSS links for the current page and for the plugins """
-        entries = [entry for entry in self._plugin_manager.call_hook("css") if entry is not None]
-        # Load javascript for the current page
-        entries += self._ctx["css"]
-        entries = ["<link href='" + entry + "' rel='stylesheet'>" for entry in entries]
-        return "\n".join(entries)
 
     def _generic_hook(self, name, **kwargs):
         """ A generic hook that links the TemplateHelper with PluginManager """
