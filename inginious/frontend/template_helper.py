@@ -24,8 +24,7 @@ class TemplateHelper(object):
                               "course_menu": (lambda **kwargs: self._generic_hook('course_menu', **kwargs)),
                               "submission_admin_menu": (lambda **kwargs: self._generic_hook('submission_admin_menu', **kwargs)),
                               "task_list_item": (lambda **kwargs: self._generic_hook('task_list_item', **kwargs)),
-                              "task_menu": (lambda **kwargs: self._generic_hook('task_menu', **kwargs)),
-                              "welcome_text": (lambda **kwargs: self._generic_hook('welcome_text', **kwargs))}
+                              "task_menu": (lambda **kwargs: self._generic_hook('task_menu', **kwargs))}
         self._plugin_manager = plugin_manager
         self._template_dir = 'frontend/templates'
         self._template_globals = {}
