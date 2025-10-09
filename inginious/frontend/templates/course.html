@@ -9,7 +9,9 @@
 {% block title %}{{ course.get_name(user_manager.session_language()) }}{% endblock %}
 
 {% block column %}
-    {{ template_helper.call('course_menu', course=course, template_helper=template_helper) | safe }}
+    {% for entry in plugin_manager.call_hook('course_menu', course=course, template_helper=template_helper) %}
+        {{ entry | safe }}
+    {% endfor %}
     {% if registered or staff %}
         <h3>{{ _("Current grade") }}</h3>
         <div class="progress mb-3">
