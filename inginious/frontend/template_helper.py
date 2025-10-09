@@ -19,7 +19,6 @@ class TemplateHelper(object):
         :param plugin_manager: an instance of a PluginManager
         :param use_minified: weither to use minified js/css or not. Use True in production, False in dev envs.
         """
-        self._base_helpers = {}
         self._plugin_manager = plugin_manager
         self._template_dir = 'frontend/templates'
         self._template_globals = {}
@@ -58,19 +57,3 @@ class TemplateHelper(object):
         env.globals.update(self._template_globals)
 
         return env
-
-    def call(self, name, **kwargs):
-        helpers = dict(list(self._base_helpers.items()))
-        if helpers.get(name, None) is None:
-            return ""
-        else:
-            return helpers[name](**kwargs)
-
-    def add_other(self, name, func):
-        """ Add another callback to the template helper """
-        self._base_helpers[name] = func
-
-    def _generic_hook(self, name, **kwargs):
-        """ A generic hook that links the TemplateHelper with PluginManager """
-        entries = [entry for entry in self._plugin_manager.call_hook(name, **kwargs) if entry is not None]
-        return "\n".join(entries)
