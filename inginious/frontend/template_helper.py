@@ -4,32 +4,19 @@
 # more information about the licensing of this file.
 
 """ TemplateManager """
-import os
-from functools import lru_cache
-
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-import inginious
+from jinja2 import  FileSystemLoader
+from flask import current_app, render_template
+from inginious import get_root_path
 
 class TemplateHelper(object):
     """ Class accessible from templates that calls function defined in the Python part of the code. """
 
-    def __init__(self, plugin_manager, use_minified=True):
+    def __init__(self, plugin_manager):
         """
         Init the Template Helper
         :param plugin_manager: an instance of a PluginManager
-        :param use_minified: weither to use minified js/css or not. Use True in production, False in dev envs.
         """
         self._plugin_manager = plugin_manager
-        self._template_dir = 'frontend/templates'
-        self._template_globals = {}
-
-        self.add_to_template_globals("template_helper", self)
-        self.add_to_template_globals("plugin_manager", plugin_manager)
-        self.add_to_template_globals("use_minified", use_minified)
-
-    def add_to_template_globals(self, name, value):
-        """ Add a variable to will be accessible in the templates """
-        self._template_globals[name] = value
 
     def render(self, path, template_folder="", **tpl_kwargs):
         """
@@ -39,21 +26,9 @@ class TemplateHelper(object):
         :param tpl_kwargs: named args sent to the template
         :return: the rendered template, as a str
         """
-        env = self._get_jinja_renderer(template_folder)
-        env.globals.update(dict(self._plugin_manager.call_hook("template_helper")))
-        return self._get_jinja_renderer(template_folder).get_template(path).render(**tpl_kwargs)
-
-    @lru_cache(None)
-    def _get_jinja_renderer(self, template_folder=""):
-        # Always include the main template folder
-        template_folders = [os.path.join(inginious.get_root_path(), self._template_dir)]
-
         # Include the additional template folder if specified
         if template_folder:
-            template_folders += [os.path.join(inginious.get_root_path(), template_folder)]
+            current_app.jinja_loader = FileSystemLoader([get_root_path() + '/frontend/templates', template_folder])
 
-        env = Environment(loader=FileSystemLoader(template_folders),
-                          autoescape=select_autoescape(['html', 'htm', 'xml']))
-        env.globals.update(self._template_globals)
-
-        return env
+        current_app.jinja_env.globals.update(dict(self._plugin_manager.call_hook("template_helper")))
+        return render_template(path, **tpl_kwargs)
