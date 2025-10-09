@@ -120,7 +120,9 @@
     {% for entry in plugin_manager.call_hook("javascript_header") %}
         <script src="{{ entry }}" type='text/javascript' charset='utf-8'></script>
     {% endfor %}
-    {{ template_helper.call('header_hook') | safe }}
+    {% for entry in plugin_manager.call_hook('header_html') %}
+        {{ entry | safe }}
+    {% endfor %}
     {% endblock %}
 </head>
 
