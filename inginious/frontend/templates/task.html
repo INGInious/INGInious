@@ -171,7 +171,9 @@
         </div>
     {% endif %}
 
-    {{ template_helper.call('task_menu', course=course, task=task, template_helper=template_helper) | safe }}
+    {% for entry in plugin_manager.call_hook('task_menu', course=course, task=task, template_helper=template_helper) %}
+        {{ entry | safe }}
+    {% endfor %}
     {% if registered %}
         <h3> {{ _("For evaluation") }}</h3>
         <div class="list-group mb-3">
