@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-import datetime
+from datetime import datetime, timezone
 import glob
 import logging
 import os
@@ -18,6 +18,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
+from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
 
 
 class CourseDangerZonePage(INGIniousAdminPage):
@@ -41,81 +42,39 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self._logger.info("Course %s wiped.", courseid)
 
     def dump_course(self, courseid):
-        """ Create a zip file containing all information about a given course in database and then remove it from db"""
-        filepath = os.path.join(self.backup_dir, courseid, datetime.datetime.now().strftime("%Y%m%d.%H%M%S") + ".zip")
+        """
+            Creates a new course (Archive course), gives it a course id resulting of the concatenation of the original id
+            and the archiving date. This archive course is marked as archived and given an archive date in its YAML descriptor.
+            The original course keeps their course id and all related submissions, user_tasks, audiences, courses and
+            groups are updated to point to the archive course.
+        """
 
-        if not os.path.exists(os.path.dirname(filepath)):
-            os.makedirs(os.path.dirname(filepath))
+        course = self.course_factory.get_course(courseid)
+        course_fs = course.get_fs()
+        if course.is_archive():
+            raise CourseNotArchivable()
+        if not course_fs.exists():
+            raise CourseNotFoundException()
 
-        with zipfile.ZipFile(filepath, "w", allowZip64=True) as zipf:
-            course_obj = self.database.courses.find_one({"_id": courseid})
-            students = course_obj.get("students", []) if course_obj else []
-            zipf.writestr("students.json", bson.json_util.dumps(students), zipfile.ZIP_DEFLATED)
+        # Create archive course by duplicating it's folder in the FS
+        archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d.%H_%M_%S")
+        self.course_factory.get_fs().copy_to(course_fs.prefix, archive_course_id)
 
-            audiences = self.database.audiences.find({"courseid": courseid})
-            zipf.writestr("audiences.json", bson.json_util.dumps(audiences), zipfile.ZIP_DEFLATED)
+        # Create archive course entry in DB
+        old_course_students = self.database.courses.find_one({"_id": courseid})
+        self.database.courses.insert_one({"_id": archive_course_id,
+                                          "archived_from": courseid,
+                                          "archive_date": datetime.now(tz=timezone.utc),
+                                          "students": old_course_students.get("students", []) if old_course_students else []})
 
-            groups = self.database.groups.find({"courseid": courseid})
-            zipf.writestr("groups.json", bson.json_util.dumps(groups), zipfile.ZIP_DEFLATED)
+        # Update course id in DB
+        self.database.aware_submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
 
-            user_tasks = self.database.user_tasks.find({"courseid": courseid})
-            zipf.writestr("user_tasks.json", bson.json_util.dumps(user_tasks), zipfile.ZIP_DEFLATED)
+        self._logger.info("Course %s backed up.", courseid)
 
-            # Fetching input data  while looping on submissions can trigger a mongo cursor timeout
-            submissions = self.database.aware_submissions.find({"courseid": courseid}, no_cursor_timeout=True)
-            erroneous_subs = set()
-
-            for submission in submissions:
-                for key in ["input", "archive"]:
-                    gridfs = self.submission_manager.get_gridfs()
-                    if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                        if gridfs.exists(submission[key]):
-                            infile = gridfs.get(submission[key])
-                            zipf.writestr(key + "/" + str(submission[key]) + ".data", infile.read(), zipfile.ZIP_DEFLATED)
-                        else:
-                            self._logger.error("Missing {} in grifs, skipping submission {}".format(str(submission[key]), str(submission["_id"])))
-                            erroneous_subs.add(submission["_id"])
-
-            submissions.rewind()
-            submissions = [submission for submission in submissions if submission["_id"] not in erroneous_subs]
-            zipf.writestr("submissions.json", bson.json_util.dumps(submissions), zipfile.ZIP_DEFLATED)
-
-        self._logger.info("Course %s dumped to backup directory.", courseid)
-        self.wipe_course(courseid)
-
-    def restore_course(self, courseid, backup):
-        """ Restores a course of given courseid to a date specified in backup (format : YYYYMMDD.HHMMSS) """
-        self.wipe_course(courseid)
-
-        filepath = os.path.join(self.backup_dir, courseid, backup + ".zip")
-        with zipfile.ZipFile(filepath, "r") as zipf:
-
-            students = bson.json_util.loads(zipf.read("students.json").decode("utf-8"))
-            if len(students) > 0:
-                self.database.courses.update_one({"_id": courseid}, {"$set": {"students": students}}, upsert=True)
-
-            audiences = bson.json_util.loads(zipf.read("audiences.json").decode("utf-8"))
-            if len(audiences) > 0:
-                self.database.audiences.insert_many(audiences)
-
-            groups = bson.json_util.loads(zipf.read("groups.json").decode("utf-8"))
-            if len(groups) > 0:
-                self.database.groups.insert_many(groups)
-
-            user_tasks = bson.json_util.loads(zipf.read("user_tasks.json").decode("utf-8"))
-            if len(user_tasks) > 0:
-                self.database.user_tasks.insert_many(user_tasks)
-
-            submissions = bson.json_util.loads(zipf.read("submissions.json").decode("utf-8"))
-            for submission in submissions:
-                for key in ["input", "archive"]:
-                    if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                        submission[key] = self.submission_manager.get_gridfs().put(zipf.read(key + "/" + str(submission[key]) + ".data"))
-
-            if len(submissions) > 0:
-                self.database.aware_submissions.insert_many(submissions)
-
-        self._logger.info("Course %s restored from backup directory.", courseid)
 
     def delete_course(self, courseid):
         """ Erase all course data """
@@ -125,32 +84,24 @@ class CourseDangerZonePage(INGIniousAdminPage):
         # Deletes the course from the factory (entire folder)
         self.course_factory.delete_course(courseid)
 
-        # Removes backup
-        filepath = os.path.join(self.backup_dir, courseid)
-        if os.path.exists(os.path.dirname(filepath)):
-            for backup in glob.glob(os.path.join(filepath, '*.zip')):
-                os.remove(backup)
-
         self._logger.info("Course %s files erased.", courseid)
+
+    def remove_old_archive_links(self, course):
+        """ Remove all archive links in DB for a course that has been deleted manually """
+        archive_list_id = [archive["_id"] for archive in self.database.courses.find({"archived_from": course.get_id()})] \
+            if not course.is_archive() else []
+        courses_in_fs = self.course_factory.get_all_courses()
+        for archive_id in archive_list_id:
+            if archive_id not in courses_in_fs :
+                self.database.courses.delete_many({"_id": archive_id})
+                self._logger.info("Archive link for course %s removed from database.", archive_id)
+
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
-        data = flask.request.args
-
-        if "download" in data:
-            filepath = os.path.join(self.backup_dir, courseid, data["download"] + '.zip')
-
-            if not os.path.exists(os.path.dirname(filepath)):
-                raise NotFound(description=_("This file doesn't exist."))
-
-            response = Response(response=open(filepath, 'rb'), content_type='application/zip')
-            response.headers['Content-Disposition'] = 'attachment; filename="{}.zip"'.format(data["download"])
-            return response
-
-        else:
-            return self.page(course)
+        return self.page(course)
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ POST request """
@@ -174,18 +125,6 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 except Exception as ex:
                     msg = _("An error occurred while dumping course from database: {}").format(repr(ex))
                     error = True
-        elif "restore" in data:
-            if "backupdate" not in data:
-                msg = "No backup date selected."
-                error = True
-            else:
-                try:
-                    dt = datetime.datetime.strptime(data["backupdate"], "%Y%m%d.%H%M%S").astimezone()
-                    self.restore_course(courseid, data["backupdate"])
-                    msg = _("Course restored to date : <time datetime='{dt}'>{dt}</time>.").format(dt=dt.isoformat())
-                except Exception as ex:
-                    msg = _("An error occurred while restoring backup: {}").format(repr(ex))
-                    error = True
         elif "deleteall" in data:
             if not data.get("courseid", "") == courseid:
                 msg = _("Wrong course id.")
@@ -200,27 +139,20 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         return self.page(course, msg, error)
 
-    def get_backup_list(self, course):
-        backups = []
-
-        filepath = os.path.join(self.backup_dir, course.get_id())
-        if os.path.exists(os.path.dirname(filepath)):
-            for backup in glob.glob(os.path.join(filepath, '*.zip')):
-                try:
-                    basename = os.path.basename(backup)[0:-4]
-                    dt = datetime.datetime.strptime(basename, "%Y%m%d.%H%M%S").astimezone()
-                    backups.append({"file": basename, "date": dt})
-                except:  # Wrong format
-                    pass
-
-        return backups
 
     def page(self, course, msg="", error=False):
         """ Get all data and display the page """
         thehash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
         self.user_manager.set_session_token(thehash)
 
-        backups = self.get_backup_list(course)
+        self.remove_old_archive_links(course)
+
+        archive_list_id = [archive["_id"] for archive in self.database.courses.find({"archived_from": course.get_id()})] \
+            if not course.is_archive() else []
+        archives = [self.course_factory.get_course(archive_id) for archive_id in archive_list_id]
+
+        original_course_id = self.database.courses.find_one({"_id": course.get_id()}) if course.is_archive() else None
+        original_course = self.course_factory.get_course(original_course_id["archived_from"]) if  original_course_id else None
 
         return self.template_helper.render("course_admin/danger_zone.html", course=course, thehash=thehash,
-                                           backups=backups, msg=msg, error=error)
+                                           archives=archives, original_course=original_course, msg=msg, error=error)

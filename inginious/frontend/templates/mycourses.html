@@ -57,6 +57,8 @@
             <a href="{{ get_path('course', courseid) }}" class="list-group-item list-group-item-action
                 {% if course.is_lti() %}
                     list-group-item-info
+                {% elif course.is_archive() %}
+                    list-group-item-dark
                 {% elif not course.is_open_to_non_staff() %}
                     list-group-item-warning
                 {% endif %}">
@@ -68,6 +70,8 @@
                         <i class="pull-right">
                             {% if course.is_lti() %}
                                 {{ _("LTI course") }} -
+                            {% elif course.is_archive() %}
+                                {{ _("Archive") }} - {{show_time(course.get_archiving_date())}}
                             {% elif not course.is_open_to_non_staff() %}
                                 {{ _("Hidden course") }} -
                             {% endif %}
