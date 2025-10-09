@@ -115,11 +115,21 @@
             <div class="form-group">
                 <input class="form-control" id="course_search" type="text" placeholder="Search a course by its name">
             </div>
+            <div class="form_group" id="course_filters">
+                <div >
+
+                    <button type="button" id="is_archive" class="btn btn-light course_filter" data-value="null">Archive</button>
+                    <button type="button" id="is_lti" class="btn btn-light course_filter" data-value="null">LTI</button>
+                    <button type="button" id="is_hidden" class="btn btn-light course_filter" data-value="null">Hidden</button>
+                    <button type="button" id="is_pinned" class="btn btn-light course_filter" data-value="null">Pinned</button>
+                </div>
+            </div>
+            <hr>
             <div class="course_list list-group">
                 {%if open_courses %}
                     {% set username = user_manager.session_username() %}
                     {% for courseid, course in open_courses.items() %}
-                        <a href="{{ get_path('course', courseid) }}" class="list-group-item list-group-item-action
+                        <a href="{{ get_path('course', courseid) }}" course_id="{{courseid}}" class="course_item list-group-item list-group-item-action
                             {% if course.is_lti() %}
                                 list-group-item-info
                             {% elif course.is_archive() %}
@@ -208,10 +218,64 @@
     });
 
     $(document).on("keyup", "#course_search", function() {
-    console.log("filtering");
         var value = $(this).val().toLowerCase();
         $(".course_list a").filter(function() {
             $(this).toggle($(this).find(".course_name").text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+
+    $(document).on("click", ".course_filter", function() {
+        // change button color
+        classes = ["btn-light", "btn-success", "btn-danger"];
+        old_class = $(this).attr("class").split(' ').filter(element => classes.includes(element));
+
+        if (old_class == "btn-light") {
+            $(this).removeClass("btn-light");
+            $(this).addClass("btn-success");
+            $(this).data("value", "true");
+        } else if (old_class == "btn-success") {
+            $(this).removeClass("btn-success");
+            $(this).addClass("btn-danger");
+            $(this).data("value", "false");
+        } else if (old_class == "btn-danger") {
+            $(this).removeClass("btn-danger");
+            $(this).addClass("btn-light");
+            $(this).data("value", "null");
+        }
+    });
+
+
+    $(document).on("click", ".course_filter", function() {
+        // filter
+        var filter_values = Object({"is_archive": null, "is_lti": null, "is_hidden": null, "is_exam": null, "is_pinned": null});
+        $(".course_filter").each(function() {
+            filter_values[$(this).attr("id")] = eval($(this).data("value"));
+        });
+
+        var filtered_courses = [];
+
+        {% for courseid, course in open_courses.items() %}
+            filtered_courses.push("{{courseid}}");
+            var course_values = Object({"is_archive": eval({{ 'true' if course.is_archive() else 'false' }}),
+                                         "is_lti": eval({{ 'true' if course.is_lti() else 'false' }}),
+                                         "is_hidden": eval({{ 'true' if not course.is_open_to_non_staff() else 'false' }}),
+                                         "is_pinned": eval({{ 'true' if courseid in pinned_courses else 'false' }})
+                                         });
+
+            for (filter of Object.keys(course_values)) {
+                if (filter_values[filter] === null) {
+                    continue;
+                }
+                else if (filter_values[filter] !== course_values[filter]) {
+                    filtered_courses.pop();
+                    break;
+                }
+            }
+        {% endfor %}
+
+        // show/hide courses
+        $(".course_list .course_item").filter(function() {
+            $(this).toggle($.inArray($(this).attr("course_id"), filtered_courses) > -1)
         });
     });
 </script>
