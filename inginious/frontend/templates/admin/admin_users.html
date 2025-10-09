@@ -4,7 +4,9 @@
 {% extends "layout.html" %}
 {% block title %}{{_("Users Administration") }}{% endblock %}
 {% block column %}
-    {{ template_helper.call('main_menu', template_helper=template_helper) | safe }}
+    {% for entry in plugin_manager.call_hook('main_menu', template_helper=template_helper) %}
+        {{ entry }}
+    {% endfor %}
 {% endblock %}
 {% block navbar %}
     <nav aria-label="breadcrumb">

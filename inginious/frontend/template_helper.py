@@ -20,7 +20,6 @@ class TemplateHelper(object):
         :param use_minified: weither to use minified js/css or not. Use True in production, False in dev envs.
         """
         self._base_helpers = {"header_hook": (lambda **kwargs: self._generic_hook('header_html', **kwargs)),
-                              "main_menu": (lambda **kwargs: self._generic_hook('main_menu', **kwargs)),
                               "course_menu": (lambda **kwargs: self._generic_hook('course_menu', **kwargs)),
                               "submission_admin_menu": (lambda **kwargs: self._generic_hook('submission_admin_menu', **kwargs)),
                               "task_list_item": (lambda **kwargs: self._generic_hook('task_list_item', **kwargs)),
