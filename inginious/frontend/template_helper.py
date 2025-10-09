@@ -19,7 +19,7 @@ class TemplateHelper(object):
         :param plugin_manager: an instance of a PluginManager
         :param use_minified: weither to use minified js/css or not. Use True in production, False in dev envs.
         """
-        self._base_helpers = {"task_menu": (lambda **kwargs: self._generic_hook('task_menu', **kwargs))}
+        self._base_helpers = {}
         self._plugin_manager = plugin_manager
         self._template_dir = 'frontend/templates'
         self._template_globals = {}
