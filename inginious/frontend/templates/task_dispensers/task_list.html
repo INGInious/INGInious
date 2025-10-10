@@ -44,7 +44,7 @@
                                         {% if completion.is_integer() %}{{ completion | int }}{% else %}{{ completion }}{% endif %} %
                                     </div>
                                 </div>
-                                {% for entry in plugin_manager.call_hook('task_list_item', course=course, task=task, tasks_data=tasks_data, template_helper=template_helper) %}
+                                {% for entry in plugin_manager.call_hook('task_list_item', course=course, task=task, tasks_data=tasks_data) %}
                                     {{ entry | safe }}
                                 {% endfor %}
                             {% endif %}
