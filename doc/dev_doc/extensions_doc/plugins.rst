@@ -100,14 +100,12 @@ Each hook available in INGInious is described here, starting with its name and p
     Used to add links to the administration menu. This hook should return a tuple (link,name) 
     where link is the relative link from the index of the course administration.
     You can also return None.
-``submission_admin_menu`` (``course``, ``task``, ``submission`` ``template_helper``)
+``submission_admin_menu`` (``course``, ``task``, ``submission``)
     ``course`` : :ref:`inginious.frontend.courses.Course`
     
     ``task`` : :ref:`inginious.frontend.tasks.Task`
 
     ``submission`` : OrderedDict
-
-    ``template_helper`` : :ref:`inginious.frontend.template_helper.TemplateHelper`
 
     Returns : HTML or None.
 
@@ -115,15 +113,12 @@ Each hook available in INGInious is described here, starting with its name and p
     ``course`` is the course the submission was made for.
     ``task`` is the task the submission was made for.
     ``submission`` is the submission's data.
-    ``template_helper`` is an object of type TemplateHelper, that can be useful to render templates.
-``task_list_item`` (``course``, ``task``, ``tasks_data`` ``template_helper``)
+``task_list_item`` (``course``, ``task``, ``tasks_data``)
     ``course`` : :ref:`inginious.frontend.courses.Course`
     
     ``task`` : :ref:`inginious.frontend.tasks.Task`
 
     ``tasks_data`` : dict
-
-    ``template_helper`` : :ref:`inginious.frontend.template_helper.TemplateHelper`
 
     Returns : HTML or None.
 
@@ -133,34 +128,25 @@ Each hook available in INGInious is described here, starting with its name and p
     ``course`` is the course the submission was made for.
     ``task`` is the task the submission was made for.
     ``tasks_data`` is a dictionary used by INGInious which contains the grade and completion status of each of the course's tasks for the visiting user.
-    ``template_helper`` is an object of type TemplateHelper, that can be useful to render templates.
-``main_menu`` (``template_helper``)
-    ``template_helper`` : :ref:`inginious.frontend.template_helper.TemplateHelper`
-
+``main_menu`` ()
     Returns : HTML or None.
 
-    Allows to add HTML to the menu displayed on the main (course list) page. ``template_helper`` is an object
-    of type TemplateHelper, that can be useful to render templates.
-``course_menu`` (``course``, ``template_helper``)
+    Allows to add HTML to the menu displayed on the main (course list) page.
+``course_menu`` (``course``)
     ``course`` : :ref:`inginious.frontend.courses.Course`
 
-    ``template_helper`` : :ref:`inginious.frontend.template_helper.TemplateHelper`
-
     Returns : HTML or None.
 
-    Allows to add HTML to the menu displayed on the course page. Course is the course object related to the page. ``template_helper`` is an object
-    of type TemplateHelper, that can be useful to render templates.
-``task_menu`` (``course``, ``task``, ``template_helper``)
+    Allows to add HTML to the menu displayed on the course page. Course is the course object related to the page.
+``task_menu`` (``course``, ``task``)
     ``course`` : :ref:`inginious.frontend.courses.Course`
 
     ``task`` : :ref:`inginious.frontend.tasks.Task`
 
-    ``template_helper`` : :ref:`inginious.frontend.template_helper.TemplateHelper`
-
     Returns: HTML or None.
 
     Allows to add HTML to the menu displayed on the course page. ``course`` is the course object related to the page. ``task``
-    is the task object related to the page. ``template_helper`` is an object of type TemplateHelper, that can be useful to render templates.
+    is the task object related to the page.
 ``javascript_header``
     Returns : List of path to Javascript files.
 
@@ -235,8 +221,8 @@ Each hook available in INGInious is described here, starting with its name and p
 ``template_helper`` ()
     Returns : Tuple (name,func)
 
-    Adds a new helper to the instance of TemplateHelper. Should return a tuple (name,func) where name is the name that will
-    be indicated when calling the TemplateHelper.call method, and func is the function that will be called.
+    Adds a new helper to the Jinja global environment. Should return a tuple (name,func) where name is the name that will
+    be used in Jinja templates and func is the function that will be called.
 ``feedback_text`` (``task``, ``submission``, ``text``)
     Returns : {"task": ``task``, "submission": ``submission``, "text": ``modified_text``}
 
@@ -249,17 +235,14 @@ Each hook available in INGInious is described here, starting with its name and p
     This hook is called each time a submission is displayed. Pay attention to output correct javascript, as it may
     break the webpage.
 
-``task_editor_tab`` (``course``, ``taskid``, ``task_data``, ``template_helper``)
+``task_editor_tab`` (``course``, ``taskid``, ``task_data``)
     ``course`` : inginious.frontend.courses.Course
 
     ``task_data`` : OrderedDict
     
-    ``template_helper`` : inginious.frontend.template_helper.TemplateHelper
-    
     This hook allows to add additional tabs on the task editor.
     
-    ``course`` is the course object related to task, ``task_data`` is the task descriptor content and ``template_helper`` is an
-    object of type TemplateHelper, that can be useful to render templates such as tab content.
+    ``course`` is the course object related to task, ``task_data`` is the task descriptor content.
 
 ``task_editor_submit`` (``course``, ``taskid``, ``task_data``, ``task_fs``)
     ``course`` : inginious.frontend.courses.Course
@@ -317,15 +300,13 @@ and implementing the following abstract methods:
 
   - ``get_type_name(cls, language)`` returning a human-readable transleted string representing the problem type.
     ``language`` is the gettext 2-letter language code.
-  - ``get_renderer(cls, template_helper)`` returning the template renderer used for the subproblem. ``template_helper``
-    is the webapp ``TemplateHelper`` singleton. It can be used to specify a local template folder.
-  - ``show_input(self, template_helper, language, seed)`` returning a HTML code displayed after the subproblem context to the
-    student. ``template_helper`` is the webapp ``TemplateHelper`` singleton. ``language`` is the gettext 2-letter language
+  - ``show_input(self, language, seed)`` returning a HTML code displayed after the subproblem context to the
+    student. ``language`` is the gettext 2-letter language
     code. ``seed`` is a seed to be used in the random number generator. For simplicity, it should be a string and the usage
     of the username is recommended, as the seed is made to ensure that a user always see the same exercise.
     Classes inheriting from DisplayableProblem should prepend/append a salt to the seed and then create a new
     instance of Random from it. See ``inginious.frontend.tasks_problems.DisplayableMultipleChoiceProblem``
     for an example.
-  - ``show_editbox(cls, template_helper, key, language)`` returning a HTML code corresponding to the subproblem edition box.
-    ``language`` is the gettext 2-letter language code. ``template_helper`` is the webapp ``TemplateHelper`` singleton.
+  - ``show_editbox(cls, key, language)`` returning a HTML code corresponding to the subproblem edition box.
+    ``language`` is the gettext 2-letter language code.
     ``key`` is the problem type sent by the frontend.
