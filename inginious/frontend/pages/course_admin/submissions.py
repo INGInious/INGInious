@@ -5,9 +5,8 @@
 import json
 import logging
 import pymongo
-import flask
 from bson import ObjectId
-from flask import Response
+from flask import request, Response, render_template
 from werkzeug.exceptions import NotFound, Forbidden
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
@@ -22,11 +21,11 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         course, __ = self.get_course_and_check_rights(courseid)
         msgs = []
 
-        user_input = flask.request.form.copy()
-        user_input["users"] = flask.request.form.getlist("users")
-        user_input["audiences"] = flask.request.form.getlist("audiences")
-        user_input["tasks"] = flask.request.form.getlist("tasks")
-        user_input["org_categories"] = flask.request.form.getlist("org_categories")
+        user_input = request.form.copy()
+        user_input["users"] = request.form.getlist("users")
+        user_input["audiences"] = request.form.getlist("audiences")
+        user_input["tasks"] = request.form.getlist("tasks")
+        user_input["org_categories"] = request.form.getlist("org_categories")
 
         if "replay_submission" in user_input:
             # Replay a unique submission
@@ -87,11 +86,11 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
 
-        user_input = flask.request.args.copy()
-        user_input["users"] = flask.request.args.getlist("users")
-        user_input["audiences"] = flask.request.args.getlist("audiences")
-        user_input["tasks"] = flask.request.args.getlist("tasks")
-        user_input["org_categories"] = flask.request.args.getlist("org_categories")
+        user_input = request.args.copy()
+        user_input["users"] = request.args.getlist("users")
+        user_input["audiences"] = request.args.getlist("audiences")
+        user_input["tasks"] = request.args.getlist("tasks")
+        user_input["org_categories"] = request.args.getlist("org_categories")
 
         if "download_submission" in user_input:
             submission = self.database.submissions.find_one({"_id": ObjectId(user_input["download_submission"]),
@@ -119,7 +118,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
         data, sub_count, pages = self.submissions_from_user_input(course, params, msgs, page, limit)
 
-        return self.template_helper.render("course_admin/submissions.html", course=course, users=users,
+        return render_template("course_admin/submissions.html", course=course, users=users,
                                            tutored_users=tutored_users, audiences=audiences,
                                            tutored_audiences=tutored_audiences, tasks=tasks, old_params=params,
                                            data=data, displayed_selection=json.dumps(params),

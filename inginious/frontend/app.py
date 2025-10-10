@@ -8,6 +8,7 @@ import builtins
 import os
 import sys
 import flask
+import jinja2
 import pymongo
 import oauthlib
 import gettext
@@ -24,7 +25,6 @@ from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
-from inginious.frontend.template_helper import TemplateHelper
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.l10n_manager import L10nManager
 from inginious import get_root_path, __version__, DB_VERSION
@@ -206,7 +206,6 @@ def get_app(config):
                             "1.3": LTIGradeManager(database, user_manager, course_factory)}
 
     submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
-    template_helper = TemplateHelper(plugin_manager)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
@@ -238,9 +237,9 @@ def get_app(config):
     mail.init_app(flask_app)
 
     # Add some helpers for the templates
+    flask_app.jinja_loader = jinja2.ChoiceLoader([flask_app.jinja_loader, jinja2.PrefixLoader({})])
     flask_app.jinja_env.globals["_"] = _
     flask_app.jinja_env.globals["str"] = str
-    flask_app.jinja_env.globals["template_helper"] = template_helper
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
     flask_app.jinja_env.globals["use_minified"] = config.get('use_minified_js', True)
     flask_app.jinja_env.globals["available_languages"] = available_languages
@@ -257,14 +256,18 @@ def get_app(config):
     flask_app.jinja_env.globals["is_tos_defined"] = is_tos_defined
     flask_app.jinja_env.globals["privacy_page"] = config.get("privacy_page", None)
 
+    @flask_app.context_processor
+    def context_processor():
+        return dict(plugin_manager.call_hook("template_helper"))
+
     # Not found page
     def flask_not_found(e):
-        return template_helper.render("notfound.html", message=e.description), 404
+        return flask.render_template("notfound.html", message=e.description), 404
     flask_app.register_error_handler(404, flask_not_found)
 
     # Forbidden page
     def flask_forbidden(e):
-        return template_helper.render("forbidden.html", message=e.description), 403
+        return flask.render_template("forbidden.html", message=e.description), 403
     flask_app.register_error_handler(403, flask_forbidden)
 
     # Enable debug mode if needed
@@ -273,7 +276,7 @@ def get_app(config):
     oauthlib.set_debug(web_debug)
 
     def flask_internalerror(e):
-        return template_helper.render("internalerror.html", message=e.description), 500
+        return flask.render_template("internalerror.html", message=e.description), 500
     flask_app.register_error_handler(InternalServerError, flask_internalerror)
 
     # Insert the needed singletons into the application, to allow pages to call them
@@ -284,7 +287,6 @@ def get_app(config):
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.l10n_manager = l10n_manager
-    flask_app.template_helper = template_helper
     flask_app.database = database
     flask_app.gridfs = gridfs
     flask_app.client = client

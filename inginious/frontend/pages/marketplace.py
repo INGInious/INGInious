@@ -5,8 +5,7 @@
 
 """ Course page """
 import sys
-import flask
-from flask import redirect
+from flask import request, redirect, render_template
 from werkzeug.exceptions import Forbidden
 
 from inginious.common.base import id_checker
@@ -38,7 +37,7 @@ class MarketplacePage(INGIniousAuthPage):
         if not self.user_manager.user_is_superadmin():
             raise Forbidden(description=_("You're not allowed to do that"))
 
-        user_input = flask.request.form
+        user_input = request.form
         errors = []
         if "new_courseid" in user_input:
             new_courseid = user_input["new_courseid"]
@@ -58,7 +57,7 @@ class MarketplacePage(INGIniousAuthPage):
         if errors is None:
             errors = []
         courses = get_all_marketplace_courses()
-        return self.template_helper.render("marketplace.html", courses=courses, errors=errors)
+        return render_template("marketplace.html", courses=courses, errors=errors)
 
 
 def import_course(course, new_courseid, username, course_factory):

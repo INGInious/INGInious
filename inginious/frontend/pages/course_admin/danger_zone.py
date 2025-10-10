@@ -11,8 +11,7 @@ import random
 import zipfile
 
 import bson.json_util
-import flask
-from flask import redirect, Response
+from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import NotFound
 
 
@@ -137,7 +136,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
-        data = flask.request.args
+        data = request.args
 
         if "download" in data:
             filepath = os.path.join(self.backup_dir, courseid, data["download"] + '.zip')
@@ -159,7 +158,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         msg = ""
         error = False
 
-        data = flask.request.form
+        data = request.form
         if not data.get("token", "") == self.user_manager.session_token():
             msg = _("Operation aborted due to invalid token.")
             error = True
@@ -222,5 +221,5 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         backups = self.get_backup_list(course)
 
-        return self.template_helper.render("course_admin/danger_zone.html", course=course, thehash=thehash,
+        return render_template("course_admin/danger_zone.html", course=course, thehash=thehash,
                                            backups=backups, msg=msg, error=error)

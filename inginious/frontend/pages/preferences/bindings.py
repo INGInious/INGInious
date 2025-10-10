@@ -4,8 +4,7 @@
 # more information about the licensing of this file.
 
 """ Auth bindings page """
-import flask
-from flask import redirect
+from flask import request, redirect, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
@@ -18,7 +17,7 @@ class BindingsPage(INGIniousAuthPage):
         auth_methods = self.user_manager.get_auth_methods()
         user_data = self.user_manager.get_user_info(self.user_manager.session_username())
         bindings = user_data.bindings
-        return self.template_helper.render("preferences/bindings.html", bindings=bindings,
+        return render_template("preferences/bindings.html", bindings=bindings,
                                            auth_methods=auth_methods, msg="", error=False)
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
@@ -31,7 +30,7 @@ class BindingsPage(INGIniousAuthPage):
         if not user_data:
             raise self.app.notfound(message=_("User doesn't exist."))
 
-        user_input = flask.request.form
+        user_input = request.form
         auth_methods = self.user_manager.get_auth_methods()
 
         if "auth_binding" in user_input:
@@ -48,5 +47,5 @@ class BindingsPage(INGIniousAuthPage):
 
         bindings = user_data.get("bindings", {})
 
-        return self.template_helper.render("preferences/bindings.html", bindings=bindings,
+        return render_template("preferences/bindings.html", bindings=bindings,
                                            auth_methods=auth_methods, msg=msg, error=error)

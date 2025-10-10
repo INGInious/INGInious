@@ -4,8 +4,9 @@
 # more information about the licensing of this file.
 
 """ Index page """
-import flask
 from collections import OrderedDict
+
+from flask import request, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
@@ -20,7 +21,7 @@ class MyCoursesPage(INGIniousAuthPage):
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ Parse course registration or course creation and display the course list page """
 
-        user_input = flask.request.form
+        user_input = request.form
         success = None
 
         if "new_courseid" in user_input and self.user_manager.user_is_superadmin():
@@ -61,7 +62,7 @@ class MyCoursesPage(INGIniousAuthPage):
 
         registerable_courses = OrderedDict(sorted(iter(registerable_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
 
-        return self.template_helper.render("mycourses.html",
+        return render_template("mycourses.html",
                                            open_courses=open_courses,
                                            registrable_courses=registerable_courses,
                                            submissions=except_free_last_submissions,
