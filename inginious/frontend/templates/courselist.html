@@ -17,7 +17,7 @@
                 {{ _("My courses") }}
             </a>
         </div>
-        {% for entry in plugin_manager.call_hook('main_menu', template_helper=template_helper) %}
+        {% for entry in plugin_manager.call_hook('main_menu') %}
             {{ entry }}
         {% endfor %}
     {% endif %}

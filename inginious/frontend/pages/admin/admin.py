@@ -5,7 +5,7 @@
 
 """ Admin index page"""
 
-from flask import request, jsonify
+from flask import request, jsonify, render_template
 
 from inginious.frontend.pages.utils import INGIniousAdministratorPage
 
@@ -30,7 +30,7 @@ class AdministrationUsersPage(INGIniousAdministratorPage):
         size_users = self.user_manager.get_users_count()
         pages = size_users // user_per_page + (size_users % user_per_page > 0) if user_per_page > 0 else 1
 
-        return self.template_helper.render("admin/admin_users.html", all_users=all_users,
+        return render_template("admin/admin_users.html", all_users=all_users,
                                            number_of_pages=pages, page_number=page)
 
 

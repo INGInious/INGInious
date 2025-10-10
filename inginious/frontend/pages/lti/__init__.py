@@ -5,7 +5,7 @@
 
 """ LTI """
 
-from flask import redirect, request
+from flask import redirect, request, render_template
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
@@ -56,7 +56,7 @@ class LTIBindPage(INGIniousAuthPage):
     def _get_lti_session_data(self):
         data = self.database.lti_sessions.find_one({'session_id': request.args['lti_session_id']}) if 'lti_session_id' in request.args else None
         if data is None or data.get("lti", None) is None:
-            return None, self.template_helper.render("lti/bind.html", success=False,
+            return None, render_template("lti/bind.html", success=False,
                                                      data=None, error=_("Invalid LTI session id"))
         return data.get("lti"), None
 
@@ -64,7 +64,7 @@ class LTIBindPage(INGIniousAuthPage):
         data, error = self._get_lti_session_data()
         if error:
             return error
-        return self.template_helper.render("lti/bind.html", success=False, data=data, error="")
+        return render_template("lti/bind.html", success=False, data=data, error="")
 
     def POST_AUTH(self):
         data, error = self._get_lti_session_data()
@@ -76,7 +76,7 @@ class LTIBindPage(INGIniousAuthPage):
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:
-            return self.template_helper.render("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
+            return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
 
         if data:
             user_profile = self.database.users.find_one({"username": self.user_manager.session_username()})
@@ -95,10 +95,10 @@ class LTIBindPage(INGIniousAuthPage):
                                  data["task"][0],
                                  data[self._field],
                                  user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(data[self._field], ""))
-                return self.template_helper.render("lti/bind.html", lti_version=self._lti_version, success=False,
+                return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                    data=data, error=_("Your account is already bound with this context."))
 
-        return self.template_helper.render("lti/bind.html", lti_version=self._lti_version, success=True, data=data, error="")
+        return render_template("lti/bind.html", lti_version=self._lti_version, success=True, data=data, error="")
 
 
 class LTILoginPage(INGIniousPage):
@@ -123,7 +123,7 @@ class LTILoginPage(INGIniousPage):
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:
-            return self.template_helper.render("lti/bind.html", lti_version=self._lti_version, success=False,
+            return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                session_id="", data=None, error="Invalid LTI data")
 
         user_profile = self.database.users.find_one({"ltibindings." + data["task"][0] + "." + data[self._field]: data["username"]})
@@ -133,7 +133,7 @@ class LTILoginPage(INGIniousPage):
         if self.user_manager.session_logged_in():
             return redirect(self.app.get_path("lti", "task"))
 
-        return self.template_helper.render("lti/login.html", lti_version=self._lti_version)
+        return render_template("lti/login.html", lti_version=self._lti_version)
 
     def POST(self):
         """

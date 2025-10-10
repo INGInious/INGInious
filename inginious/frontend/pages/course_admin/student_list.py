@@ -8,11 +8,10 @@ import json
 
 import yaml
 
-import flask
 from collections import OrderedDict
 from bson import ObjectId
 from pymongo import ReturnDocument
-from flask import Response
+from flask import Response, request, render_template
 from io import StringIO
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
@@ -24,9 +23,9 @@ class CourseStudentListPage(INGIniousAdminPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
-        if "preferred_field" in flask.request.args and flask.request.args["preferred_field"] in \
+        if "preferred_field" in request.args and request.args["preferred_field"] in \
                 ['username', 'email']:
-            preferred_field = flask.request.args["preferred_field"]
+            preferred_field = request.args["preferred_field"]
             audiences = []
             si = StringIO()
             cw = csv.writer(si)
@@ -43,7 +42,7 @@ class CourseStudentListPage(INGIniousAdminPage):
             response.headers['Content-Disposition'] = 'attachment; filename="audiences.csv"'
             return response
 
-        if "download_groups" in flask.request.args:
+        if "download_groups" in request.args:
             groups = [{"description": group["description"],
                        "students": group["students"],
                        "size": group["size"],
@@ -53,15 +52,15 @@ class CourseStudentListPage(INGIniousAdminPage):
             response.headers['Content-Disposition'] = 'attachment; filename="groups.yaml"'
             return response
 
-        return self.page(course, active_tab="tab_audiences" if "audiences" in flask.request.args else "tab_students")
+        return self.page(course, active_tab="tab_audiences" if "audiences" in request.args else "tab_students")
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ POST request """
         course, __ = self.get_course_and_check_rights(courseid, None, True)
-        data = flask.request.form.copy()
-        data["delete"] = flask.request.form.getlist("delete")
-        data["groupfile"] = flask.request.files.get("groupfile")
-        data["audiencefile"] = flask.request.files.get("audiencefile")
+        data = request.form.copy()
+        data["delete"] = request.form.getlist("delete")
+        data["groupfile"] = request.files.get("groupfile")
+        data["audiencefile"] = request.files.get("audiencefile")
         error = {}
         msg = {}
         active_tab = "tab_students"
@@ -92,12 +91,12 @@ class CourseStudentListPage(INGIniousAdminPage):
         groups = self.user_manager.get_course_groups(course)
         student_list, audience_list, other_students, users_info = self.get_user_lists(course)
 
-        if "csv_audiences" in flask.request.args:
+        if "csv_audiences" in request.args:
             return make_csv(audiences)
-        if "csv_student" in flask.request.args:
+        if "csv_student" in request.args:
             return make_csv(user_data)
 
-        return self.template_helper.render("course_admin/student_list.html", course=course,
+        return render_template("course_admin/student_list.html", course=course,
                                            user_data=list(user_data.values()), audiences=split_audiences,
                                            active_tab=active_tab, student_list=student_list,
                                            audience_list=audience_list,

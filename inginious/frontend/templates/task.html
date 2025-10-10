@@ -171,7 +171,7 @@
         </div>
     {% endif %}
 
-    {% for entry in plugin_manager.call_hook('task_menu', course=course, task=task, template_helper=template_helper) %}
+    {% for entry in plugin_manager.call_hook('task_menu', course=course, task=task) %}
         {{ entry | safe }}
     {% endfor %}
     {% if registered %}
@@ -376,7 +376,7 @@
                 </div>
             {% endif %}
             <div class="card-body">
-                {{ problem.show_input(template_helper, user_manager.session_language(), user_manager.session_username()) | safe }}
+                {{ problem.show_input(user_manager.session_language(), user_manager.session_username()) | safe }}
             </div>
         </div>
     {% endfor %}

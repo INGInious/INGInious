@@ -4,7 +4,7 @@
 {% extends "layout.html" %}
 {% block title %}{{_("Users Administration") }}{% endblock %}
 {% block column %}
-    {% for entry in plugin_manager.call_hook('main_menu', template_helper=template_helper) %}
+    {% for entry in plugin_manager.call_hook('main_menu') %}
         {{ entry }}
     {% endfor %}
 {% endblock %}

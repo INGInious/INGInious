@@ -7,8 +7,7 @@
 
 import json
 
-import flask
-from flask import redirect
+from flask import request, redirect, render_template
 from werkzeug.exceptions import NotFound
 from bson.objectid import ObjectId
 
@@ -49,7 +48,7 @@ class CourseEditAudience(INGIniousAdminPage):
             raise NotFound(description=_("This audience doesn't exist."))
 
         student_list, tutor_list, other_students, users_info = self.get_user_lists(course, audienceid)
-        return self.template_helper.render("course_admin/audience_edit.html", course=course, student_list=student_list,
+        return render_template("course_admin/audience_edit.html", course=course, student_list=student_list,
                                            tutor_list=tutor_list,other_students=other_students, users_info=users_info,
                                            audience=audience, msg=msg, error=error)
 
@@ -65,9 +64,9 @@ class CourseEditAudience(INGIniousAdminPage):
         msg=''
         error = False
 
-        data = flask.request.form.copy()
-        data["delete"] = flask.request.form.getlist("delete")
-        data["tutors"] = flask.request.form.getlist("tutors")
+        data = request.form.copy()
+        data["delete"] = request.form.getlist("delete")
+        data["tutors"] = request.form.getlist("tutors")
 
         if len(data["delete"]):
 

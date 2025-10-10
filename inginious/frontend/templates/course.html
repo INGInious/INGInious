@@ -9,7 +9,7 @@
 {% block title %}{{ course.get_name(user_manager.session_language()) }}{% endblock %}
 
 {% block column %}
-    {% for entry in plugin_manager.call_hook('course_menu', course=course, template_helper=template_helper) %}
+    {% for entry in plugin_manager.call_hook('course_menu', course=course) %}
         {{ entry | safe }}
     {% endfor %}
     {% if registered or staff %}
@@ -175,7 +175,7 @@ function filter_tag(tag) {
     }
 </style>
 
-{{ course.get_task_dispenser().render(template_helper, course, tasks_data, category_filter_list,user_manager.session_username()) | safe }}
+{{ course.get_task_dispenser().render(course, tasks_data, category_filter_list,user_manager.session_username()) | safe }}
 
 {% include "unregister_modal.html" %}
 
