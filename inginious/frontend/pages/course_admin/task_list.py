@@ -5,8 +5,9 @@
 import bson
 import json
 import logging
-import flask
 from collections import OrderedDict
+
+from flask import request, render_template
 from natsort import natsorted
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
@@ -25,7 +26,7 @@ class CourseTaskListPage(INGIniousAdminPage):
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
         errors = []
-        user_input = flask.request.form
+        user_input = request.form
         if "task_dispenser" in user_input:
             selected_task_dispenser = user_input.get("task_dispenser", "toc")
             task_dispenser_class = self.course_factory.get_task_dispensers().get(selected_task_dispenser, None)
@@ -130,7 +131,7 @@ class CourseTaskListPage(INGIniousAdminPage):
 
         task_dispensers = self.course_factory.get_task_dispensers()
 
-        return self.template_helper.render("course_admin/task_list.html", course=course,
+        return render_template("course_admin/task_list.html", course=course,
                                            task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,
                                            tasks_errors=tasks_errors, validated=validated, webdav_host=self.webdav_host)
 

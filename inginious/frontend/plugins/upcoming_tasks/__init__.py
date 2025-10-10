@@ -8,17 +8,16 @@
 import os
 from collections import OrderedDict
 from datetime import datetime, timedelta
-import flask
-from flask import send_from_directory
+from flask import request, send_from_directory, render_template
 
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
 
-def menu(template_helper):
+def menu():
     """ Displays the link to the board on the main page, if the plugin is activated """
-    return template_helper.render("main_menu.html", template_folder=PATH_TO_PLUGIN + '/templates/')
+    return render_template("upcoming_tasks/main_menu.html")
 
 
 class StaticMockPage(INGIniousPage):
@@ -40,7 +39,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
 
     def POST_AUTH(self):
         """ Called when modifying time planner """
-        user_input = flask.request.form
+        user_input = request.form
         time_planner = user_input.get("time_planner", default="unlimited")
         return self.page(time_planner)
 
@@ -110,8 +109,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
         # Sort the courses based on the most urgent task for each course
         open_courses = OrderedDict(sorted(list(open_courses.items()), key=lambda x: all_accessibilities[x[0]][list(sorted_tasks[x[0]].keys())[0]].get_soft_end_date()))
 
-        return self.template_helper.render("coming_tasks.html",
-                                           template_folder=PATH_TO_PLUGIN + "/templates/",
+        return render_template("upcoming_tasks/coming_tasks.html",
                                            open_courses=open_courses,
                                            tasks_data=tasks_data,
                                            sorted_tasks=sorted_tasks,
@@ -124,3 +122,4 @@ def init(plugin_manager, _, _2, config):
     plugin_manager.add_page('/coming_tasks', UpComingTasksBoard.as_view("upcomingtasksboardpage"))
     plugin_manager.add_page('/plugins/coming_tasks/static/<path:path>', StaticMockPage.as_view("upcomingtasksstaticmockpage"))
     plugin_manager.add_hook('main_menu', menu)
+    plugin_manager.add_template_prefix('upcoming_tasks', PATH_TO_PLUGIN + "/templates")

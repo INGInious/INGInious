@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+from flask import render_template
 from inginious.frontend.environment_types.env_type import FrontendEnvType
 
 
@@ -51,8 +52,8 @@ class GenericDockerOCIRuntime(FrontendEnvType):
 
         return out
 
-    def studio_env_template(self, templator, task, allow_html: bool):
-        return templator.render("course_admin/edit_tabs/env_generic_docker_oci.html", env_params=task.get("environment_parameters", {}),
+    def studio_env_template(self, task, allow_html: bool):
+        return render_template("course_admin/edit_tabs/env_generic_docker_oci.html", env_params=task.get("environment_parameters", {}),
                                 content_is_html=allow_html, env_id=self.id)
 
     def __init__(self, ssh_allowed=False):

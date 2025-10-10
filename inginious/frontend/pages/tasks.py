@@ -14,7 +14,7 @@ import random
 import time
 import flask
 
-from flask import redirect, Response
+from flask import redirect, Response, render_template
 from werkzeug.exceptions import NotFound, HTTPException
 from bson.objectid import ObjectId
 from pymongo import ReturnDocument
@@ -33,7 +33,6 @@ class BaseTaskPage(object):
         self.user_manager = self.cp.user_manager
         self.database = self.cp.database
         self.course_factory = self.cp.course_factory
-        self.template_helper = self.cp.template_helper
         self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
         self.default_max_file_size = self.cp.default_max_file_size
         self.webterm_link = self.cp.webterm_link
@@ -60,14 +59,14 @@ class BaseTaskPage(object):
             self.user_manager.course_register_user(course, force=True)
 
         if not self.user_manager.course_is_open_to_user(course, username, is_LTI):
-            return handle_course_unavailable(self.cp.app.get_path, self.template_helper, self.user_manager, course)
+            return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
 
         is_staff = self.user_manager.has_staff_rights_on_course(course, username)
 
         try:
             task = course.get_task(taskid)
             if not self.user_manager.task_is_visible_by_user(task, username, is_LTI):
-                return self.template_helper.render("task_unavailable.html")
+                return render_template("task_unavailable.html")
         except TaskNotFoundException:
             raise NotFound()
 
@@ -157,7 +156,7 @@ class BaseTaskPage(object):
             is_input_list = {problem.get_id():  1 if problem.input_type() == list else 0 for problem in task.get_problems()}
 
             # Display the task itself
-            return self.template_helper.render("task.html", user_info=user_info, course=course, task=task,
+            return render_template("task.html", user_info=user_info, course=course, task=task,
                                                submissions=submissions, students=students,
                                                eval_submission=eval_submission, user_task=user_task,
                                                previous_taskid=previous_taskid, next_taskid=next_taskid,
@@ -170,14 +169,14 @@ class BaseTaskPage(object):
 
         course = self.course_factory.get_course(courseid)
         if not self.user_manager.course_is_open_to_user(course, username, isLTI):
-            return handle_course_unavailable(self.cp.app.get_path, self.template_helper, self.user_manager, course)
+            return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
 
         is_staff = self.user_manager.has_staff_rights_on_course(course, username)
         is_admin = self.user_manager.has_admin_rights_on_course(course, username)
 
         task = course.get_task(taskid)
         if not self.user_manager.task_is_visible_by_user(task, username, isLTI):
-            return self.template_helper.render("task_unavailable.html")
+            return render_template("task_unavailable.html")
 
         self.user_manager.user_saw_task(username, courseid, taskid)
 
@@ -416,7 +415,7 @@ class TaskPageStaticDownload(INGIniousPage):
         try:
             course = self.course_factory.get_course(courseid)
             if not self.user_manager.course_is_open_to_user(course):
-                return handle_course_unavailable(self.cp.app.get_path, self.template_helper, self.user_manager, course)
+                return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
 
             path_norm = posixpath.normpath(urllib.parse.unquote(path))
 
@@ -426,7 +425,7 @@ class TaskPageStaticDownload(INGIniousPage):
 
                 task = course.get_task(taskid)
                 if not self.user_manager.task_is_visible_by_user(task):  # ignore LTI check here
-                    return self.template_helper.render("task_unavailable.html")
+                    return render_template("task_unavailable.html")
 
                 public_folder = task.get_fs().from_subfolder("public")
             (method, mimetype_or_none, file_or_url) = public_folder.distribute(path_norm, False)

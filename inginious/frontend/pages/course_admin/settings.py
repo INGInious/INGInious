@@ -6,6 +6,7 @@
 import re
 import json
 import flask
+from flask import render_template
 
 from pylti1p3.tool_config import ToolConfDict
 from jwcrypto.jwk import JWK
@@ -145,7 +146,7 @@ class CourseSettingsPage(INGIniousAdminPage):
 
     def page(self, course, errors=None, saved=False):
         """ Get all data and display the page """
-        return self.template_helper.render("course_admin/settings.html", course=course, errors=errors, saved=saved)
+        return render_template("course_admin/settings.html", course=course, errors=errors, saved=saved)
 
     def define_tags(self, course, data, course_content):
         tags = self.prepare_datas(data, "tags")

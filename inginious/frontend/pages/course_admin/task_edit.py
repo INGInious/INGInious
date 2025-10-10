@@ -12,7 +12,7 @@ import bson
 import flask
 from collections import OrderedDict
 from zipfile import ZipFile
-from flask import redirect
+from flask import render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.tasks import _migrate_from_v_0_6
@@ -54,9 +54,9 @@ class CourseEditTask(INGIniousAdminPage):
         available_filetypes = self.task_factory.get_available_task_file_extensions()
 
         additional_tabs = self.plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
-                                                        task_data=task_data, template_helper=self.template_helper)
+                                                        task_data=task_data)
 
-        return self.template_helper.render("course_admin/task_edit.html", course=course, taskid=taskid,
+        return render_template("course_admin/task_edit.html", course=course, taskid=taskid,
                                            problem_types=self.task_factory.get_problem_types(), task_data=task_data,
                                            environment_types=environment_types, environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),

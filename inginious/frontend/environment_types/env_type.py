@@ -23,6 +23,6 @@ class FrontendEnvType(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def studio_env_template(self, templator, task, allow_html: bool):
+    def studio_env_template(self, task, allow_html: bool):
         """ Return the HTML to be displayed inside the studio "environment" tab """
         pass
