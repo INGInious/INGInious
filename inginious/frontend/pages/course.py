@@ -5,13 +5,13 @@
 
 """ Course page """
 import flask
-from flask import redirect
+from flask import redirect, render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
-def handle_course_unavailable(get_path, template_helper, user_manager, course):
+def handle_course_unavailable(get_path, user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
     reason = user_manager.course_is_open_to_user(course, lti=False, return_reason=True)
     if reason == "unregistered_not_previewable":
@@ -19,7 +19,7 @@ def handle_course_unavailable(get_path, template_helper, user_manager, course):
         user_info = user_manager.get_user_info(username)
         if course.is_registration_possible(user_info):
             return redirect(get_path("register", course.get_id()))
-    return template_helper.render("course_unavailable.html", reason=reason)
+    return render_template("course_unavailable.html", reason=reason)
 
 
 class CoursePage(INGIniousAuthPage):
@@ -58,7 +58,7 @@ class CoursePage(INGIniousAuthPage):
         """ Prepares and shows the course page """
         username = self.user_manager.session_username()
         if not self.user_manager.course_is_open_to_user(course, lti=False):
-            return handle_course_unavailable(self.app.get_path, self.template_helper, self.user_manager, course)
+            return handle_course_unavailable(self.app.get_path, self.user_manager, course)
         else:
             tasks = course.get_tasks()
 
@@ -86,7 +86,7 @@ class CoursePage(INGIniousAuthPage):
             # Get user info
             user_info = self.user_manager.get_user_info(username)
 
-            return self.template_helper.render("course.html", user_info=user_info,
+            return render_template("course.html", user_info=user_info,
                                                course=course,
                                                submissions=last_submissions,
                                                tasks_data=tasks_data,

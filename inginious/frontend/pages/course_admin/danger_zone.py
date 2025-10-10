@@ -11,8 +11,7 @@ import random
 import zipfile
 
 import bson.json_util
-import flask
-from flask import redirect, Response
+from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import NotFound
 
 
@@ -92,7 +91,6 @@ class CourseDangerZonePage(INGIniousAdminPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
-
         return self.page(course)
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
@@ -102,7 +100,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         msg = ""
         error = False
 
-        data = flask.request.form
+        data = request.form
         if not data.get("token", "") == self.user_manager.session_token():
             msg = _("Operation aborted due to invalid token.")
             error = True
@@ -137,5 +135,6 @@ class CourseDangerZonePage(INGIniousAdminPage):
         thehash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
         self.user_manager.set_session_token(thehash)
 
-        return self.template_helper.render("course_admin/danger_zone.html", course=course, thehash=thehash,
-                                        msg=msg, error=error)
+
+        return render_template("course_admin/danger_zone.html", course=course, thehash=thehash,
+                               msg=msg, error=error)

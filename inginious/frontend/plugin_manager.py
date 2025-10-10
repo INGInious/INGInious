@@ -8,6 +8,9 @@ import importlib
 import logging
 import bisect
 
+from jinja2 import  FileSystemLoader
+
+from inginious.frontend.user_manager import AuthMethod
 from inginious.frontend.task_problems import get_displayable_problem_types
 from inginious.common.tasks_problems import get_problem_types
 
@@ -101,16 +104,10 @@ class PluginManager(object):
             raise PluginManagerNotLoadedException()
         self._task_factory.add_custom_task_file_manager(task_file_manager)
 
-    def register_auth_method(self, auth_method):
+    def register_auth_method(self, auth_method: AuthMethod):
         """
-            Register a new authentication method
-
-            name
-                the name of the authentication method, typically displayed by the webapp
-
-            input_to_display
-
-            Only available after that the Plugin Manager is loaded
+        Registers a new authentication method
+        :param auth_method: a AuthMethod-based class
         """
         if not self._loaded:
             raise PluginManagerNotLoadedException()
@@ -127,3 +124,11 @@ class PluginManager(object):
     def get_user_manager(self):
         """ Returns the user manager"""
         return self._user_manager
+
+    def add_template_prefix(self, prefix : str, folder : str):
+        """
+        Adds a template folder served for all templates prefixed by indicated prefix
+        :param prefix: prefix the template folder is served from.
+        :param folder: abolute path to the template folder.
+        """
+        self._flask_app.jinja_loader.loaders[1].mapping[prefix] = FileSystemLoader(folder)

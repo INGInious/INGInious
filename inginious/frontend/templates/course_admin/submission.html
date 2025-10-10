@@ -76,7 +76,7 @@
                     </button>
                 </div>
             {% endif %}
-            {% for entry in plugin_manager.call_hook('submission_admin_menu', course=course, task=task, submission=submission, template_helper=template_helper) %}
+            {% for entry in plugin_manager.call_hook('submission_admin_menu', course=course, task=task, submission=submission) %}
                 {{ entry | safe }}
             {% endfor %}
         </div>
@@ -132,7 +132,7 @@
         </div>
         <div class="card-body">
             {% if problem["id"] in task_problems %}
-                {{ task_problems[problem["id"]].show_input(template_helper, user_manager.session_language(), username) | safe }}
+                {{ task_problems[problem["id"]].show_input(user_manager.session_language(), username) | safe }}
             {% elif not problem["defined"] %}
                 <span class="text-warning">{{_("This problem id is not defined in the task.")}}</span>
             {% else %}

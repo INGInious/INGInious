@@ -3,16 +3,16 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 import copy
-import json
 from collections import OrderedDict
 
 from functools import reduce
 from operator import concat
+
+from flask import render_template
 from inginious.frontend.task_dispensers.util import check_toc, parse_tasks_config, check_task_config,\
     SectionsList, SectionConfigItem, GroupSubmission, Weight, SubmissionStorage, EvaluationMode, Categories, \
     SubmissionLimit, Accessibility
 from inginious.frontend.task_dispensers import TaskDispenser
-from inginious.frontend.accessible_time import AccessibleTime
 
 
 class TableOfContents(TaskDispenser):
@@ -106,20 +106,20 @@ class TableOfContents(TaskDispenser):
         """ Returns the task dispenser data structure """
         return self._toc
 
-    def render_edit(self, template_helper, course, task_data, task_errors):
+    def render_edit(self, course, task_data, task_errors):
         """ Returns the formatted task list edition form """
         config_fields = {
             "closed": SectionConfigItem(_("Closed by default"), "checkbox", False),
             "hidden_if_empty": SectionConfigItem(_("Hidden if empty"),"checkbox",False)
         }
-        return template_helper.render("course_admin/task_dispensers/toc.html", course=course,
+        return render_template("course_admin/task_dispensers/toc.html", course=course,
                                       course_structure=self._toc, tasks=task_data, task_errors=task_errors, 
                                       config_fields=config_fields, dispenser_config=self._task_config)
 
-    def render(self, template_helper, course, tasks_data, tag_list, username):
+    def render(self, course, tasks_data, tag_list, username):
         """ Returns the formatted task list"""
         accessibilities = course.get_task_dispenser().get_accessibilities(self._task_list_func(),[username])
-        return template_helper.render("task_dispensers/toc.html", course=course, tasks=self._task_list_func(),
+        return render_template("task_dispensers/toc.html", course=course, tasks=self._task_list_func(),
                                       tasks_data=tasks_data, tag_filter_list=tag_list, sections=self._toc,accessibilities=accessibilities)
 
     def check_dispenser_data(self, dispenser_data):

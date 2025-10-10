@@ -10,7 +10,7 @@ from typing import List, Dict
 
 import flask
 from gridfs import GridFS
-from flask import redirect, url_for
+from flask import redirect, render_template
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
@@ -20,7 +20,6 @@ from inginious.frontend.environment_types import get_all_env_types
 from inginious.frontend.environment_types.env_type import FrontendEnvType
 from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
-from inginious.frontend.template_helper import TemplateHelper
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
 from pymongo.database import Database
@@ -98,11 +97,6 @@ class INGIniousPage(MethodView):
         return self.app.user_manager
 
     @property
-    def template_helper(self) -> TemplateHelper:
-        """ Returns the Template Helper singleton """
-        return self.app.template_helper
-
-    @property
     def database(self) -> Database:
         """ Returns the database singleton """
         return self.app.database
@@ -178,7 +172,7 @@ class INGIniousAuthPage(INGIniousPage):
 
             if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
                 self.user_manager.disconnect_user()
-                return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
             return self.GET_AUTH(*args, **kwargs)
         elif self.preview_allowed(*args, **kwargs):
@@ -191,7 +185,7 @@ class INGIniousAuthPage(INGIniousPage):
             if "callbackerror" in flask.request.args:
                 error = _("Couldn't fetch the required information from the service. Please check the provided "
                           "permissions (name, email) and contact your INGInious administrator if the error persists.")
-            return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods(),
+            return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
                                                error=error)
 
     def POST(self, *args, **kwargs):
@@ -205,7 +199,7 @@ class INGIniousAuthPage(INGIniousPage):
 
             if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
                 self.user_manager.disconnect_user()
-                return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
             return self.POST_AUTH(*args, **kwargs)
         else:
@@ -214,12 +208,12 @@ class INGIniousAuthPage(INGIniousPage):
                 if self.user_manager.auth_user(user_input["login"].strip(), user_input["password"]) is not None:
                     return self.GET_AUTH(*args, **kwargs)
                 else:
-                    return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods(),
+                    return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
                                                        error=_("Invalid login/password"))
             elif self.preview_allowed(*args, **kwargs):
                 return self.POST_AUTH(*args, **kwargs)
             else:
-                return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
     def preview_allowed(self, *args, **kwargs):
         """
@@ -242,7 +236,7 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         username = self.user_manager.session_username()
         if self.user_manager.session_logged_in():
             if not self.user_manager.user_is_superadmin(username):
-                return self.template_helper.render("forbidden.html",
+                return render_template("forbidden.html",
                                                    message=_("Forbidden"))
             return self.GET_AUTH(*args, **kwargs)
         return INGIniousAuthPage.GET(self, *args, **kwargs)
@@ -256,7 +250,7 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         username = self.user_manager.session_username()
         if self.user_manager.session_logged_in() and self.user_manager.user_is_superadmin(username):
             return self.POST_AUTH()
-        return self.template_helper.render("forbidden.html",
+        return render_template("forbidden.html",
                                            message=_("You have not sufficient right to see this part."))
 
 
@@ -317,5 +311,5 @@ class INGIniousStaticPage(INGIniousPage):
         title = filecontent["title"]
         content = ParsableText.rst(filecontent["content"], initial_header_level=2)
 
-        return self.template_helper.render("static.html", pagetitle=title, content=content)
+        return render_template("static.html", pagetitle=title, content=content)
 
