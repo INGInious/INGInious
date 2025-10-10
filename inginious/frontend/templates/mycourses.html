@@ -217,13 +217,6 @@
         });
     });
 
-    $(document).on("keyup", "#course_search", function() {
-        var value = $(this).val().toLowerCase();
-        $(".course_list a").filter(function() {
-            $(this).toggle($(this).find(".course_name").text().toLowerCase().indexOf(value) > -1)
-        });
-    });
-
     $(document).on("click", ".course_filter", function() {
         // change button color
         classes = ["btn-light", "btn-success", "btn-danger"];
@@ -245,7 +238,11 @@
     });
 
 
-    $(document).on("click", ".course_filter", function() {
+    $(document).on("click keyup", ".course_filter, #course_search", function() {
+        // search
+        var value = $(this).val().toLowerCase();
+
+
         // filter
         var filter_values = Object({"is_archive": null, "is_lti": null, "is_hidden": null, "is_exam": null, "is_pinned": null});
         $(".course_filter").each(function() {
@@ -275,7 +272,8 @@
 
         // show/hide courses
         $(".course_list .course_item").filter(function() {
-            $(this).toggle($.inArray($(this).attr("course_id"), filtered_courses) > -1)
+            $(this).toggle(($.inArray($(this).attr("course_id"), filtered_courses) > -1)
+                            && $(this).find(".course_name").text().toLowerCase().indexOf(value) > -1)
         });
     });
 </script>
