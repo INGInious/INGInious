@@ -5,9 +5,9 @@
 
 """ Utilities for computation of statistics  """
 from collections import OrderedDict
-
-import flask
 import zoneinfo
+
+from flask import request, render_template
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
@@ -161,11 +161,11 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
 
-        user_input = flask.request.args.copy()
-        user_input["users"] = flask.request.args.getlist("users")
-        user_input["audiences"] = flask.request.args.getlist("audiences")
-        user_input["tasks"] = flask.request.args.getlist("tasks")
-        user_input["org_categories"] = flask.request.args.getlist("org_categories")
+        user_input = request.args.copy()
+        user_input["users"] = request.args.getlist("users")
+        user_input["audiences"] = request.args.getlist("audiences")
+        user_input["tasks"] = request.args.getlist("tasks")
+        user_input["org_categories"] = request.args.getlist("org_categories")
         params = self.get_input_params(user_input, course, 500)
 
         return self.page(course, params)
@@ -174,11 +174,11 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
 
-        user_input = flask.request.form.copy()
-        user_input["users"] = flask.request.form.getlist("users")
-        user_input["audiences"] = flask.request.form.getlist("audiences")
-        user_input["tasks"] = flask.request.form.getlist("tasks")
-        user_input["org_categories"] = flask.request.form.getlist("org_categories")
+        user_input = request.form.copy()
+        user_input["users"] = request.form.getlist("users")
+        user_input["audiences"] = request.form.getlist("audiences")
+        user_input["tasks"] = request.form.getlist("tasks")
+        user_input["org_categories"] = request.form.getlist("org_categories")
         params = self.get_input_params(user_input, course, 500)
 
         return self.page(course, params)
@@ -218,10 +218,10 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         stats_progress = self._progress_stats(course)
         stats_global = self._global_stats(tasks, filter, limit, best_submissions_list, params.get('stat', 'normal') == 'pond_stat')
 
-        if "progress_csv" in flask.request.args:
+        if "progress_csv" in request.args:
             return make_csv(stats_progress)
 
-        return self.template_helper.render("course_admin/stats.html", course=course, users=users,
+        return render_template("course_admin/stats.html", course=course, users=users,
                                            tutored_users=tutored_users, audiences=audiences,
                                            tutored_audiences=tutored_audiences, tasks=tasks, old_params=params,
                                            stats_graph=stats_graph, stats_tasks=stats_tasks, stats_users=stats_users,
