@@ -260,7 +260,7 @@ class Course(object):
     def get_description(self, language):
         """Returns the course description """
         description = self.gettext(language, self._description) if self._description else ''
-        return ParsableText(description, "rst", translation=self.get_translation_obj(language))
+        return ParsableText(description, "rst")
 
     def get_tags(self):
         return self._tags
