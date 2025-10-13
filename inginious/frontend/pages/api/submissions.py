@@ -12,7 +12,7 @@ import flask
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
 
-def _get_submissions(course_factory, submission_manager, user_manager, translations, courseid, taskid, with_input, submissionid=None):
+def _get_submissions(course_factory, submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
     """
         Helper for the GET methods of the two following classes
     """
@@ -45,8 +45,7 @@ def _get_submissions(course_factory, submission_manager, user_manager, translati
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, user_manager.session_username()),
-            translation=translations.get(user_manager.session_language(), gettext.NullTranslations())
+            show_everything=user_manager.has_staff_rights_on_course(course, user_manager.session_username())
         )
         data = {
             "id": str(submission["_id"]),
@@ -111,7 +110,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.course_factory, self.submission_manager, self.user_manager, self.app.l10n_manager.translations, courseid, taskid, with_input, submissionid)
+        return _get_submissions(self.course_factory, self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -152,7 +151,7 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.course_factory, self.submission_manager, self.user_manager, self.app.l10n_manager.translations, courseid, taskid, with_input)
+        return _get_submissions(self.course_factory, self.submission_manager, self.user_manager, courseid, taskid, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """

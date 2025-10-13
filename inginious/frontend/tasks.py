@@ -196,8 +196,7 @@ class Task(object):
         """ Get the context(description) of this task """
         context = self.gettext(language, self._context) if self._context else ""
         vals = self._plugin_manager.call_hook('task_context', course=self.get_course(), task=self, default=context)
-        return ParsableText(vals[0], "rst", translation=self.get_translation_obj(language)) if len(vals) \
-            else ParsableText(context, "rst", translation=self.get_translation_obj(language))
+        return ParsableText(vals[0], "rst") if len(vals) else ParsableText(context, "rst")
 
     def get_authors(self, language):
         """ Return the list of this task's authors """

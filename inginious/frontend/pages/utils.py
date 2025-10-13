@@ -22,6 +22,7 @@ from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
+from inginious.frontend.i18n import available_languages
 from pymongo.database import Database
 
 from inginious.frontend.course_factory import CourseFactory
@@ -46,11 +47,10 @@ class INGIniousPage(MethodView):
 
     def _pre_check(self):
         """ Checks for language. """
-        if "lang" in flask.request.args and flask.request.args["lang"] in self.app.l10n_manager.translations.keys():
+        if "lang" in flask.request.args and flask.request.args["lang"] in available_languages:
             self.user_manager.set_session_language(flask.request.args["lang"])
         elif not self.user_manager.session_language(default=None):
-            best_lang = flask.request.accept_languages.best_match(self.app.l10n_manager.translations.keys(),
-                                                                  default="en")
+            best_lang = flask.request.accept_languages.best_match(available_languages,default="en")
             self.user_manager.set_session_language(best_lang)
 
     def GET(self, *args, **kwargs):

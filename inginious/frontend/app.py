@@ -11,7 +11,6 @@ import flask
 import jinja2
 import pymongo
 import oauthlib
-import gettext
 
 from gridfs import GridFS
 from binascii import hexlify
@@ -26,7 +25,7 @@ from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.user_manager import UserManager
-from inginious.frontend.l10n_manager import L10nManager
+from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__, DB_VERSION
 from inginious.frontend.course_factory import create_factories
 from inginious.common.entrypoints import filesystem_from_config_dict
@@ -209,36 +208,12 @@ def get_app(config):
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
-    # Init gettext
-    available_translations = {
-        "de": "Deutsch",
-        "el": "ελληνικά",
-        "es": "Español",
-        "fr": "Français",
-        "he": "עִבְרִית",
-        "nl": "Nederlands",
-        "nb_NO": "Norsk (bokmål)",
-        "pt": "Português",
-        "vi": "Tiếng Việt"
-    }
-
-    available_languages = {"en": "English"}
-    available_languages.update(available_translations)
-
-    l10n_manager = L10nManager(user_manager)
-
-    l10n_manager.translations["en"] = gettext.NullTranslations()  # English does not need translation ;-)
-    for lang in available_translations.keys():
-        l10n_manager.translations[lang] = gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
-
-    builtins.__dict__['_'] = l10n_manager.gettext
-
     # Init web mail
     mail.init_app(flask_app)
 
     # Add some helpers for the templates
     flask_app.jinja_loader = jinja2.ChoiceLoader([flask_app.jinja_loader, jinja2.PrefixLoader({})])
-    flask_app.jinja_env.globals["_"] = _
+    flask_app.jinja_env.globals["_"] = gettext
     flask_app.jinja_env.globals["str"] = str
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
     flask_app.jinja_env.globals["use_minified"] = config.get('use_minified_js', True)
@@ -286,7 +261,6 @@ def get_app(config):
     flask_app.task_factory = task_factory
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
-    flask_app.l10n_manager = l10n_manager
     flask_app.database = database
     flask_app.gridfs = gridfs
     flask_app.client = client
