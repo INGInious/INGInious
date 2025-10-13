@@ -132,7 +132,7 @@ def get_app(config):
 
     config = _put_configuration_defaults(config)
     mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client[config.get('mongo_opt', {}).get('database', 'INGInious')]
+    database = mongo_client.get_database(config.get('database', 'INGInious'), codec_options=CodecOptions(tz_aware=True))
     gridfs = GridFS(database)
 
     # Init database if needed
@@ -153,9 +153,6 @@ def get_app(config):
         database.db_version.insert_one({"db_version": DB_VERSION})
     elif db_version.get("db_version", 0) != DB_VERSION:
         raise Exception("Please update the database before running INGInious")
-
-    # Apply tz_aware codec option on submissions collection
-    database.aware_submissions = database.submissions.with_options(codec_options=CodecOptions(tz_aware=True))
 
     flask_app = flask.Flask(__name__)
 

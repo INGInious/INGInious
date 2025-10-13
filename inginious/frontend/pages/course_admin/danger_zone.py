@@ -25,7 +25,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
     _logger = logging.getLogger("inginious.webapp.danger_zone")
 
     def wipe_course(self, courseid):
-        submissions = self.database.aware_submissions.find({"courseid": courseid})
+        submissions = self.database.submissions.find({"courseid": courseid})
         for submission in submissions:
             for key in ["input", "archive"]:
                 gridfs = self.submission_manager.get_gridfs()
@@ -36,7 +36,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self.database.audiences.delete_many({"courseid": courseid})
         self.database.groups.delete_many({"courseid": courseid})
         self.database.user_tasks.delete_many({"courseid": courseid})
-        self.database.aware_submissions.delete_many({"courseid": courseid})
+        self.database.submissions.delete_many({"courseid": courseid})
 
         self._logger.info("Course %s wiped.", courseid)
 
@@ -62,7 +62,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             zipf.writestr("user_tasks.json", bson.json_util.dumps(user_tasks), zipfile.ZIP_DEFLATED)
 
             # Fetching input data  while looping on submissions can trigger a mongo cursor timeout
-            submissions = self.database.aware_submissions.find({"courseid": courseid}, no_cursor_timeout=True)
+            submissions = self.database.submissions.find({"courseid": courseid}, no_cursor_timeout=True)
             erroneous_subs = set()
 
             for submission in submissions:
@@ -113,7 +113,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                         submission[key] = self.submission_manager.get_gridfs().put(zipf.read(key + "/" + str(submission[key]) + ".data"))
 
             if len(submissions) > 0:
-                self.database.aware_submissions.insert_many(submissions)
+                self.database.submissions.insert_many(submissions)
 
         self._logger.info("Course %s restored from backup directory.", courseid)
 

@@ -15,7 +15,7 @@ from datetime import datetime, date, timedelta
 
 class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
     def _tasks_stats(self, tasks, filter, limit):
-        stats_tasks = self.database.aware_submissions.aggregate(
+        stats_tasks = self.database.submissions.aggregate(
             [{"$match": filter},
              {"$limit": limit},
              {"$project": {"taskid": "$taskid", "result": "$result"}},
@@ -32,7 +32,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         ]
 
     def _users_stats(self, filter, limit):
-        stats_users = self.database.aware_submissions.aggregate([
+        stats_users = self.database.submissions.aggregate([
             {"$match": filter},
             {"$limit": limit},
             {"$project": {"username": "$username", "result": "$result"}},
@@ -77,7 +77,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
         filter["submitted_on"] = {"$gte": min_date, "$lt": max_date + delta1}
 
-        stats_graph = self.database.aware_submissions.aggregate(
+        stats_graph = self.database.submissions.aggregate(
             [{"$match": filter},
              {"$limit": limit},
              {"$project": project},
@@ -147,7 +147,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         return result
 
     def _global_stats(self, tasks, filter, limit, best_submissions_list, pond_stat):
-        submissions = self.database.aware_submissions.find(filter)
+        submissions = self.database.submissions.find(filter)
         if limit is not None:
             submissions.limit(limit)
 

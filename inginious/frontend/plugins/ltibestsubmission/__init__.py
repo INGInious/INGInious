@@ -43,7 +43,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
             # no best submission
             return json_util.dumps({"status": "success", "submission": None})
 
-        best_sub = list(self.database.aware_submissions.find({"_id": ObjectId(user_best_sub_id)}))[0]
+        best_sub = list(self.database.submissions.find({"_id": ObjectId(user_best_sub_id)}))[0]
 
         # attach the input to the submission
         best_sub = self.submission_manager.get_input_from_submission(best_sub)

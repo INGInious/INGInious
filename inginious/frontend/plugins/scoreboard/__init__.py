@@ -74,7 +74,7 @@ class ScoreBoard(INGIniousAuthPage):
                 raise NotFound(description="Unknown task id "+taskid)
 
         # Get all submissions
-        results = self.database.aware_submissions.find({
+        results = self.database.submissions.find({
             "courseid": courseid,
             "taskid": {"$in": list(scoreboard_content.keys())},
             "custom.score": {"$exists": True},

@@ -77,7 +77,7 @@ class WebAppSubmissionManager:
 
         # Save submission to database
         try:
-            submission = self._database.aware_submissions.find_one_and_update(
+            submission = self._database.submissions.find_one_and_update(
                 {"_id": submission["_id"]},
                 {"$set": data, "$unset": unset_obj},
                 return_document=ReturnDocument.AFTER
@@ -89,7 +89,7 @@ class WebAppSubmissionManager:
         # Check for size as it also takes the MongoDB command into consideration
         except pymongo.errors.DocumentTooLarge:
             data = {"status": "error", "text": _("Maximum submission size exceeded. Check feedback, stdout, stderr and state."), "grade": 0.0}
-            submission = self._database.aware_submissions.find_one_and_update(
+            submission = self._database.submissions.find_one_and_update(
                 {"_id": submission["_id"]},
                 {"$set": data, "$unset": unset_obj},
                 return_document=ReturnDocument.AFTER
@@ -189,10 +189,10 @@ class WebAppSubmissionManager:
             submission["input"] = self._gridfs.put(bson.BSON.encode(inputdata))
             submission["tests"] = {}  # Be sure tags are reinitialized
             submission["user_ip"] = flask.request.remote_addr
-            submissionid = self._database.aware_submissions.insert_one(submission).inserted_id
+            submissionid = self._database.submissions.insert_one(submission).inserted_id
 
         # Clean the submission document in db
-        self._database.aware_submissions.update_one(
+        self._database.submissions.update_one(
             {"_id": submission["_id"]},
             {"$set": {"status": "waiting", "response_type": task.get_response_type()},
              "$unset": {"result": "", "grade": "", "text": "", "tests": "", "problems": "", "archive": "", "state": "",
@@ -206,7 +206,7 @@ class WebAppSubmissionManager:
                                      "Frontend - {}".format(submission["username"]), debug, ssh_callback)
 
 
-        self._database.aware_submissions.update_one(
+        self._database.submissions.update_one(
             {"_id": submission["_id"], "status": "waiting"},
             {"$set": {"jobid": jobid,"last_replay": datetime.now()}}
         )
@@ -225,7 +225,7 @@ class WebAppSubmissionManager:
 
     def get_submission(self, submissionid, user_check=True):
         """ Get a submission from the database """
-        sub = self._database.aware_submissions.find_one({'_id': ObjectId(submissionid)})
+        sub = self._database.submissions.find_one({'_id': ObjectId(submissionid)})
         if user_check and not self.user_is_submission_owner(sub):
             return None
         return sub
@@ -247,7 +247,7 @@ class WebAppSubmissionManager:
         username = self._user_manager.session_username()
 
         # Prevent student from submitting several submissions together
-        waiting_submission = self._database.aware_submissions.find_one({
+        waiting_submission = self._database.submissions.find_one({
             "courseid": task.get_course_id(),
             "taskid": task.get_id(),
             "username": username,
@@ -298,7 +298,7 @@ class WebAppSubmissionManager:
 
         self._before_submission_insertion(task, inputdata, debug, obj)
         obj["input"] = self._gridfs.put(bson.BSON.encode(inputdata))
-        submissionid = self._database.aware_submissions.insert_one(obj).inserted_id
+        submissionid = self._database.submissions.insert_one(obj).inserted_id
         to_remove = self._after_submission_insertion(task, inputdata, debug, obj, submissionid, task_dispenser)
 
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
@@ -309,7 +309,7 @@ class WebAppSubmissionManager:
                                                               custom, state, archive, stdout, stderr, task_dispenser, True)),
                                      "Frontend - {}".format(username), debug, ssh_callback)
 
-        self._database.aware_submissions.update_one(
+        self._database.submissions.update_one(
             {"_id": submissionid, "status": "waiting"},
             {"$set": {"jobid": jobid}}
         )
@@ -333,7 +333,7 @@ class WebAppSubmissionManager:
 
         if max_submissions <= 0:
             return []
-        tasks = list(self._database.aware_submissions.find(
+        tasks = list(self._database.submissions.find(
             {"username": username, "courseid": task.get_course_id(), "taskid": task.get_id()},
             projection=["_id", "status", "result", "grade", "submitted_on"],
             sort=[('submitted_on', pymongo.ASCENDING)]))
@@ -362,7 +362,7 @@ class WebAppSubmissionManager:
             to_keep.add(tasks.pop()["_id"])
 
         to_delete = {val["_id"] for val in tasks}.difference(to_keep)
-        self._database.aware_submissions.delete_many({"_id": {"$in": list(to_delete)}})
+        self._database.submissions.delete_many({"_id": {"$in": list(to_delete)}})
 
         return list(map(str, to_delete))
 
@@ -464,7 +464,7 @@ class WebAppSubmissionManager:
         if not self._user_manager.session_logged_in():
             raise Exception("A user must be logged in to get his submissions")
 
-        cursor = self._database.aware_submissions.find({"username": self._user_manager.session_username(),
+        cursor = self._database.submissions.find({"username": self._user_manager.session_username(),
                                                   "taskid": task.get_id(), "courseid": task.get_course_id()})
         cursor.sort([("submitted_on", -1)])
         return list(cursor)
@@ -480,7 +480,7 @@ class WebAppSubmissionManager:
         # and then resorted by submission date before limiting. Actually, grouping
         # and pushing, keeping the max date, followed by result filtering is much more
         # efficient
-        data = self._database.aware_submissions.aggregate([
+        data = self._database.submissions.aggregate([
             {"$match": mongo_request},
             {"$group": {"_id": {"courseid": "$courseid", "taskid": "$taskid"},
                         "submitted_on": {"$max": "$submitted_on"},
@@ -663,7 +663,7 @@ class WebAppSubmissionManager:
                 "ssh_user": user,
                 "ssh_password": password
             }
-            self._database.aware_submissions.update_one({"_id": submission_id}, {"$set": obj})
+            self._database.submissions.update_one({"_id": submission_id}, {"$set": obj})
 
     def get_job_queue_snapshot(self):
         """ Get a snapshot of the remote backend job queue. May be a cached version.
@@ -710,6 +710,6 @@ def update_pending_jobs(database):
     """ Updates pending jobs status in the database """
 
     # Updates the submissions that are waiting with the status error, as the server restarted
-    database.aware_submissions.update_many({'status': 'waiting'},
+    database.submissions.update_many({'status': 'waiting'},
                                 {"$unset": {'jobid': ""},
                                  "$set": {'status': 'error', 'grade': 0.0, 'text': 'Internal error. Server restarted'}})

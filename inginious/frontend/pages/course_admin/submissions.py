@@ -30,7 +30,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
         if "replay_submission" in user_input:
             # Replay a unique submission
-            submission = self.database.aware_submissions.find_one({"_id": ObjectId(user_input["replay_submission"])})
+            submission = self.database.submissions.find_one({"_id": ObjectId(user_input["replay_submission"])})
             if submission is None:
                 raise NotFound(description=_("This submission doesn't exist."))
 
@@ -94,7 +94,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         user_input["org_categories"] = flask.request.args.getlist("org_categories")
 
         if "download_submission" in user_input:
-            submission = self.database.aware_submissions.find_one({"_id": ObjectId(user_input["download_submission"]),
+            submission = self.database.submissions.find_one({"_id": ObjectId(user_input["download_submission"]),
                                                              "courseid": course.get_id(),
                                                              "status": {"$in": ["done", "error"]}})
             if submission is None:
@@ -200,8 +200,8 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
                                                                     keep_only_evaluation_submissions=keep_only_evaluation_submissions,
                                                                     keep_only_crashes=keep_only_crashes)
 
-        submissions = self.database.aware_submissions.find(filter)
-        submissions_count = self.database.aware_submissions.count_documents(filter)
+        submissions = self.database.submissions.find(filter)
+        submissions_count = self.database.submissions.count_documents(filter)
 
         if sort_by[0] not in ["submitted_on", "username", "grade", "taskid"]:
             sort_by[0] = "submitted_on"
