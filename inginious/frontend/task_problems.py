@@ -80,8 +80,7 @@ class DisplayableCodeProblem(CodeProblem, DisplayableProblem):
 
     def show_input(self, language, seed):
         """ Show BasicCodeProblem and derivatives """
-        header = ParsableText(self.gettext(language,self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language,self._header), "rst")
         return render_template("tasks/code.html", inputId=self.get_id(), header=header,
                                       lines=8, first_line=self._first_line, maxChars=0, language=self._language, optional=self._optional,
                                       default=self._default)
@@ -110,8 +109,7 @@ class DisplayableCodeSingleLineProblem(CodeSingleLineProblem, DisplayableProblem
 
     def show_input(self, language, seed):
         """ Show InputBox """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language, self._header), "rst")
         return render_template("tasks/single_line_code.html", inputId=self.get_id(), header=header, type="text",
                                       maxChars=0, optional=self._optional, default=self._default)
 
@@ -148,8 +146,7 @@ class DisplayableFileProblem(FileProblem, DisplayableProblem):
 
     def show_input(self, language, seed):
         """ Show FileBox """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language, self._header), "rst")
         return render_template("tasks/file.html", inputId=self.get_id(), header=header,
                                       max_size=self._max_size, allowed_exts=self._allowed_exts)
 
@@ -210,14 +207,13 @@ class DisplayableMultipleChoiceProblem(MultipleChoiceProblem, DisplayableProblem
             rand.shuffle(choices)
         else:
             choices = sorted(choices, key=lambda k: k['index'])
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language, self._header), "rst")
         return render_template("tasks/multiple_choice.html", pid=self.get_id(), header=header,
                                       checkbox=self._multiple, choices=choices,
                                       func=lambda text: ParsableText(
-                                          self.gettext(language, text) if text else "", "rst",
-                                          translation=self.get_translation_obj(language))
+                                          self.gettext(language, text) if text else "", "rst"
                                       )
+                               )
 
     @classmethod
     def show_editbox(cls, key, language):
@@ -240,8 +236,7 @@ class DisplayableMatchProblem(MatchProblem, DisplayableProblem):
 
     def show_input(self, language, seed):
         """ Show MatchProblem """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language, self._header), "rst")
         return render_template("tasks/match.html", inputId=self.get_id(), header=header)
 
     @classmethod
