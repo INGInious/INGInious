@@ -35,8 +35,19 @@ class MyCoursesPage(INGIniousAuthPage):
             courseid = user_input["pinning_courseid"]
             if courseid not in pinned_courses:
                 self.user_manager.pin_course(self.user_manager.session_username(), courseid)
+                # return data for html
+                pin_html_data = {
+                    "courseid": courseid,
+                    "is_lti" : self.course_factory.get_course(courseid).is_lti(),
+                    "lti_url" : self.course_factory.get_course(courseid).lti_url(),
+                    "name": self.course_factory.get_course(courseid).get_name(self.user_manager.session_language()),
+                    "path": self.app.get_path("course", courseid),
+                    "description": str(self.course_factory.get_course(courseid).get_description(self.user_manager.session_language()))
+                }
+                return pin_html_data
             else:
                 self.user_manager.unpin_course(self.user_manager.session_username(), courseid)
+                return {"courseid": courseid}
 
         return self.show_page(success)
 

@@ -65,29 +65,29 @@
     <div class="tab-content">
         <div role="tabpanel" class="card-body tab-pane active" id="tab_pinned_courses">
             <h2>{{ _("My pinned courses") }}</h2>
-            <div class="list-group">
+            <div class="list-group" id="pinned_list">
                 {%if pinned_courses %}
                     {% for courseid, course in pinned_courses.items() %}
-                    <div class="card m-2">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        {% if course.is_lti() %}
-                                            {% if course.lti_url() %}
-                                                <a target="_blank" href="{{ course.lti_url() }}">
+                        <div class="card m-2" id="pinned-{{courseid}}">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    {% if course.is_lti() %}
+                                        {% if course.lti_url() %}
+                                        <a target="_blank" href="{{ course.lti_url() }}">
                                             {% endif %}
                                             {{course.get_name(user_manager.session_language())}}
                                             {% if course.lti_url() %}
-                                                </a>
-                                            {% endif %}
-                                        {% else %}
-                                            <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
+                                        </a>
                                         {% endif %}
-                                    </h5>
-                                    <div class="card-text card-trunc">
-                                        {{ course.get_description(user_manager.session_language()) | safe }}
-                                    </div>
+                                    {% else %}
+                                        <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
+                                    {% endif %}
+                                </h5>
+                                <div class="card-text card-trunc">
+                                    {{ course.get_description(user_manager.session_language()) | safe }}
                                 </div>
                             </div>
+                        </div>
                     {# Resizing logic #}
                         {% if loop.index % 2 == 0 %}
                             <div class="w-100 d-none d-sm-block d-md-none"><!-- wrap every 2 on sm--></div>
@@ -117,7 +117,6 @@
             </div>
             <div class="form_group" id="course_filters">
                 <div >
-
                     <button type="button" id="is_archive" class="btn btn-light course_filter" data-value="null">Archive</button>
                     <button type="button" id="is_lti" class="btn btn-light course_filter" data-value="null">LTI</button>
                     <button type="button" id="is_hidden" class="btn btn-light course_filter" data-value="null">Hidden</button>
@@ -129,7 +128,7 @@
                 {%if open_courses %}
                     {% set username = user_manager.session_username() %}
                     {% for courseid, course in open_courses.items() %}
-                        <a href="{{ get_path('course', courseid) }}" course_id="{{courseid}}" class="course_item list-group-item list-group-item-action
+                        <a href="{{ get_path('course', courseid) }}" data-course-id="{{courseid}}" class="course_item list-group-item list-group-item-action
                             {% if course.is_lti() %}
                                 list-group-item-info
                             {% elif course.is_archive() %}
@@ -204,12 +203,52 @@
 
 <script>
     $(document).on('change', '.course_pin', function() {
+        var checkbox = $(this);
         $.ajax({
             type: "POST",
             url: "/mycourses",
             data: "pinning_courseid=" + $(this).data("courseid"),
             success: function(data) {
-                 console.log("success");
+                var courseid = checkbox.data("courseid");
+                if (checkbox.is(':checked')) {
+                    // pinned
+                    if(data["is_lti"]) {
+                        if(data["lti_url"] == null) {
+
+                        } else {
+                            $(document).find("#pinned_list").append(`<div class="card m-2" id="pinned-`+ courseid +`">
+                                        <div class="card-body">
+                                            <h5 class="card-title">
+                                            <a target="_blank" href=`+data["lti_url"]+`>
+                                                `+data["name"]+`
+                                            </a>
+                                            </h5>
+                                            <div class="card-text card-trunc">
+                                                `+data["description"]+`
+                                            </div>
+                                        </div>
+                                    </div>`);
+                        }
+                    } else {
+                        $(document).find("#pinned_list").append(`<div class="card m-2" id="pinned-`+ courseid +`">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                        <a href=`+data["path"]+`>`+data["name"]+`</a>
+                                        </h5>
+                                        <div class="card-text card-trunc">
+                                            `+data["description"]+`
+                                        </div>
+                                    </div>
+                                </div>`);
+                    }
+
+                    $(document).find('.course_item[data-course-id="' + courseid + '"]').data("temporary_pin_value", "true");  // works
+
+                } else {
+                    // unpin
+                    $(document).find("#pinned-" + courseid).remove();
+                    $(document).find('.course_item[data-course-id="' + courseid + '"]').data("temporary_pin_value", "false");
+                }
             },
             error: function(data) {
                  $(".pin_alert").removeAttr("hidden");
@@ -242,7 +281,6 @@
         // search
         var value = $(this).val().toLowerCase();
 
-
         // filter
         var filter_values = Object({"is_archive": null, "is_lti": null, "is_hidden": null, "is_exam": null, "is_pinned": null});
         $(".course_filter").each(function() {
@@ -253,10 +291,15 @@
 
         {% for courseid, course in open_courses.items() %}
             filtered_courses.push("{{courseid}}");
+
+            // use temporary pin value from DOM if exists. Used to make filtering work directly after pinning/unpinning
+            temp_is_pinned = eval($(document).find('.course_item[data-course-id="{{courseid}}"]').data("temporary_pin_value"))
+            is_pinned = (temp_is_pinned === undefined) ? ({{ 'true' if courseid in pinned_courses else 'false' }}) : temp_is_pinned;
+
             var course_values = Object({"is_archive": eval({{ 'true' if course.is_archive() else 'false' }}),
                                          "is_lti": eval({{ 'true' if course.is_lti() else 'false' }}),
                                          "is_hidden": eval({{ 'true' if not course.is_open_to_non_staff() else 'false' }}),
-                                         "is_pinned": eval({{ 'true' if courseid in pinned_courses else 'false' }})
+                                         "is_pinned": is_pinned
                                          });
 
             for (filter of Object.keys(course_values)) {
@@ -272,7 +315,7 @@
 
         // show/hide courses
         $(".course_list .course_item").filter(function() {
-            $(this).toggle(($.inArray($(this).attr("course_id"), filtered_courses) > -1)
+            $(this).toggle(($.inArray($(this).data("course-id"), filtered_courses) > -1)
                             && $(this).find(".course_name").text().toLowerCase().indexOf(value) > -1)
         });
     });
