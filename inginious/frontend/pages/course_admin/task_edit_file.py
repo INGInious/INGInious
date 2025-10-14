@@ -75,7 +75,7 @@ class CourseTaskFiles(INGIniousAdminPage):
         tmp_out = {}
         entries = task_fs.list(True, True, True)
         for entry in entries:
-            if os.path.splitext(entry)[0] == "task" and os.path.splitext(entry)[1][1:] in task_factory.get_available_task_file_extensions():
+            if entry == "task.yaml":
                 continue
 
             data = entry.split("/")
@@ -123,8 +123,7 @@ class CourseTaskFiles(INGIniousAdminPage):
             return None
 
         # do not allow touching the task.* file
-        if os.path.splitext(path)[0] == "task" and os.path.splitext(path)[1][1:] in \
-                self.task_factory.get_available_task_file_extensions():
+        if path == "task.yaml":
             return None
 
         return path
