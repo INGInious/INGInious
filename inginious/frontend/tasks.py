@@ -23,8 +23,7 @@ def _migrate_from_v_0_6(content):
         del content["environment"]
         content["environment_parameters"] = {"limits": content.get("limits", {}),
                                              "run_cmd": content.get("run_cmd", ''),
-                                             "network_grading": content.get("network_grading", False),
-                                             "response_is_html": content.get('responseIsHTML', False)}
+                                             "network_grading": content.get("network_grading", False)}
 
     # Retrocompatibility v0.8.5
     if content.get("environment_parameters", {}).get("ssh_allowed", False):
@@ -149,10 +148,6 @@ class Task(object):
     def get_environment_parameters(self):
         """ Returns the raw environment parameters, which is a dictionnary that is envtype dependent. """
         return self._environment_parameters
-
-    def get_response_type(self):
-        """ Returns the method used to parse the output of the task: HTML or rst """
-        return "HTML" if self._environment_parameters.get('response_is_html', False) else "rst"
 
     def get_fs(self):
         """ Returns a FileSystemProvider which points to the folder of this task """
