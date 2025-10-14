@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 from inginious.common.base import id_checker
 
 
-def _get_problem_types(name: str, base_class) -> dict:
+def _inspect_problem_types(name: str, base_class) -> dict:
     """ Generic function to get a mapping of Problem names and their associated class by 
         inspecting a given module.
 
@@ -40,22 +40,24 @@ def _get_problem_types(name: str, base_class) -> dict:
     """ Return the mapping """
     return {member.get_type(): member for member in members}
 
-def get_problem_types(name: str) -> dict:
+def inspect_problem_types(name: str) -> dict:
     """ Get the mapping of Problem types available by inspecting a given module.
 
         :param  name:   The name of the module to inspect.
         :return:        The mapping of problem name and problem class.
     """
-    raw = _get_problem_types(name, Problem)
+    raw = _inspect_problem_types(name, Problem)
     return {pbl_name: pbl_cls for pbl_name, pbl_cls in raw.items() if pbl_name is not None}
 
-def get_default_problem_types() -> dict:
-    """ Get the mapping of default Problem types available by inspecting the current module.
+_problem_types = {}
 
-        :return:    The mapping of problem name and problem class.
-    """
-    return get_problem_types(__name__)
+def get_problem_types():
+    return _problem_types
 
+def register_problem_types(problem_types):
+    """ Register a problem type """
+    global _problem_types
+    _problem_types.update(problem_types)
 
 class Problem(object, metaclass=ABCMeta):
     """Basic problem """

@@ -32,6 +32,7 @@ from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.lti.v1_3 import LTIGradeManager
+from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
@@ -188,9 +189,9 @@ def get_app(config):
         task_dispenser.get_id(): task_dispenser for task_dispenser in [TableOfContents, CombinatoryTest]
     }
 
-    default_problem_types = get_default_displayable_problem_types()
+    register_problem_types(get_default_displayable_problem_types())
 
-    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types, database)
+    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, database)
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
