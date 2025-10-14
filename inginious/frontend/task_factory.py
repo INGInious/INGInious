@@ -267,7 +267,7 @@ class TaskFactory(object):
         last_modif, task_content = self._get_last_updates(course, taskid, task_fs, True)
 
         self._cache[(course.get_id(), taskid)] = (
-            Task(course, taskid, task_content, self._filesystem, self._task_problem_types),
+            Task(taskid, task_content, course.get_fs(), self._task_problem_types),
             last_modif
         )
 

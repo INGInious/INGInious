@@ -78,7 +78,7 @@ class APITasks(APIAuthenticatedPage):
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(self.user_manager.session_username(), task.get_course_id(), task.get_id())
+            task_cache = self.user_manager.get_task_cache(self.user_manager.session_username(), course.get_id(), task.get_id())
 
             data = {
                 "id": taskid,
