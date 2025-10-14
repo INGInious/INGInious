@@ -236,12 +236,12 @@ class CourseFactory(object):
         self._task_factory.update_cache_for_course(courseid)
 
 
-def create_factories(fs_provider, task_dispensers, task_problem_types, database=None):
+def create_factories(fs_provider, task_dispensers, database=None):
     """
     Shorthand for creating Factories
     :param fs_provider: A FileSystemProvider leading to the courses
     :param task_class:
     :return: a tuple with two objects: the first being of type CourseFactory, the second of type TaskFactory
     """
-    task_factory = TaskFactory(fs_provider, task_problem_types)
+    task_factory = TaskFactory(fs_provider)
     return CourseFactory(fs_provider, task_factory, task_dispensers, database), task_factory
