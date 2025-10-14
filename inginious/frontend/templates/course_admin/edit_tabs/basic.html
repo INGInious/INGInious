@@ -8,24 +8,6 @@
     </div>
 </div>
 
-{% if available_filetypes|length != 1 %}
-    <div class="form-group row">
-        <label for="name" class="col-sm-2 control-label">{{ _("Filetype") }}</label>
-        <div class="col-sm-10">
-            <select class="form-control" id="@filetype" name="@filetype">
-                {% for type in available_filetypes %}
-                    <option value="{{type}}"
-                        {% if type == current_filetype or (current_filetype is none and type == "yaml") %}
-                            selected="selected"
-                        {% endif %}>{{ type }}</option>
-                {% endfor %}
-            </select>
-        </div>
-    </div>
-{% else %}
-    <input type="hidden" id="@filetype" name="@filetype" value="{{ available_filetypes[0] }}"/>
-{% endif %}
-
 <div class="form-group row">
     <label for="context" class="col-sm-2 control-label">{{_("Context")}}</label>
     <div class="col-sm-10">

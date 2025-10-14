@@ -47,13 +47,6 @@ class CourseEditTask(INGIniousAdminPage):
         environment_types = self.environment_types
         environments = self.environments
 
-        current_filetype = None
-        try:
-            current_filetype = self.task_factory.get_task_descriptor_extension(courseid, taskid)
-        except:
-            pass
-        available_filetypes = self.task_factory.get_available_task_file_extensions()
-
         additional_tabs = plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
                                                         task_data=task_data)
 
@@ -62,8 +55,6 @@ class CourseEditTask(INGIniousAdminPage):
                                            environment_types=environment_types, environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),
                                            contains_is_html=self.contains_is_html(task_data),
-                                           current_filetype=current_filetype,
-                                           available_filetypes=available_filetypes,
                                            file_list=CourseTaskFiles.get_task_filelist(self.task_factory, courseid, taskid),
                                            additional_tabs=additional_tabs)
 
@@ -112,12 +103,6 @@ class CourseEditTask(INGIniousAdminPage):
                     and not key == "@action"}
 
             data["environment_id"] = environment_id # we do this after having removed all the environment_id[something] entries
-
-            # Determines the task filetype
-            if data["@filetype"] not in self.task_factory.get_available_task_file_extensions():
-                return json.dumps({"status": "error", "message": _("Invalid file type: {}").format(str(data["@filetype"]))})
-            file_ext = data["@filetype"]
-            del data["@filetype"]
 
             # Parse and order the problems (also deletes @order from the result)
             if problems is None:
@@ -192,7 +177,6 @@ class CourseEditTask(INGIniousAdminPage):
                         {"status": "error", "message": _("There was a problem while extracting the zip archive. Some files may have been modified")})
                 task_fs.copy_to(tmpdirname)
 
-        self.task_factory.delete_all_possible_task_files(courseid, taskid)
-        self.task_factory.update_task_descriptor_content(courseid, taskid, data, force_extension=file_ext)
+        self.task_factory.update_task_descriptor_content(courseid, taskid, data)
 
         return json.dumps({"status": "ok"})
