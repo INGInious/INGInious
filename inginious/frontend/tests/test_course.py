@@ -12,14 +12,13 @@ import shutil
 
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.course_factory import create_factories
-from inginious.common.tasks_problems import *
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.environment_types import register_base_env_types
+from inginious.common.tasks_problems import register_problem_types
+from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 
 task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.get_id(): CombinatoryTest}
-problem_types = {"code": CodeProblem, "code_single_line": CodeSingleLineProblem, "file": FileProblem,
-                 "multiple_choice": MultipleChoiceProblem, "match": MatchProblem}
 
 
 @pytest.fixture()
@@ -27,7 +26,8 @@ def ressource(request):
     register_base_env_types()
     dir_path = tempfile.mkdtemp()
     fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
-    course_factory, _ = create_factories(fs, task_dispensers, problem_types)
+    register_problem_types(get_default_displayable_problem_types())
+    course_factory, _ = create_factories(fs, task_dispensers)
     yield (course_factory, dir_path)
     course_factory.update_course_descriptor_content("test", {"name": "Unit test 1", "admins": ["testadmin1","testadmin2"],
                                                              "accessible": True})

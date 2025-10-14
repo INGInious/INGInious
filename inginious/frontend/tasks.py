@@ -10,6 +10,7 @@ import gettext
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
 from inginious.common.base import id_checker
+from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.plugins import plugin_manager
 
@@ -35,7 +36,7 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, taskid, content, course_fs, task_problem_types):
+    def __init__(self, taskid, content, course_fs):
         if not id_checker(taskid):
             raise Exception("Task with invalid id: " + course_fs.prefix + taskid)
 
@@ -74,7 +75,7 @@ class Task(object):
         self._problems = []
         for problemid in self._data['problems']:
             self._problems.append(
-                self._create_task_problem(problemid, self._data['problems'][problemid], task_problem_types))
+                self._create_task_problem(problemid, self._data['problems'][problemid]))
 
         # Env type
         self._environment_id = self._data.get('environment_id', 'default')
@@ -157,15 +158,15 @@ class Task(object):
         """ Returns a FileSystemProvider which points to the folder of this task """
         return self._task_fs
 
-    def _create_task_problem(self, problemid, problem_content, task_problem_types):
+    def _create_task_problem(self, problemid, problem_content):
         """Creates a new instance of the right class for a given problem."""
         # Basic checks
         if not id_checker(problemid):
             raise Exception("Invalid problem _id: " + problemid)
-        if problem_content.get('type', "") not in task_problem_types:
+        if problem_content.get('type', "") not in get_problem_types():
             raise Exception("Invalid type for problem " + problemid)
 
-        return task_problem_types.get(problem_content.get('type', ""))(problemid, problem_content, self._translations, self._task_fs)
+        return get_problem_types().get(problem_content.get('type', ""))(problemid, problem_content, self._translations, self._task_fs)
 
     def get_name(self, language):
         """ Returns the name of this task """

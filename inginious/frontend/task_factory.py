@@ -17,23 +17,9 @@ from inginious.frontend.tasks import Task
 class TaskFactory(object):
     """ Load courses from disk """
 
-    def __init__(self, filesystem: FileSystemProvider, task_problem_types):
+    def __init__(self, filesystem: FileSystemProvider):
         self._filesystem = filesystem
         self._cache = {}
-        self._task_problem_types = task_problem_types
-
-    def set_problem_types(self, problem_types):
-        """ Set the problem types for the current TaskFactory.
-
-            :param problem_types: A mapping of problem types and their associated name.
-        """
-        self._task_problem_types.update(problem_types)
-
-    def add_problem_type(self, problem_type):
-        """
-        :param problem_type: Problem class
-        """
-        pass
 
     def get_task(self, course, taskid):
         """
@@ -192,7 +178,7 @@ class TaskFactory(object):
         last_modif, task_content = self._get_last_updates(course, task_fs, True)
 
         self._cache[(course.get_id(), taskid)] = (
-            Task(taskid, task_content, course.get_fs(), self._task_problem_types),
+            Task(taskid, task_content, course.get_fs()),
             last_modif
         )
 
@@ -244,9 +230,3 @@ class TaskFactory(object):
         if task_fs.exists():
             task_fs.delete()
             get_course_logger(courseid).info("Task %s erased from the factory.", taskid)
-
-    def get_problem_types(self):
-        """
-        Returns the supported problem types by this task factory
-        """
-        return self._task_problem_types

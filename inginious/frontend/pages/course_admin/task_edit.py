@@ -20,6 +20,7 @@ from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
 from inginious.common.base import dict_from_prefix, id_checker
 from inginious.common.exceptions import TaskNotFoundException
+from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.pages.course_admin.task_edit_file import CourseTaskFiles
 from inginious.frontend.tasks import Task
 from inginious.frontend.plugins import plugin_manager
@@ -51,7 +52,7 @@ class CourseEditTask(INGIniousAdminPage):
                                                         task_data=task_data)
 
         return render_template("course_admin/task_edit.html", course=course, taskid=taskid,
-                                           problem_types=self.task_factory.get_problem_types(), task_data=task_data,
+                                           problem_types=get_problem_types(), task_data=task_data,
                                            environment_types=environment_types, environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),
                                            contains_is_html=self.contains_is_html(task_data),
@@ -71,7 +72,7 @@ class CourseEditTask(INGIniousAdminPage):
     def parse_problem(self, problem_content):
         """ Parses a problem, modifying some data """
         del problem_content["@order"]
-        return self.task_factory.get_problem_types().get(problem_content["type"]).parse_problem(problem_content)
+        return get_problem_types().get(problem_content["type"]).parse_problem(problem_content)
 
     def POST_AUTH(self, courseid, taskid):  # pylint: disable=arguments-differ
         """ Edit a task """
@@ -159,7 +160,7 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            Task(taskid, data, self.course_factory.get_course_fs(courseid), self.task_factory.get_problem_types())
+            Task(taskid, data, self.course_factory.get_course_fs(courseid))
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 
