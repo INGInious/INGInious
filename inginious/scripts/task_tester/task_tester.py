@@ -189,16 +189,17 @@ def get_config(configfile):
 
     return load_json_or_yaml(configfile)
 
-def launch_job(filename, data, inputfiles, task, job_manager, verbose):
+def launch_job(filename, data, inputfiles, course, task, job_manager, verbose):
     """ Re-run a submission and compare the results.
         :param filename:    The path towards the submission.
         :param data:        The submission content.
         :param inputfiles:  All the submissions to re-execute for a given task.
+        :param course:      Course the task belongs to
         :param task:        The task to test.
         :post:              The list of failed submission test and the number of re-runned 
                             submission have been updated.
     """
-    result, grade, problems, tests, custom, state, archive, stdout, stderr = job_manager.new_job(0, task, data["input"], "Task tester", True)
+    result, grade, problems, tests, custom, state, archive, stdout, stderr = job_manager.new_job(0, course, task, data["input"], "Task tester", True)
     job_done_callback({"result":result, "grade": grade, "problems": problems, "tests": tests, "custom": custom, "archive": archive, "stdout": stdout, "stderr": stderr}, filename, inputfiles, data, verbose)
 
 def test_task(course, taskid, job_manager, verbose) -> tuple[list, int]:
@@ -231,7 +232,7 @@ def test_task(course, taskid, job_manager, verbose) -> tuple[list, int]:
             
         with open(filename, 'r') as fd:
             submission = inginious.common.custom_yaml.load(fd)
-        launch_job(filename, submission, inputfiles, task, job_manager, verbose)
+        launch_job(filename, submission, inputfiles, course, task, job_manager, verbose)
     
     result = (job_done_callback.failed, job_done_callback.jobs_done)
 

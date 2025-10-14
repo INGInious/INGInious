@@ -177,10 +177,8 @@ Each hook available in INGInious is described here, starting with its name and p
     ``default`` : Default value as specified in the configuration
 
     Overrides the task limits
-``task_context`` (``course``, ``taskid``, ``default``)
+``task_context`` (``task``, ``default``)
     Returns: inginious.frontend.parsable_text.ParsableText
-
-    ``course`` : inginious.frontend.courses.Course
 
     ``task`` : inginious.frontend.tasks.Task
 

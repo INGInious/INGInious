@@ -16,11 +16,11 @@ class ClientBuffer(object):
         self._waiting_jobs = []
         self._jobs_done = {}
 
-    def new_job(self, priority, task, inputdata, launcher_name="Unknown", debug=False):
+    def new_job(self, priority, course, task, inputdata, launcher_name="Unknown", debug=False):
         """ Runs a new job. It works exactly like the Client class, instead that there is no callback """
         bjobid = uuid.uuid4()
         self._waiting_jobs.append(str(bjobid))
-        self._client.new_job(priority, task, inputdata,
+        self._client.new_job(priority, course, task, inputdata,
                              (lambda result, grade, problems, tests, custom, archive, stdout, stderr:
                               self._callback(bjobid, result, grade, problems, tests, custom, archive, stdout, stderr)),
                              launcher_name, debug)

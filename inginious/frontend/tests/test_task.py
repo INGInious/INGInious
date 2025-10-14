@@ -40,7 +40,6 @@ class TestTaskBasic(object):
         t = course_factory.get_task('test', 'task1')
         assert t.get_environment_id() == 'default'
         assert t.get_id() == 'task1'
-        assert t.get_course_id() == 'test'
         assert t.get_response_type() == 'rst'
 
         env_param = t.get_environment_parameters()
@@ -70,7 +69,7 @@ class TestTaskBasic(object):
     def test_no_problems(self, ressource):
         course_factory = ressource
         try:
-            Task(course_factory.get_course('test3'), 'invalid_task',
+            Task('invalid_task',
                  {"environment_id": "default",
                   "environment_type": "docker",
                   "environment_parameters": {
@@ -85,14 +84,6 @@ class TestTaskBasic(object):
             assert str(e) == "Tasks must have some problems descriptions"
             return
         assert False
-
-    def test_course(self, ressource):
-        course_factory = ressource
-        # yeah, trivial. But we want 100% code coverage ;-)
-        c = course_factory.get_course("test")
-        t = c.get_task("task1")
-        assert t.get_course() == c
-        assert t.get_course_id() == "test"
 
     def test_input_consistent_valid(self, ressource):
         course_factory = ressource

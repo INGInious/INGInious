@@ -174,7 +174,7 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            Task(course, taskid, data, self.course_factory.get_fs(), plugin_manager, self.task_factory.get_problem_types())
+            Task(taskid, data, self.course_factory.get_course_fs(courseid), self.task_factory.get_problem_types())
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 
