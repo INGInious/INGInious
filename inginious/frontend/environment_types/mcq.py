@@ -13,5 +13,5 @@ class MCQEnvType(FrontendEnvType):
     def check_task_environment_parameters(self, data):
         return {}
 
-    def studio_env_template(self, task, allow_html):
+    def studio_env_template(self, task):
         return ""

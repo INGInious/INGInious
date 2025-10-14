@@ -55,19 +55,8 @@ class CourseEditTask(INGIniousAdminPage):
                                            problem_types=get_problem_types(), task_data=task_data,
                                            environment_types=environment_types, environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),
-                                           contains_is_html=self.contains_is_html(task_data),
                                            file_list=CourseTaskFiles.get_task_filelist(self.task_factory, courseid, taskid),
                                            additional_tabs=additional_tabs)
-
-    @classmethod
-    def contains_is_html(cls, data):
-        """ Detect if the problem has at least one "xyzIsHTML" key """
-        for key, val in data.items():
-            if isinstance(key, str) and key.endswith("IsHTML"):
-                return True
-            if isinstance(val, (OrderedDict, dict)) and cls.contains_is_html(val):
-                return True
-        return False
 
     def parse_problem(self, problem_content):
         """ Parses a problem, modifying some data """
@@ -122,10 +111,6 @@ class CourseEditTask(INGIniousAdminPage):
                 return json.dumps({"status": "error", "message": _("The number of random inputs must be an integer!")})
             if data['input_random'] < 0:
                 return json.dumps({"status": "error", "message": _("The number of random inputs must be positive!")})
-
-            # Checkboxes
-            if data.get("responseIsHTML"):
-                data["responseIsHTML"] = True
 
             # Network grading
             data["network_grading"] = "network_grading" in data
