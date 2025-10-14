@@ -31,7 +31,7 @@ def _get_submissions(course_factory, submission_manager, user_manager, courseid,
         raise APINotFound("Task not found")
 
     if submissionid is None:
-        submissions = submission_manager.get_user_submissions(task)
+        submissions = submission_manager.get_user_submissions(course, task)
     else:
         try:
             submissions = [submission_manager.get_submission(submissionid)]
@@ -184,7 +184,7 @@ class APISubmissions(APIAuthenticatedPage):
         self.user_manager.user_saw_task(username, courseid, taskid)
 
         # Verify rights
-        if not self.user_manager.task_can_user_submit(task, username, False):
+        if not self.user_manager.task_can_user_submit(course, task, username, False):
             raise APIForbidden("You are not allowed to submit for this task")
 
         user_input = flask.request.form.copy()
@@ -208,7 +208,7 @@ class APISubmissions(APIAuthenticatedPage):
 
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(task, user_input, course.get_task_dispenser(), debug)
+            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
