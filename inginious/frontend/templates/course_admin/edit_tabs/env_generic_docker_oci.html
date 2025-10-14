@@ -38,14 +38,3 @@
         <input type="text" class="form-control" id="{{env_id}}-run-cmd" name="envparams[{{env_id}}][run_cmd]" placeholder="{{ _('Optional') }}" value="{{env_params.get('run_cmd','')}}"/>
     </div>
 </div>
-{% if content_is_html %}
-    <div class="form-group row">
-        <label for="{{env_id}}-responseIsHTML" class="col-sm-4 control-label">{{ _("Are the task's responses written in HTML instead of restructuredText?") }}</label>
-        <div class="col-sm-8">
-            <div class="checkbox"><label>
-                <input type="checkbox" id="{{env_id}}-responseIsHTML" name="envparams[{{env_id}}][responseIsHTML]"
-                    {{ 'checked="checked"' if env_params.get('responseIsHTML',False) }} />&nbsp;
-            </label></div>
-        </div>
-    </div>
-{% endif %}

@@ -43,7 +43,6 @@ class TestTaskBasic(object):
         t = course_factory.get_task('test', 'task1')
         assert t.get_environment_id() == 'default'
         assert t.get_id() == 'task1'
-        assert t.get_response_type() == 'rst'
 
         env_param = t.get_environment_parameters()
         lim = env_param['limits']

@@ -23,9 +23,6 @@ class GenericDockerOCIRuntime(FrontendEnvType):
         else:
             out['run_cmd'] = data['run_cmd']
 
-        # Response is HTML
-        out["response_is_html"] = data.get("response_is_html", False)
-
         # Network access in grading container?
         out["network_grading"] = data.get("network_grading", False)
 
@@ -52,9 +49,9 @@ class GenericDockerOCIRuntime(FrontendEnvType):
 
         return out
 
-    def studio_env_template(self, task, allow_html: bool):
-        return render_template("course_admin/edit_tabs/env_generic_docker_oci.html", env_params=task.get("environment_parameters", {}),
-                                content_is_html=allow_html, env_id=self.id)
+    def studio_env_template(self, task):
+        return render_template("course_admin/edit_tabs/env_generic_docker_oci.html",
+                               env_params=task.get("environment_parameters", {}), env_id=self.id)
 
     def __init__(self, ssh_allowed=False):
         self._ssh_allowed = ssh_allowed

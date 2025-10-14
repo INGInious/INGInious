@@ -192,7 +192,7 @@ class WebAppSubmissionManager:
         # Clean the submission document in db
         self._database.submissions.update_one(
             {"_id": submission["_id"]},
-            {"$set": {"status": "waiting", "response_type": task.get_response_type()},
+            {"$set": {"status": "waiting"},
              "$unset": {"result": "", "grade": "", "text": "", "tests": "", "problems": "", "archive": "", "state": "",
                         "custom": ""}
              })
@@ -260,7 +260,6 @@ class WebAppSubmissionManager:
             "status": "waiting",
             "submitted_on": datetime.now(tz=timezone.utc),
             "username": [username],
-            "response_type": task.get_response_type(),
             "user_ip": flask.request.remote_addr
         }
 
@@ -390,29 +389,25 @@ class WebAppSubmissionManager:
         if only_feedback:
             submission = {"text": submission.get("text", None), "problems": dict(submission.get("problems", {}))}
         if "text" in submission:
-            submission["text"] = ParsableText(submission["text"], submission["response_type"], show_everything).parse()
+            submission["text"] = ParsableText(submission["text"], "rst", show_everything).parse()
         if "problems" in submission:
             for problem in submission["problems"]:
                 if isinstance(submission["problems"][problem], str):  # fallback for old-style submissions
                     submission["problems"][problem] = (
-                    submission.get('result', 'crash'), ParsableText(submission["problems"][problem],
-                                                                    submission["response_type"],
+                    submission.get('result', 'crash'), ParsableText(submission["problems"][problem],"rst",
                                                                     show_everything).parse())
                 else:  # new-style submission
 
                     try:
                         submission["problems"][problem] = (
-                        submission["problems"][problem][0], ParsableText(submission["problems"][problem][1],
-                                                                     submission["response_type"],
+                        submission["problems"][problem][0], ParsableText(submission["problems"][problem][1],"rst",
                                                                      show_everything).parse())
                     except TypeError:
                         self._logger.error(
                             "Something went wrong with provided feedback for submission %s", str(submission["_id"])
                             )
                         submission["problems"][problem] = (
-                            'crash', ParsableText(_("Feedback is badly formatted."),
-                                                                    submission["response_type"],
-                                                                    show_everything).parse())
+                            'crash', ParsableText(_("Feedback is badly formatted."),"rst", show_everything).parse())
         return submission
 
     def is_running(self, submissionid, user_check=True):
