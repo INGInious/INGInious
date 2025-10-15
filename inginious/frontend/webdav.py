@@ -131,11 +131,9 @@ class INGIniousDAVCourseFile(FileResource):
 
 class INGIniousFilesystemProvider(DAVProvider):
     """ A DAVProvider adapted to the structure of INGInious """
-    def __init__(self, course_factory, task_factory):
+    def __init__(self, course_factory):
         super(INGIniousFilesystemProvider, self).__init__()
-
         self.course_factory = course_factory
-        self.task_factory = task_factory
         self.readonly = False
 
     def _get_course_id(self, path):
@@ -207,11 +205,11 @@ def get_app(config):
         raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
 
     fs_provider = LocalFSProvider(config["tasks_directory"])
-    course_factory, task_factory = create_factories(fs_provider, {}, {}, None)
+    course_factory = create_factories(fs_provider, {}, {}, None)
     user_manager = UserManager(database, config.get('superadmins', []))
 
     config = dict(wsgidav_app.DEFAULT_CONFIG)
-    config["provider_mapping"] = {"/": INGIniousFilesystemProvider(course_factory, task_factory)}
+    config["provider_mapping"] = {"/": INGIniousFilesystemProvider(course_factory)}
     config["http_authenticator"]["domain_controller"] = get_dc(course_factory, user_manager, fs_provider)
     config["verbose"] = 0
 
