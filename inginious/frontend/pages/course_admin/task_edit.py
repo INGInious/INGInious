@@ -6,12 +6,9 @@
 """ Pages that allow editing of tasks """
 import json
 import logging
-import tempfile
-import bson
 
 import flask
 from collections import OrderedDict
-from zipfile import ZipFile
 from flask import render_template
 from werkzeug.exceptions import NotFound
 
@@ -70,16 +67,9 @@ class CourseEditTask(INGIniousAdminPage):
 
         __, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
         data = flask.request.form.copy()
-        data["task_file"] = flask.request.files.get("task_file")
 
-        # Else, parse content
+        # Parse content
         try:
-            try:
-                task_zip = data.get("task_file").read()
-            except:
-                task_zip = None
-            del data["task_file"]
-
             problems = dict_from_prefix("problem", data)
             environment_type = data.get("environment_type", "")
             environment_parameters = dict_from_prefix("envparams", data).get(environment_type, {})
@@ -148,20 +138,6 @@ class CourseEditTask(INGIniousAdminPage):
             Task(taskid, data, self.course_factory.get_course_fs(courseid))
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
-
-        if task_zip:
-            try:
-                zipfile = ZipFile(task_zip)
-            except Exception:
-                return json.dumps({"status": "error", "message": _("Cannot read zip file. Files were not modified")})
-
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                try:
-                    zipfile.extractall(tmpdirname)
-                except Exception:
-                    return json.dumps(
-                        {"status": "error", "message": _("There was a problem while extracting the zip archive. Some files may have been modified")})
-                task_fs.copy_to(tmpdirname)
 
         self.task_factory.update_task_descriptor_content(courseid, taskid, data)
 
