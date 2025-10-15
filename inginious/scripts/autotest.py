@@ -19,7 +19,7 @@ from inginious.common.tags import Tag
 from inginious.frontend.tasks import Task
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.common.log import init_logging
-from inginious.frontend.course_factory import create_factories
+from inginious.frontend.course_factory import CourseFactory
 from inginious.client.client_sync import ClientSync
 from inginious.frontend.arch_helper import start_asyncio_and_zmq, create_arch
 from inginious.common.filesystems.local import LocalFSProvider
@@ -298,7 +298,7 @@ def main():
     fs_provider = LocalFSProvider(config["task_directory"])
 
     try:
-        course_factory = create_factories(fs_provider, task_dispensers, problem_types)  # used for getting tasks
+        course_factory = CourseFactory(fs_provider, task_dispensers, None)  # used for getting tasks
 
         client = create_client(config, course_factory, fs_provider)
 

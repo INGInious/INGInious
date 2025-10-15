@@ -25,9 +25,7 @@ from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.common.filesystems.local import LocalFSProvider
-from inginious.frontend.course_factory import create_factories
-from inginious.common.filesystems import FileSystemProvider
-from inginious.frontend.parsable_text import ParsableText
+from inginious.frontend.course_factory import CourseFactory
 from inginious.client.client_sync import ClientSync
 from inginious.common.base import load_json_or_yaml
 import inginious.frontend.tasks
@@ -298,7 +296,7 @@ def main():
 
     """ Intialize the LocalFileSystemProvider of the instance """
     local_fsp = LocalFSProvider(task_directory)
-    course_factory = create_factories(local_fsp, task_dispensers, task_problem_types)
+    course_factory = CourseFactory(local_fsp, task_dispensers, None)
 
     """ Initialize client """
     zmq_context, asyncio_thread = start_asyncio_and_zmq()
