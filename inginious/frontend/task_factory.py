@@ -24,26 +24,3 @@ class TaskFactory(object):
         :return: an object representing the task, of the type given in the constructor
         """
         return Task.get(taskid, course.get_fs())
-
-    def get_readable_tasks(self, course):
-        """ Returns the list of all available tasks in a course """
-        course_fs = self._filesystem.from_subfolder(course.get_id())
-        tasks = [
-            task[0:len(task)-1]  # remove trailing /
-            for task in course_fs.list(folders=True, files=False, recursive=False)
-            if course_fs.from_subfolder(task).exists("task.yaml")
-        ]
-        return tasks
-
-    def get_all_tasks(self, course):
-        """
-        :return: a table containing taskid=>Task pairs
-        """
-        tasks = self.get_readable_tasks(course)
-        output = {}
-        for task in tasks:
-            try:
-                output[task] = self.get_task(course, task)
-            except:
-                pass
-        return output
