@@ -28,7 +28,6 @@ class PluginManager(object):
         self._loaded = False
         self._webpy_app = None
         self._flask_app = None
-        self._task_factory = None
         self._database = None
         self._user_manager = None
         self._submission_manager = None
@@ -68,10 +67,9 @@ class PluginManager(object):
                 kwargs = out
         return kwargs
 
-    def load(self, client, flask_app, course_factory, task_factory, database, user_manager, submission_manager, config):
+    def load(self, client, flask_app, course_factory, database, user_manager, submission_manager, config):
         """ Loads the plugin manager. Must be done after the initialisation of the client """
         self._flask_app = flask_app
-        self._task_factory = task_factory
         self._database = database
         self._user_manager = user_manager
         self._submission_manager = submission_manager
