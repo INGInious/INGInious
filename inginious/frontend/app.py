@@ -191,7 +191,7 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, database)
+    course_factory = create_factories(fs_provider, default_task_dispensers, database)
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
@@ -255,7 +255,6 @@ def get_app(config):
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
     flask_app.course_factory = course_factory
-    flask_app.task_factory = task_factory
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.database = database
@@ -282,7 +281,7 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, course_factory, task_factory, database, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, course_factory, database, user_manager, submission_manager, config.get("plugins", []))
 
     # Start the inginious.backend
     client.start()

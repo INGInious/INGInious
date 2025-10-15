@@ -122,8 +122,9 @@ class Task(object):
 
         # i18n
         self._translations = {}
+
         self._task_fs = course_fs.from_subfolder(taskid)
-        self._task_fs.ensure_exists()
+        self._new_doc = not self._task_fs.exists()
 
         self._translations_fs = self._task_fs.from_subfolder("$i18n")
 
@@ -280,7 +281,7 @@ class Task(object):
     def save(self):
         """ Saves the Task into the filesystem """
         self._task_fs.put("task.yaml", get_json_or_yaml("task.yaml", self._data))
-        if self._task_fs.prefix not in _cache:
+        if self._new_doc:
             logging.getLogger("inginious.task").info("Task %s created in the factory.", self._task_fs.prefix)
 
     @classmethod

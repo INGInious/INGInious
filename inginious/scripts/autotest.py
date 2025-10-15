@@ -298,7 +298,7 @@ def main():
     fs_provider = LocalFSProvider(config["task_directory"])
 
     try:
-        course_factory, _ = create_factories(fs_provider, task_dispensers, problem_types)  # used for getting tasks
+        course_factory = create_factories(fs_provider, task_dispensers, problem_types)  # used for getting tasks
 
         client = create_client(config, course_factory, fs_provider)
 

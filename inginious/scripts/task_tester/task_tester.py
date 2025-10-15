@@ -298,7 +298,7 @@ def main():
 
     """ Intialize the LocalFileSystemProvider of the instance """
     local_fsp = LocalFSProvider(task_directory)
-    course_factory, task_factory = create_factories(local_fsp, task_dispensers, task_problem_types)
+    course_factory = create_factories(local_fsp, task_dispensers, task_problem_types)
 
     """ Initialize client """
     zmq_context, asyncio_thread = start_asyncio_and_zmq()

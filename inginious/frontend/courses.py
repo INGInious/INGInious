@@ -38,11 +38,10 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_factory, task_dispensers, database):
+    def __init__(self, courseid, content, course_fs, task_dispensers, database):
         self._id = courseid
         self._content = content
         self._fs = course_fs
-        self._task_factory = task_factory
 
         self._translations = {}
         translations_fs = self._fs.from_subfolder("$i18n")
@@ -88,9 +87,7 @@ class Course(object):
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
             task_dispenser_class = task_dispensers.get(self._content.get('task_dispenser', 'toc'), TableOfContents)
-            # Here we use a lambda to encourage the task dispenser to pass by the task_factory to fetch course tasks
-            # to avoid them to be cached along with the course object. Passing the task factory as argument
-            # would require to pass the course too, and have a useless reference back.
+            # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
             self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(False), self._content.get("dispenser_data", ''), database, self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())

@@ -54,7 +54,6 @@ class CourseTaskListPage(INGIniousAdminPage):
             for taskid in json.loads(user_input.get("new_tasks", "[]")):
                 try:
                     task_fs = course.get_fs().from_subfolder(taskid)
-                    task_fs.ensure_exists()
                     if task_fs.exists("task.yaml"):
                         raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
 
