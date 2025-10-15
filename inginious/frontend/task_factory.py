@@ -47,15 +47,3 @@ class TaskFactory(object):
             except:
                 pass
         return output
-
-    def update_cache_for_course(self, courseid):
-        """
-        Clean/update the cache of all the tasks for a given course (id)
-        :param courseid:
-        """
-        to_drop = []
-        for (cid, tid) in self._cache:
-            if cid == courseid:
-                to_drop.append(tid)
-        for tid in to_drop:
-            del self._cache[(courseid, tid)]
