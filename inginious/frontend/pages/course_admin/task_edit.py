@@ -50,7 +50,7 @@ class CourseEditTask(INGIniousAdminPage):
                                            problem_types=get_problem_types(), task_data=task_data,
                                            environment_types=environment_types, environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),
-                                           file_list=CourseTaskFiles.get_task_filelist(self.task_factory, courseid, taskid),
+                                           file_list=CourseTaskFiles.get_task_filelist(task.get_fs()),
                                            additional_tabs=additional_tabs)
 
     def parse_problem(self, problem_content):

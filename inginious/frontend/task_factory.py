@@ -5,11 +5,7 @@
 
 """ Factory for loading tasks from disk """
 
-from os.path import splitext
 from inginious.common.filesystems import FileSystemProvider
-from inginious.common.log import get_course_logger
-from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
-from inginious.common.exceptions import InvalidNameException
 
 from inginious.frontend.tasks import Task
 
@@ -28,19 +24,6 @@ class TaskFactory(object):
         :return: an object representing the task, of the type given in the constructor
         """
         return Task.get(taskid, course.get_fs())
-
-    def get_task_fs(self, courseid, taskid):
-        """
-        :param courseid: the course id of the course
-        :param taskid: the task id of the task
-        :raise: InvalidNameException
-        :return: A FileSystemProvider to the folder containing the task files
-        """
-        if not id_checker(courseid):
-            raise InvalidNameException("Course with invalid name: " + courseid)
-        if not id_checker(taskid):
-            raise InvalidNameException("Task with invalid name: " + taskid)
-        return self._filesystem.from_subfolder(courseid).from_subfolder(taskid)
 
     def get_readable_tasks(self, course):
         """ Returns the list of all available tasks in a course """
