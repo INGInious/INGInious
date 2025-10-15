@@ -11,7 +11,7 @@ import tempfile
 import shutil
 
 from inginious.common.filesystems.local import LocalFSProvider
-from inginious.frontend.course_factory import create_factories
+from inginious.frontend.course_factory import CourseFactory
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.common.tasks_problems import register_problem_types
@@ -27,7 +27,7 @@ def ressource(request):
     dir_path = tempfile.mkdtemp()
     fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
     register_problem_types(get_default_displayable_problem_types())
-    course_factory = create_factories(fs, task_dispensers)
+    course_factory = CourseFactory(fs, task_dispensers, None)
     yield (course_factory, dir_path)
     course_factory.update_course_descriptor_content("test", {"name": "Unit test 1", "admins": ["testadmin1","testadmin2"],
                                                              "accessible": True})
