@@ -22,7 +22,7 @@ def example_task_editor_tab_2(course, taskid, task_data):
     return tab_id, link, content
 
 
-def on_task_editor_submit(course, taskid, task_data, task_fs):
+def on_task_editor_submit(course, taskid, task_data):
     # We can modify task data here
     task_data['example_field'] = 'test'
 

@@ -10,7 +10,9 @@ from collections import OrderedDict
 from flask import request, render_template
 from natsort import natsorted
 
+from inginious.frontend.tasks import Task
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.common.exceptions import TaskAlreadyExistsException
 
 
 class CourseTaskListPage(INGIniousAdminPage):
@@ -51,13 +53,19 @@ class CourseTaskListPage(INGIniousAdminPage):
 
             for taskid in json.loads(user_input.get("new_tasks", "[]")):
                 try:
-                    self.task_factory.create_task(course, taskid, {
-                        "name": taskid, "problems": {}, "environment_type": "mcq"})
+                    task_fs = course.get_fs().from_subfolder(taskid)
+                    task_fs.ensure_exists()
+                    if task_fs.exists("task.yaml"):
+                        raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
+
+                    t = Task(taskid, {"name": taskid, "problems": {}, "environment_type": "mcq"}, course.get_fs())
+                    t.save()
                 except Exception as ex:
                     errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
             for taskid in json.loads(user_input.get("deleted_tasks", "[]")):
                 try:
-                    self.task_factory.delete_task(courseid, taskid)
+                    t = Task.get(taskid, course.get_fs())
+                    t.delete()
                 except Exception as ex:
                     errors.append(_("Couldn't delete task {} : ").format(taskid) + str(ex))
             for taskid in json.loads(user_input.get("wiped_tasks", "[]")):
@@ -84,11 +92,9 @@ class CourseTaskListPage(INGIniousAdminPage):
     def clean_task_files(self, course):
         task_dispenser = course.get_task_dispenser()
         legacy_fields = task_dispenser.legacy_fields.keys()
-        for taskid in course.get_tasks():
-            descriptor = self.task_factory.get_task_descriptor_content(course.get_id(), taskid)
-            for field in legacy_fields:
-                descriptor.pop(field, None)
-            self.task_factory.update_task_descriptor_content(course.get_id(), taskid, descriptor)
+        for taskid, task in course.get_tasks().items():
+            task.drop_legacy_fields(legacy_fields)
+            task.save()
 
     def submission_url_generator(self, taskid):
         """ Generates a submission url """

@@ -6,13 +6,86 @@
 """ Classes modifying basic tasks, problems and boxes classes """
 
 import gettext
+import logging
 
+from inginious.common.filesystems import FileSystemProvider
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
-from inginious.common.base import id_checker
 from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.plugins import plugin_manager
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
+from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, \
+    TaskUnreadableException
+
+
+_cache = {}
+
+def _cache_update_needed(course_fs, taskid):
+    """
+    :param course_fs: a Course object
+    :param taskid: a (valid) task id
+    :raise InvalidNameException, TaskNotFoundException
+    :return: True if an update of the cache is needed, False else
+    """
+    task_fs = course_fs.from_subfolder(taskid)
+    if task_fs.prefix not in _cache:
+        return True
+
+    try:
+        last_update, content = _get_last_updates(course_fs, taskid, False)
+    except:
+        raise TaskNotFoundException()
+
+    last_modif = _cache[task_fs.prefix][1]
+    for filename, mftime in last_update.items():
+        if filename not in last_modif or last_modif[filename] < mftime:
+            return True
+
+    return False
+
+
+def _get_last_updates(course_fs, taskid, need_content=False):
+    task_fs = course_fs.from_subfolder(taskid)
+    last_update = {"task.yaml": task_fs.get_last_modification_time("task.yaml")}
+    translations_fs = task_fs.from_subfolder("$i18n")
+
+    if not translations_fs.exists():
+        translations_fs = task_fs.from_subfolder("student").from_subfolder("$i18n")
+    if not translations_fs.exists():
+        translations_fs = course_fs.from_subfolder("$common").from_subfolder("$i18n")
+    if not translations_fs.exists():
+        translations_fs = course_fs.from_subfolder("$common").from_subfolder("student").from_subfolder(
+            "$i18n")
+    if not translations_fs.exists():
+        translations_fs = course_fs.from_subfolder("$i18n")
+
+    if translations_fs.exists():
+        for f in translations_fs.list(folders=False, files=True, recursive=False):
+            lang = f[0:len(f) - 3]
+            if translations_fs.exists(lang + ".mo"):
+                last_update["$i18n/" + lang + ".mo"] = translations_fs.get_last_modification_time(lang + ".mo")
+
+    if need_content:
+        try:
+            task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
+        except Exception as e:
+            raise TaskUnreadableException(str(e))
+        return last_update, task_content
+    else:
+        return last_update, None
+
+
+def _update_cache(course_fs, taskid):
+    """
+    Updates the cache
+    :param course: a Course object
+    :param taskid: a (valid) task id
+    :raise InvalidNameException, TaskNotFoundException, TaskUnreadableException
+    """
+    task_fs = course_fs.from_subfolder(taskid)
+    last_modif, task_content = _get_last_updates(course_fs, taskid, True)
+    _cache[task_fs.prefix] = Task(taskid, task_content, course_fs), last_modif
 
 
 def _migrate_from_v_0_6(content):
@@ -199,3 +272,32 @@ class Task(object):
         """ Fetch the legacy config fields now used by task dispensers """
         return {field_class.get_id(): self._data[field] for field, field_class in fields.items()
                 if field in self._data}
+
+    def drop_legacy_fields(self, legacy_fields : list[str]):
+        for field in legacy_fields:
+            self._data.pop(field, None)
+
+    def save(self):
+        """ Saves the Task into the filesystem """
+        self._task_fs.put("task.yaml", get_json_or_yaml("task.yaml", self._data))
+        if self._task_fs.prefix not in _cache:
+            logging.getLogger("inginious.task").info("Task %s created in the factory.", self._task_fs.prefix)
+
+    @classmethod
+    def get(cls, taskid : str, course_fs : FileSystemProvider):
+        """ Fetch a task with id taskid from the specified course filesystem"""
+        if not id_checker(taskid):
+            raise InvalidNameException("Task with invalid name: " + taskid)
+
+        if _cache_update_needed(course_fs, taskid):
+            _update_cache(course_fs, taskid)
+
+        task_fs = course_fs.from_subfolder(taskid)
+        return _cache[task_fs.prefix][0]
+
+    def delete(self):
+        """ Erase the content of the task folder """
+        if self._task_fs.prefix in _cache:
+            del _cache[self._task_fs.prefix]
+        self._task_fs.delete()
+        logging.getLogger("inginious.task").info("Task %s erased from the factory.", self._task_fs.prefix)

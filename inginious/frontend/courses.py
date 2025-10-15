@@ -20,6 +20,7 @@ from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.plugins import plugin_manager
+from inginious.frontend.tasks import Task
 
 
 def _migrate_from_v_0_6(content, task_list):
@@ -128,7 +129,7 @@ class Course(object):
 
     def get_task(self, taskid):
         """ Returns a Task object """
-        return self._task_factory.get_task(self, taskid)
+        return Task.get(taskid, self.get_fs())
 
     def get_descriptor(self):
         """ Get (a copy) the description of the course """
