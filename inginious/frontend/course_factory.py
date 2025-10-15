@@ -233,8 +233,6 @@ class CourseFactory(object):
             last_modif
         )
 
-        self._task_factory.update_cache_for_course(courseid)
-
 
 def create_factories(fs_provider, task_dispensers, database=None):
     """
