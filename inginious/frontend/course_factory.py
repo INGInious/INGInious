@@ -224,13 +224,3 @@ class CourseFactory(object):
             Course(courseid, course_descriptor, self.get_course_fs(courseid), self._task_dispensers, self._database),
             last_modif
         )
-
-
-def create_factories(fs_provider, task_dispensers, database=None):
-    """
-    Shorthand for creating Factories
-    :param fs_provider: A FileSystemProvider leading to the courses
-    :param task_class:
-    :return: a tuple with two objects: the first being of type CourseFactory, the second of type TaskFactory
-    """
-    return CourseFactory(fs_provider, task_dispensers, database)
