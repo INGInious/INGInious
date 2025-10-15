@@ -117,7 +117,7 @@ class CourseTaskListPage(INGIniousAdminPage):
         """ Get all data and display the page """
 
         # Load tasks and verify exceptions
-        files = self.task_factory.get_readable_tasks(course)
+        files = course.get_readable_tasks()
 
         tasks = {}
         if errors is None:
