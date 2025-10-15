@@ -35,12 +35,10 @@ class CourseEditTask(INGIniousAdminPage):
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
         try:
-            task_data = self.task_factory.get_task_descriptor_content(courseid, taskid)
+            task = self.course_factory.get_task(courseid, taskid)
+            task_data = task._data
         except TaskNotFoundException:
             raise NotFound()
-
-        # Ensure retrocompatibility
-        task_data = _migrate_from_v_0_6(task_data)
 
         environment_types = self.environment_types
         environments = self.environments
@@ -115,19 +113,8 @@ class CourseEditTask(INGIniousAdminPage):
         except:
             return json.dumps({"status": "error", "message": _("Error while reading course's informations")})
 
-        # Get original data
-        try:
-            orig_data = self.task_factory.get_task_descriptor_content(courseid, taskid)
-            data["order"] = orig_data["order"]
-        except:
-            pass
-
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
-        task_fs.ensure_exists()
-
         # Call plugins and return the first error
-        plugin_results = plugin_manager.call_hook('task_editor_submit', course=course, taskid=taskid,
-                                                       task_data=data, task_fs=task_fs)
+        plugin_results = plugin_manager.call_hook('task_editor_submit', course=course, taskid=taskid, task_data=data)
 
         # Retrieve the first non-null element
         error = next(filter(None, plugin_results), None)
@@ -135,10 +122,10 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            Task(taskid, data, self.course_factory.get_course_fs(courseid))
+            t = Task(taskid, data, self.course_factory.get_course_fs(courseid))
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 
-        self.task_factory.update_task_descriptor_content(courseid, taskid, data)
+        t.save()
 
         return json.dumps({"status": "ok"})
