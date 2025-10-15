@@ -27,7 +27,7 @@ from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__, DB_VERSION
-from inginious.frontend.course_factory import create_factories
+from inginious.frontend.course_factory import CourseFactory
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
@@ -191,7 +191,7 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    course_factory = create_factories(fs_provider, default_task_dispensers, database)
+    course_factory = CourseFactory(fs_provider, default_task_dispensers, database)
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
