@@ -5,87 +5,42 @@
 
 """ Classes modifying basic tasks, problems and boxes classes """
 
+import os
 import gettext
 import logging
 
+from typing import Callable, Any, TypeVar
+
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.common.filesystems import FileSystemProvider
+from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
-from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.plugins import plugin_manager
-from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
-from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, \
-    TaskUnreadableException
+from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, TaskUnreadableException
 
 
 _cache = {}
 
-def _cache_update_needed(course_fs, taskid):
-    """
-    :param course_fs: a Course object
-    :param taskid: a (valid) task id
-    :raise InvalidNameException, TaskNotFoundException
-    :return: True if an update of the cache is needed, False else
-    """
-    task_fs = course_fs.from_subfolder(taskid)
-    if task_fs.prefix not in _cache:
-        return True
-
+def _load_task(task_fs : FileSystemProvider, taskid : str):
+    # Try to open the task file
     try:
-        last_update, content = _get_last_updates(course_fs, taskid, False)
-    except:
-        raise TaskNotFoundException()
+        task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
+    except Exception as e:
+        raise TaskUnreadableException(str(e))
 
-    last_modif = _cache[task_fs.prefix][1]
-    for filename, mftime in last_update.items():
-        if filename not in last_modif or last_modif[filename] < mftime:
-            return True
+    return Task(taskid, task_content, task_fs)
 
-    return False
+T = TypeVar('T')
 
-
-def _get_last_updates(course_fs, taskid, need_content=False):
-    task_fs = course_fs.from_subfolder(taskid)
-    last_update = {"task.yaml": task_fs.get_last_modification_time("task.yaml")}
-    translations_fs = task_fs.from_subfolder("$i18n")
-
-    if not translations_fs.exists():
-        translations_fs = task_fs.from_subfolder("student").from_subfolder("$i18n")
-    if not translations_fs.exists():
-        translations_fs = course_fs.from_subfolder("$common").from_subfolder("$i18n")
-    if not translations_fs.exists():
-        translations_fs = course_fs.from_subfolder("$common").from_subfolder("student").from_subfolder(
-            "$i18n")
-    if not translations_fs.exists():
-        translations_fs = course_fs.from_subfolder("$i18n")
-
-    if translations_fs.exists():
-        for f in translations_fs.list(folders=False, files=True, recursive=False):
-            lang = f[0:len(f) - 3]
-            if translations_fs.exists(lang + ".mo"):
-                last_update["$i18n/" + lang + ".mo"] = translations_fs.get_last_modification_time(lang + ".mo")
-
-    if need_content:
-        try:
-            task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
-        except Exception as e:
-            raise TaskUnreadableException(str(e))
-        return last_update, task_content
-    else:
-        return last_update, None
-
-
-def _update_cache(course_fs, taskid):
-    """
-    Updates the cache
-    :param course: a Course object
-    :param taskid: a (valid) task id
-    :raise InvalidNameException, TaskNotFoundException, TaskUnreadableException
-    """
-    task_fs = course_fs.from_subfolder(taskid)
-    last_modif, task_content = _get_last_updates(course_fs, taskid, True)
-    _cache[task_fs.prefix] = Task(taskid, task_content, course_fs), last_modif
+def _fetch_from_cache(course_fs : FileSystemProvider, path : str, get_resource : Callable[[], T]) -> T:
+    """ Fetch the cached content for course_fs.prefix + path or put the get_resource() result in cache """
+    last_modif = course_fs.get_last_modification_time(path)
+    cached_data = _cache.get(course_fs.prefix + path, (None, 0))
+    if cached_data[1] < last_modif:
+        _cache[course_fs.prefix + path] = get_resource(), last_modif
+    return _cache[course_fs.prefix + path][0]
 
 
 def _migrate_from_v_0_6(content):
@@ -108,9 +63,9 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, taskid, content, course_fs):
+    def __init__(self, taskid : str, content : dict[str, Any], task_fs : FileSystemProvider):
         if not id_checker(taskid):
-            raise Exception("Task with invalid id: " + course_fs.prefix + taskid)
+            raise Exception("Task with invalid id: " + task_fs.prefix)
 
         content = _migrate_from_v_0_6(content)
 
@@ -123,26 +78,8 @@ class Task(object):
         # i18n
         self._translations = {}
 
-        self._task_fs = course_fs.from_subfolder(taskid)
+        self._task_fs = task_fs
         self._new_doc = not self._task_fs.exists()
-
-        self._translations_fs = self._task_fs.from_subfolder("$i18n")
-
-        if not self._translations_fs.exists():
-            self._translations_fs = self._task_fs.from_subfolder("student").from_subfolder("$i18n")
-        if not self._translations_fs.exists():
-            self._translations_fs = course_fs.from_subfolder("$common").from_subfolder("$i18n")
-        if not self._translations_fs.exists():
-            self._translations_fs = course_fs.from_subfolder("$common").from_subfolder(
-                "student").from_subfolder("$i18n")
-
-        if self._translations_fs.exists():
-            for f in self._translations_fs.list(folders=False, files=True, recursive=False):
-                lang = f[0:len(f) - 3]
-                if self._translations_fs.exists(lang + ".mo"):
-                    self._translations[lang] = gettext.GNUTranslations(self._translations_fs.get_fd(lang + ".mo"))
-                else:
-                    self._translations[lang] = gettext.NullTranslations()
 
         # Check all problems
         self._problems = []
@@ -185,6 +122,9 @@ class Task(object):
         
         # Regenerate input random
         self._regenerate_input_random = bool(self._data.get("regenerate_input_random", False))
+
+    def set_translations(self, translations : dict[str, gettext.GNUTranslations]):
+        self._translations = translations
 
     def get_translation_obj(self, language):
         return self._translations.get(language, gettext.NullTranslations())
@@ -290,11 +230,30 @@ class Task(object):
         if not id_checker(taskid):
             raise InvalidNameException("Task with invalid name: " + taskid)
 
-        if _cache_update_needed(course_fs, taskid):
-            _update_cache(course_fs, taskid)
-
         task_fs = course_fs.from_subfolder(taskid)
-        return _cache[task_fs.prefix][0]
+        if not task_fs.exists("task.yaml"):
+            raise TaskNotFoundException()
+
+        task = _fetch_from_cache(task_fs, "task.yaml", lambda: _load_task(task_fs, taskid))
+
+        translations = {}
+        i18n_paths = [
+            task_fs.from_subfolder("$i18n"),
+            task_fs.from_subfolder("student").from_subfolder("$i18n"),
+            course_fs.from_subfolder("$common").from_subfolder("$i18n"),
+            course_fs.from_subfolder("$common").from_subfolder("student").from_subfolder("$i18n")
+        ]
+
+        for i18n_fs in i18n_paths:
+            if i18n_fs.exists():
+                for f in i18n_fs.list(folders=False, files=True, recursive=False):
+                    lang, ext = os.path.splitext(f)
+                    if ext == ".mo":
+                        translations[lang] = _fetch_from_cache(i18n_fs, f, lambda: gettext.GNUTranslations(i18n_fs.get_fd(f)))
+                break
+
+        task.set_translations(translations)
+        return task
 
     def delete(self):
         """ Erase the content of the task folder """
