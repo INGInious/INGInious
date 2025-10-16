@@ -21,7 +21,7 @@
             </thead>
             <tr>
                 <td><i class="fa fa-folder-open"></i>&nbsp;/</td>
-                <td><a href="{{get_path('admin', course.get_id(), 'edit', taskid, 'files?action=download&path=/')}}"
+                <td><a href="{{get_path('admin', course.get_id(), 'edit', 'task', taskid, 'files?action=download&path=/')}}"
                        onclick="studio_task_edit_downloadfile('/'); return false;" class="btn btn-sm btn-primary btn-block" title="{{ _('Download') }}"><i
                         class="fa fa-cloud-download"></i></a></td>
                 <td></td>
@@ -36,7 +36,7 @@
                         {{ name }}
                     </td>
                     <td>
-                        <a href="{{get_path('admin', course.get_id(), 'edit', taskid, 'files?action=download&path=' + complete_name)}}"
+                        <a href="{{get_path('admin', course.get_id(), 'edit', 'task', taskid, 'files?action=download&path=' + complete_name)}}"
                            class="btn btn-sm btn-primary btn-block" title="{{ _('Download') }}"><i class="fa fa-cloud-download"></i></a>
                     </td>
                     <td>
