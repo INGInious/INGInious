@@ -9,6 +9,7 @@ import copy
 import gettext
 import hashlib
 import re
+import logging
 from typing import Iterable, List
 from collections import OrderedDict
 from pylti1p3.tool_config import ToolConfDict
@@ -61,7 +62,7 @@ class Course(object):
         if self._content.get('nofrontend', False):
             raise Exception("That course is not allowed to be displayed directly in the webapp")
 
-        _migrate_from_v_0_6(content, self.get_tasks(False))
+        _migrate_from_v_0_6(content, self.get_tasks())
 
         try:
             self._admins = self._content.get('admins', [])
@@ -88,7 +89,7 @@ class Course(object):
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
             task_dispenser_class = task_dispensers.get(self._content.get('task_dispenser', 'toc'), TableOfContents)
             # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
-            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(False), self._content.get("dispenser_data", ''), database, self.get_id())
+            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", ''), database, self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
@@ -180,17 +181,15 @@ class Course(object):
             if self._fs.from_subfolder(task).exists("task.yaml")
         ]
 
-    def get_tasks(self, ordered=False):
-        if ordered:
-            return self._task_dispenser.get_ordered_tasks()
-
+    def get_tasks(self) -> dict[str, Task]:
+        """ Returns """
         tasks = self.get_readable_tasks()
         output = {}
         for task in tasks:
             try:
                 output[task] = self.get_task(task)
-            except:
-                pass
+            except Exception as e:
+                logging.getLogger("inginious.course." + self._id).info("Couldn't load task %s : %s", task, str(e))
         return output
 
     def get_access_control_method(self):
