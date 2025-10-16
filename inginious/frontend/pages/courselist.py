@@ -5,6 +5,8 @@
 
 """ Index page """
 from collections import OrderedDict
+from flask import render_template
+
 from inginious.frontend.pages.utils import INGIniousPage
 
 
@@ -29,4 +31,4 @@ class CourseListPage(INGIniousPage):
         open_courses = {courseid: course for courseid, course in all_courses.items() if course.is_open_to_non_staff()}
         open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
 
-        return self.template_helper.render("courselist.html", open_courses=open_courses, user_info=user_info)
+        return render_template("courselist.html", open_courses=open_courses, user_info=user_info)

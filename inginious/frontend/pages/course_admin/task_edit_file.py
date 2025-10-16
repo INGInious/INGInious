@@ -7,8 +7,7 @@
 import json
 import os.path
 
-import flask
-from flask import redirect, Response
+from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import  NotFound
 
 from inginious.common.base import id_checker
@@ -25,7 +24,7 @@ class CourseTaskFiles(INGIniousAdminPage):
 
         self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
-        user_input = flask.request.args
+        user_input = request.args
         if user_input.get("action") == "download" and user_input.get('path') is not None:
             return self.action_download(courseid, taskid, user_input.get('path'))
         elif user_input.get("action") == "delete" and user_input.get('path') is not None:
@@ -46,8 +45,8 @@ class CourseTaskFiles(INGIniousAdminPage):
 
         self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
-        user_input = flask.request.form.copy()
-        user_input["file"] = flask.request.files.get("file")
+        user_input = request.form.copy()
+        user_input["file"] = request.files.get("file")
 
         if user_input.get("action") == "upload" and user_input.get('path') is not None and user_input.get('file') is not None:
             return self.action_upload(courseid, taskid, user_input.get('path'), user_input.get('file'))
@@ -58,7 +57,7 @@ class CourseTaskFiles(INGIniousAdminPage):
 
     def show_tab_file(self, courseid, taskid, error=None):
         """ Return the file tab """
-        return self.template_helper.render("course_admin/edit_tabs/files.html",
+        return render_template("course_admin/edit_tabs/files.html",
                                            course=self.course_factory.get_course(courseid),
                                            taskid=taskid,
                                            file_list=self.get_task_filelist(self.task_factory, courseid, taskid),
@@ -260,8 +259,8 @@ class CourseTaskFileUpload(CourseTaskFiles):
 
         self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
-        user_input = flask.request.form.copy()
-        user_input["file"] = flask.request.files.get("file")
+        user_input = request.form.copy()
+        user_input["file"] = request.files.get("file")
         if user_input.get('file') is not None:
             file = user_input.get('file')
             name = user_input.get('name')
