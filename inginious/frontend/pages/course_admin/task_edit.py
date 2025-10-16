@@ -122,7 +122,7 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            t = Task(taskid, data, self.course_factory.get_course_fs(courseid))
+            t = Task(taskid, data, self.course_factory.get_course_fs(courseid).from_subfolder(taskid))
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 
