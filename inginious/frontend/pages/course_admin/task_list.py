@@ -57,7 +57,7 @@ class CourseTaskListPage(INGIniousAdminPage):
                     if task_fs.exists("task.yaml"):
                         raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
 
-                    t = Task(taskid, {"name": taskid, "problems": {}, "environment_type": "mcq"}, course.get_fs())
+                    t = Task(taskid, {"name": taskid, "problems": {}, "environment_type": "mcq"}, task_fs)
                     t.save()
                 except Exception as ex:
                     errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
