@@ -35,7 +35,7 @@ class CourseStudentInfoPage(INGIniousAdminPage):
         """ Get all data and display the page """
         data = list(self.database.user_tasks.find({"username": username, "courseid": course.get_id()}))
 
-        tasks = course.get_tasks(True)
+        tasks = course.get_task_dispenser().get_ordered_tasks()
         user_task_list = course.get_task_dispenser().get_user_task_list([username])[username]
         result = OrderedDict([(taskid, {"taskid": taskid, "name": tasks[taskid].get_name(self.user_manager.session_language()),
                                  "tried": 0, "status": "notviewed", "grade": 0, "visible": False,

@@ -114,8 +114,8 @@ class CourseFactory(object):
         for courseid in course_ids:
             try:
                 output[courseid] = self.get_course(courseid)
-            except Exception:
-                get_course_logger(courseid).warning("Cannot open course", exc_info=True)
+            except Exception as e:
+                get_course_logger(courseid).warning("Cannot open course : %s", str(e))
         return output
 
     def _get_course_descriptor_path(self, courseid):
