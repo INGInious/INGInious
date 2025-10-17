@@ -18,10 +18,9 @@ class CourseFactory(object):
     """ Load courses from disk """
     _logger = logging.getLogger("inginious.course_factory")
 
-    def __init__(self, filesystem: FileSystemProvider, database):
+    def __init__(self, filesystem: FileSystemProvider):
         self._filesystem = filesystem
         self._cache = {}
-        self._database = database
 
     def get_course(self, courseid):
         """
@@ -189,6 +188,6 @@ class CourseFactory(object):
                     last_modif["$i18n/" + lang + ".mo"] = translations_fs.get_last_modification_time(lang + ".mo")
 
         self._cache[courseid] = (
-            Course(courseid, course_descriptor, self.get_course_fs(courseid), self._database),
+            Course(courseid, course_descriptor, self.get_course_fs(courseid)),
             last_modif
         )

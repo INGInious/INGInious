@@ -29,7 +29,7 @@ problem_types = {"code": CodeProblem, "code_single_line": CodeSingleLineProblem,
 def ressource(request):
     register_base_env_types()
     fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
-    course_factory = CourseFactory(fs, None)
+    course_factory = CourseFactory(fs)
     register_problem_types(get_default_displayable_problem_types())
     register_task_dispenser(TableOfContents)
     register_task_dispenser(CombinatoryTest)
