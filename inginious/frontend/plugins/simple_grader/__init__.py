@@ -92,7 +92,7 @@ def init(plugin_manager, course_factory, client, config):
                 if post_input.get("async") is None:
                     # New sync job
                     try:
-                        result, grade, problems, tests, custom, state, archive, stdout, stderr = client_sync.new_job(0, task, task_input, "Plugin - Simple Grader")
+                        result, grade, problems, tests, custom, state, archive, stdout, stderr = client_sync.new_job(0, course, task, task_input, "Plugin - Simple Grader")
                         job_return = {"result":result, "grade": grade, "problems": problems, "tests": tests, "custom": custom, "state": state, "archive": archive, "stdout": stdout, "stderr": stderr}
                     except:
                         response.response = [json.dumps({"status": "error", "status_message": "An internal error occurred"})]
@@ -102,7 +102,7 @@ def init(plugin_manager, course_factory, client, config):
                     return response
                 else:
                     # New async job
-                    jobid = client_buffer.new_job(task, task_input, "Plugin - Simple Grader")
+                    jobid = client_buffer.new_job(course, task, task_input, "Plugin - Simple Grader")
                     response.response = [json.dumps({"status": "done", "jobid": str(jobid)})]
                     return response
             elif "jobid" in post_input:

@@ -18,6 +18,8 @@ from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.frontend.plugins import plugin_manager
+from inginious.frontend.tasks import Task
 
 
 def _migrate_from_v_0_6(content, task_list):
@@ -35,12 +37,10 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_factory, plugin_manager, task_dispensers, database):
+    def __init__(self, courseid, content, course_fs, task_dispensers, database):
         self._id = courseid
         self._content = content
         self._fs = course_fs
-        self._task_factory = task_factory
-        self._plugin_manager = plugin_manager
 
         self._translations = {}
         translations_fs = self._fs.from_subfolder("$i18n")
@@ -60,7 +60,7 @@ class Course(object):
         if self._content.get('nofrontend', False):
             raise Exception("That course is not allowed to be displayed directly in the webapp")
 
-        _migrate_from_v_0_6(content, self._task_factory.get_all_tasks(self))
+        _migrate_from_v_0_6(content, self.get_tasks(False))
 
         try:
             self._admins = self._content.get('admins', [])
@@ -84,10 +84,8 @@ class Course(object):
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
             task_dispenser_class = task_dispensers.get(self._content.get('task_dispenser', 'toc'), TableOfContents)
-            # Here we use a lambda to encourage the task dispenser to pass by the task_factory to fetch course tasks
-            # to avoid them to be cached along with the course object. Passing the task factory as argument
-            # would require to pass the course too, and have a useless reference back.
-            self._task_dispenser = task_dispenser_class(lambda: self._task_factory.get_all_tasks(self), self._content.get("dispenser_data", ''), database, self.get_id())
+            # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
+            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(False), self._content.get("dispenser_data", ''), database, self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
@@ -125,7 +123,7 @@ class Course(object):
 
     def get_task(self, taskid):
         """ Returns a Task object """
-        return self._task_factory.get_task(self, taskid)
+        return Task.get(taskid, self.get_fs())
 
     def get_descriptor(self):
         """ Get (a copy) the description of the course """
@@ -161,15 +159,33 @@ class Course(object):
 
     def get_accessibility(self, plugin_override=True):
         """ Return the AccessibleTime object associated with the accessibility of this course """
-        vals = self._plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
+        vals = plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
         return vals[0] if len(vals) and plugin_override else self._accessible
 
     def get_registration_accessibility(self):
         """ Return the AccessibleTime object associated with the registration """
         return self._registration
 
+    def get_readable_tasks(self):
+        """ Returns the list of all available tasks in a course """
+        return [
+            task[0:len(task)-1]  # remove trailing /
+            for task in self._fs.list(folders=True, files=False, recursive=False)
+            if self._fs.from_subfolder(task).exists("task.yaml")
+        ]
+
     def get_tasks(self, ordered=False):
-        return self._task_dispenser.get_ordered_tasks() if ordered else self._task_factory.get_all_tasks(self)
+        if ordered:
+            return self._task_dispenser.get_ordered_tasks()
+
+        tasks = self.get_readable_tasks()
+        output = {}
+        for task in tasks:
+            try:
+                output[task] = self.get_task(task)
+            except:
+                pass
+        return output
 
     def get_access_control_method(self):
         """ Returns either None, "username", "binding", or "email", depending on the method used to verify that users can register to the course """
@@ -250,7 +266,7 @@ class Course(object):
 
     def allow_unregister(self, plugin_override=True):
         """ Returns True if students can unregister from course """
-        vals = self._plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
+        vals = plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
         return vals[0] if len(vals) and plugin_override else self._allow_unregister
 
     def get_name(self, language):
@@ -260,7 +276,7 @@ class Course(object):
     def get_description(self, language):
         """Returns the course description """
         description = self.gettext(language, self._description) if self._description else ''
-        return ParsableText(description, "rst", translation=self.get_translation_obj(language))
+        return ParsableText(description, "rst")
 
     def get_tags(self):
         return self._tags
