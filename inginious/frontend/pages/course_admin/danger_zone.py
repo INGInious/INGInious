@@ -41,7 +41,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         self._logger.info("Course %s wiped.", courseid)
 
-    def dump_course(self, courseid):
+    def dump_course(self, course):
         """
             Creates a new course (Archive course), gives it a course id resulting of the concatenation of the original id
             and the archiving date. This archive course is marked as archived and given an archive date in its YAML descriptor.
@@ -49,12 +49,10 @@ class CourseDangerZonePage(INGIniousAdminPage):
             groups are updated to point to the archive course.
         """
 
-        course = self.course_factory.get_course(courseid)
+        courseid = course.get_id()
         course_fs = course.get_fs()
         if course.is_archive():
             raise CourseNotArchivable()
-        if not course_fs.exists():
-            raise CourseNotFoundException()
 
         # Create archive course
         archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
@@ -112,7 +110,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    self.dump_course(courseid)
+                    self.dump_course(course)
                     msg = _("All course data have been deleted.")
                 except Exception as ex:
                     msg = _("An error occurred while dumping course from database: {}").format(repr(ex))

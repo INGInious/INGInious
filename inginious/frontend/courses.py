@@ -147,11 +147,11 @@ class Course(object):
 
     def is_open_to_non_staff(self):
         """ Returns true if the course is accessible by users that are not administrator of this course """
-        return self.get_accessibility().is_open() and not self.is_archive()
+        return self.get_accessibility().is_open()
 
     def is_registration_possible(self, user_info: UserInfo):
         """ Returns true if users can register for this course """
-        return self.get_accessibility().is_open() and self._registration.is_open() and self.is_user_accepted_by_access_control(user_info) and not self.is_archive()
+        return self.get_accessibility().is_open() and self._registration.is_open() and self.is_user_accepted_by_access_control(user_info)
 
     def is_password_needed_for_registration(self):
         """ Returns true if a password is needed for registration """
@@ -170,8 +170,6 @@ class Course(object):
 
     def get_registration_accessibility(self):
         """ Return the AccessibleTime object associated with the registration """
-        if self.is_archive():
-            return AccessibleTime(False)
         return self._registration
 
     def get_tasks(self, ordered=False):
@@ -252,12 +250,10 @@ class Course(object):
         return at_least_one if self.get_access_control_accept() else not at_least_one
 
     def allow_preview(self):
-        return self._allow_preview and not self.is_archive()
+        return self._allow_preview
 
     def allow_unregister(self, plugin_override=True):
         """ Returns True if students can unregister from course """
-        if self.is_archive():
-            return False
         vals = self._plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
         return vals[0] if len(vals) and plugin_override else self._allow_unregister
 
@@ -289,4 +285,4 @@ class Course(object):
 
     def get_archiving_date(self):
         """ Returns the date at which the course was archived as a string (None if not archived)"""
-        return datetime.fromisoformat(self._content["archive_date"])
+        return datetime.fromisoformat(self._content["archive_date"]) if self._content["archive_date"] else None
