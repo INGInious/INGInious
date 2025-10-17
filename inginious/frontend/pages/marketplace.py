@@ -11,6 +11,8 @@ from werkzeug.exceptions import Forbidden
 from inginious.common.base import id_checker
 from inginious.common.exceptions import ImportCourseException
 from inginious.common.log import get_course_logger
+
+from inginious.frontend.courses import Course
 from inginious.frontend.marketplace_courses import get_all_marketplace_courses, get_marketplace_course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
@@ -74,7 +76,7 @@ def import_course(course, new_courseid, username, course_factory):
         raise ImportCourseException(_("Couldn't clone course into your instance"))
 
     try:
-        old_descriptor = course_factory.get_course_descriptor_content(new_courseid)
+        old_descriptor = course_factory.get_course(new_courseid).get_descriptor()
     except:
         old_descriptor ={}
 
@@ -88,8 +90,11 @@ def import_course(course, new_courseid, username, course_factory):
         else:
             new_descriptor["name"] = new_courseid
         if "toc" in old_descriptor:
-            new_descriptor["toc"] = old_descriptor["toc"]
-        course_factory.update_course_descriptor_content(new_courseid, new_descriptor)
+            new_descriptor["task_dispenser"] = "toc"
+            new_descriptor["dispenser_data"] = {"config": {}, "toc": old_descriptor["toc"]}
+
+        c = Course(new_courseid, new_descriptor, course_fs)
+        c.save()
     except:
         course_factory.delete_course(new_courseid)
         raise ImportCourseException(_("An error occur while editing the course description"))

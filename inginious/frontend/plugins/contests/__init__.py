@@ -14,6 +14,7 @@ import pymongo
 from flask import request, render_template
 
 from werkzeug.exceptions import NotFound
+from inginious.frontend.courses import Course
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
@@ -192,9 +193,10 @@ class ContestAdmin(INGIniousAdminPage):
 
     def save_contest_data(self, course, contest_data):
         """ Saves updated contest data for the course """
-        course_content = self.course_factory.get_course_descriptor_content(course.get_id())
+        course_content = course.get_descriptor()
         course_content["dispenser_data"]["contest_settings"] = contest_data
-        self.course_factory.update_course_descriptor_content(course.get_id(), course_content)
+
+        Course(course.get_id(), course_content, course.get_fs()).save()
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request: simply display the form """
