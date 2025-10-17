@@ -23,6 +23,7 @@ from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundExc
 from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.plugins import plugin_manager
+from inginious.frontend.courses import Course
 
 
 class BaseTaskPage(object):
@@ -33,14 +34,14 @@ class BaseTaskPage(object):
         self.submission_manager = self.cp.submission_manager
         self.user_manager = self.cp.user_manager
         self.database = self.cp.database
-        self.course_factory = self.cp.course_factory
+        self.fs_provider = self.cp.fs_provider
         self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
         self.default_max_file_size = self.cp.default_max_file_size
         self.webterm_link = self.cp.webterm_link
 
     def preview_allowed(self, courseid, taskid):
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except CourseNotFoundException as ex:
             raise NotFound(description=str(ex))
         return course.get_accessibility().is_open() and course.allow_preview()
@@ -51,7 +52,7 @@ class BaseTaskPage(object):
 
         # Fetch the course
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except CourseNotFoundException as ex:
             raise NotFound(description=str(ex))
 
@@ -167,7 +168,7 @@ class BaseTaskPage(object):
         """ POST a new submission """
         username = self.user_manager.session_username()
 
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid, self.fs_provider)
         if not self.user_manager.course_is_open_to_user(course, username, isLTI):
             return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
 
@@ -413,7 +414,7 @@ class TaskPageStaticDownload(INGIniousPage):
     def GET(self, courseid, taskid, path):  # pylint: disable=arguments-differ
         """ GET request """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
             if not self.user_manager.course_is_open_to_user(course):
                 return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
 

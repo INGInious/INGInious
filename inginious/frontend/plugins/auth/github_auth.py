@@ -58,7 +58,7 @@ class GithubAuthMethod(AuthMethod):
         return '<i class="fa fa-github" style="font-size:50px; color:#24292e;"></i>'
 
 
-def init(plugin_manager, course_factory, client, conf):
+def init(plugin_manager, fs_provider, client, conf):
 
     if conf.get("debug", False):
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'

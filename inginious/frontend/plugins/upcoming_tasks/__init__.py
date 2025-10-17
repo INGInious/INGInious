@@ -10,6 +10,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from flask import request, send_from_directory, render_template
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
@@ -52,7 +53,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
     def page(self, time_planner):
         """ General main method called for GET and POST """
         username = self.user_manager.session_username()
-        all_courses = self.course_factory.get_all_courses()
+        all_courses = Course.get_all(self.fs_provider)
         time_planner = self.time_planner_conversion(time_planner)
 
         # Get the courses id

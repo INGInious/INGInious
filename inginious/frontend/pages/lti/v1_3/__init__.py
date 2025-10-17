@@ -14,6 +14,7 @@ from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.lti.v1_3 import MongoLTILaunchDataStorage
+from inginious.frontend.courses import Course
 
 
 class LTI13JWKSPage(INGIniousPage):
@@ -21,7 +22,7 @@ class LTI13JWKSPage(INGIniousPage):
 
     def GET(self, courseid, keyset_hash):
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
@@ -41,7 +42,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
     def _handle_oidc_login_request(self, courseid):
         """ Initiates the LTI 1.3 OIDC login. """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
@@ -68,7 +69,7 @@ class LTI13LaunchPage(INGIniousPage):
     def _handle_message_launch(self, courseid, taskid):
         """ Decrypt and process the LTI Launch message. """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 

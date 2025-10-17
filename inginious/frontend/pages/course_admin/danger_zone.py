@@ -56,7 +56,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         # Copy archive course
         archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-        self.course_factory.get_fs().copy_to(course_fs.prefix, archive_course_id)
+        self.fs_provider.copy_to(course_fs.prefix, archive_course_id)
 
         # Update archive YAML file
         archive_course_content = course.get_descriptor()
@@ -64,8 +64,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         archive_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
 
         # Save archived course
-        archive_course_fs = self.course_factory.get_course_fs(archive_course_id)
-        Course(archive_course_id, archive_course_content,archive_course_fs).save()
+        Course(archive_course_id, archive_course_content, self.fs_provider).save()
 
         # Update course id in DB
         self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
