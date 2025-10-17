@@ -8,6 +8,7 @@
 from flask import redirect, request, render_template
 from werkzeug.exceptions import Forbidden
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.pages.tasks import BaseTaskPage
 
@@ -72,7 +73,7 @@ class LTIBindPage(INGIniousAuthPage):
             return error
 
         try:
-            course = self.course_factory.get_course(data["task"][0])
+            course = Course.get(data["task"][0], self.fs_provider)
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:
@@ -119,7 +120,7 @@ class LTILoginPage(INGIniousPage):
             raise Forbidden(description=_("No LTI data available."))
 
         try:
-            course = self.course_factory.get_course(data["task"][0])
+            course = Course.get(data["task"][0], self.fs_provider)
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:

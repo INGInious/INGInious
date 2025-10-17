@@ -3,6 +3,7 @@ from bson import ObjectId, json_util
 from werkzeug.exceptions import NotFound
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.courses import Course
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
@@ -48,7 +49,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         # attach the input to the submission
         best_sub = self.submission_manager.get_input_from_submission(best_sub)
 
-        task = self.course_factory.get_course(courseid).get_task(taskid)
+        task = Course.get(courseid, self.fs_provider).get_task(taskid)
         question_answer_list = []
         for problem in task.get_problems():
             answer = best_sub["input"][problem.get_id()]
