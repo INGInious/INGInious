@@ -9,10 +9,10 @@ import os
 import gettext
 import logging
 
-from typing import Callable, Any, TypeVar
+from typing import Any
 
 from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
-from inginious.common.filesystems import FileSystemProvider
+from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache
 from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
@@ -20,8 +20,6 @@ from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.plugins import plugin_manager
 from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, TaskUnreadableException
 
-
-_cache = {}
 
 def _load_task(task_fs : FileSystemProvider, taskid : str):
     # Try to open the task file
@@ -31,16 +29,6 @@ def _load_task(task_fs : FileSystemProvider, taskid : str):
         raise TaskUnreadableException(str(e))
 
     return Task(taskid, task_content, task_fs)
-
-T = TypeVar('T')
-
-def _fetch_from_cache(course_fs : FileSystemProvider, path : str, get_resource : Callable[[], T]) -> T:
-    """ Fetch the cached content for course_fs.prefix + path or put the get_resource() result in cache """
-    last_modif = course_fs.get_last_modification_time(path)
-    cached_data = _cache.get(course_fs.prefix + path, (None, 0))
-    if cached_data[1] < last_modif:
-        _cache[course_fs.prefix + path] = get_resource(), last_modif
-    return _cache[course_fs.prefix + path][0]
 
 
 def _migrate_from_v_0_6(content):
@@ -234,7 +222,7 @@ class Task(object):
         if not task_fs.exists("task.yaml"):
             raise TaskNotFoundException()
 
-        task = _fetch_from_cache(task_fs, "task.yaml", lambda: _load_task(task_fs, taskid))
+        task = fetch_or_cache(task_fs, "task.yaml", lambda: _load_task(task_fs, taskid))
 
         translations = {}
         i18n_paths = [
@@ -249,7 +237,7 @@ class Task(object):
                 for f in i18n_fs.list(folders=False, files=True, recursive=False):
                     lang, ext = os.path.splitext(f)
                     if ext == ".mo":
-                        translations[lang] = _fetch_from_cache(i18n_fs, f, lambda: gettext.GNUTranslations(i18n_fs.get_fd(f)))
+                        translations[lang] = fetch_or_cache(i18n_fs, f, lambda: gettext.GNUTranslations(i18n_fs.get_fd(f)))
                 break
 
         task.set_translations(translations)
@@ -257,7 +245,6 @@ class Task(object):
 
     def delete(self):
         """ Erase the content of the task folder """
-        if self._task_fs.prefix in _cache:
-            del _cache[self._task_fs.prefix]
+        invalidate_cache(self._task_fs)
         self._task_fs.delete()
         logging.getLogger("inginious.task").info("Task %s erased from the factory.", self._task_fs.prefix)
