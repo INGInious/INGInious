@@ -4,6 +4,7 @@
 # more information about the licensing of this file.
 
 """ A course class with some modification for users """
+from __future__ import annotations
 
 import copy
 import gettext
@@ -306,10 +307,11 @@ class Course(object):
         """ Saves the Course into the filesystem """
         self._fs.put("course.yaml", get_json_or_yaml("course.yaml", self._content))
         if self._new_doc:
-            logging.getLogger("inginious.task").info("Course %s created in the factory.", self._fs.prefix)
+            logging.getLogger("inginious.course").info("Course %s created in the factory.", self._fs.prefix)
 
     @classmethod
-    def get(cls, courseid : str, fs_provider: FileSystemProvider):
+    def get(cls, courseid : str, fs_provider: FileSystemProvider) -> Course:
+        """ Fetch a course with id courseid from the specified course filesystem"""
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
 
@@ -329,3 +331,9 @@ class Course(object):
 
         course.set_translations(translations)
         return course
+
+    def delete(self):
+        """ Erase the content of the course folder """
+        invalidate_cache(self._fs)
+        self._fs.delete()
+        logging.getLogger("inginious.course").info("Course %s erased from the factory.", self._fs.prefix)

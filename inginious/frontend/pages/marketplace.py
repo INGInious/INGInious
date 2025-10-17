@@ -80,23 +80,21 @@ def import_course(course, new_courseid, username, course_factory):
     except:
         old_descriptor ={}
 
-    try:
-        new_descriptor = {"description": old_descriptor.get("description", ""),
-                          'admins': [username],
-                          "accessible": False,
-                          "tags": old_descriptor.get("tags", {})}
-        if "name" in old_descriptor:
-            new_descriptor["name"] = old_descriptor["name"] + " - " + new_courseid
-        else:
-            new_descriptor["name"] = new_courseid
-        if "toc" in old_descriptor:
-            new_descriptor["task_dispenser"] = "toc"
-            new_descriptor["dispenser_data"] = {"config": {}, "toc": old_descriptor["toc"]}
+    new_descriptor = {"description": old_descriptor.get("description", ""),
+                      'admins': [username],
+                      "accessible": False,
+                      "tags": old_descriptor.get("tags", {})}
+    if "name" in old_descriptor:
+        new_descriptor["name"] = old_descriptor["name"] + " - " + new_courseid
+    else:
+        new_descriptor["name"] = new_courseid
+    if "toc" in old_descriptor:
+        new_descriptor["task_dispenser"] = "toc"
+        new_descriptor["dispenser_data"] = {"config": {}, "toc": old_descriptor["toc"]}
 
-        c = Course(new_courseid, new_descriptor, course_fs)
-        c.save()
+    try:
+        Course(new_courseid, new_descriptor, course_fs).save()
     except:
-        course_factory.delete_course(new_courseid)
         raise ImportCourseException(_("An error occur while editing the course description"))
 
     get_course_logger(new_courseid).info("Course %s cloned from the marketplace.", new_courseid)
