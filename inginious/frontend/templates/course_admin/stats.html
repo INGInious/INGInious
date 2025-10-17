@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block column %}
-{{ template_helper.call('course_admin_menu',course=course,current='stats') | safe }}
+    {% with current='stats' %}{% include 'course_admin/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% set is_admin = user_manager.has_admin_rights_on_course(course) %}

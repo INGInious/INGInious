@@ -4,53 +4,50 @@
 # more information about the licensing of this file.
 
 """ A course class with some modification for users """
+from __future__ import annotations
 
 import copy
 import gettext
 import hashlib
 import re
-from typing import Iterable, List
-from collections import OrderedDict
+import os
+import logging
+from typing import Iterable, List, Any
 from pylti1p3.tool_config import ToolConfDict
 
+from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache
 from inginious.common.tags import Tag
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.frontend.plugins import plugin_manager
+from inginious.frontend.task_dispensers import get_task_dispensers
+from inginious.frontend.tasks import Task
+from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException
 
 
-def _migrate_from_v_0_6(content, task_list):
-    if 'task_dispenser' not in content:
-        content["task_dispenser"] = "toc"
-        if 'toc' in content:
-            content['dispenser_data'] = {"toc": content["toc"]}
-        else:
-            ordered_tasks = OrderedDict(sorted(list(task_list.items()),
-                                               key=lambda t: (int(t[1]._data.get('order', -1)), t[1].get_id())))
-            content['dispenser_data'] = {"toc": [{"id": "tasks-list", "title": _("List of exercises"),
-                                          "rank": 0, "tasks_list": list(ordered_tasks.keys())}], "config": {}}
+def _load_course(course_fs : FileSystemProvider, courseid : str):
+    # Try to open the course file
+    try:
+        logging.getLogger("inginious.course").info("Caching course %s", courseid)
+        task_content = loads_json_or_yaml("course.yaml", course_fs.get("course.yaml"))
+    except Exception as e:
+        raise CourseUnreadableException(str(e))
 
+    return Course(courseid, task_content, course_fs)
 
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_factory, plugin_manager, task_dispensers, database):
+    def __init__(self, courseid, content, course_fs):
         self._id = courseid
         self._content = content
         self._fs = course_fs
-        self._task_factory = task_factory
-        self._plugin_manager = plugin_manager
+        self._new_doc = not self._fs.exists()
 
         self._translations = {}
-        translations_fs = self._fs.from_subfolder("$i18n")
-        if translations_fs.exists():
-            for f in translations_fs.list(folders=False, files=True, recursive=False):
-                lang = f[0:len(f) - 3]
-                if translations_fs.exists(lang + ".mo"):
-                    self._translations[lang] = gettext.GNUTranslations(translations_fs.get_fd(lang + ".mo"))
-                else:
-                    self._translations[lang] = gettext.NullTranslations()
 
         try:
             self._name = self._content['name']
@@ -59,8 +56,6 @@ class Course(object):
 
         if self._content.get('nofrontend', False):
             raise Exception("That course is not allowed to be displayed directly in the webapp")
-
-        _migrate_from_v_0_6(content, self._task_factory.get_all_tasks(self))
 
         try:
             self._admins = self._content.get('admins', [])
@@ -83,11 +78,9 @@ class Course(object):
             self._lti_config = self._content.get('lti_config', {})
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
-            task_dispenser_class = task_dispensers.get(self._content.get('task_dispenser', 'toc'), TableOfContents)
-            # Here we use a lambda to encourage the task dispenser to pass by the task_factory to fetch course tasks
-            # to avoid them to be cached along with the course object. Passing the task factory as argument
-            # would require to pass the course too, and have a useless reference back.
-            self._task_dispenser = task_dispenser_class(lambda: self._task_factory.get_all_tasks(self), self._content.get("dispenser_data", ''), database, self.get_id())
+            task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
+            # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
+            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", {}), self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
@@ -109,6 +102,9 @@ class Course(object):
         # Build the regex for the ACL, allowing for fast matching. Only used internally.
         self._registration_ac_regex = self._build_ac_regex(self._registration_ac_list)
 
+    def set_translations(self, translations : dict[str, gettext.GNUTranslations]):
+        self._translations = translations
+
     def get_translation_obj(self, language):
         return self._translations.get(language, gettext.NullTranslations())
 
@@ -125,7 +121,7 @@ class Course(object):
 
     def get_task(self, taskid):
         """ Returns a Task object """
-        return self._task_factory.get_task(self, taskid)
+        return Task.get(taskid, self.get_fs())
 
     def get_descriptor(self):
         """ Get (a copy) the description of the course """
@@ -161,15 +157,31 @@ class Course(object):
 
     def get_accessibility(self, plugin_override=True):
         """ Return the AccessibleTime object associated with the accessibility of this course """
-        vals = self._plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
+        vals = plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
         return vals[0] if len(vals) and plugin_override else self._accessible
 
     def get_registration_accessibility(self):
         """ Return the AccessibleTime object associated with the registration """
         return self._registration
 
-    def get_tasks(self, ordered=False):
-        return self._task_dispenser.get_ordered_tasks() if ordered else self._task_factory.get_all_tasks(self)
+    def get_readable_tasks(self):
+        """ Returns the list of all available tasks in a course """
+        return [
+            task[0:len(task)-1]  # remove trailing /
+            for task in self._fs.list(folders=True, files=False, recursive=False)
+            if self._fs.from_subfolder(task).exists("task.yaml")
+        ] if self._fs.exists() else []
+
+    def get_tasks(self) -> dict[str, Task]:
+        """ Returns """
+        tasks = self.get_readable_tasks()
+        output = {}
+        for task in tasks:
+            try:
+                output[task] = self.get_task(task)
+            except Exception as e:
+                logging.getLogger("inginious.course." + self._id).info("Couldn't load task %s : %s", task, str(e))
+        return output
 
     def get_access_control_method(self):
         """ Returns either None, "username", "binding", or "email", depending on the method used to verify that users can register to the course """
@@ -250,7 +262,7 @@ class Course(object):
 
     def allow_unregister(self, plugin_override=True):
         """ Returns True if students can unregister from course """
-        vals = self._plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
+        vals = plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
         return vals[0] if len(vals) and plugin_override else self._allow_unregister
 
     def get_name(self, language):
@@ -260,7 +272,7 @@ class Course(object):
     def get_description(self, language):
         """Returns the course description """
         description = self.gettext(language, self._description) if self._description else ''
-        return ParsableText(description, "rst", translation=self.get_translation_obj(language))
+        return ParsableText(description, "rst")
 
     def get_tags(self):
         return self._tags
@@ -274,3 +286,55 @@ class Course(object):
     def _build_ac_regex(self, list_ac):
         """ Build a regex for the AC list, allowing for fast matching. The regex is only used internally """
         return re.compile('|'.join(re.escape(x).replace("\\*", ".*") for x in list_ac))
+
+    def get_descriptor(self):
+        return self._content
+
+    def set_descriptor_element(self, key: str, value: Any):
+        self._content[key] = value
+
+    def save(self):
+        """ Saves the Course into the filesystem """
+        self._fs.put("course.yaml", get_json_or_yaml("course.yaml", self._content))
+        if self._new_doc:
+            logging.getLogger("inginious.course").info("Course %s created in the factory.", self._fs.prefix)
+
+    @classmethod
+    def get(cls, courseid : str, fs_provider: FileSystemProvider) -> Course:
+        """ Fetch a course with id courseid from the specified course filesystem"""
+        if not id_checker(courseid):
+            raise InvalidNameException("Course with invalid name: " + courseid)
+
+        course_fs = fs_provider.from_subfolder(courseid)
+        if not course_fs.exists("course.yaml"):
+            raise CourseNotFoundException()
+
+        course = fetch_or_cache(course_fs, "course.yaml", lambda: _load_course(course_fs, courseid))
+
+        translations = {}
+        i18n_fs = course_fs.from_subfolder("$i18n")
+        if i18n_fs.exists():
+            for f in i18n_fs.list(folders=False, files=True, recursive=False):
+                lang, ext = os.path.splitext(f)
+                if ext == ".mo":
+                    translations[lang] = fetch_or_cache(i18n_fs, f, lambda: gettext.GNUTranslations(i18n_fs.get_fd(f)))
+
+        course.set_translations(translations)
+        return course
+
+    def delete(self):
+        """ Erase the content of the course folder """
+        invalidate_cache(self._fs)
+        self._fs.delete()
+        logging.getLogger("inginious.course").info("Course %s erased from the factory.", self._fs.prefix)
+
+    @classmethod
+    def get_all(cls, fs_provider: FileSystemProvider) -> dict[str, Course]:
+        """ Returns a dictionnary with courseid=>Course mapping """
+        output = {}
+        for courseid in [f[0:len(f) - 1] for f in fs_provider.list(folders=True, files=False, recursive=False)]:
+            try:
+                output[courseid] = Course.get(courseid, fs_provider)
+            except Exception as e:
+                logging.getLogger("inginious.course").warning("Cannot open course : %s", courseid)
+        return output

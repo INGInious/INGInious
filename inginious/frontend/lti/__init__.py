@@ -16,7 +16,7 @@ from pymongo import ReturnDocument
 class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
     _submission_tags = {}
 
-    def __init__(self, mongo_collection, user_manager, course_factory):
+    def __init__(self, mongo_collection, user_manager, fs_provider):
         super(LTIScorePublisher, self).__init__()
         self.daemon = True
         self._queue = queue.Queue()
@@ -24,7 +24,7 @@ class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
 
         self._mongo_collection = mongo_collection
         self._user_manager = user_manager
-        self._course_factory = course_factory
+        self._fs_provider = fs_provider
 
         self.start()
 

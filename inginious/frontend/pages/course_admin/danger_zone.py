@@ -11,8 +11,7 @@ import random
 import zipfile
 
 import bson.json_util
-import flask
-from flask import redirect, Response
+from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import NotFound
 
 
@@ -117,16 +116,16 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         self._logger.info("Course %s restored from backup directory.", courseid)
 
-    def delete_course(self, courseid):
+    def delete_course(self, course):
         """ Erase all course data """
         # Wipes the course (delete database)
-        self.wipe_course(courseid)
+        self.wipe_course(course.get_id())
 
         # Deletes the course from the factory (entire folder)
-        self.course_factory.delete_course(courseid)
+        course.delete()
 
         # Removes backup
-        filepath = os.path.join(self.backup_dir, courseid)
+        filepath = os.path.join(self.backup_dir, course.get_id())
         if os.path.exists(os.path.dirname(filepath)):
             for backup in glob.glob(os.path.join(filepath, '*.zip')):
                 os.remove(backup)
@@ -137,7 +136,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
-        data = flask.request.args
+        data = request.args
 
         if "download" in data:
             filepath = os.path.join(self.backup_dir, courseid, data["download"] + '.zip')
@@ -159,7 +158,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         msg = ""
         error = False
 
-        data = flask.request.form
+        data = request.form
         if not data.get("token", "") == self.user_manager.session_token():
             msg = _("Operation aborted due to invalid token.")
             error = True
@@ -192,7 +191,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    self.delete_course(courseid)
+                    self.delete_course(course)
                     return redirect(self.app.get_path("index"))
                 except Exception as ex:
                     msg = _("An error occurred while deleting the course data: {}").format(repr(ex))
@@ -222,5 +221,5 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         backups = self.get_backup_list(course)
 
-        return self.template_helper.render("course_admin/danger_zone.html", course=course, thehash=thehash,
+        return render_template("course_admin/danger_zone.html", course=course, thehash=thehash,
                                            backups=backups, msg=msg, error=error)
