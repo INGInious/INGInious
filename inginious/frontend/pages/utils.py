@@ -18,7 +18,6 @@ from inginious.client.client import Client
 from inginious.common import custom_yaml
 from inginious.frontend.environment_types import get_all_env_types
 from inginious.frontend.environment_types.env_type import FrontendEnvType
-from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
@@ -70,11 +69,6 @@ class INGIniousPage(MethodView):
         """ Interfaces INGInious pages with Flask views for POST requests. """
         self._pre_check()
         return self.POST(*args, **kwargs)
-
-    @property
-    def plugin_manager(self) -> PluginManager:
-        """ Returns the plugin manager singleton """
-        return self.app.plugin_manager
 
     @property
     def course_factory(self) -> CourseFactory:

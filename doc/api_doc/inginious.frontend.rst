@@ -82,10 +82,10 @@ inginious.frontend.parsable_text module
 
 .. _inginious.frontend.plugin_manager:
 
-inginious.frontend.plugin_manager module
------------------------------------------------
+inginious.frontend.plugins.plugin_manager module
+-------------------------------------------------
 
-.. automodule:: inginious.frontend.plugin_manager
+.. automodule:: inginious.frontend.plugins.plugin_manager
     :members:
     :undoc-members:
     :show-inheritance:
