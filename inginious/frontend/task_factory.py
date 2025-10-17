@@ -8,36 +8,18 @@
 from os.path import splitext
 from inginious.common.filesystems import FileSystemProvider
 from inginious.common.log import get_course_logger
-from inginious.common.base import id_checker, get_json_or_yaml
-from inginious.common.task_file_readers.yaml_reader import TaskYAMLFileReader
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, \
-    TaskUnreadableException, TaskReaderNotFoundException, TaskAlreadyExistsException
+    TaskUnreadableException, TaskAlreadyExistsException
 
 from inginious.frontend.tasks import Task
 
 class TaskFactory(object):
     """ Load courses from disk """
 
-    def __init__(self, filesystem: FileSystemProvider, plugin_manager, task_problem_types):
+    def __init__(self, filesystem: FileSystemProvider):
         self._filesystem = filesystem
-        self._plugin_manager = plugin_manager
         self._cache = {}
-        self._task_file_managers = {}
-        self._task_problem_types = task_problem_types
-        self.add_custom_task_file_manager(TaskYAMLFileReader())
-
-    def set_problem_types(self, problem_types):
-        """ Set the problem types for the current TaskFactory.
-
-            :param problem_types: A mapping of problem types and their associated name.
-        """
-        self._task_problem_types.update(problem_types)
-
-    def add_problem_type(self, problem_type):
-        """
-        :param problem_type: Problem class
-        """
-        pass
 
     def get_task(self, course, taskid):
         """
@@ -65,26 +47,12 @@ class TaskFactory(object):
         if not id_checker(taskid):
             raise InvalidNameException("Task with invalid name: " + taskid)
 
-        descriptor_path, descriptor_manager = self._get_task_descriptor_info(courseid, taskid)
         try:
-            task_content = descriptor_manager.load(self.get_task_fs(courseid, taskid).get(descriptor_path))
+            task_fs = self.get_task_fs(courseid, taskid)
+            task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
         except Exception as e:
             raise TaskUnreadableException(str(e))
         return task_content
-
-    def get_task_descriptor_extension(self, courseid, taskid):
-        """
-        :param courseid: the course id of the course
-        :param taskid: the task id of the task
-        :raise: InvalidNameException, TaskNotFoundException
-        :return: the current extension of the task descriptor
-        """
-        if not id_checker(courseid):
-            raise InvalidNameException("Course with invalid name: " + courseid)
-        if not id_checker(taskid):
-            raise InvalidNameException("Task with invalid name: " + taskid)
-        descriptor_path = self._get_task_descriptor_info(courseid, taskid)[0]
-        return splitext(descriptor_path)[1]
 
     def get_task_fs(self, courseid, taskid):
         """
@@ -99,13 +67,12 @@ class TaskFactory(object):
             raise InvalidNameException("Task with invalid name: " + taskid)
         return self._filesystem.from_subfolder(courseid).from_subfolder(taskid)
 
-    def update_task_descriptor_content(self, courseid, taskid, content, force_extension=None):
+    def update_task_descriptor_content(self, courseid, taskid, content):
         """
         Update the task descriptor with the dict in content
         :param courseid: the course id of the course
         :param taskid: the task id of the task
         :param content: the content to put in the task file
-        :param force_extension: If None, save it the same format. Else, save with the given extension
         :raise InvalidNameException, TaskNotFoundException, TaskUnreadableException
         """
         if not id_checker(courseid):
@@ -113,16 +80,8 @@ class TaskFactory(object):
         if not id_checker(taskid):
             raise InvalidNameException("Task with invalid name: " + taskid)
 
-        if force_extension is None:
-            path_to_descriptor, descriptor_manager = self._get_task_descriptor_info(courseid, taskid)
-        elif force_extension in self.get_available_task_file_extensions():
-            path_to_descriptor = "task." + force_extension
-            descriptor_manager = self._task_file_managers[force_extension]
-        else:
-            raise TaskReaderNotFoundException()
-
         try:
-            self.get_task_fs(courseid, taskid).put(path_to_descriptor, descriptor_manager.dump(content))
+            self.get_task_fs(courseid, taskid).put("task.yaml", get_json_or_yaml("task.yaml", content))
         except:
             raise TaskNotFoundException()
 
@@ -132,28 +91,9 @@ class TaskFactory(object):
         tasks = [
             task[0:len(task)-1]  # remove trailing /
             for task in course_fs.list(folders=True, files=False, recursive=False)
-            if self._task_file_exists(course_fs.from_subfolder(task))]
+            if course_fs.from_subfolder(task).exists("task.yaml")
+        ]
         return tasks
-
-    def _task_file_exists(self, task_fs):
-        """ Returns true if a task file exists in this directory """
-        for filename in ["task.{}".format(ext) for ext in self.get_available_task_file_extensions()]:
-            if task_fs.exists(filename):
-                return True
-        return False
-
-    def delete_all_possible_task_files(self, courseid, taskid):
-        """ Deletes all possibles task files in directory, to allow to change the format """
-        if not id_checker(courseid):
-            raise InvalidNameException("Course with invalid name: " + courseid)
-        if not id_checker(taskid):
-            raise InvalidNameException("Task with invalid name: " + taskid)
-        task_fs = self.get_task_fs(courseid, taskid)
-        for ext in self.get_available_task_file_extensions():
-            try:
-                task_fs.delete("task."+ext)
-            except:
-                pass
 
     def get_all_tasks(self, course):
         """
@@ -167,35 +107,6 @@ class TaskFactory(object):
             except:
                 pass
         return output
-
-    def _get_task_descriptor_info(self, courseid, taskid):
-        """
-        :param courseid: the course id of the course
-        :param taskid: the task id of the task
-        :raise InvalidNameException, TaskNotFoundException
-        :return: a tuple, containing:
-            (descriptor filename,
-             task file manager for the descriptor)
-        """
-        if not id_checker(courseid):
-            raise InvalidNameException("Course with invalid name: " + courseid)
-        if not id_checker(taskid):
-            raise InvalidNameException("Task with invalid name: " + taskid)
-
-        task_fs = self.get_task_fs(courseid, taskid)
-        for ext, task_file_manager in self._task_file_managers.items():
-            if task_fs.exists("task."+ext):
-                return "task." + ext, task_file_manager
-
-        raise TaskNotFoundException()
-
-    def add_custom_task_file_manager(self, task_file_manager):
-        """ Add a custom task file manager """
-        self._task_file_managers[task_file_manager.get_ext()] = task_file_manager
-
-    def get_available_task_file_extensions(self):
-        """ Get a list of all the extensions possible for task descriptors """
-        return list(self._task_file_managers.keys())
 
     def _cache_update_needed(self, course, taskid):
         """
@@ -213,7 +124,7 @@ class TaskFactory(object):
             return True
 
         try:
-            last_update, __ = self._get_last_updates(course, taskid, task_fs, False)
+            last_update, __ = self._get_last_updates(course, task_fs, False)
         except:
             raise TaskNotFoundException()
 
@@ -224,9 +135,8 @@ class TaskFactory(object):
 
         return False
 
-    def _get_last_updates(self, course, taskid, task_fs, need_content=False):
-        descriptor_name, descriptor_reader = self._get_task_descriptor_info(course.get_id(), taskid)
-        last_update = {descriptor_name: task_fs.get_last_modification_time(descriptor_name)}
+    def _get_last_updates(self, course, task_fs, need_content=False):
+        last_update = {"task.yaml": task_fs.get_last_modification_time("task.yaml")}
         translations_fs = task_fs.from_subfolder("$i18n")
 
         if not translations_fs.exists():
@@ -247,7 +157,7 @@ class TaskFactory(object):
 
         if need_content:
             try:
-                task_content = descriptor_reader.load(task_fs.get(descriptor_name))
+                task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
             except Exception as e:
                 raise TaskUnreadableException(str(e))
             return last_update, task_content
@@ -265,10 +175,10 @@ class TaskFactory(object):
             raise InvalidNameException("Task with invalid name: " + taskid)
 
         task_fs = self.get_task_fs(course.get_id(), taskid)
-        last_modif, task_content = self._get_last_updates(course, taskid, task_fs, True)
+        last_modif, task_content = self._get_last_updates(course, task_fs, True)
 
         self._cache[(course.get_id(), taskid)] = (
-            Task(course, taskid, task_content, self._filesystem, self._plugin_manager, self._task_problem_types),
+            Task(taskid, task_content, course.get_fs()),
             last_modif
         )
 
@@ -320,9 +230,3 @@ class TaskFactory(object):
         if task_fs.exists():
             task_fs.delete()
             get_course_logger(courseid).info("Task %s erased from the factory.", taskid)
-
-    def get_problem_types(self):
-        """
-        Returns the supported problem types by this task factory
-        """
-        return self._task_problem_types

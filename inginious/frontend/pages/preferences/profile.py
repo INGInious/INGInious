@@ -5,9 +5,9 @@
 
 """ Profile page """
 import re
-import flask
 import zoneinfo
 
+from flask import request, render_template
 from pymongo import ReturnDocument
 from werkzeug.exceptions import NotFound
 
@@ -136,7 +136,7 @@ class ProfilePage(INGIniousAuthPage):
         if not userdata:
             raise NotFound(description=_("User unavailable."))
 
-        return self.template_helper.render("preferences/profile.html", terms_page=self.app.terms_page,
+        return render_template("preferences/profile.html", terms_page=self.app.terms_page,
                                            available_timezones=available_timezones,
                                            privacy_page=self.app.privacy_page, msg="", error=False)
 
@@ -150,10 +150,10 @@ class ProfilePage(INGIniousAuthPage):
 
         msg = ""
         error = False
-        data = flask.request.form
+        data = request.form
         if "save" in data:
             userdata, msg, error = self.save_profile(userdata, data)
 
-        return self.template_helper.render("preferences/profile.html", terms_page=self.app.terms_page,
+        return render_template("preferences/profile.html", terms_page=self.app.terms_page,
                                            available_timezones=available_timezones,
                                            privacy_page=self.app.privacy_page, msg=msg, error=error)
