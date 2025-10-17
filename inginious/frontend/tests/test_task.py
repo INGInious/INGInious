@@ -17,10 +17,10 @@ from inginious.frontend.course_factory import CourseFactory
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
+from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 
-task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.get_id(): CombinatoryTest}
 problem_types = {"code": CodeProblem, "code_single_line": CodeSingleLineProblem, "file": FileProblem,
                  "multiple_choice": MultipleChoiceProblem, "match": MatchProblem}
 
@@ -29,8 +29,10 @@ problem_types = {"code": CodeProblem, "code_single_line": CodeSingleLineProblem,
 def ressource(request):
     register_base_env_types()
     fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
-    course_factory = CourseFactory(fs, task_dispensers, None)
+    course_factory = CourseFactory(fs, None)
     register_problem_types(get_default_displayable_problem_types())
+    register_task_dispenser(TableOfContents)
+    register_task_dispenser(CombinatoryTest)
     yield course_factory
 
 

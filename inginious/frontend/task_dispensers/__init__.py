@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
+from typing import Type
 
 class TaskDispenser(metaclass=ABCMeta):
     legacy_fields = {}
@@ -121,3 +121,14 @@ class TaskDispenser(metaclass=ABCMeta):
     def import_legacy_tasks(self):
         """ Imports the task dispenser settings from a task file dict """
         pass
+
+_task_dispensers = {}
+
+def get_task_dispensers() -> dict[str, TaskDispenser]:
+    """Returns a mapping between registered task dispensers ids and classes"""
+    return _task_dispensers
+
+
+def register_task_dispenser(task_dispenser : Type[TaskDispenser]):
+    """ Register a task dispenser using its class """
+    _task_dispensers[task_dispenser.get_id()] = task_dispenser

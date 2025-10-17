@@ -16,6 +16,7 @@ from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
+from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 
 task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.get_id(): CombinatoryTest}
@@ -27,7 +28,9 @@ def ressource(request):
     dir_path = tempfile.mkdtemp()
     fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
     register_problem_types(get_default_displayable_problem_types())
-    course_factory = CourseFactory(fs, task_dispensers, None)
+    register_task_dispenser(TableOfContents)
+    register_task_dispenser(CombinatoryTest)
+    course_factory = CourseFactory(fs, None)
     yield (course_factory, dir_path)
     course_factory.update_course_descriptor_content("test", {"name": "Unit test 1", "admins": ["testadmin1","testadmin2"],
                                                              "accessible": True})

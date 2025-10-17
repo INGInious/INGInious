@@ -34,6 +34,7 @@ from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.lti.v1_3 import LTIGradeManager
 from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
+from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.flask.mapping import init_flask_mapping, init_flask_maintenance_mapping
@@ -185,13 +186,12 @@ def get_app(config):
         task_directory = config["tasks_directory"]
         fs_provider = LocalFSProvider(task_directory)
 
-    default_task_dispensers = {
-        task_dispenser.get_id(): task_dispenser for task_dispenser in [TableOfContents, CombinatoryTest]
-    }
+    register_task_dispenser(TableOfContents)
+    register_task_dispenser(CombinatoryTest)
 
     register_problem_types(get_default_displayable_problem_types())
 
-    course_factory = CourseFactory(fs_provider, default_task_dispensers, database)
+    course_factory = CourseFactory(fs_provider, database)
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
