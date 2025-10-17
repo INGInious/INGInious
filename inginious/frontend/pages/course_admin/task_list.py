@@ -34,8 +34,9 @@ class CourseTaskListPage(INGIniousAdminPage):
             selected_task_dispenser = user_input.get("task_dispenser", "toc")
             task_dispenser_class = get_task_dispensers().get(selected_task_dispenser, None)
             if task_dispenser_class:
-                self.course_factory.update_course_descriptor_element(courseid, 'task_dispenser', task_dispenser_class.get_id())
-                self.course_factory.update_course_descriptor_element(courseid, 'dispenser_data', {})
+                course.set_descriptor_element('task_dispenser', task_dispenser_class.get_id())
+                course.set_descriptor_element('dispenser_data', {})
+                course.save()
             else:
                 errors.append(_("Invalid task dispenser"))
         elif "migrate_tasks" in user_input:
@@ -83,9 +84,9 @@ class CourseTaskListPage(INGIniousAdminPage):
         task_dispenser = course.get_task_dispenser()
         data, msg = task_dispenser.check_dispenser_data(dispenser_data)
         if data:
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'task_dispenser',
-                                                                 task_dispenser.get_id())
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'dispenser_data', data)
+            course.set_descriptor_element('task_dispenser',task_dispenser.get_id())
+            course.set_descriptor_element('dispenser_data', data)
+            course.save()
         else:
             raise Exception(_("Invalid course structure: ") + msg)
 

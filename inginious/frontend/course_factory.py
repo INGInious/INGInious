@@ -45,35 +45,6 @@ class CourseFactory(object):
         """
         return self.get_course(courseid).get_task(taskid)
 
-    def get_course_descriptor_content(self, courseid):
-        """
-        :param courseid: the course id of the course
-        :raise: InvalidNameException, CourseNotFoundException, CourseUnreadableException
-        :return: the content of the dict that describes the course
-        """
-        return loads_json_or_yaml("course.yaml", self.get_course_fs(courseid).get("course.yaml").decode("utf-8"))
-
-    def update_course_descriptor_content(self, courseid, content):
-        """
-        Updates the content of the dict that describes the course
-        :param courseid: the course id of the course
-        :param content: the new dict that replaces the old content
-        :raise InvalidNameException, CourseNotFoundException
-        """
-        self.get_course_fs(courseid).put("course.yaml", get_json_or_yaml("course.yaml", content))
-
-    def update_course_descriptor_element(self, courseid, key, value):
-        """
-        Updates the value for the key in the dict that describes the course
-        :param courseid: the course id of the course
-        :param key: the element to change in the dict
-        :param value: the new value that replaces the old one
-        :raise InvalidNameException, CourseNotFoundException
-        """
-        course_structure = self.get_course_descriptor_content(courseid)
-        course_structure[key] = value
-        self.update_course_descriptor_content(courseid, course_structure)
-
     def get_fs(self):
         """
         :return: a FileSystemProvider pointing to the task directory
