@@ -86,21 +86,3 @@ class CourseFactory(object):
             course_fs.put("course.yaml", get_json_or_yaml("course.yaml", init_content))
 
         get_course_logger(courseid).info("Course %s created in the factory.", courseid)
-
-    def delete_course(self, courseid):
-        """
-        Erase the content of the course folder
-        :param courseid: the course id of the course
-        :raise: InvalidNameException or CourseNotFoundException
-        """
-        if not id_checker(courseid):
-            raise InvalidNameException("Course with invalid name: " + courseid)
-
-        course_fs = self.get_course_fs(courseid)
-
-        if not course_fs.exists():
-            raise CourseNotFoundException()
-
-        course_fs.delete()
-
-        get_course_logger(courseid).info("Course %s erased from the factory.", courseid)
