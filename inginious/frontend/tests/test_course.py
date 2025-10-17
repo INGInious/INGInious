@@ -30,7 +30,7 @@ def ressource(request):
     register_problem_types(get_default_displayable_problem_types())
     register_task_dispenser(TableOfContents)
     register_task_dispenser(CombinatoryTest)
-    course_factory = CourseFactory(fs, None)
+    course_factory = CourseFactory(fs)
     yield (course_factory, dir_path)
     course_factory.update_course_descriptor_content("test", {"name": "Unit test 1", "admins": ["testadmin1","testadmin2"],
                                                              "accessible": True})

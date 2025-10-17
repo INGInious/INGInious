@@ -40,7 +40,7 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, database):
+    def __init__(self, courseid, content, course_fs):
         self._id = courseid
         self._content = content
         self._fs = course_fs
@@ -90,7 +90,7 @@ class Course(object):
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
             task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
             # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
-            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", ''), database, self.get_id())
+            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", ''), self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
