@@ -11,6 +11,7 @@ from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
 from inginious.common.base import id_checker
 from inginious.frontend.accessible_time import AccessibleTime
+from inginious.frontend.plugins import plugin_manager
 
 
 def _migrate_from_v_0_6(content):
@@ -34,7 +35,7 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, course, taskid, content, filesystem, plugin_manager, task_problem_types):
+    def __init__(self, course, taskid, content, filesystem, task_problem_types):
         # We load the descriptor of the task here to allow plugins to modify settings of the task before it is read by the Task constructor
         if not id_checker(taskid):
             raise Exception("Task with invalid id: " + course.get_id() + "/" + taskid)
@@ -44,7 +45,6 @@ class Task(object):
         self._course = course
         self._taskid = taskid
         self._fs = filesystem
-        self._plugin_manager = plugin_manager
         self._data = content
 
         if "problems" not in self._data:
@@ -170,10 +170,6 @@ class Task(object):
         """ Returns a FileSystemProvider which points to the folder of this task """
         return self._task_fs
 
-    def get_hook(self):
-        """ Returns the hook manager parameter for this task"""
-        return self._plugin_manager
-
     def get_translation_fs(self):
         """ Return the translation_fs parameter for this task"""
         return self._translations_fs
@@ -195,7 +191,7 @@ class Task(object):
     def get_context(self, language):
         """ Get the context(description) of this task """
         context = self.gettext(language, self._context) if self._context else ""
-        vals = self._plugin_manager.call_hook('task_context', course=self.get_course(), task=self, default=context)
+        vals = plugin_manager.call_hook('task_context', course=self.get_course(), task=self, default=context)
         return ParsableText(vals[0], "rst") if len(vals) else ParsableText(context, "rst")
 
     def get_authors(self, language):

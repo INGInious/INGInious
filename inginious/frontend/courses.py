@@ -19,6 +19,7 @@ from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.frontend.plugins import plugin_manager
 
 
 def _migrate_from_v_0_6(content, task_list):
@@ -36,12 +37,11 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_factory, plugin_manager, task_dispensers, database):
+    def __init__(self, courseid, content, course_fs, task_factory, task_dispensers, database):
         self._id = courseid
         self._content = content
         self._fs = course_fs
         self._task_factory = task_factory
-        self._plugin_manager = plugin_manager
 
         self._translations = {}
         translations_fs = self._fs.from_subfolder("$i18n")
@@ -166,7 +166,8 @@ class Course(object):
         """ Return the AccessibleTime object associated with the accessibility of this course """
         if self.is_archive():
             return AccessibleTime(False)
-        vals = self._plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
+
+        vals = plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
         return vals[0] if len(vals) and plugin_override else self._accessible
 
     def get_registration_accessibility(self):
@@ -255,7 +256,7 @@ class Course(object):
 
     def allow_unregister(self, plugin_override=True):
         """ Returns True if students can unregister from course """
-        vals = self._plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
+        vals = plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
         return vals[0] if len(vals) and plugin_override else self._allow_unregister
 
     def get_name(self, language):
