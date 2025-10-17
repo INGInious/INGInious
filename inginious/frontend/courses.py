@@ -9,12 +9,13 @@ import copy
 import gettext
 import hashlib
 import re
+import os
 import logging
 from typing import Iterable, List, Any
-from collections import OrderedDict
 from pylti1p3.tool_config import ToolConfDict
 from datetime import datetime
 
+from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache
 from inginious.common.tags import Tag
 from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.frontend.accessible_time import AccessibleTime
@@ -24,7 +25,17 @@ from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.task_dispensers import get_task_dispensers
 from inginious.frontend.tasks import Task
+from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException
 
+
+def _load_course(course_fs : FileSystemProvider, courseid : str):
+    # Try to open the course file
+    try:
+        task_content = loads_json_or_yaml("course.yaml", course_fs.get("course.yaml"))
+    except Exception as e:
+        raise CourseUnreadableException(str(e))
+
+    return Course(courseid, task_content, course_fs)
 
 class Course(object):
     """ A course with some modification for users """
@@ -36,14 +47,6 @@ class Course(object):
         self._new_doc = not self._fs.exists()
 
         self._translations = {}
-        translations_fs = self._fs.from_subfolder("$i18n")
-        if translations_fs.exists():
-            for f in translations_fs.list(folders=False, files=True, recursive=False):
-                lang = f[0:len(f) - 3]
-                if translations_fs.exists(lang + ".mo"):
-                    self._translations[lang] = gettext.GNUTranslations(translations_fs.get_fd(lang + ".mo"))
-                else:
-                    self._translations[lang] = gettext.NullTranslations()
 
         try:
             self._name = self._content['name']
@@ -99,6 +102,9 @@ class Course(object):
 
         # Build the regex for the ACL, allowing for fast matching. Only used internally.
         self._registration_ac_regex = self._build_ac_regex(self._registration_ac_list)
+
+    def set_translations(self, translations : dict[str, gettext.GNUTranslations]):
+        self._translations = translations
 
     def get_translation_obj(self, language):
         return self._translations.get(language, gettext.NullTranslations())
@@ -301,3 +307,25 @@ class Course(object):
         self._fs.put("course.yaml", get_json_or_yaml("course.yaml", self._content))
         if self._new_doc:
             logging.getLogger("inginious.task").info("Course %s created in the factory.", self._fs.prefix)
+
+    @classmethod
+    def get(cls, courseid : str, fs_provider: FileSystemProvider):
+        if not id_checker(courseid):
+            raise InvalidNameException("Course with invalid name: " + courseid)
+
+        course_fs = fs_provider.from_subfolder(courseid)
+        if not course_fs.exists("course.yaml"):
+            raise CourseNotFoundException()
+
+        course = fetch_or_cache(course_fs, "course.yaml", lambda: _load_course(course_fs, courseid))
+
+        translations = {}
+        i18n_fs = course_fs.from_subfolder("$i18n")
+        if i18n_fs.exists():
+            for f in i18n_fs.list(folders=False, files=True, recursive=False):
+                lang, ext = os.path.splitext(f)
+                if ext == ".mo":
+                    translations[lang] = fetch_or_cache(i18n_fs, f, lambda: gettext.GNUTranslations(i18n_fs.get_fd(f)))
+
+        course.set_translations(translations)
+        return course
