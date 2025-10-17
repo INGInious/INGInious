@@ -12,9 +12,8 @@ from collections import OrderedDict
 from flask import render_template
 from werkzeug.exceptions import NotFound
 
-from inginious.frontend.tasks import _migrate_from_v_0_6
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-
 from inginious.common.base import dict_from_prefix, id_checker
 from inginious.common.exceptions import TaskNotFoundException
 from inginious.common.tasks_problems import get_problem_types
@@ -109,7 +108,7 @@ class CourseEditTask(INGIniousAdminPage):
 
         # Get the course
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except:
             return json.dumps({"status": "error", "message": _("Error while reading course's informations")})
 
