@@ -21,6 +21,7 @@ from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.plugins import plugin_manager
+from inginious.frontend.task_dispensers import get_task_dispensers
 from inginious.frontend.tasks import Task
 
 
@@ -39,7 +40,7 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_dispensers, database):
+    def __init__(self, courseid, content, course_fs, database):
         self._id = courseid
         self._content = content
         self._fs = course_fs
@@ -87,7 +88,7 @@ class Course(object):
             self._lti_config = self._content.get('lti_config', {})
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
-            task_dispenser_class = task_dispensers.get(self._content.get('task_dispenser', 'toc'), TableOfContents)
+            task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
             # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
             self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", ''), database, self.get_id())
         except:
