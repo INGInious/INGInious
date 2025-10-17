@@ -191,7 +191,7 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    course_factory = CourseFactory(fs_provider, database)
+    course_factory = CourseFactory(fs_provider)
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
