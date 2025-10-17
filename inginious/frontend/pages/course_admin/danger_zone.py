@@ -15,6 +15,7 @@ from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import NotFound
 
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
 from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
@@ -53,16 +54,18 @@ class CourseDangerZonePage(INGIniousAdminPage):
         if course.is_archive():
             raise CourseNotArchivable()
 
-        # Create archive course
+        # Copy archive course
         archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-        self.course_factory.create_course(archive_course_id, None)
         self.course_factory.get_fs().copy_to(course_fs.prefix, archive_course_id)
 
         # Update archive YAML file
-        archive_course_content = self.course_factory.get_course(archive_course_id).get_descriptor()
+        archive_course_content = course.get_descriptor()
         archive_course_content["archived"] = True
         archive_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
-        self.course_factory.update_course_descriptor_content(archive_course_id, archive_course_content)
+
+        # Save archived course
+        archive_course_fs = self.course_factory.get_course_fs(archive_course_id)
+        Course(archive_course_id, archive_course_content,archive_course_fs).save()
 
         # Update course id in DB
         self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})

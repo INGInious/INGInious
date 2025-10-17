@@ -10,12 +10,13 @@ import gettext
 import hashlib
 import re
 import logging
-from typing import Iterable, List
+from typing import Iterable, List, Any
 from collections import OrderedDict
 from pylti1p3.tool_config import ToolConfDict
 from datetime import datetime
 
 from inginious.common.tags import Tag
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
@@ -25,18 +26,6 @@ from inginious.frontend.task_dispensers import get_task_dispensers
 from inginious.frontend.tasks import Task
 
 
-def _migrate_from_v_0_6(content, task_list):
-    if 'task_dispenser' not in content:
-        content["task_dispenser"] = "toc"
-        if 'toc' in content:
-            content['dispenser_data'] = {"toc": content["toc"]}
-        else:
-            ordered_tasks = OrderedDict(sorted(list(task_list.items()),
-                                               key=lambda t: (int(t[1]._data.get('order', -1)), t[1].get_id())))
-            content['dispenser_data'] = {"toc": [{"id": "tasks-list", "title": _("List of exercises"),
-                                          "rank": 0, "tasks_list": list(ordered_tasks.keys())}], "config": {}}
-
-
 class Course(object):
     """ A course with some modification for users """
 
@@ -44,6 +33,7 @@ class Course(object):
         self._id = courseid
         self._content = content
         self._fs = course_fs
+        self._new_doc = not self._fs.exists()
 
         self._translations = {}
         translations_fs = self._fs.from_subfolder("$i18n")
@@ -62,8 +52,6 @@ class Course(object):
 
         if self._content.get('nofrontend', False):
             raise Exception("That course is not allowed to be displayed directly in the webapp")
-
-        _migrate_from_v_0_6(content, self.get_tasks())
 
         try:
             self._admins = self._content.get('admins', [])
@@ -90,7 +78,7 @@ class Course(object):
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
             task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
             # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
-            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", ''), self.get_id())
+            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", {}), self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
@@ -304,3 +292,12 @@ class Course(object):
     def get_archiving_date(self):
         """ Returns the date at which the course was archived as a string (None if not archived)"""
         return self._archive_date
+
+    def set_descriptor_element(self, key: str, value: Any):
+        self._content[key] = value
+
+    def save(self):
+        """ Saves the Course into the filesystem """
+        self._fs.put("course.yaml", get_json_or_yaml("course.yaml", self._content))
+        if self._new_doc:
+            logging.getLogger("inginious.task").info("Course %s created in the factory.", self._fs.prefix)
