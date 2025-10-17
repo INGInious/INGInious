@@ -116,16 +116,16 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         self._logger.info("Course %s restored from backup directory.", courseid)
 
-    def delete_course(self, courseid):
+    def delete_course(self, course):
         """ Erase all course data """
         # Wipes the course (delete database)
-        self.wipe_course(courseid)
+        self.wipe_course(course.get_id())
 
         # Deletes the course from the factory (entire folder)
-        self.course_factory.delete_course(courseid)
+        course.delete()
 
         # Removes backup
-        filepath = os.path.join(self.backup_dir, courseid)
+        filepath = os.path.join(self.backup_dir, course.get_id())
         if os.path.exists(os.path.dirname(filepath)):
             for backup in glob.glob(os.path.join(filepath, '*.zip')):
                 os.remove(backup)
@@ -191,7 +191,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    self.delete_course(courseid)
+                    self.delete_course(course)
                     return redirect(self.app.get_path("index"))
                 except Exception as ex:
                     msg = _("An error occurred while deleting the course data: {}").format(repr(ex))
