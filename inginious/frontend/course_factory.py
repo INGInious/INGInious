@@ -29,16 +29,6 @@ class CourseFactory(object):
         """
         return Course.get(courseid, self._filesystem)
 
-    def get_task(self, courseid, taskid):
-        """
-        Shorthand for CourseFactory.get_course(courseid).get_task(taskid)
-        :param courseid: the course id of the course
-        :param taskid: the task id of the task
-        :raise InvalidNameException, CourseNotFoundException, CourseUnreadableException, TaskNotFoundException, TaskUnreadableException
-        :return: an object representing the task, of the type given in the constructor
-        """
-        return self.get_course(courseid).get_task(taskid)
-
     def get_fs(self):
         """
         :return: a FileSystemProvider pointing to the task directory
