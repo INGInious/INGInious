@@ -35,9 +35,6 @@ use_minified_js: true
 # If you don't want to install/activate it, just set it to None or remove it from the file
 webterm: "https://my-host.be:8080"
 
-# Location of the backup directory (webapp)
-backup_directory: ./inginious/backup
-
 # Plugins that will be loaded by the webapp
 plugins:
   - plugin_module: inginious.frontend.plugins.auth.demo_auth
