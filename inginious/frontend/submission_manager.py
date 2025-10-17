@@ -22,25 +22,24 @@ from pymongo.collection import ReturnDocument
 
 import inginious.common.custom_yaml
 from inginious.frontend.parsable_text import ParsableText
+from inginious.frontend.plugins import plugin_manager
 
 
 class WebAppSubmissionManager:
     """ Manages submissions. Communicates with the database and the client. """
 
-    def __init__(self, client, user_manager, database, gridfs, plugin_manager, lti_score_publishers):
+    def __init__(self, client, user_manager, database, gridfs, lti_score_publishers):
         """
         :type client: inginious.client.client.AbstractClient
         :type user_manager: inginious.frontend.user_manager.UserManager
         :type database: pymongo.database.Database
         :type gridfs: gridfs.GridFS
-        :type plugin_manager: inginious.frontend.plugin_manager.PluginManager
         :return:
         """
         self._client = client
         self._user_manager = user_manager
         self._database = database
         self._gridfs = gridfs
-        self._plugin_manager = plugin_manager
         self._logger = logging.getLogger("inginious.webapp.submissions")
         self._lti_score_publishers = lti_score_publishers
 
@@ -95,7 +94,7 @@ class WebAppSubmissionManager:
                 return_document=ReturnDocument.AFTER
             )
 
-        self._plugin_manager.call_hook("submission_done", submission=submission, archive=archive, newsub=newsub)
+        plugin_manager.call_hook("submission_done", submission=submission, archive=archive, newsub=newsub)
 
         if "lti_version" in submission:
             lti_score_publisher = self._lti_score_publishers.get(submission["lti_version"], None)
@@ -294,7 +293,7 @@ class WebAppSubmissionManager:
                 key_str = "@lti_" + key
                 inputdata[key_str] = lti_info[key]
 
-        self._plugin_manager.call_hook("new_submission", submission=obj, inputdata=inputdata)
+        plugin_manager.call_hook("new_submission", submission=obj, inputdata=inputdata)
 
         self._before_submission_insertion(task, inputdata, debug, obj)
         obj["input"] = self._gridfs.put(bson.BSON.encode(inputdata))

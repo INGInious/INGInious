@@ -18,9 +18,8 @@ from inginious.frontend.tasks import Task
 class TaskFactory(object):
     """ Load courses from disk """
 
-    def __init__(self, filesystem: FileSystemProvider, plugin_manager, task_problem_types):
+    def __init__(self, filesystem: FileSystemProvider, task_problem_types):
         self._filesystem = filesystem
-        self._plugin_manager = plugin_manager
         self._cache = {}
         self._task_file_managers = {}
         self._task_problem_types = task_problem_types
@@ -268,7 +267,7 @@ class TaskFactory(object):
         last_modif, task_content = self._get_last_updates(course, taskid, task_fs, True)
 
         self._cache[(course.get_id(), taskid)] = (
-            Task(course, taskid, task_content, self._filesystem, self._plugin_manager, self._task_problem_types),
+            Task(course, taskid, task_content, self._filesystem, self._task_problem_types),
             last_modif
         )
 

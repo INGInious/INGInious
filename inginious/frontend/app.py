@@ -21,7 +21,7 @@ from bson.codec_options import CodecOptions
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
-from inginious.frontend.plugin_manager import PluginManager
+from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.user_manager import UserManager
@@ -174,9 +174,6 @@ def get_app(config):
 
     zmq_context, __ = start_asyncio_and_zmq(config.get('debug_asyncio', False))
 
-    # Init the different parts of the app
-    plugin_manager = PluginManager()
-
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
     register_base_env_types()
 
@@ -193,7 +190,7 @@ def get_app(config):
 
     default_problem_types = get_default_displayable_problem_types()
 
-    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types, plugin_manager, database)
+    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, default_problem_types, database)
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
@@ -204,7 +201,7 @@ def get_app(config):
     lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager, course_factory),
                             "1.3": LTIGradeManager(database, user_manager, course_factory)}
 
-    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
+    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, lti_score_publishers)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
@@ -256,7 +253,6 @@ def get_app(config):
 
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
-    flask_app.plugin_manager = plugin_manager
     flask_app.course_factory = course_factory
     flask_app.task_factory = task_factory
     flask_app.submission_manager = submission_manager

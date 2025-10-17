@@ -14,7 +14,6 @@ from inginious.common.tasks_problems import *
 
 from inginious.frontend.tasks import Task
 from inginious.frontend.course_factory import create_factories
-from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
@@ -81,7 +80,7 @@ class TestTaskBasic(object):
                       "memory": '100',
                       "hard_time": '',
                   }
-                  }, 'fake_path', PluginManager(), problem_types)
+                  }, 'fake_path', problem_types)
         except Exception as e:
             assert str(e) == "Tasks must have some problems descriptions"
             return

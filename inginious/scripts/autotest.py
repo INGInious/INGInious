@@ -155,7 +155,6 @@ def test_web_task(yaml_data, task, config, yaml_path):
             task.get_id(),
             yaml_data,
             task.get_fs(),
-            task.get_hook(),
             config["default_problem_types"]
         )  # Test of init a web task with the yaml_data. if the values are incorrect, exception will be raised
         web_task.get_context('English').parse(debug=True)  # Test of compiling the context

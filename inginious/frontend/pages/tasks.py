@@ -22,6 +22,7 @@ from pymongo import ReturnDocument
 from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundException
 from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
+from inginious.frontend.plugins import plugin_manager
 
 
 class BaseTaskPage(object):
@@ -36,7 +37,6 @@ class BaseTaskPage(object):
         self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
         self.default_max_file_size = self.cp.default_max_file_size
         self.webterm_link = self.cp.webterm_link
-        self.plugin_manager = self.cp.plugin_manager
 
     def preview_allowed(self, courseid, taskid):
         try:
@@ -358,10 +358,10 @@ class BaseTaskPage(object):
                                 "If the error persists, send an email to the course administrator.")
 
         tojson["title"] += " " + _("[Submission #{submissionid} - <b><time datetime='{submissionDate}'>{submissionDate}</time></b>]").format(submissionid=data["_id"], submissionDate=data["submitted_on"].isoformat())
-        tojson["title"] = self.plugin_manager.call_hook_recursive("feedback_title", task=task, submission=data, title=tojson["title"])["title"]
+        tojson["title"] = plugin_manager.call_hook_recursive("feedback_title", task=task, submission=data, title=tojson["title"])["title"]
         
         tojson["text"] = data.get("text", "")
-        tojson["text"] = self.plugin_manager.call_hook_recursive("feedback_text", task=task, submission=data, text=tojson["text"])["text"]
+        tojson["text"] = plugin_manager.call_hook_recursive("feedback_text", task=task, submission=data, text=tojson["text"])["text"]
 
         if reloading:
             # Set status='ok' because we are reloading an old submission.
@@ -380,7 +380,7 @@ class BaseTaskPage(object):
                         tojson["tests"][tag] = data["tests"][tag]
 
         # allow plugins to insert javascript to be run in the browser after the submission is loaded
-        tojson["feedback_script"] = "".join(self.plugin_manager.call_hook("feedback_script", task=task, submission=data))
+        tojson["feedback_script"] = "".join(plugin_manager.call_hook("feedback_script", task=task, submission=data))
 
         return json.dumps(tojson, default=str)
 
