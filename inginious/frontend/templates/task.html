@@ -68,13 +68,13 @@
             <tr>
                 <td>{{ _("Grade") }}</td>
                 <td>
-                    <span id="task_grade">{{ user_task.get('grade', 0) }}</span>%
+                    <span id="task_grade">{{ user_task.grade }}</span>%
                 </td>
             </tr>
             <tr>
                 <td>{{ _("Attempts") }}</td>
                 <td id="task_tries">
-                    {{ user_task.get('tried', 0) }}
+                    {{ user_task.tried }}
                 </td>
             </tr>
         {% endif %}
@@ -297,7 +297,7 @@
         "@lang": "{{ user_manager.session_language() }}",
         "@username": "{{ user_manager.session_username() }}",
         "@random": {{ input_random_list }},
-        "@state": "{{ user_task.get('state', '') if registered else '' }}"
+        "@state": "{{ user_task.state if registered else '' }}"
     }
 </script>
 <div id="task_context" class="collapse show">

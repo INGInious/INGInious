@@ -14,6 +14,7 @@ from inginious.frontend.tasks import Task
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.common.exceptions import TaskAlreadyExistsException
 from inginious.frontend.task_dispensers import get_task_dispensers
+from inginious.frontend.models.user_task import UserTask
 
 
 class CourseTaskListPage(INGIniousAdminPage):
@@ -109,7 +110,7 @@ class CourseTaskListPage(INGIniousAdminPage):
                 if key in submission and type(submission[key]) == bson.objectid.ObjectId:
                     self.submission_manager.get_gridfs().delete(submission[key])
 
-        self.database.user_tasks.delete_many({"courseid": courseid, "taskid": taskid})
+        UserTask.objects(courseid=courseid, taskid=taskid).delete()
         self.database.submissions.delete_many({"courseid": courseid, "taskid": taskid})
 
         logging.getLogger("inginious.webapp.task_edit").info("Task %s/%s wiped.", courseid, taskid)

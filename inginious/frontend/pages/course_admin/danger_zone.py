@@ -19,6 +19,7 @@ from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
 from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
+from inginious.frontend.models.user_task import UserTask
 
 
 class CourseDangerZonePage(INGIniousAdminPage):
@@ -36,7 +37,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self.database.courses.update_one({"_id": courseid}, {"$set": {"students": []}})
         self.database.audiences.delete_many({"courseid": courseid})
         self.database.groups.delete_many({"courseid": courseid})
-        self.database.user_tasks.delete_many({"courseid": courseid})
+        UserTask.objects(courseid=courseid).delete()
         self.database.submissions.delete_many({"courseid": courseid})
 
         self._logger.info("Course %s wiped.", courseid)
@@ -69,7 +70,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         # Update course id in DB
         self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
-        self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        UserTask.objects(courseid=courseid).update(set__courseid=archive_course_id)
         self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         old_course_students = self.database.courses.find_one_and_delete({"_id": courseid})
@@ -89,7 +90,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         # Deletes the course from the factory (entire folder)
         course.delete()
 
-        self._logger.info("Course %s files erased.", courseid)
+        self._logger.info("Course %s files erased.", course.get_id())
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """

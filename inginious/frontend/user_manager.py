@@ -12,8 +12,6 @@ from typing import Dict, Optional
 
 from werkzeug.exceptions import NotFound
 from abc import ABCMeta, abstractmethod
-from datetime import datetime
-from datetime import timedelta
 from functools import reduce
 from natsort import natsorted
 from collections import OrderedDict, namedtuple
@@ -25,6 +23,8 @@ import re
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from flask.sessions import NullSession
+
+from inginious.frontend.models.user_task import UserTask
 
 
 class AuthInvalidInputException(Exception):
@@ -587,7 +587,7 @@ class UserManager:
             return False
         else:
             self._database.submissions.delete_many({"username": username})
-            self._database.user_tasks.delete_many({"username": username})
+            UserTask.objects(username=username).delete()
             user_courses = self._database.courses.find({"students": username})
             for elem in user_courses: self.course_unregister_user(elem['_id'], username)
         return True
@@ -629,7 +629,7 @@ class UserManager:
         """
         return self.get_course_caches([username], course)[username]
 
-    def get_course_caches(self, usernames, course):
+    def get_course_caches(self, usernames : list[str], course):
         """
         :param usernames: List of username for which we want info. If usernames is None, data from all users will be returned.
         :param course: A Course object
@@ -649,28 +649,26 @@ class UserManager:
         if usernames is not None:
             match["username"] = {"$in": usernames}
 
-        tasks = course.get_tasks()
-        taskids = tasks.keys()
+        taskids = course.get_readable_tasks()
         match["taskid"] = {"$in": list(taskids)}
 
-        data = list(self._database.user_tasks.aggregate(
-            [
-                {"$match": match},
-                {"$group": {
+        user_tasks = UserTask.objects(**match)
+        data = user_tasks.aggregate([{
+            "$group":
+                {
                     "_id": "$username",
                     "task_tried": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
                     "total_tries": {"$sum": "$tried"},
                     "task_succeeded": {"$addToSet": {"$cond": ["$succeeded", "$taskid", False]}},
                     "task_grades": {"$addToSet": {"taskid": "$taskid", "grade": "$grade"}}
-                }}
-            ]))
+                }
+        }])
 
         if usernames is None:
             usernames = self.get_course_registered_users(course=course, with_admins=False)
 
         retval = {username: {"task_succeeded": 0, "task_grades": [], "grade": 0} for username in usernames}
 
-        user_tasks = self._database.user_tasks.find(match)
         users_tasks_list = course.get_task_dispenser().get_user_task_list(usernames)
         users_grade = course.get_task_dispenser().get_course_grades(user_tasks, usernames)
 
@@ -715,76 +713,61 @@ class UserManager:
         if usernames is not None:
             match["username"] = {"$in": usernames}
 
-        data = self._database.user_tasks.find(match)
+        data = UserTask.objects(**match)
         retval = {username: None for username in usernames}
         for result in data:
             username = result["username"]
-            del result["username"]
-            del result["_id"]
             retval[username] = result
 
         return retval
 
     def user_saw_task(self, username, courseid, taskid):
         """ Set in the database that the user has viewed this task """
-        self._database.user_tasks.update_one({"username": username, "courseid": courseid, "taskid": taskid},
-                                             {"$setOnInsert": {"username": username, "courseid": courseid,
-                                                               "taskid": taskid,
-                                                               "tried": 0, "succeeded": False, "grade": 0.0,
-                                                               "submissionid": None, "state": ""}},
-                                             upsert=True)
+        UserTask.objects(username=username, courseid=courseid, taskid=taskid).update_one(
+            set_on_insert__username=username,
+            set_on_insert__courseid=courseid,
+            set_on_insert__taskid=taskid,
+            set_on_insert__tried=0,
+            set_on_insert__succeeded=False,
+            set_on_insert__grade=0.0,
+            set_on_insert__submissionid=None,
+            set_on_insert__state="",
+            upsert=True
+        )
 
     def update_user_stats(self, username, course, task, submission, result_str, grade, state, newsub, task_dispenser):
         """ Update stats with a new submission """
         self.user_saw_task(username, submission["courseid"], submission["taskid"])
 
+        eval_mode = task_dispenser.get_evaluation_mode(task.get_id())
+        match_filter = {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]}
         if newsub:
-            old_submission = self._database.user_tasks.find_one_and_update(
-                {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]},
-                {"$inc": {"tried": 1, "tokens.amount": 1}})
+            old_submission = UserTask.objects(**match_filter).modify(inc__tried=1, inc__tokens__amount=1, new=True)
 
-            # Check if the submission is the default download
-            set_default = task_dispenser.get_evaluation_mode(task.get_id()) == 'last' or \
-                          (task_dispenser.get_evaluation_mode(task.get_id()) == 'best' and old_submission.get('grade', 0.0) <= grade)
-
-            if set_default:
-                self._database.user_tasks.find_one_and_update(
-                    {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]},
-                    {"$set": {"succeeded": result_str == "success", "grade": grade, "state": state,
-                              "submissionid": submission['_id']}})
+            # Update if the submission should be the default one
+            if eval_mode == 'last' or (eval_mode == 'best' and old_submission.grade <= grade):
+                old_submission.succeeded = result_str == "success"
+                old_submission.grade = grade
+                old_submission.state = state
+                old_submission.submissionid = submission["_id"]
+                old_submission.save()
         else:
-            old_submission = self._database.user_tasks.find_one(
-                {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]})
-            def_sub = []
-            if task_dispenser.get_evaluation_mode(task.get_id()) == 'best':  # if best, update cache consequently (with best submission)
-                def_sub = list(self._database.submissions.find(
-                    {"username": username, "courseid": course.get_id(), "taskid": task.get_id(),
-                     "status": "done"}).sort(
-                    [("grade", pymongo.DESCENDING), ("submitted_on", pymongo.DESCENDING)]).limit(1))
-
-            elif task_dispenser.get_evaluation_mode(task.get_id()) == 'last':  # if last, update cache with last submission
-                def_sub = list(self._database.submissions.find(
-                    {"username": username, "courseid": course.get_id(), "taskid": task.get_id()})
-                               .sort([("submitted_on", pymongo.DESCENDING)]).limit(1))
+            old_submission = UserTask.objects.get(**match_filter)
+            sort_filter = [("grade", pymongo.DESCENDING)] if eval_mode == 'best' else []
+            sort_filter.append(("submitted_on", pymongo.DESCENDING))
+            def_sub = list(self._database.submissions.find(match_filter).sort(sort_filter).limit(1))
 
             if len(def_sub) > 0:
-                self._database.user_tasks.find_one_and_update(
-                    {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]},
-                    {"$set": {
-                        "succeeded": def_sub[0]["result"] == "success",
-                        "grade": def_sub[0]["grade"],
-                        "state": def_sub[0]["state"],
-                        "submissionid": def_sub[0]['_id']
-                    }})
-
-            elif old_submission["submissionid"] == submission["_id"]:  # otherwise, update cache if needed
-                self._database.user_tasks.find_one_and_update(
-                    {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]},
-                    {"$set": {
-                        "succeeded": submission["result"] == "success",
-                        "grade": submission["grade"],
-                        "state": submission["state"]
-                    }})
+                old_submission.succeeded = def_sub[0]["result"] == "success"
+                old_submission.grade = def_sub[0]["grade"]
+                old_submission.state = def_sub[0]["state"]
+                old_submission.submissionid = def_sub[0]['_id']
+                old_submission.save()
+            elif old_submission.submissionid == submission["_id"]: # otherwise, update cache if needed
+                old_submission.succeeded = submission["result"] == "success"
+                old_submission.grade = submission["grade"]
+                old_submission.state = submission["state"]
+                old_submission.save()
 
     def task_is_visible_by_user(self, course, task, username=None, lti=None):
         """ Returns true if the task is visible and can be accessed by the user
@@ -812,64 +795,35 @@ class UserManager:
             - False to indicate the user is not in a LTI session
             - "auto" to enable the check and take the information from the current session
         """
+        checks = [only_check] if only_check is not None else ["groups", "tokens"]
+
         if username is None:
             username = self.session_username()
 
+        if self.has_staff_rights_on_course(course, username):
+            return True
+
         # Check if course access is ok
-        course_registered = self.course_is_open_to_user(course, username, lti)
+        course_filter = self.course_is_open_to_user(course, username, lti)
+
         # Check if task accessible to user
-        task_accessible = course.get_task_dispenser().get_accessibility(task.get_id(), username).is_open()
-        # User has staff rights ?
-        staff_right = self.has_staff_rights_on_course(course, username)
-        # Is this task a group task .
-        is_group_task = course.get_task_dispenser().get_group_submission(task.get_id())
+        task_filter = course.get_task_dispenser().get_accessibility(task.get_id(), username).is_open()
 
         # Check for group
+        is_group_task = course.get_task_dispenser().get_group_submission(task.get_id())
         group = self._database.groups.find_one({"courseid": course.get_id(), "students": self.session_username()})
+        group_filter = 'groups' in checks and group if is_group_task else True
 
-        if not only_check or only_check == 'groups':
-            group_filter = (group is not None and is_group_task) or not is_group_task
-        else:
-            group_filter = True
-
+        # Check for tokens
         students = group["students"] if (group is not None and is_group_task) else [self.session_username()]
-
-        # Check for token availability
-        enough_tokens = True
-        timenow = datetime.now().astimezone()
+        token_filter = True
         submission_limit = course.get_task_dispenser().get_submission_limit(task.get_id())
-        if not only_check or only_check == 'tokens':
-            if submission_limit == {"amount": -1, "period": -1}:
-                # no token limits
-                enough_tokens = True
-            else:
-                # select users with a cache for this particular task
-                user_tasks = list(self._database.user_tasks.find({"courseid": course.get_id(),
-                                                                  "taskid": task.get_id(),
-                                                                  "username": {"$in": students}}))
+        if 'tokens' in checks and submission_limit != {"amount": -1, "period": -1}:
+            user_tasks = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username__in=students)
+            token_filter = reduce(lambda last, cur: last and cur.check_tokens(submission_limit), user_tasks, True)
 
-                # verify that they all can submit
-                def check_tokens_for_user_task(user_task):
-                    token_dict = user_task.get("tokens", {"amount": 0, "date": datetime.fromtimestamp(0).astimezone()})
-                    tokens_ok = token_dict.get("amount", 0) < submission_limit["amount"]
-                    date_limited = submission_limit["period"] > 0
-                    need_reset = token_dict.get("date", datetime.fromtimestamp(0).astimezone()) < timenow - timedelta(
-                        hours=submission_limit["period"])
+        return course_filter and task_filter and group_filter and token_filter
 
-                    if date_limited and need_reset:
-                        # time limit for the tokens is reached; reset the tokens
-                        self._database.user_tasks.find_one_and_update(user_task, {
-                            "$set": {"tokens": {"amount": 0, "date": datetime.now()}}})
-                        return True
-                    elif tokens_ok:
-                        return True
-                    else:
-                        return False
-
-                enough_tokens = reduce(lambda old, user_task: old and check_tokens_for_user_task(user_task), user_tasks,
-                                       True)
-
-        return (course_registered and task_accessible and group_filter and enough_tokens) or staff_right
 
     def get_course_audiences(self, course):
         """ Returns a list of the course audiences"""
@@ -1046,14 +1000,6 @@ class UserManager:
             return list(set(l + course.get_staff()))
         else:
             return l
-
-    def reset_user_task_state(self, courseid, taskid, username):
-
-        d = self._database.user_tasks.find_one_and_update(
-            {"username": username, "courseid": courseid, "taskid": taskid},
-            {"$set": {
-                "state": ""
-            }})
 
     ##############################################
     #             Rights management              #
