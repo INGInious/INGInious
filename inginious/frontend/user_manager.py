@@ -837,7 +837,7 @@ class UserManager:
 
         # Check for token availability
         enough_tokens = True
-        timenow = datetime.now()
+        timenow = datetime.now().astimezone()
         submission_limit = course.get_task_dispenser().get_submission_limit(task.get_id())
         if not only_check or only_check == 'tokens':
             if submission_limit == {"amount": -1, "period": -1}:
@@ -851,10 +851,10 @@ class UserManager:
 
                 # verify that they all can submit
                 def check_tokens_for_user_task(user_task):
-                    token_dict = user_task.get("tokens", {"amount": 0, "date": datetime.fromtimestamp(0)})
+                    token_dict = user_task.get("tokens", {"amount": 0, "date": datetime.fromtimestamp(0).astimezone()})
                     tokens_ok = token_dict.get("amount", 0) < submission_limit["amount"]
                     date_limited = submission_limit["period"] > 0
-                    need_reset = token_dict.get("date", datetime.fromtimestamp(0)) < timenow - timedelta(
+                    need_reset = token_dict.get("date", datetime.fromtimestamp(0).astimezone()) < timenow - timedelta(
                         hours=submission_limit["period"])
 
                     if date_limited and need_reset:
