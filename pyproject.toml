@@ -48,6 +48,7 @@ dependencies = [
     "lti==0.9.5",
     "PyLTI1p3==2.0.0",
     "MarkupSafe==3.0.2",
+    "mongoengine==0.29.1",
     "msgpack==1.1.0",
     "natsort==8.4.0",
     "psutil==6.1.1",

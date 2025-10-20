@@ -17,6 +17,7 @@ from binascii import hexlify
 from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
 from bson.codec_options import CodecOptions
+from mongoengine import connect
 
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
@@ -133,6 +134,8 @@ def get_app(config):
     mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
     database = mongo_client.get_database(config.get('database', 'INGInious'), codec_options=CodecOptions(tz_aware=True))
     gridfs = GridFS(database)
+
+    connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
     # Init database if needed
     db_version = database.db_version.find_one({})
