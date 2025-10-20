@@ -80,6 +80,7 @@ class Course(object):
             self._allow_preview = self._content.get('allow_preview', False)
             self._is_lti = self._content.get('is_lti', False)
             self._is_archive = self._content.get('archived', False)
+            self._archive_date = datetime.fromisoformat(self._content["archive_date"]).astimezone() if "archive_date" in self._content else None
             self._lti_url = self._content.get('lti_url', '')
             self._lti_keys = self._content.get('lti_keys', {})
             self._lti_config = self._content.get('lti_config', {})
@@ -285,4 +286,4 @@ class Course(object):
 
     def get_archiving_date(self):
         """ Returns the date at which the course was archived as a string (None if not archived)"""
-        return datetime.fromisoformat(self._content["archive_date"]) if self._content["archive_date"] else None
+        return self._archive_date
