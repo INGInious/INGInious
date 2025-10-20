@@ -24,6 +24,7 @@ from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.courses import Course
+from inginious.frontend.models.user_task import UserTask
 
 
 class BaseTaskPage(object):
@@ -60,8 +61,6 @@ class BaseTaskPage(object):
 
         if not self.user_manager.course_is_open_to_user(course, username, is_LTI):
             return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
-
-        is_staff = self.user_manager.has_staff_rights_on_course(course, username)
 
         try:
             task = course.get_task(taskid)
@@ -120,19 +119,12 @@ class BaseTaskPage(object):
                 time.time() if task.regenerate_input_random() else ""))
             random_input_list = [random.random() for i in range(task.get_number_input_random())]
 
-            user_task = self.database.user_tasks.find_one_and_update(
-                {
-                    "courseid": course.get_id(),
-                    "taskid": task.get_id(),
-                    "username": self.user_manager.session_username()
-                },
-                {
-                    "$set": {"random": random_input_list}
-                },
-                return_document=ReturnDocument.AFTER
+            user_task = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username=username).modify(
+                set__random=random_input_list,
+                new=True
             )
 
-            submissionid = user_task.get('submissionid', None)
+            submissionid = user_task.submissionid
             eval_submission = self.database.submissions.find_one({'_id': ObjectId(submissionid)}) if submissionid else None
 
             students = [self.user_manager.session_username()]
@@ -187,8 +179,8 @@ class BaseTaskPage(object):
                 return json.dumps({"status": "error", "title": _("Error"), "text": _("You are not allowed to submit for this task.")})
 
             # Retrieve input random and check still valid
-            random_input = self.database.user_tasks.find_one({"courseid": course.get_id(), "taskid": task.get_id(), "username": username}, { "random": 1 })
-            random_input = random_input["random"] if "random" in random_input else []
+            user_task = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username=username).only("random").get()
+            random_input = user_task.random
             for i in range(0, len(random_input)):
                 s = "@random_" + str(i)
                 if s not in userinput or float(userinput[s]) != random_input[i]:
@@ -251,13 +243,9 @@ class BaseTaskPage(object):
                 result = self.submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
 
                 # user_task always exists as we called user_saw_task before
-                user_task = self.database.user_tasks.find_one({
-                    "courseid": course.get_id(),
-                    "taskid": task.get_id(),
-                    "username": {"$in": result["username"]}
-                })
+                user_task = UserTask.objects.get(courseid=course.get_id(), taskid=task.get_id(), username__in=result["username"])
 
-                default_submissionid = user_task.get('submissionid', None)
+                default_submissionid = user_task.submissionid
                 if default_submissionid is None:
                     # This should never happen, as user_manager.update_user_stats is called whenever a submission is done.
                     return Response(content_type='application/json', response=json.dumps({

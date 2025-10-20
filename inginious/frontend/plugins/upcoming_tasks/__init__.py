@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from flask import request, send_from_directory, render_template
 
 from inginious.frontend.courses import Course
+from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
@@ -87,7 +88,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
             new_user_task_list = [taskid for taskid, accessibility in accessibilities.items() if accessibility.after_start() and taskid not in outdated_tasks]
 
             tasks_data[courseid] = {taskid: {"succeeded": False, "grade": 0.0} for taskid in new_user_task_list}
-            user_tasks = self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": new_user_task_list}})
+            user_tasks = UserTask.objects(username=username, courseid=course.get_id(), taskid__in=new_user_task_list)
             for user_task in user_tasks:
                 if not user_task["succeeded"]:
                     tasks_data[courseid][user_task["taskid"]]["succeeded"] = user_task["succeeded"]

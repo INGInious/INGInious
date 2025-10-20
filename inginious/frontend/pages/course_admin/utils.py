@@ -18,6 +18,7 @@ from bson.objectid import ObjectId
 from inginious.common.base import id_checker
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.models.user_task import UserTask
 
 
 class INGIniousAdminPage(INGIniousAuthPage):
@@ -228,7 +229,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
             filter["result"] = {"$in": ["crash", "timeout"]}
 
         # Only evaluation submissions
-        user_tasks = self.database.user_tasks.find(base_filter)
+        user_tasks = UserTask.objects(**base_filter)
         best_submissions_list = {user_task['submissionid'] for user_task in user_tasks if
                                  user_task['submissionid'] is not None}
 

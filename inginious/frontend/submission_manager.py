@@ -23,6 +23,7 @@ from pymongo.collection import ReturnDocument
 import inginious.common.custom_yaml
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.plugins import plugin_manager
+from inginious.frontend.models.user_task import UserTask
 
 
 class WebAppSubmissionManager:
@@ -176,10 +177,8 @@ class WebAppSubmissionManager:
             username = self._user_manager.session_username()
             submission["username"] = [username]
             submission["submitted_on"] = datetime.now(tz=timezone.utc)
-            my_user_task = self._database.user_tasks.find_one(
-                {"courseid": course.get_id(), "taskid": task.get_id(), "username": username},
-                {"tried": 1, "_id": 0})
-            tried_count = my_user_task["tried"]
+            my_user_task = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username=username).only("tried").get()
+            tried_count = my_user_task.tried
             inputdata["@attempts"] = str(tried_count + 1)
             inputdata["@username"] = username
             inputdata["@email"] = self._user_manager.session_email()
@@ -269,16 +268,11 @@ class WebAppSubmissionManager:
         inputdata["@email"] = self._user_manager.session_email()
         inputdata["@lang"] = self._user_manager.session_language()
         inputdata["@time"] = str(obj["submitted_on"])
-        my_user_task = self._database.user_tasks.find_one(
-            {"courseid": course.get_id(), "taskid": task.get_id(), "username": username}, {"tried": 1, "_id": 0})
-        tried_count = my_user_task["tried"]
-        inputdata["@attempts"] = str(tried_count + 1)
-        # Retrieve input random
-        states = self._database.user_tasks.find_one(
-            {"courseid": course.get_id(), "taskid": task.get_id(), "username": username},
-            {"random": 1, "state": 1})
-        inputdata["@random"] = states["random"] if "random" in states else []
-        inputdata["@state"] = states["state"] if "state" in states else ""
+
+        my_user_task = UserTask.objects.get(courseid=course.get_id(), taskid=task.get_id(), username=username)
+        inputdata["@attempts"] = str(my_user_task.tried + 1)
+        inputdata["@random"] = list(my_user_task.random)
+        inputdata["@state"] = my_user_task.state
 
         # Send LTI information to the client except "consumer_key"
         lti_info = self._user_manager.session_lti_info()

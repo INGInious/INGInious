@@ -8,7 +8,7 @@ from collections import OrderedDict
 from flask import request, render_template
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
-
+from inginious.frontend.models.user_task import UserTask
 
 class CourseStudentInfoPage(INGIniousAdminPage):
     """ List information about a student """
@@ -23,7 +23,7 @@ class CourseStudentInfoPage(INGIniousAdminPage):
         taskid = data["taskid"]
         course, __ = self.get_course_and_check_rights(courseid)
 
-        self.user_manager.reset_user_task_state(courseid, taskid, username)
+        UserTask.objects.get(username=username, courseid=courseid, taskid=taskid).reset_state()
 
         return self.page(course, username)
 
@@ -33,7 +33,7 @@ class CourseStudentInfoPage(INGIniousAdminPage):
 
     def page(self, course, username):
         """ Get all data and display the page """
-        data = list(self.database.user_tasks.find({"username": username, "courseid": course.get_id()}))
+        data = UserTask.objects(username=username, courseid=course.get_id())
 
         tasks = course.get_task_dispenser().get_ordered_tasks()
         user_task_list = course.get_task_dispenser().get_user_task_list([username])[username]

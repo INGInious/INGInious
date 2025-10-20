@@ -4,6 +4,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.courses import Course
+from inginious.frontend.models.user_task import UserTask
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
@@ -30,15 +31,13 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         inginious_username = inginious_usernames[0]["username"]
 
         # get best submission from database
-        user_best_sub = list(self.database.user_tasks.find(
-            {"username": inginious_username, "courseid": courseid, "taskid": taskid},
-            {"submissionid": 1, "_id": 0}))
+        user_best_sub = UserTask.objects(username=inginious_username, courseid=courseid, taskid=taskid).only("submissionid").get()
 
         if not user_best_sub:
             # no submission to retrieve
             return json_util.dumps({"status": "success", "submission": None})
 
-        user_best_sub_id = user_best_sub[0]["submissionid"]
+        user_best_sub_id = user_best_sub.submissionid
 
         if user_best_sub_id is None:
             # no best submission
