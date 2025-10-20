@@ -9,6 +9,7 @@ import zoneinfo
 
 from flask import request, render_template
 
+from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
 
@@ -111,26 +112,19 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         return "?tasks=" + taskid
 
     def _progress_stats(self, course):
-        data = list(self.database.user_tasks.aggregate(
-            [
+        registered_users = self.user_manager.get_course_registered_users(course, False)
+        user_tasks = UserTask.objects(courseid=course.get_id(), username__in=registered_users)
+        data = user_tasks.aggregate([
+            {"$group":
                 {
-                    "$match":
-                        {
-                            "courseid": course.get_id(),
-                            "username": {"$in": self.user_manager.get_course_registered_users(course, False)}
-                        }
-                },
-                {
-                    "$group":
-                        {
-                            "_id": "$taskid",
-                            "viewed": {"$sum": 1},
-                            "attempted": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
-                            "attempts": {"$sum": "$tried"},
-                            "succeeded": {"$sum": {"$cond": ["$succeeded", 1, 0]}}
-                        }
+                    "_id": "$taskid",
+                    "viewed": {"$sum": 1},
+                    "attempted": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
+                    "attempts": {"$sum": "$tried"},
+                    "succeeded": {"$sum": {"$cond": ["$succeeded", 1, 0]}}
                 }
-            ]))
+            }
+        ])
         tasks = course.get_task_dispenser().get_ordered_tasks()
 
         # Now load additional information
