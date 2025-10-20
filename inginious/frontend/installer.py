@@ -166,9 +166,6 @@ class Installer:
 
         database = self.try_mongodb_opts(options["mongo_opt"]["host"], options["mongo_opt"]["database"])
 
-        self._display_header("BACKUP DIRECTORY")
-        backup_directory_opt = self.configure_backup_directory()
-        options.update(backup_directory_opt)
 
         self._display_header("AUTHENTIFICATION")
         auth_opts = self.configure_authentication(database)
@@ -511,10 +508,6 @@ class Installer:
             True)
 
         return options
-
-    def configure_backup_directory(self):
-        """ Configure backup directory """
-        return {"backup_directory": self._configure_directory("backups")}
 
     def ldap_plugin(self):
         """ Configures the LDAP plugin """

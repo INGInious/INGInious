@@ -13,6 +13,9 @@ class InvalidNameException(Exception):
 class CourseNotFoundException(Exception):
     pass
 
+class CourseNotArchivable(Exception):
+    pass
+
 
 class TaskNotFoundException(Exception):
     pass

@@ -733,6 +733,34 @@ class UserManager:
                                                                "submissionid": None, "state": ""}},
                                              upsert=True)
 
+
+    def get_user_pinned_courses_ids(self, username):
+        data = self._database.users.find_one({"username": username})
+        course_ids = data.get("pinned_courses", []) if data else []
+        return course_ids
+
+    def pin_course(self, username, courseid):
+        data = self._database.users.find_one({"username": username})
+        if data:
+            pinned_courses = data.get("pinned_courses", [])
+            if courseid not in pinned_courses:
+                pinned_courses.append(courseid)
+                self._database.users.update_one({"username": username}, {"$set": {"pinned_courses": pinned_courses}})
+                return True
+        return False
+
+
+    def unpin_course(self, username, courseid):
+        data = self._database.users.find_one({"username": username})
+        if data:
+            pinned_courses = data.get("pinned_courses", [])
+            if courseid in pinned_courses:
+                pinned_courses.remove(courseid)
+                self._database.users.update_one({"username": username}, {"$set": {"pinned_courses": pinned_courses}})
+                return True
+        return False
+
+
     def update_user_stats(self, username, task, submission, result_str, grade, state, newsub, task_dispenser):
         """ Update stats with a new submission """
         self.user_saw_task(username, submission["courseid"], submission["taskid"])
@@ -994,7 +1022,7 @@ class UserManager:
         if lti == "auto":
             lti = self.session_lti_info() is not None
 
-        if self.has_staff_rights_on_course(course, username):
+        if self.has_staff_rights_on_course(course, username) or course.is_open_to_non_staff():
             return True
 
         if not course.get_accessibility().is_open():
