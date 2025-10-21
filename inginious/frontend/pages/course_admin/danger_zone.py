@@ -70,12 +70,14 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
-        old_course_students = self.database.courses.find_one({"_id": courseid})
+        old_course_students = self.database.courses.find_one_and_delete({"_id": courseid})
+
         if old_course_students:
             old_course_students["_id"] = archive_course_id
             self.database.courses.insert_one(old_course_students)
 
-        self._logger.info("Course %s archived.", courseid)
+        self._logger.info("Course %s archived as %s.", courseid, archive_course_id)
+        return courseid, archive_course_id
 
     def delete_course(self, courseid):
         """ Erase all course data """
@@ -110,8 +112,8 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    self.dump_course(course)
-                    msg = _("All course data have been deleted.")
+                    courseid, archive_course_id = self.dump_course(course)
+                    msg = _(f"Course archived as : ") + archive_course_id # is ok
                 except Exception as ex:
                     msg = _("An error occurred while dumping course from database: {}").format(repr(ex))
                     error = True
