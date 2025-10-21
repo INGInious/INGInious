@@ -113,7 +113,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             else:
                 try:
                     courseid, archive_course_id = self.dump_course(course)
-                    msg = _(f"Course archived as : ") + archive_course_id # is ok
+                    msg = _("Course archived as : ") + archive_course_id
                 except Exception as ex:
                     msg = _("An error occurred while dumping course from database: {}").format(repr(ex))
                     error = True
