@@ -112,7 +112,7 @@ class LTI11LaunchPage(INGIniousPage):
         self.logger.debug('_parse_lti_data:' + str(post_input))
 
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 

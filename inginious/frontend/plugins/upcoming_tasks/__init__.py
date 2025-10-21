@@ -53,7 +53,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
     def page(self, time_planner):
         """ General main method called for GET and POST """
         username = self.user_manager.session_username()
-        all_courses = Course.get_all(self.fs_provider)
+        all_courses = Course.get_all()
         time_planner = self.time_planner_conversion(time_planner)
 
         # Get the courses id
@@ -118,7 +118,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
                                            submissions=except_free_last_submissions)
 
 
-def init(plugin_manager, _, _2, config):
+def init(plugin_manager, client, config):
     """ Init the plugin """
     plugin_manager.add_page('/coming_tasks', UpComingTasksBoard.as_view("upcomingtasksboardpage"))
     plugin_manager.add_page('/plugins/coming_tasks/static/<path:path>', StaticMockPage.as_view("upcomingtasksstaticmockpage"))

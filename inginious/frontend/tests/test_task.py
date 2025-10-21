@@ -8,6 +8,7 @@ from collections import OrderedDict
 import pytest
 import os
 
+from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.common.exceptions import InvalidNameException, TaskUnreadableException
 from inginious.common.tasks_problems import *
@@ -27,20 +28,18 @@ problem_types = {"code": CodeProblem, "code_single_line": CodeSingleLineProblem,
 @pytest.fixture()
 def ressource(request):
     register_base_env_types()
-    fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
+    init_fs_provider(LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks')))
     register_problem_types(get_default_displayable_problem_types())
     register_task_dispenser(TableOfContents)
     register_task_dispenser(CombinatoryTest)
-    yield fs
 
 
 class TestTaskBasic(object):
 
     def test_task_loading(self, ressource):
         '''Tests if a course file loads correctly'''
-        fs = ressource
         print("\033[1m-> common-tasks: task loading\033[0m")
-        t = Task.get('task1', fs.from_subfolder('test'))
+        t = Task.get('test', 'task1')
         assert t.get_environment_id() == 'default'
         assert t.get_id() == 'task1'
 
@@ -53,25 +52,22 @@ class TestTaskBasic(object):
         assert t.get_problems()[0].get_type() == 'multiple_choice'
 
     def test_task_invalid_name(self, ressource):
-        fs = ressource
         try:
-            Task.get('invalid/name', fs.from_subfolder('test'))
+            Task.get('test','invalid/name')
         except InvalidNameException:
             return
         assert False
 
     def test_task_invalid(self, ressource):
-        fs = ressource
         try:
-            Task.get('invalid_task', fs.from_subfolder('test3'))
+            Task.get('test3', 'invalid_task')
         except TaskUnreadableException:
             return
         assert False
 
     def test_no_problems(self, ressource):
-        fs = ressource
         try:
-            Task('invalid_task',
+            Task('fake_path','invalid_task',
                  {"environment_id": "default",
                   "environment_type": "docker",
                   "environment_parameters": {
@@ -80,21 +76,18 @@ class TestTaskBasic(object):
                       "time": '30',
                       "memory": '100',
                       "hard_time": '',
-                  }
-                  }, 'fake_path')
+                  }})
         except Exception as e:
             assert str(e) == "Tasks must have some problems descriptions"
             return
         assert False
 
     def test_input_consistent_valid(self, ressource):
-        fs = ressource
-        t = Task.get('task3', fs.from_subfolder('test'))
+        t = Task.get('test', 'task3')
         assert t.input_is_consistent({"unittest": "10"}, [], 0) is True
 
     def test_input_consistent_invalid(self, ressource):
-        fs = ressource
-        t = Task.get('task3', fs.from_subfolder('test'))
+        t = Task.get('test', 'task3')
         assert t.input_is_consistent({"unittest": 10}, [], 0) is False
 
 
@@ -103,20 +96,19 @@ class TestTaskProblem(object):
         '''Tests if problem types are correctly recognized'''
         fs = ressource
         print("\033[1m-> common-tasks: problem types parsing\033[0m")
-        t =  Task.get('task1', fs.from_subfolder('test2'))
+        t =  Task.get('test2', 'task1')
         assert t.get_problems()[0].get_type() == 'match'
 
-        t =  Task.get('task2', fs.from_subfolder('test2'))
+        t =  Task.get('test2', 'task2')
         assert t.get_problems()[0].get_type() == 'match'
 
-        t =  Task.get('task3', fs.from_subfolder('test2'))
+        t =  Task.get('test2', 'task3')
         assert t.get_problems()[0].get_type() == 'multiple_choice'
 
     def test_multiple_choice(self, ressource):
         '''Tests multiple choice problems methods'''
-        fs = ressource
         print("\033[1m-> common-tasks: multiple_choice parsing\033[0m")
-        p =  Task.get('task3', fs.from_subfolder('test2')).get_problems()[0]
+        p =  Task.get('test2', 'task3').get_problems()[0]
         assert p.allow_multiple()
 
         # Check correct and incorrect answer
@@ -130,9 +122,8 @@ class TestTaskProblem(object):
 
     def test_match(self, ressource):
         '''Tests match problems methods'''
-        fs = ressource
         print("\033[1m-> common-tasks: match-problem loading\033[0m")
-        p =  Task.get('task1', fs.from_subfolder('test2')).get_problems()[0]
+        p =  Task.get('test2', 'task1').get_problems()[0]
 
         # Check correct and incorrect answer
         assert p.check_answer({'unittest': 'Answer 1'}, "")[0]
@@ -145,9 +136,8 @@ class TestTaskProblem(object):
 
     def test_code(self, ressource):
         '''Tests code problems methods'''
-        fs = ressource
         print("\033[1m-> common-tasks: code problem parsing\033[0m")
-        p =  Task.get('task3', fs.from_subfolder('test')).get_problems()[0]
+        p =  Task.get('test','task3').get_problems()[0]
 
         # Check random form input
         assert p.input_is_consistent({'unittest': '10'}, [], 0)
@@ -160,7 +150,7 @@ class TestTaskProblem(object):
         """Tests file problems methods"""
         fs = ressource
         print("\033[1m-> common-tasks: file problem type\033[0m")
-        p =  Task.get('task4', fs.from_subfolder('test2')).get_problems()[0]
+        p =  Task.get('test2', 'task4').get_problems()[0]
         assert p.get_type() == 'file'
 
         # Check random form input

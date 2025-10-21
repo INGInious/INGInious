@@ -67,7 +67,7 @@ class GoogleAuthMethod(AuthMethod):
                'user-select: none; width: 50px; height:50px;" >'
 
 
-def init(plugin_manager, fs_provider, client, conf):
+def init(plugin_manager, client, conf):
     if conf.get("debug", False):
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 

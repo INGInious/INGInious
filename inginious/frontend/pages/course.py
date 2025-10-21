@@ -33,7 +33,7 @@ class CoursePage(INGIniousAuthPage):
     def get_course(self, courseid):
         """ Return the course """
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except:
             raise NotFound(description=_("Course not found."))
 

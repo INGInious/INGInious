@@ -15,6 +15,8 @@ import zmq
 from inginious.common.messages import AgentHello, BackendJobId, SPResult, AgentJobDone, BackendNewJob, BackendKillJob, \
     AgentJobStarted, AgentJobSSHDebug, Ping, Pong, ZMQUtils
 
+from inginious.common.filesystems import get_fs_provider
+
 """
 Various utils to implements new kind of agents easily.
 """
@@ -48,17 +50,16 @@ class Agent(object, metaclass=ABCMeta):
     An INGInious agent, that grades specific kinds of jobs, and interacts with a Backend.
     """
 
-    def __init__(self, context, backend_addr, friendly_name, concurrency, filesystem):
+    def __init__(self, context, backend_addr, friendly_name, concurrency):
         """
         :param context: a ZMQ context to which the agent will be linked
         :param backend_addr: address of the backend to which the agent should connect. The format is the same as ZMQ
         :param concurrency: number of simultaneous jobs that can be run by this agent
-        :param filesystem: filesystem for the tasks
         """
         # These fields can be read/modified/overridden in subclasses
         self._logger = logging.getLogger("inginious.agent")
         self._loop = asyncio.get_event_loop()
-        self._fs = filesystem
+        self._fs = get_fs_provider()
 
         # These fields should not be read/modified/overridden in subclasses
         self.__concurrency = concurrency

@@ -73,7 +73,7 @@ class LTIBindPage(INGIniousAuthPage):
             return error
 
         try:
-            course = Course.get(data["task"][0], self.fs_provider)
+            course = Course.get(data["task"][0])
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:
@@ -120,7 +120,7 @@ class LTILoginPage(INGIniousPage):
             raise Forbidden(description=_("No LTI data available."))
 
         try:
-            course = Course.get(data["task"][0], self.fs_provider)
+            course = Course.get(data["task"][0])
             if data[self._field] not in self._ids_fct(course):
                 raise Exception()
         except:

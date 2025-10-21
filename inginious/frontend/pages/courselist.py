@@ -25,7 +25,7 @@ class CourseListPage(INGIniousPage):
         """  Display main course list page """
         username = self.user_manager.session_username()
         user_info = self.user_manager.get_user_info(username)
-        all_courses = Course.get_all(self.fs_provider)
+        all_courses = Course.get_all()
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items() if course.is_open_to_non_staff()}

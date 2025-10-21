@@ -17,7 +17,7 @@ class CourseRegisterPage(INGIniousAuthPage):
 
     def basic_checks(self, courseid):
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except (InvalidNameException, CourseNotFoundException, CourseUnreadableException) as e:
             raise NotFound(description=_("This course doesn't exist."))
 

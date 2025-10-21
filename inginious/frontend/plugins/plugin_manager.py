@@ -13,11 +13,7 @@ from jinja2 import  FileSystemLoader
 from inginious.frontend.user_manager import AuthMethod
 from inginious.frontend.task_problems import inspect_displayable_problem_types
 from inginious.common.tasks_problems import register_problem_types
-
-
-class PluginManagerNotLoadedException(Exception):
-    pass
-
+from inginious.common.exceptions import NotLoadedException
 
 class PluginManager(object):
     """ Registers an manage plugins. The init method inits only the Hook Manager; you have to call the method load() to start the plugins """
@@ -67,7 +63,7 @@ class PluginManager(object):
                 kwargs = out
         return kwargs
 
-    def load(self, client, flask_app, fs_provider, database, user_manager, submission_manager, config):
+    def load(self, client, flask_app, database, user_manager, submission_manager, config):
         """ Loads the plugin manager. Must be done after the initialisation of the client """
         self._flask_app = flask_app
         self._database = database
@@ -83,12 +79,12 @@ class PluginManager(object):
             register_problem_types(displayable_pbl_types)
 
             """ Initialize the module """
-            module.init(self, fs_provider, client, entry)
+            module.init(self, client, entry)
 
     def add_page(self, pattern, classname_or_viewfunc):
         """ Add a new page to the web application. Only available after that the Plugin Manager is loaded """
         if not self._loaded:
-            raise PluginManagerNotLoadedException()
+            raise NotLoadedException("PluginManager not loaded")
 
         self._flask_app.add_url_rule("/" + pattern[1:], view_func=classname_or_viewfunc)
 
@@ -98,7 +94,7 @@ class PluginManager(object):
         :param auth_method: a AuthMethod-based class
         """
         if not self._loaded:
-            raise PluginManagerNotLoadedException()
+            raise NotLoadedException("PluginManager not loaded")
         self._user_manager.register_auth_method(auth_method)
 
     def get_database(self):
