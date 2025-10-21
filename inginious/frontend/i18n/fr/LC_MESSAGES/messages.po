@@ -506,9 +506,9 @@ msgstr "L'opération a échoué car le jeton est invalide."
 msgid "Wrong course id."
 msgstr "Identifiant de cours incorrect."
 
-#: inginious/frontend/pages/course_admin/danger_zone.py:173
-msgid "All course data have been deleted."
-msgstr "Toutes les données du cours ont été supprimées."
+#: inginious/frontend/pages/course_admin/danger_zone.py:116
+msgid "Course archived as : "
+msgstr "Cours archivé en tant que : "
 
 #: inginious/frontend/pages/course_admin/danger_zone.py:175
 #, python-brace-format

@@ -51,8 +51,13 @@
                 <div class="card-header bg-warning text-white">
                     {{ _("Archive course data") }}
                 </div>
+                {% if course.is_archive() %}
+                    <div class="alert alert-danger m-3" role="alert">
+                        {{ _("This course is already an archive course. You cannot archive it again.") }}
+                    </div>
+                {% else %}
                 <div class="card-body">
-                    {{ _("<p>This will reset and backup all course data (submissions, audiences, groups, user statistics) from the database.</p><p>To confirm your will, please type the course id below :</p>") | safe }}
+                    {{ _("<p>This will reset and archive all course data (submissions, audiences, groups, user statistics) from the database. The archive will be stored as a new course.</p><p>To confirm your will, please type the course id below :</p>") | safe }}
                     <form class="form-horizontal" method="post">
                         <input type="hidden" name="token" value="{{ thehash }}">
                         <div class="row">
@@ -65,71 +70,7 @@
                         </div>
                     </form>
                 </div>
-            </div>
-
-            <div class="card">
-                <div id="restore_modal" class="modal fade">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h4 class="modal-title"> {{ _("Restore backup from {}").format('<span class="backupdate"></span>') | safe }}</h4>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            </div>
-                            <div class="modal-body">
-                                {{ _("<p>This will restore your course data to {}. Are you sure ?</p>").format("<span class='backupdate'></span>") | safe }}
-                            </div>
-                            <div class="modal-footer">
-                                <form method="post">
-                                    <input type="hidden" name="backupdate" id="backupdate">
-                                    <input type="hidden" name="token" value="{{ thehash }}">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ _("Cancel") }}</button>
-                                    <button type="submit" name="restore" class="btn btn-danger">{{ _("Restore backup") }}</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-header">
-                    {{ _("Backups") }}
-                </div>
-                <table class="table mb-0">
-                    <thead class="table-borderless">
-                        <tr>
-                            <th>{{ _("backup date") }}</th>
-                            <th><span class="pull-right"> {{ _("download") }}</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for backup in backups %}
-                            <tr>
-                                <td>{{ show_time(backup['date']) }}</td>
-                                <td>
-                                    <div class="pull-right btn-group btn-group-sm">
-
-                                        <button type="button" data-backupdate="{{backup['date'].isoformat()}}" data-backupfile="{{backup['file']}}" data-toggle="modal" data-target="#restore_modal" class="btn btn-danger restore" title="{{ _('Restore backup') }}">
-                                            <i class="fa fa-recycle"></i>
-                                        </button>
-
-                                        <a href="?download={{backup['file']}}" class="btn btn-secondary" title="{{ _('Download backup') }}"
-                                           data-toggle="tooltip" data-placement="bottom"><i class="fa fa-download"></i></a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <script type="text/javascript">
-                        $('#restore_modal').on('show.bs.modal', function (event) {
-                          $('.modal-dialog .backupdate').each(function (index) {
-                              $(this).text(dtf.format(new Date($(event.relatedTarget).data('backupdate'))));
-                          });
-                          $('.modal-dialog #backupdate').val($(event.relatedTarget).data('backupfile'));
-                        });
-                        $(".restore").each(function(index) {
-                            $(this).tooltip({"placement": "bottom"});
-                        });
-                </script>
+                {% endif %}
             </div>
         </div>
         <div role="tabpanel" class="tab-pane card-body" id="tab_delete_course">
@@ -138,7 +79,7 @@
                     {{ _("Delete course") }}
                 </div>
                 <div class="card-body">
-                    {{ _("<p> This will <b>permanently</b> remove the course and all its data (including tasks and backups) from INGInious.</p><p>To confirm your will, please type the course id below :</p>") | safe }}
+                    {{ _("<p> This will <b>permanently</b> remove the course and all its data (including tasks and archive courses) from INGInious.</p><p>To confirm your will, please type the course id below :</p>") | safe }}
                     <form class="form-horizontal" method="post">
                         <input type="hidden" name="token" value="{{ thehash }}">
                         <div class="row">
@@ -160,7 +101,7 @@
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                     </div>
                                     <div class="modal-body">
-                                        {{ _("<p>This will <b>permanently</b> remove the course and all its data (including tasks and backups) from INGInious. Are you really sure ?</p>") | safe }}
+                                        {{ _("<p>This will <b>permanently</b> remove the course and all its data (including tasks and archive courses) from INGInious. Are you really sure ?</p>") | safe }}
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ _("Cancel") }}</button>
