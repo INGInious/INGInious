@@ -22,7 +22,7 @@ class LTI13JWKSPage(INGIniousPage):
 
     def GET(self, courseid, keyset_hash):
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
@@ -42,7 +42,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
     def _handle_oidc_login_request(self, courseid):
         """ Initiates the LTI 1.3 OIDC login. """
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
@@ -69,7 +69,7 @@ class LTI13LaunchPage(INGIniousPage):
     def _handle_message_launch(self, courseid, taskid):
         """ Decrypt and process the LTI Launch message. """
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 

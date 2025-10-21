@@ -26,8 +26,7 @@ class MyCoursesPage(INGIniousAuthPage):
         if "new_courseid" in user_input and self.user_manager.user_is_superadmin():
             try:
                 courseid = user_input["new_courseid"]
-                course_fs = self.fs_provider.from_subfolder(courseid)
-                Course(courseid, {"name": courseid, "accessible": False}, course_fs).save()
+                Course(courseid, {"name": courseid, "accessible": False}).save()
                 success = True
             except:
                 success = False
@@ -39,7 +38,7 @@ class MyCoursesPage(INGIniousAuthPage):
         username = self.user_manager.session_username()
         user_info = self.user_manager.get_user_info(username)
 
-        all_courses = Course.get_all(self.fs_provider)
+        all_courses = Course.get_all()
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items()

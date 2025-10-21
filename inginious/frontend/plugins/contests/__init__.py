@@ -106,7 +106,7 @@ class ContestScoreboard(INGIniousAuthPage):
     """ Displays the scoreboard of the contest """
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        course = Course.get(courseid, self.fs_provider)
+        course = Course.get(courseid)
         task_dispenser = course.get_task_dispenser()
         if not task_dispenser.get_id() == Contest.get_id():
             raise NotFound()
@@ -268,7 +268,7 @@ class ContestAdmin(INGIniousAdminPage):
             return render_template("contests/admin.html", course=course, data=contest_data, errors=errors, saved=False)
 
 
-def init(plugin_manager, fs_provider, client, config):  # pylint: disable=unused-argument
+def init(plugin_manager, client, config):  # pylint: disable=unused-argument
     """
         Init the contest plugin.
         Available configuration:

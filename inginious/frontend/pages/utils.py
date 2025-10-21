@@ -69,11 +69,6 @@ class INGIniousPage(MethodView):
         return self.POST(*args, **kwargs)
 
     @property
-    def fs_provider(self) -> FileSystemProvider:
-        """ Returns the filesystem provider singleton """
-        return self.app.fs_provider
-
-    @property
     def submission_manager(self) -> WebAppSubmissionManager:
         """ Returns the submission manager singleton"""
         return self.app.submission_manager

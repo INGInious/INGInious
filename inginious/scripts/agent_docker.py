@@ -16,6 +16,7 @@ import sys
 from zmq.asyncio import ZMQEventLoop, Context
 import asyncio
 
+from inginious.common.filesystems import init_fs_provider
 from inginious.common.entrypoints import get_args_and_filesystem
 from inginious.agent.docker_agent import DockerAgent, DockerRuntime
 
@@ -99,6 +100,7 @@ def main():
                              "\n"
                              "Common values are 'runc docker shared' and 'kata-runtime kata root'.")
     (args, fsprovider) = get_args_and_filesystem(parser)
+    init_fs_provider(fsprovider)
 
     if not os.path.exists(args.tmpdir):
         os.makedirs(args.tmpdir)
@@ -122,7 +124,7 @@ def main():
         context = Context()
 
         # Create agent
-        agent = DockerAgent(context, args.backend, args.friendly_name, args.concurrency, fsprovider,
+        agent = DockerAgent(context, args.backend, args.friendly_name, args.concurrency,
                             address_host=args.debug_host, external_ports=args.debug_ports, tmp_dir=args.tmpdir,
                             runtimes=args.runtime, ssh_allowed=args.ssh)
 

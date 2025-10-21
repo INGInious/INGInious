@@ -31,7 +31,7 @@ def on_task_editor_submit(course, taskid, task_data):
         return json.dumps({"status": "error", "message": "You must provide a task hint in Example tab 2"})
 
 
-def init(plugin_manager, fs_provider, client, config):
+def init(plugin_manager, client, config):
 
     plugin_manager.add_hook('task_editor_tab', example_task_editor_tab)
     plugin_manager.add_hook('task_editor_tab', example_task_editor_tab_2)

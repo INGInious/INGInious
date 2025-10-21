@@ -139,7 +139,7 @@ class CourseSettingsPage(INGIniousAdminPage):
 
 
         if len(errors) == 0:
-            Course(courseid, course_content, course.get_fs()).save()
+            Course(courseid, course_content).save()
             errors = None
             course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)  # don't forget to reload the modified course
 
@@ -170,7 +170,7 @@ class CourseSettingsPage(INGIniousAdminPage):
             del tag["id"]
 
         course_content["tags"] = tags
-        Course(course.get_id(), course_content, course.get_fs()).save()
+        Course(course.get_id(), course_content).save()
         return None
 
     def prepare_datas(self, data, prefix: str):
