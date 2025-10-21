@@ -28,6 +28,7 @@ from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__, DB_VERSION
 from inginious.common.entrypoints import filesystem_from_config_dict
+from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.lti.v1_3 import LTIGradeManager
@@ -185,6 +186,8 @@ def get_app(config):
         task_directory = config["tasks_directory"]
         fs_provider = LocalFSProvider(task_directory)
 
+    init_fs_provider(fs_provider)
+
     register_task_dispenser(TableOfContents)
     register_task_dispenser(CombinatoryTest)
 
@@ -194,10 +197,10 @@ def get_app(config):
 
     update_pending_jobs(database)
 
-    client = create_arch(config, fs_provider, zmq_context)
+    client = create_arch(config, zmq_context)
 
-    lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager, fs_provider),
-                            "1.3": LTIGradeManager(database, user_manager, fs_provider)}
+    lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager),
+                            "1.3": LTIGradeManager(database, user_manager)}
 
     submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, lti_score_publishers)
 
@@ -251,7 +254,6 @@ def get_app(config):
 
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
-    flask_app.fs_provider = fs_provider
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.database = database
@@ -278,7 +280,7 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, fs_provider, database, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, database, user_manager, submission_manager, config.get("plugins", []))
 
     # Start the inginious.backend
     client.start()

@@ -108,7 +108,7 @@ class CourseEditTask(INGIniousAdminPage):
 
         # Get the course
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except:
             return json.dumps({"status": "error", "message": _("Error while reading course's informations")})
 
@@ -121,7 +121,7 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            t = Task(taskid, data, course.get_fs().from_subfolder(taskid))
+            t = Task(courseid, taskid, data)
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 

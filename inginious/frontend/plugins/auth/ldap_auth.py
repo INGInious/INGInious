@@ -129,7 +129,7 @@ class LDAPAuthenticationPage(AuthenticationPage):
             return render_template("ldap_auth/custom_auth_form.html", settings=settings, error=_("Incorrect password"))
 
 
-def init(plugin_manager, _, _2, conf):
+def init(plugin_manager, client, conf):
     """
         Allow to connect through a LDAP service
 

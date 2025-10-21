@@ -15,13 +15,17 @@ import sys
 
 from yaml import SafeLoader, load
 
-from inginious.common.tags import Tag
 from inginious.frontend.tasks import Task
+from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.common.log import init_logging
 from inginious.client.client_sync import ClientSync
 from inginious.frontend.arch_helper import start_asyncio_and_zmq, create_arch
+from inginious.frontend.environment_types import register_base_env_types
 from inginious.common.filesystems.local import LocalFSProvider
+from inginious.common.filesystems import init_fs_provider
+from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.courses import Course
@@ -36,14 +40,14 @@ def import_class(name):
     return mod
 
 
-def create_client(config, fs_provider):
+def create_client(config):
     """
     Create a new client and return it
     :param config: dict for configuration
     :return: a Client object
     """
     zmq_context, t = start_asyncio_and_zmq(config.get("debug_asyncio", False))
-    return create_arch(config, fs_provider, zmq_context)
+    return create_arch(config, zmq_context)
 
 
 def compare_all_outputs(output1, output2, keys):
@@ -129,9 +133,9 @@ def test_task(yaml_data, course, task, client, client_sync):
     :param client_sync: ClientSync object
     :return: dict whose the format is specified in compare_all_outputs function doc
     """
-    if task.get_environment() not in client.get_available_containers():
+    if task.get_environment_id() not in client.get_available_environments().get(task.get_environment_type(), ()):
         time.sleep(1)
-    if task.get_environment() not in client.get_available_containers():
+    if task.get_environment_id() not in client.get_available_environments().get(task.get_environment_type(), ()):
         raise Exception('Environment not available')
     new_output = client_sync.new_job(0, course, task, yaml_data['input'])  # request the client with input from yaml and given task
     keys = ["result", "grade", "problems", "tests", "custom", "state", "archive", "stdout", "stderr"]
@@ -139,28 +143,19 @@ def test_task(yaml_data, course, task, client, client_sync):
     return compare_all_outputs(old_output, new_output, keys)
 
 
-def test_web_task(yaml_data, course, task, config, yaml_path):
+def test_web_task(yaml_data, course, task, yaml_path):
     """
     Test the correctness of the data and task input, i.e. the content does not raise any exception and the rst contents
     are compiling
     :param yaml_data: dict, content of a task.yaml
     :param task: Task object linked to this task.yaml
-    :param config: dict, configuration values
     :param yaml_path: String, path of the file
     :return: yaml_data if any error, {} otherwise
     """
     try:
-        web_task = Task(
-            course.get_id(),
-            task.get_id(),
-            yaml_data,
-            task.get_fs(),
-            config["default_problem_types"]
-        )  # Test of init a web task with the yaml_data. if the values are incorrect, exception will be raised
+        web_task = Task(course.get_id(), task.get_id(), yaml_data)  # Test of init a web task with the yaml_data. if the values are incorrect, exception will be raised
         web_task.get_context('English').parse(debug=True)  # Test of compiling the context
-        if not Tag.check_format(web_task.get_tags()):
-            raise BaseException("Tag type not correct")
-        if web_task.get_evaluate() not in ["best", "last", "student"]:
+        if course.get_task_dispenser().get_evaluation_mode(task.get_id()) not in ["best", "last"]:
             raise BaseException("Not correct evaluation type")
         for sub_prob in yaml_data["problems"]:
             p = ParsableText(yaml_data["problems"][sub_prob]["header"])  # parse the rst of the subproblem
@@ -171,12 +166,11 @@ def test_web_task(yaml_data, course, task, config, yaml_path):
         return yaml_data
 
 
-def test_submission_yaml(client, fs_provider, path, output, client_sync):
+def test_submission_yaml(client, path, output, client_sync):
     """
     Test the content of a submission.test yaml by comparing it to the output of the client for this task and the same
     input.
     :param client: Client object
-    :param fs_provider: FileSystemProvider object
     :param path: String, path to the submission.test
     :param output: dict, output variable
     :param client_sync: ClientSync object, client_sync = ClientSync(client)
@@ -185,18 +179,17 @@ def test_submission_yaml(client, fs_provider, path, output, client_sync):
     # print(os.path.join(test_path, yaml_file.name))
     with open(path, 'r') as yaml:
         yaml_data = load(yaml, Loader=SafeLoader)
-        course = Course.get(yaml_data["courseid"], fs_provider)
+        course = Course.get(yaml_data["courseid"])
         res = test_task(yaml_data, course, course.get_task(yaml_data["taskid"]), client, client_sync)
         if res != {}:
             output[path] = res
 
 
-def test_task_yaml(path, output, fs_provider, task_name, course_name, config):
+def test_task_yaml(path, output, task_name, course_name):
     """
     Test the format and content of a task.yaml file and, if incorrect, the data is stored in the output dict
     :param path: path to the task.yaml
     :param output: output dictionary
-    :param fs_provider: FileSystemProvider object
     :param task_name: String, name of the task
     :param course_name: String, name of the course
     :param config: dict, contains configuration variable
@@ -204,19 +197,18 @@ def test_task_yaml(path, output, fs_provider, task_name, course_name, config):
     """
     with open(path, 'r') as yaml_file:
         yaml_data = load(yaml_file, Loader=SafeLoader)
-    course = Course.get(course_name, fs_provider)
-    res = test_web_task(yaml_data, course, course.get_task(task_name), config, path)
+    course = Course.get(course_name)
+    res = test_web_task(yaml_data, course, course.get_task(task_name), path)
     if res != {}:
         output[path] = res
 
 
-def test_all_files(config, client, fs_provider):
+def test_all_files(config, client):
     """
     Test each yaml file contained in the dir_path directory, with dir_path specified in the config var, as specified in
     the test_task function
     :param config: dict for configuration
     :param client: backend client of type Client
-    :param fs_provider: FilesytemProvider object
     :return: None
     """
     test_output = {}
@@ -233,9 +225,9 @@ def test_all_files(config, client, fs_provider):
                     test_files = os.scandir(test_path)
                     for yaml_file in test_files:
                         if not yaml_file.name.startswith('.') and yaml_file.is_file():  # Exclude possible failures
-                            test_submission_yaml(client, fs_provider, yaml_file.path, test_output, client_sync)
+                            test_submission_yaml(client, yaml_file.path, test_output, client_sync)
                 task_yaml_path = os.path.join(task.path, "task.yaml")
-                test_task_yaml(task_yaml_path, test_output, fs_provider, task.name, os.path.split(dir_path)[1], config)
+                test_task_yaml(task_yaml_path, test_output, task.name, os.path.split(dir_path)[1])
     if test_output != {}:  # errors in task.yaml ou submission.test
         output = json.dumps(test_output)
         if "file" in config:
@@ -260,49 +252,38 @@ def main():
     args = parser.parse_args()
 
     if args.logging:
-        # Init logging
         init_logging()
 
-    task_dispensers = {
-        task_dispenser.get_id(): task_dispenser for task_dispenser in [TableOfContents]
-    }
+    register_base_env_types()
+    init_fs_provider(LocalFSProvider(args.task_dir))
 
-    problem_types = get_default_displayable_problem_types()
+    register_task_dispenser(TableOfContents)
+    register_task_dispenser(CombinatoryTest)
+    register_problem_types(get_default_displayable_problem_types())
+
+    def load_modules(module_list, loader):
+        for module in module_list:
+            try:
+                module_class = import_class(module)
+                loader(module_class)
+            except:
+                print("Cannot load {}, exiting".format(module), file=sys.stderr)
+                exit(1)
 
     if args.tdisp:
-        for tdisp_loc in args.tdisp:
-            try:
-                tdisp = import_class(tdisp_loc)
-                task_dispensers[tdisp.get_id()] = tdisp
-            except:
-                print("Cannot load {}, exiting".format(tdisp_loc), file=sys.stderr)
-                exit(1)
+        load_modules(args.tdisp, register_task_dispenser)
 
     if args.ptype:
-        for ptype_loc in args.ptype:
-            try:
-                ptype = import_class(ptype_loc)
-                problem_types[ptype.get_type()] = ptype
-            except:
-                print("Cannot load {}, exiting".format(ptype_loc), file=sys.stderr)
-                exit(1)
+        load_modules(args.ptype, register_problem_types)
 
-    config = {
-        "task_directory": args.task_dir,
-        "course_directory": args.course_dir,
-        "backend": "local",
-        "default_problem_types": problem_types
-    }  # yaml in tests directories in each task directory
-
+    config = { "course_directory": args.course_dir, "backend": "local"}
     if args.file:
         config["file"] = args.file
 
-    fs_provider = LocalFSProvider(config["task_directory"])
-
     try:
-        client = create_client(config, fs_provider)
+        client = create_client(config)
         client.start()
-        test_all_files(config, client, fs_provider)
+        test_all_files(config, client)
     except BaseException as e:
         print("\nAn error has occured: {}\n".format(e), file=sys.stderr)
         exit(66)

@@ -12,11 +12,12 @@ from wsgidav.dc.base_dc import BaseDomainController
 from wsgidav.dav_provider import DAVProvider
 from wsgidav.fs_dav_provider import FolderResource, FileResource
 
+from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.courses import Course
 
-def get_dc(fs_provider, user_manager, filesystem):
+def get_dc(user_manager):
 
     class INGIniousDAVDomainController(BaseDomainController):
         """ Authenticates users using the API key and their username """
@@ -46,7 +47,7 @@ def get_dc(fs_provider, user_manager, filesystem):
 
         def is_user_realm_admin(self, realm, user_name):
             try:
-                course = Course.get_course(realm, fs_provider)
+                course = Course.get(realm)
             except Exception as ex:
                 return True  # Not a course: static file,...
 
@@ -69,9 +70,8 @@ def get_dc(fs_provider, user_manager, filesystem):
 
 class INGIniousDAVCourseFile(FileResource):
     """ Protects the course description file. """
-    def __init__(self, path, environ, filePath, fs_provider, course_id):
+    def __init__(self, path, environ, filePath, course_id):
         super(INGIniousDAVCourseFile, self).__init__(path, environ, filePath)
-        self._fs_provider = fs_provider
         self._course_id = course_id
 
     def delete(self):
@@ -118,7 +118,7 @@ class INGIniousDAVCourseFile(FileResource):
 
             # Now we check if we can still load the course...
             try:
-                Course.get(self._course_id, self._fs_provider)
+                Course.get(self._course_id)
                 # Everything ok, let's leave things as-is
             except:
                 # We can't load the new file, rollback!
@@ -131,9 +131,8 @@ class INGIniousDAVCourseFile(FileResource):
 
 class INGIniousFilesystemProvider(DAVProvider):
     """ A DAVProvider adapted to the structure of INGInious """
-    def __init__(self, fs_provider):
+    def __init__(self):
         super(INGIniousFilesystemProvider, self).__init__()
-        self.fs_provider = fs_provider
         self.readonly = False
 
     def _get_course_id(self, path):
@@ -156,7 +155,7 @@ class INGIniousFilesystemProvider(DAVProvider):
     def _loc_to_file_path(self, path, environ=None):
         course_id = self._get_course_id(path)
         try:
-            course = Course.get(course_id, self.fs_provider)
+            course = Course.get(course_id)
         except:
             raise DAVError(HTTP_NOT_FOUND, "Unknown course {}".format(course_id))
 
@@ -190,7 +189,7 @@ class INGIniousFilesystemProvider(DAVProvider):
         # course.yaml needs a special protection
         inner_path = self._get_inner_path(path)
         if len(inner_path) == 1 and inner_path[0] in ["course.yaml", "course.json"]:
-            return INGIniousDAVCourseFile(path, environ, fp, self.fs_provider, self._get_course_id(path))
+            return INGIniousDAVCourseFile(path, environ, fp, self._get_course_id(path))
 
         return FileResource(path, environ, fp)
 
@@ -204,12 +203,12 @@ def get_app(config):
     if "tasks_directory" not in config:
         raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
 
-    fs_provider = LocalFSProvider(config["tasks_directory"])
+    init_fs_provider(LocalFSProvider(config["tasks_directory"]))
     user_manager = UserManager(database, config.get('superadmins', []))
 
     config = dict(wsgidav_app.DEFAULT_CONFIG)
-    config["provider_mapping"] = {"/": INGIniousFilesystemProvider(fs_provider)}
-    config["http_authenticator"]["domain_controller"] = get_dc(fs_provider, user_manager, fs_provider)
+    config["provider_mapping"] = {"/": INGIniousFilesystemProvider()}
+    config["http_authenticator"]["domain_controller"] = get_dc(user_manager)
     config["verbose"] = 0
 
     app = wsgidav_app.WsgiDAVApp(config)

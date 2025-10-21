@@ -12,7 +12,7 @@ import logging
 from typing import Any
 
 from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
-from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache
+from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
 from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
@@ -21,14 +21,14 @@ from inginious.frontend.plugins import plugin_manager
 from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, TaskUnreadableException
 
 
-def _load_task(task_fs : FileSystemProvider, taskid : str):
+def _load_task(task_fs : FileSystemProvider, courseid : str, taskid : str):
     # Try to open the task file
     try:
         task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
     except Exception as e:
         raise TaskUnreadableException(str(e))
 
-    return Task(taskid, task_content, task_fs)
+    return Task(courseid, taskid, task_content)
 
 
 def _migrate_from_v_0_6(content):
@@ -51,9 +51,9 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, taskid : str, content : dict[str, Any], task_fs : FileSystemProvider):
-        if not id_checker(taskid):
-            raise Exception("Task with invalid id: " + task_fs.prefix)
+    def __init__(self, courseid : str, taskid : str, content : dict[str, Any]):
+        if not id_checker(courseid) or not id_checker(taskid):
+            raise Exception(f"Task with invalid id: {courseid}/{taskid}")
 
         content = _migrate_from_v_0_6(content)
 
@@ -66,7 +66,7 @@ class Task(object):
         # i18n
         self._translations = {}
 
-        self._task_fs = task_fs
+        self._task_fs = get_fs_provider().from_subfolder(courseid).from_subfolder(taskid)
         self._new_doc = not self._task_fs.exists()
 
         # Check all problems
@@ -213,16 +213,17 @@ class Task(object):
             logging.getLogger("inginious.task").info("Task %s created in the factory.", self._task_fs.prefix)
 
     @classmethod
-    def get(cls, taskid : str, course_fs : FileSystemProvider):
+    def get(cls, courseid : str, taskid : str):
         """ Fetch a task with id taskid from the specified course filesystem"""
-        if not id_checker(taskid):
-            raise InvalidNameException("Task with invalid name: " + taskid)
+        if not id_checker(courseid) or not id_checker(taskid):
+            raise InvalidNameException(f"Task with invalid name: {courseid}/{taskid}")
 
+        course_fs = get_fs_provider().from_subfolder(courseid)
         task_fs = course_fs.from_subfolder(taskid)
         if not task_fs.exists("task.yaml"):
             raise TaskNotFoundException()
 
-        task = fetch_or_cache(task_fs, "task.yaml", lambda: _load_task(task_fs, taskid))
+        task = fetch_or_cache(task_fs, "task.yaml", lambda: _load_task(task_fs, courseid, taskid))
 
         translations = {}
         i18n_paths = [
