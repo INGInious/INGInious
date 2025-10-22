@@ -4,8 +4,7 @@
 # more information about the licensing of this file.
 
 """ Profile page """
-import flask
-from flask import redirect
+from flask import request, redirect, render_template
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
@@ -36,7 +35,7 @@ class DeletePage(INGIniousAuthPage):
         if not userdata or not self.app.allow_deletion:
             raise Forbidden(description=_("User unavailable or deletion is forbidden."))
 
-        return self.template_helper.render("preferences/delete.html", msg="", error=False)
+        return render_template("preferences/delete.html", msg="", error=False)
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
@@ -47,10 +46,10 @@ class DeletePage(INGIniousAuthPage):
 
         msg = ""
         error = False
-        data = flask.request.form
+        data = request.form
         if "delete" in data:
             msg, error = self.delete_account(data)
             if not error:
                 return redirect("/index")
 
-        return self.template_helper.render("preferences/delete.html", msg=msg, error=error)
+        return render_template("preferences/delete.html", msg=msg, error=error)

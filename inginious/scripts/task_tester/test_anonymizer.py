@@ -60,7 +60,6 @@ input:
         eval,
         output;
 problems: {}
-response_type: rst
 result: crash
 state: {}
 status: error

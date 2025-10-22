@@ -6,7 +6,9 @@
 {% block title %} {{_("Danger zone")}} {% endblock %}
 
 {% block column %}
-    {{ template_helper.call('course_admin_menu',course=course,current='danger') | safe }}
+    {% with current='danger' %}
+        {% include 'course_admin/menu.html' %}
+    {% endwith %}
 {% endblock %}
 
 {% block navbar %}
