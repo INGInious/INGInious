@@ -6,7 +6,7 @@
 """ Babel extractors for INGInious files """
 
 from inginious.common import custom_yaml
-from inginious.common.tasks_problems import get_default_problem_types
+from inginious.common.tasks_problems import Problem, get_problem_types
 
 def import_class(name):
     m = name.split('.')
@@ -38,7 +38,7 @@ def get_strings(content, fields):
 
 
 def extract_yaml(fileobj, keywords, comment_tags, options):
-    task_problem_types = get_default_problem_types()
+    task_problem_types = get_problem_types()
 
     problems = options["problems"].split() if "problems" in options else []
     for problem in problems:
@@ -54,7 +54,7 @@ def extract_yaml(fileobj, keywords, comment_tags, options):
             yield 0, "", content.get(key, ""), [key]
 
         for problem_id, problem_content in content.get("problems").items():
-            fields = task_problem_types.get(problem_content.get('type', "")).get_text_fields()
+            fields = task_problem_types.get(problem_content.get('type', ""), Problem).get_text_fields()
 
             for string, strkey in get_strings(content.get("problems").get(problem_id), fields):
                 yield 0, "", string, [key + ", " + problem_id + ", " + strkey]

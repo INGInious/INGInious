@@ -82,10 +82,10 @@ inginious.frontend.parsable_text module
 
 .. _inginious.frontend.plugin_manager:
 
-inginious.frontend.plugin_manager module
------------------------------------------------
+inginious.frontend.plugins.plugin_manager module
+-------------------------------------------------
 
-.. automodule:: inginious.frontend.plugin_manager
+.. automodule:: inginious.frontend.plugins.plugin_manager
     :members:
     :undoc-members:
     :show-inheritance:
@@ -124,15 +124,6 @@ inginious.frontend.tasks module
     :undoc-members:
     :show-inheritance:
 
-.. _inginious.frontend.template_helper.TemplateHelper:
-
-inginious.frontend.template_helper module
-------------------------------------------------
-
-.. automodule:: inginious.frontend.template_helper
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 inginious.frontend.user_manager module
 ---------------------------------------------

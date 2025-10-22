@@ -5,8 +5,7 @@
 
 import logging
 
-import flask
-from flask import redirect
+from flask import request, redirect, render_template
 from werkzeug.exceptions import NotFound, Forbidden
 from bson.errors import InvalidId
 
@@ -40,14 +39,14 @@ class SubmissionPage(INGIniousAdminPage):
         course, task, submission = self.fetch_submission(submissionid)
         is_admin = self.user_manager.has_admin_rights_on_course(course)
 
-        webinput = flask.request.form
+        webinput = request.form
         if "replay" in webinput and is_admin:
-            self.submission_manager.replay_job(task, submission, course.get_task_dispenser())
+            self.submission_manager.replay_job(course, task, submission, course.get_task_dispenser())
         elif "replay-copy" in webinput:  # Authorized for tutors
-            self.submission_manager.replay_job(task, submission, course.get_task_dispenser(), True)
+            self.submission_manager.replay_job(course, task, submission, course.get_task_dispenser(), True)
             return redirect(self.app.get_path("course", course.get_id(), task.get_id()))
         elif "replay-debug" in webinput and is_admin:
-            self.submission_manager.replay_job(task, submission, course.get_task_dispenser(), True, "ssh")
+            self.submission_manager.replay_job(course, task, submission, course.get_task_dispenser(), True, "ssh")
             return redirect(self.app.get_path("course", course.get_id(), task.get_id()))
 
         return self.page(course, task, submission)
@@ -55,11 +54,7 @@ class SubmissionPage(INGIniousAdminPage):
     def page(self, course, task, submission):
         """ Get all data and display the page """
         submission = self.submission_manager.get_input_from_submission(submission)
-        submission = self.submission_manager.get_feedback_from_submission(
-            submission,
-            show_everything=True,
-            translation=self.app.l10n_manager.get_translation_obj()
-        )
+        submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=True)
 
         to_display = {
             problem.get_id(): {
@@ -77,6 +72,6 @@ class SubmissionPage(INGIniousAdminPage):
             } for pid in (set(submission["input"]) - set(to_display))
         })
 
-        return self.template_helper.render("course_admin/submission.html", course=course, task=task,
+        return render_template("course_admin/submission.html", course=course, task=task,
                                            submission=submission, to_display=to_display.values(),
                                            pdict={problem.get_id(): problem.get_type() for problem in task.get_problems()})

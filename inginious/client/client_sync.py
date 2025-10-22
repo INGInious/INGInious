@@ -13,7 +13,7 @@ class ClientSync(object):
     def __init__(self, client):
         self._client = client
 
-    def new_job(self, priority, task, inputdata, launcher_name="Unknown", debug=False):
+    def new_job(self, priority, course, task, inputdata, launcher_name="Unknown", debug=False):
         """
             Runs a new job.
             It works exactly like the Client class, instead that there is no callback and directly returns result, in the form of a tuple
@@ -28,7 +28,7 @@ class ClientSync(object):
 
         manage_output.job_return = None
 
-        self._client.new_job(priority, task, inputdata, manage_output, launcher_name, debug)
+        self._client.new_job(priority, course, task, inputdata, manage_output, launcher_name, debug)
         job_semaphore.acquire()
         job_return = manage_output.job_return
         return job_return

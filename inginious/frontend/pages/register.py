@@ -5,13 +5,12 @@
 
 """ Registration page"""
 
-import hashlib
 import random
 import re
 import flask
 import logging
 
-from smtplib import SMTPException
+from flask import render_template
 from flask_mail import Message
 from werkzeug.exceptions import Forbidden
 from inginious.frontend.pages.utils import INGIniousPage
@@ -40,7 +39,7 @@ class RegistrationPage(INGIniousPage):
         elif "reset" in data:
             msg, error, reset = self.get_reset_data(data)
 
-        return self.template_helper.render("register.html", terms_page=self.app.terms_page,
+        return render_template("register.html", terms_page=self.app.terms_page,
                                            privacy_page=self.app.privacy_page, reset=reset, msg=msg, error=error)
 
     def get_reset_data(self, data):
@@ -213,5 +212,5 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
             if not error:
                 reset = None
 
-        return self.template_helper.render("register.html", terms_page=self.app.terms_page,
+        return render_template("register.html", terms_page=self.app.terms_page,
                                            privacy_page=self.app.privacy_page, reset=reset, msg=msg, error=error)

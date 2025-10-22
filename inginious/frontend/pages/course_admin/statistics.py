@@ -5,9 +5,9 @@
 
 """ Utilities for computation of statistics  """
 from collections import OrderedDict
-
-import flask
 import zoneinfo
+
+from flask import request, render_template
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
@@ -146,7 +146,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
                 result[entry["_id"]]["succeeded"] = entry["succeeded"]
         return result
 
-    def _global_stats(self, tasks, filter, limit, best_submissions_list, pond_stat):
+    def _global_stats(self, course, tasks, filter, limit, best_submissions_list, pond_stat):
         submissions = self.database.submissions.find(filter)
         if limit is not None:
             submissions.limit(limit)
@@ -155,17 +155,17 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         for d in data:
             d["best"] = d["_id"] in best_submissions_list  # mark best submissions
 
-        return compute_statistics(tasks, data, pond_stat)
+        return compute_statistics(course, tasks, data, pond_stat)
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
 
-        user_input = flask.request.args.copy()
-        user_input["users"] = flask.request.args.getlist("users")
-        user_input["audiences"] = flask.request.args.getlist("audiences")
-        user_input["tasks"] = flask.request.args.getlist("tasks")
-        user_input["org_categories"] = flask.request.args.getlist("org_categories")
+        user_input = request.args.copy()
+        user_input["users"] = request.args.getlist("users")
+        user_input["audiences"] = request.args.getlist("audiences")
+        user_input["tasks"] = request.args.getlist("tasks")
+        user_input["org_categories"] = request.args.getlist("org_categories")
         params = self.get_input_params(user_input, course, 500)
 
         return self.page(course, params)
@@ -174,11 +174,11 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
 
-        user_input = flask.request.form.copy()
-        user_input["users"] = flask.request.form.getlist("users")
-        user_input["audiences"] = flask.request.form.getlist("audiences")
-        user_input["tasks"] = flask.request.form.getlist("tasks")
-        user_input["org_categories"] = flask.request.form.getlist("org_categories")
+        user_input = request.form.copy()
+        user_input["users"] = request.form.getlist("users")
+        user_input["audiences"] = request.form.getlist("audiences")
+        user_input["tasks"] = request.form.getlist("tasks")
+        user_input["org_categories"] = request.form.getlist("org_categories")
         params = self.get_input_params(user_input, course, 500)
 
         return self.page(course, params)
@@ -216,12 +216,12 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         stats_users = self._users_stats(filter, limit)
         stats_graph = self._graph_stats(daterange, filter, limit)
         stats_progress = self._progress_stats(course)
-        stats_global = self._global_stats(tasks, filter, limit, best_submissions_list, params.get('stat', 'normal') == 'pond_stat')
+        stats_global = self._global_stats(course, tasks, filter, limit, best_submissions_list, params.get('stat', 'normal') == 'pond_stat')
 
-        if "progress_csv" in flask.request.args:
+        if "progress_csv" in request.args:
             return make_csv(stats_progress)
 
-        return self.template_helper.render("course_admin/stats.html", course=course, users=users,
+        return render_template("course_admin/stats.html", course=course, users=users,
                                            tutored_users=tutored_users, audiences=audiences,
                                            tutored_audiences=tutored_audiences, tasks=tasks, old_params=params,
                                            stats_graph=stats_graph, stats_tasks=stats_tasks, stats_users=stats_users,
@@ -229,7 +229,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
                                            display_hour=display_hours, msgs=msgs)
 
 
-def compute_statistics(tasks, data, ponderation):
+def compute_statistics(course, tasks, data, ponderation):
     """ 
     Compute statistics about submissions and tags.
     This function returns a tuple of lists following the format describe below:
@@ -244,7 +244,7 @@ def compute_statistics(tasks, data, ponderation):
         task = tasks.get(submission["taskid"], None)
         if task:
             username = "".join(submission["username"])
-            tags_of_course = [tag for key, tag in task.get_course().get_tags().items() if tag.get_type() in [0,1]]
+            tags_of_course = [tag for key, tag in course.get_tags().items() if tag.get_type() in [0,1]]
             for tag in tags_of_course:
                 super_dict.setdefault(tag, {})
                 super_dict[tag].setdefault(username, {})
