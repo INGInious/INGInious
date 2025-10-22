@@ -10,23 +10,20 @@ from typing import List, Dict
 
 import flask
 from gridfs import GridFS
-from flask import redirect, url_for
+from flask import redirect, render_template
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
+from inginious.common.filesystems import FileSystemProvider
 from inginious.client.client import Client
 from inginious.common import custom_yaml
 from inginious.frontend.environment_types import get_all_env_types
 from inginious.frontend.environment_types.env_type import FrontendEnvType
-from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
-from inginious.frontend.template_helper import TemplateHelper
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
+from inginious.frontend.i18n import available_languages
 from pymongo.database import Database
-
-from inginious.frontend.course_factory import CourseFactory
-from inginious.frontend.task_factory import TaskFactory
 
 
 class INGIniousPage(MethodView):
@@ -47,11 +44,10 @@ class INGIniousPage(MethodView):
 
     def _pre_check(self):
         """ Checks for language. """
-        if "lang" in flask.request.args and flask.request.args["lang"] in self.app.l10n_manager.translations.keys():
+        if "lang" in flask.request.args and flask.request.args["lang"] in available_languages:
             self.user_manager.set_session_language(flask.request.args["lang"])
         elif not self.user_manager.session_language(default=None):
-            best_lang = flask.request.accept_languages.best_match(self.app.l10n_manager.translations.keys(),
-                                                                  default="en")
+            best_lang = flask.request.accept_languages.best_match(available_languages,default="en")
             self.user_manager.set_session_language(best_lang)
 
     def GET(self, *args, **kwargs):
@@ -73,19 +69,9 @@ class INGIniousPage(MethodView):
         return self.POST(*args, **kwargs)
 
     @property
-    def plugin_manager(self) -> PluginManager:
-        """ Returns the plugin manager singleton """
-        return self.app.plugin_manager
-
-    @property
-    def course_factory(self) -> CourseFactory:
-        """ Returns the course factory singleton """
-        return self.app.course_factory
-
-    @property
-    def task_factory(self) -> TaskFactory:
-        """ Returns the task factory singleton """
-        return self.app.task_factory
+    def fs_provider(self) -> FileSystemProvider:
+        """ Returns the filesystem provider singleton """
+        return self.app.fs_provider
 
     @property
     def submission_manager(self) -> WebAppSubmissionManager:
@@ -96,11 +82,6 @@ class INGIniousPage(MethodView):
     def user_manager(self) -> UserManager:
         """ Returns the user manager singleton """
         return self.app.user_manager
-
-    @property
-    def template_helper(self) -> TemplateHelper:
-        """ Returns the Template Helper singleton """
-        return self.app.template_helper
 
     @property
     def database(self) -> Database:
@@ -178,7 +159,7 @@ class INGIniousAuthPage(INGIniousPage):
 
             if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
                 self.user_manager.disconnect_user()
-                return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
             return self.GET_AUTH(*args, **kwargs)
         elif self.preview_allowed(*args, **kwargs):
@@ -191,7 +172,7 @@ class INGIniousAuthPage(INGIniousPage):
             if "callbackerror" in flask.request.args:
                 error = _("Couldn't fetch the required information from the service. Please check the provided "
                           "permissions (name, email) and contact your INGInious administrator if the error persists.")
-            return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods(),
+            return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
                                                error=error)
 
     def POST(self, *args, **kwargs):
@@ -205,7 +186,7 @@ class INGIniousAuthPage(INGIniousPage):
 
             if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
                 self.user_manager.disconnect_user()
-                return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
             return self.POST_AUTH(*args, **kwargs)
         else:
@@ -214,12 +195,12 @@ class INGIniousAuthPage(INGIniousPage):
                 if self.user_manager.auth_user(user_input["login"].strip(), user_input["password"]) is not None:
                     return self.GET_AUTH(*args, **kwargs)
                 else:
-                    return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods(),
+                    return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
                                                        error=_("Invalid login/password"))
             elif self.preview_allowed(*args, **kwargs):
                 return self.POST_AUTH(*args, **kwargs)
             else:
-                return self.template_helper.render("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
     def preview_allowed(self, *args, **kwargs):
         """
@@ -242,7 +223,7 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         username = self.user_manager.session_username()
         if self.user_manager.session_logged_in():
             if not self.user_manager.user_is_superadmin(username):
-                return self.template_helper.render("forbidden.html",
+                return render_template("forbidden.html",
                                                    message=_("Forbidden"))
             return self.GET_AUTH(*args, **kwargs)
         return INGIniousAuthPage.GET(self, *args, **kwargs)
@@ -256,7 +237,7 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         username = self.user_manager.session_username()
         if self.user_manager.session_logged_in() and self.user_manager.user_is_superadmin(username):
             return self.POST_AUTH()
-        return self.template_helper.render("forbidden.html",
+        return render_template("forbidden.html",
                                            message=_("You have not sufficient right to see this part."))
 
 
@@ -317,42 +298,5 @@ class INGIniousStaticPage(INGIniousPage):
         title = filecontent["title"]
         content = ParsableText.rst(filecontent["content"], initial_header_level=2)
 
-        return self.template_helper.render("static.html", pagetitle=title, content=content)
+        return render_template("static.html", pagetitle=title, content=content)
 
-
-def generate_user_selection_box(user_manager: UserManager, render_func, current_users: List[str], course_id: str,
-                                name: str, id: str, placeholder: str = None, single=False):
-    """
-    Returns the HTML for a user selection box.
-    The user using the box must have admin/tutors rights on the course with id course_id.
-
-    The box will return, when submitted using a form, a list of usernames separated by commas, under the given name.
-
-    NB: this function is available in the templates directly as "$user_selection_box(current_users, course_id, name, id)".
-    You must ignore the first argument (template_helper) in the templates.
-
-    :param user_manager: UserManager instance
-    :param render_func: template generator
-    :param current_users: a list of usernames currently selected
-    :param course_id: the course id
-    :param name: HTML name given to the box
-    :param id: HTML id given to the box
-    :param single: False for multiple user selection, True for single user selection
-    :return: HTML code for the box
-    """
-    current_users = [{"realname": y.realname if y is not None else x, "username": x} for x, y in
-                     user_manager.get_users_info(current_users).items()]
-    return render_func("course_admin/user_selection_box.html", current_users=current_users, course_id=course_id,
-                       name=name, id=id, placeholder=placeholder, single=single)
-
-
-def register_utils(database, user_manager, template_helper: TemplateHelper):
-    """
-    Registers utils in the template helper
-    """
-    template_helper.add_to_template_globals("user_selection_box",
-                                            lambda current_users, course_id, name, id, placeholder=None, single=False:
-                                            generate_user_selection_box(user_manager, template_helper.render,
-                                                                        current_users, course_id, name, id, placeholder,
-                                                                        single)
-                                            )

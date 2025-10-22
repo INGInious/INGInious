@@ -17,6 +17,7 @@ from lti import ToolProvider
 from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
+from inginious.frontend.courses import Course
 
 
 class LTIFlaskToolProvider(ToolProvider):
@@ -111,7 +112,7 @@ class LTI11LaunchPage(INGIniousPage):
         self.logger.debug('_parse_lti_data:' + str(post_input))
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 

@@ -5,13 +5,14 @@
 
 """ Course page """
 import flask
-from flask import redirect
+from flask import redirect, render_template
 from werkzeug.exceptions import NotFound
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
-def handle_course_unavailable(get_path, template_helper, user_manager, course):
+def handle_course_unavailable(get_path, user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
     reason = user_manager.course_is_open_to_user(course, lti=False, return_reason=True)
     if reason == "unregistered_not_previewable":
@@ -19,7 +20,7 @@ def handle_course_unavailable(get_path, template_helper, user_manager, course):
         user_info = user_manager.get_user_info(username)
         if course.is_registration_possible(user_info):
             return redirect(get_path("register", course.get_id()))
-    return template_helper.render("course_unavailable.html", reason=reason)
+    return render_template("course_unavailable.html", reason=reason)
 
 
 class CoursePage(INGIniousAuthPage):
@@ -32,7 +33,7 @@ class CoursePage(INGIniousAuthPage):
     def get_course(self, courseid):
         """ Return the course """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except:
             raise NotFound(description=_("Course not found."))
 
@@ -58,7 +59,7 @@ class CoursePage(INGIniousAuthPage):
         """ Prepares and shows the course page """
         username = self.user_manager.session_username()
         if not self.user_manager.course_is_open_to_user(course, lti=False):
-            return handle_course_unavailable(self.app.get_path, self.template_helper, self.user_manager, course)
+            return handle_course_unavailable(self.app.get_path, self.user_manager, course)
         else:
             tasks = course.get_tasks()
 
@@ -72,13 +73,13 @@ class CoursePage(INGIniousAuthPage):
 
             # Compute course/tasks scores
             tasks_data = {taskid: {"succeeded": False, "grade": 0.0} for taskid in user_task_list}
-            user_tasks = self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": user_task_list}})
+            user_tasks = list(self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": user_task_list}}))
 
             for user_task in user_tasks:
                 tasks_data[user_task["taskid"]]["succeeded"] = user_task["succeeded"]
                 tasks_data[user_task["taskid"]]["grade"] = user_task["grade"]
 
-            course_grade = course.get_task_dispenser().get_course_grade(username)
+            course_grade = course.get_task_dispenser().get_course_grade(user_tasks, username)
 
             # Get tag list
             categories = course.get_task_dispenser().get_all_categories()
@@ -86,7 +87,7 @@ class CoursePage(INGIniousAuthPage):
             # Get user info
             user_info = self.user_manager.get_user_info(username)
 
-            return self.template_helper.render("course.html", user_info=user_info,
+            return render_template("course.html", user_info=user_info,
                                                course=course,
                                                submissions=last_submissions,
                                                tasks_data=tasks_data,

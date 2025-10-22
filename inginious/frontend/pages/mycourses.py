@@ -4,9 +4,9 @@
 # more information about the licensing of this file.
 
 """ Index page """
-import flask
 from collections import OrderedDict
-
+from flask import request, render_template
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
@@ -20,13 +20,14 @@ class MyCoursesPage(INGIniousAuthPage):
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ Parse course registration or course creation and display the course list page """
 
-        user_input = flask.request.form
+        user_input = request.form
         success = None
 
         if "new_courseid" in user_input and self.user_manager.user_is_superadmin():
             try:
                 courseid = user_input["new_courseid"]
-                self.course_factory.create_course(courseid, {"name": courseid, "accessible": False})
+                course_fs = self.fs_provider.from_subfolder(courseid)
+                Course(courseid, {"name": courseid, "accessible": False}, course_fs).save()
                 success = True
             except:
                 success = False
@@ -38,7 +39,7 @@ class MyCoursesPage(INGIniousAuthPage):
         username = self.user_manager.session_username()
         user_info = self.user_manager.get_user_info(username)
 
-        all_courses = self.course_factory.get_all_courses()
+        all_courses = Course.get_all(self.fs_provider)
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items()
@@ -61,7 +62,7 @@ class MyCoursesPage(INGIniousAuthPage):
 
         registerable_courses = OrderedDict(sorted(iter(registerable_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
 
-        return self.template_helper.render("mycourses.html",
+        return render_template("mycourses.html",
                                            open_courses=open_courses,
                                            registrable_courses=registerable_courses,
                                            submissions=except_free_last_submissions,

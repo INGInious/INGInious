@@ -12,7 +12,7 @@ from pylti1p3.lineitem import LineItem
 from pylti1p3.launch_data_storage.base import LaunchDataStorage
 
 from inginious.frontend.lti import LTIScorePublisher
-
+from inginious.frontend.courses import Course
 
 class MongoLTILaunchDataStorage(LaunchDataStorage):
     """
@@ -43,16 +43,16 @@ class MongoLTILaunchDataStorage(LaunchDataStorage):
 class LTIGradeManager(LTIScorePublisher):
     _submission_tags = {"message_launch_id": "message_launch_id"}
 
-    def __init__(self, database, user_manager, course_factory):
+    def __init__(self, database, user_manager, fs_provider):
         self._logger = logging.getLogger("inginious.webapp.lti1_3.grade_manager")
         self._database = database
-        super(LTIGradeManager, self).__init__(database.lti_grade_queue, user_manager, course_factory)
+        super(LTIGradeManager, self).__init__(database.lti_grade_queue, user_manager, fs_provider)
 
     def process(self, mongo_entry, grade):
         courseid, taskid, message_launch_id = (mongo_entry["courseid"], mongo_entry["taskid"], mongo_entry["message_launch_id"])
 
         try:
-            course = self._course_factory.get_course(courseid)
+            course = Course.get(courseid, self._fs_provider)
             message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=course.lti_tool(), launch_data_storage=MongoLTILaunchDataStorage(self._database, courseid, taskid))
             launch_data = message_launch.get_launch_data()
             ags = message_launch.get_ags()

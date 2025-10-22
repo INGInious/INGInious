@@ -7,23 +7,23 @@
 
 from abc import ABCMeta, abstractmethod
 from random import Random
-import gettext
-import json
+
+from flask import render_template
 
 from inginious.common.tasks_problems import Problem, CodeProblem, CodeSingleLineProblem, \
-    MatchProblem, MultipleChoiceProblem, FileProblem,  _get_problem_types
+    MatchProblem, MultipleChoiceProblem, FileProblem,  _inspect_problem_types
 
 
 from inginious.frontend.parsable_text import ParsableText
 
 
-def get_displayable_problem_types(name: str) -> dict:
+def inspect_displayable_problem_types(name: str) -> dict:
     """ Get the mapping of DisplayableProblem types available by inspecting a given module.
 
         :param  name:   The name of the module to inspect.
         :return:        The mapping of problem name and problem class.
     """
-    raw = _get_problem_types(name, DisplayableProblem)
+    raw = _inspect_problem_types(name, DisplayableProblem)
     return {pbl_name: pbl_cls for pbl_name, pbl_cls in raw.items() if pbl_name is not None}
 
 def get_default_displayable_problem_types() -> dict:
@@ -32,7 +32,7 @@ def get_default_displayable_problem_types() -> dict:
 
         :return:    The mapping of problem name and problem class.
     """
-    return get_displayable_problem_types(__name__)
+    return inspect_displayable_problem_types(__name__)
 
 
 class DisplayableProblem(Problem, metaclass=ABCMeta):
@@ -48,19 +48,19 @@ class DisplayableProblem(Problem, metaclass=ABCMeta):
         return input_data
 
     @abstractmethod
-    def show_input(self, template_helper, language, seed):
+    def show_input(self, language, seed):
         """ get the html for this problem """
         pass
 
     @classmethod
     @abstractmethod
-    def show_editbox(cls, template_helper, key, language):
+    def show_editbox(cls, key, language):
         """ get the edit box html for this problem """
         pass
 
     @classmethod
     @abstractmethod
-    def show_editbox_templates(cls, template_helper, key, language):
+    def show_editbox_templates(cls, key, language):
         return ""
 
 
@@ -78,20 +78,19 @@ class DisplayableCodeProblem(CodeProblem, DisplayableProblem):
     def adapt_input_for_backend(self, input_data):
         return input_data
 
-    def show_input(self, template_helper, language, seed):
+    def show_input(self, language, seed):
         """ Show BasicCodeProblem and derivatives """
-        header = ParsableText(self.gettext(language,self._header), "rst",
-                              translation=self.get_translation_obj(language))
-        return template_helper.render("tasks/code.html", inputId=self.get_id(), header=header,
+        header = ParsableText(self.gettext(language,self._header), "rst")
+        return render_template("tasks/code.html", inputId=self.get_id(), header=header,
                                       lines=8, first_line=self._first_line, maxChars=0, language=self._language, optional=self._optional,
                                       default=self._default)
 
     @classmethod
-    def show_editbox(cls, template_helper, key, language):
-        return template_helper.render("course_admin/subproblems/code.html", key=key, multiline=True)
+    def show_editbox(cls, key, language):
+        return render_template("course_admin/subproblems/code.html", key=key, multiline=True)
 
     @classmethod
-    def show_editbox_templates(cls, template_helper, key, language):
+    def show_editbox_templates(cls, key, language):
         return ""
 
 
@@ -108,19 +107,18 @@ class DisplayableCodeSingleLineProblem(CodeSingleLineProblem, DisplayableProblem
     def get_type_name(cls, language):
         return _("single-line code")
 
-    def show_input(self, template_helper, language, seed):
+    def show_input(self, language, seed):
         """ Show InputBox """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
-        return template_helper.render("tasks/single_line_code.html", inputId=self.get_id(), header=header, type="text",
+        header = ParsableText(self.gettext(language, self._header), "rst")
+        return render_template("tasks/single_line_code.html", inputId=self.get_id(), header=header, type="text",
                                       maxChars=0, optional=self._optional, default=self._default)
 
     @classmethod
-    def show_editbox(cls, template_helper, key, language):
-        return template_helper.render("course_admin/subproblems/code.html", key=key, multiline=False)
+    def show_editbox(cls, key, language):
+        return render_template("course_admin/subproblems/code.html", key=key, multiline=False)
 
     @classmethod
-    def show_editbox_templates(cls, template_helper, key, language):
+    def show_editbox_templates(cls, key, language):
         return ""
 
 
@@ -143,18 +141,17 @@ class DisplayableFileProblem(FileProblem, DisplayableProblem):
         return input_data
 
     @classmethod
-    def show_editbox(cls, template_helper, key, language):
-        return template_helper.render("course_admin/subproblems/file.html", key=key)
+    def show_editbox(cls, key, language):
+        return render_template("course_admin/subproblems/file.html", key=key)
 
-    def show_input(self, template_helper, language, seed):
+    def show_input(self, language, seed):
         """ Show FileBox """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
-        return template_helper.render("tasks/file.html", inputId=self.get_id(), header=header,
+        header = ParsableText(self.gettext(language, self._header), "rst")
+        return render_template("tasks/file.html", inputId=self.get_id(), header=header,
                                       max_size=self._max_size, allowed_exts=self._allowed_exts)
 
     @classmethod
-    def show_editbox_templates(cls, template_helper, key, language):
+    def show_editbox_templates(cls, key, language):
         return ""
 
 
@@ -168,7 +165,7 @@ class DisplayableMultipleChoiceProblem(MultipleChoiceProblem, DisplayableProblem
     def get_type_name(cls, language):
         return _("multiple choice")
 
-    def show_input(self, template_helper, language, seed):
+    def show_input(self, language, seed):
         """ Show multiple choice problems """
         choices = []
         limit = self._limit
@@ -210,22 +207,21 @@ class DisplayableMultipleChoiceProblem(MultipleChoiceProblem, DisplayableProblem
             rand.shuffle(choices)
         else:
             choices = sorted(choices, key=lambda k: k['index'])
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
-        return template_helper.render("tasks/multiple_choice.html", pid=self.get_id(), header=header,
+        header = ParsableText(self.gettext(language, self._header), "rst")
+        return render_template("tasks/multiple_choice.html", pid=self.get_id(), header=header,
                                       checkbox=self._multiple, choices=choices,
                                       func=lambda text: ParsableText(
-                                          self.gettext(language, text) if text else "", "rst",
-                                          translation=self.get_translation_obj(language))
+                                          self.gettext(language, text) if text else "", "rst"
                                       )
+                               )
 
     @classmethod
-    def show_editbox(cls, template_helper, key, language):
-        return template_helper.render("course_admin/subproblems/multiple_choice.html", key=key)
+    def show_editbox(cls, key, language):
+        return render_template("course_admin/subproblems/multiple_choice.html", key=key)
 
     @classmethod
-    def show_editbox_templates(cls, template_helper, key, language):
-        return template_helper.render("course_admin/subproblems/multiple_choice_templates.html", key=key)
+    def show_editbox_templates(cls, key, language):
+        return render_template("course_admin/subproblems/multiple_choice_templates.html", key=key)
 
 
 class DisplayableMatchProblem(MatchProblem, DisplayableProblem):
@@ -238,16 +234,15 @@ class DisplayableMatchProblem(MatchProblem, DisplayableProblem):
     def get_type_name(cls, language):
         return _("match")
 
-    def show_input(self, template_helper, language, seed):
+    def show_input(self, language, seed):
         """ Show MatchProblem """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
-        return template_helper.render("tasks/match.html", inputId=self.get_id(), header=header)
+        header = ParsableText(self.gettext(language, self._header), "rst")
+        return render_template("tasks/match.html", inputId=self.get_id(), header=header)
 
     @classmethod
-    def show_editbox(cls, template_helper, key, language):
-        return template_helper.render("course_admin/subproblems/match.html", key=key)
+    def show_editbox(cls, key, language):
+        return render_template("course_admin/subproblems/match.html", key=key)
 
     @classmethod
-    def show_editbox_templates(cls, template_helper, key, language):
+    def show_editbox_templates(cls, key, language):
         return ""
