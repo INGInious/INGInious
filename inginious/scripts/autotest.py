@@ -15,11 +15,12 @@ import sys
 
 from yaml import SafeLoader, load
 
+from inginious.frontend.plugin_manager import PluginManager
 from inginious.common.tags import Tag
 from inginious.frontend.tasks import Task
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.common.log import init_logging
-from inginious.frontend.course_factory import create_factories
+from inginious.frontend.course_factory import CourseFactory
 from inginious.client.client_sync import ClientSync
 from inginious.frontend.arch_helper import start_asyncio_and_zmq, create_arch
 from inginious.common.filesystems.local import LocalFSProvider
@@ -120,7 +121,7 @@ def compare_output(output1, output2, key):
     return func.get(key, generic_compare)(output1, output2)
 
 
-def test_task(yaml_data, task, client, client_sync):
+def test_task(yaml_data, course, task, client, client_sync):
     """
     Test the task by comparing the new outputs with the old ones
     :param yaml_data: dict corresponding to the yaml output file for the task
@@ -133,13 +134,13 @@ def test_task(yaml_data, task, client, client_sync):
         time.sleep(1)
     if task.get_environment() not in client.get_available_containers():
         raise Exception('Environment not available')
-    new_output = client_sync.new_job(0, task, yaml_data['input'])  # request the client with input from yaml and given task
+    new_output = client_sync.new_job(0, course, task, yaml_data['input'])  # request the client with input from yaml and given task
     keys = ["result", "grade", "problems", "tests", "custom", "state", "archive", "stdout", "stderr"]
     old_output = [yaml_data.get(x, None) for x in keys]
     return compare_all_outputs(old_output, new_output, keys)
 
 
-def test_web_task(yaml_data, task, config, yaml_path):
+def test_web_task(yaml_data, course, task, config, yaml_path):
     """
     Test the correctness of the data and task input, i.e. the content does not raise any exception and the rst contents
     are compiling
@@ -151,11 +152,10 @@ def test_web_task(yaml_data, task, config, yaml_path):
     """
     try:
         web_task = Task(
-            task.get_course_id(),
+            course.get_id(),
             task.get_id(),
             yaml_data,
             task.get_fs(),
-            task.get_hook(),
             config["default_problem_types"]
         )  # Test of init a web task with the yaml_data. if the values are incorrect, exception will be raised
         web_task.get_context('English').parse(debug=True)  # Test of compiling the context
@@ -186,7 +186,7 @@ def test_submission_yaml(client, course_factory, path, output, client_sync):
     # print(os.path.join(test_path, yaml_file.name))
     with open(path, 'r') as yaml:
         yaml_data = load(yaml, Loader=SafeLoader)
-        res = test_task(yaml_data, course_factory.get_task(yaml_data["courseid"], yaml_data["taskid"]), client, client_sync)
+        res = test_task(yaml_data, course_factory.get_course(yaml_data["courseid"]), course_factory.get_task(yaml_data["courseid"], yaml_data["taskid"]), client, client_sync)
         if res != {}:
             output[path] = res
 
@@ -204,7 +204,7 @@ def test_task_yaml(path, output, course_factory, task_name, course_name, config)
     """
     with open(path, 'r') as yaml_file:
         yaml_data = load(yaml_file, Loader=SafeLoader)
-    res = test_web_task(yaml_data, course_factory.get_task(course_name, task_name), config, path)
+    res = test_web_task(yaml_data, course_factory.get_course(course_name), course_factory.get_task(course_name, task_name), config, path)
     if res != {}:
         output[path] = res
 
@@ -299,7 +299,7 @@ def main():
     fs_provider = LocalFSProvider(config["task_directory"])
 
     try:
-        course_factory, _ = create_factories(fs_provider, task_dispensers, problem_types)  # used for getting tasks
+        course_factory = CourseFactory(fs_provider, task_dispensers, PluginManager(), None)  # used for getting tasks
 
         client = create_client(config, course_factory, fs_provider)
 
