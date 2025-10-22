@@ -17,7 +17,9 @@
                 {{ _("My courses") }}
             </a>
         </div>
-        {{ template_helper.call('main_menu', template_helper=template_helper) | safe }}
+        {% for entry in plugin_manager.call_hook('main_menu', template_helper=template_helper) %}
+            {{ entry }}
+        {% endfor %}
     {% endif %}
 {% endblock %}
 {% block navbar %}

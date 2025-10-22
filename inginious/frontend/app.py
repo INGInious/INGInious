@@ -18,11 +18,9 @@ from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
 from bson.codec_options import CodecOptions
 
-import inginious.frontend.pages.course_admin.utils as course_admin_utils
 import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
-from inginious.frontend.pages.utils import register_utils
 from inginious.frontend.plugin_manager import PluginManager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.submission_manager import update_pending_jobs
@@ -172,17 +170,6 @@ def get_app(config):
         "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
     }
 
-    if config.get("maintenance", False):
-        template_helper = TemplateHelper(PluginManager(), None, config.get('use_minified_js', True))
-        template_helper.add_to_template_globals("get_homepath", get_homepath)
-        template_helper.add_to_template_globals("get_path", get_path)
-        template_helper.add_to_template_globals("pkg_version", __version__)
-        template_helper.add_to_template_globals("available_languages", available_languages)
-        template_helper.add_to_template_globals("_", _)
-        flask_app.template_helper = template_helper
-        init_flask_maintenance_mapping(flask_app)
-        return flask_app.wsgi_app, lambda: None
-
     default_allowed_file_extensions = config['allowed_file_extensions']
     default_max_file_size = config['max_file_size']
 
@@ -219,9 +206,7 @@ def get_app(config):
                             "1.3": LTIGradeManager(database, user_manager, course_factory)}
 
     submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, plugin_manager, lti_score_publishers)
-    template_helper = TemplateHelper(plugin_manager, user_manager, config.get('use_minified_js', True))
-
-    register_utils(database, user_manager, template_helper)
+    template_helper = TemplateHelper(plugin_manager)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
@@ -253,27 +238,24 @@ def get_app(config):
     mail.init_app(flask_app)
 
     # Add some helpers for the templates
-    template_helper.add_to_template_globals("_", _)
-    template_helper.add_to_template_globals("str", str)
-    template_helper.add_to_template_globals("available_languages", available_languages)
-    template_helper.add_to_template_globals("available_indentation_types", available_indentation_types)
-    template_helper.add_to_template_globals("get_homepath", get_homepath)
-    template_helper.add_to_template_globals("get_path", get_path)
-    template_helper.add_to_template_globals("pkg_version", __version__)
-    template_helper.add_to_template_globals("allow_registration", config.get("allow_registration", True))
-    template_helper.add_to_template_globals("sentry_io_url", config.get("sentry_io_url"))
-    template_helper.add_to_template_globals("user_manager", user_manager)
-    template_helper.add_to_template_globals("default_allowed_file_extensions", default_allowed_file_extensions)
-    template_helper.add_to_template_globals("default_max_file_size", default_max_file_size)
-    template_helper.add_to_template_globals("is_tos_defined", is_tos_defined)
-    template_helper.add_to_template_globals("privacy_page", config.get("privacy_page", None))
-    template_helper.add_other("course_admin_menu",
-                              lambda course, current: course_admin_utils.get_menu(course, current, template_helper.render,
-                                                                                  plugin_manager, user_manager))
-    template_helper.add_other("preferences_menu",
-                              lambda current: preferences_utils.get_menu(config.get("allow_deletion", True),
-                                                                         current, template_helper.render,
-                                                                         plugin_manager, user_manager))
+    flask_app.jinja_env.globals["_"] = _
+    flask_app.jinja_env.globals["str"] = str
+    flask_app.jinja_env.globals["template_helper"] = template_helper
+    flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
+    flask_app.jinja_env.globals["use_minified"] = config.get('use_minified_js', True)
+    flask_app.jinja_env.globals["available_languages"] = available_languages
+    flask_app.jinja_env.globals["available_indentation_types"] = available_indentation_types
+    flask_app.jinja_env.globals["get_homepath"] = get_homepath
+    flask_app.jinja_env.globals["get_path"] = get_path
+    flask_app.jinja_env.globals["pkg_version"] = __version__
+    flask_app.jinja_env.globals["allow_registration"] = config.get("allow_registration", True)
+    flask_app.jinja_env.globals["allow_deletion"] = config.get("allow_deletion", True)
+    flask_app.jinja_env.globals["sentry_io_url"] = config.get("sentry_io_url")
+    flask_app.jinja_env.globals["user_manager"] = user_manager
+    flask_app.jinja_env.globals["default_allowed_file_extensions"] = default_allowed_file_extensions
+    flask_app.jinja_env.globals["default_max_file_size"] = default_max_file_size
+    flask_app.jinja_env.globals["is_tos_defined"] = is_tos_defined
+    flask_app.jinja_env.globals["privacy_page"] = config.get("privacy_page", None)
 
     # Not found page
     def flask_not_found(e):
@@ -320,7 +302,11 @@ def get_app(config):
     flask_app.webdav_host = config.get("webdav_host", None)
 
     # Init the mapping of the app
-    init_flask_mapping(flask_app)
+    if config.get("maintenance", False):
+        init_flask_maintenance_mapping(flask_app)
+        return flask_app.wsgi_app, lambda: None
+    else:
+        init_flask_mapping(flask_app)
 
     # Loads plugins
     plugin_manager.load(client, flask_app, course_factory, task_factory, database, user_manager, submission_manager, config.get("plugins", []))

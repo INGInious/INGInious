@@ -7,7 +7,7 @@
 {% block title %} {{course.get_name(user_manager.session_language())}} {% endblock %}
 
 {% block column %}
-    {{ template_helper.call('course_admin_menu',course=course,current='tasks') | safe }}
+    {% with current='tasks' %}{% include 'course_admin/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}
