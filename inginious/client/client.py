@@ -298,7 +298,7 @@ class Client(BetterParanoidPirateClient):
 
         if debug == "ssh" and ssh_callback is None:
             self._logger.error("SSH callback not set in %s/%s", task.get_course_id(), task.get_id())
-            safe_callback(("crash", "SSH callback not set."), 0.0, {}, {}, {}, None, "", "")
+            safe_callback(("crash", "SSH callback not set."), 0.0, {}, {}, {}, "", None, "", "")
             return None
         # wrap ssh_callback to ensure it is called at most once, and that it can always be called to simplify code
         ssh_callback = _callable_once(ssh_callback if ssh_callback is not None else lambda _1, _2, _3, _4: None)
@@ -310,7 +310,7 @@ class Client(BetterParanoidPirateClient):
             self._logger.warning("Env %s/%s not available for task %s/%s", environment_type, environment, task.get_course_id(),
                                  task.get_id())
             ssh_callback(None, None, None, None)  # ssh_callback must be called once
-            safe_callback(("crash", "Environment not available."), 0.0, {}, {}, "", {}, None, "", "")
+            safe_callback(("crash", "Environment not available."), 0.0, {}, {}, {}, "", None, "", "")
             return None
 
         environment_parameters = task.get_environment_parameters()
