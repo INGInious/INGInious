@@ -124,15 +124,6 @@ inginious.frontend.tasks module
     :undoc-members:
     :show-inheritance:
 
-.. _inginious.frontend.template_helper.TemplateHelper:
-
-inginious.frontend.template_helper module
-------------------------------------------------
-
-.. automodule:: inginious.frontend.template_helper
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 inginious.frontend.user_manager module
 ---------------------------------------------
