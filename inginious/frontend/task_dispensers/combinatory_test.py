@@ -4,6 +4,8 @@
 # more information about the licensing of this file.
 
 from random import Random
+
+from flask import render_template
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.util import SectionConfigItem, Weight, SubmissionStorage, EvaluationMode, \
     Categories, SubmissionLimit, Accessibility
@@ -40,19 +42,19 @@ class CombinatoryTest(TableOfContents):
 
         return result
 
-    def render_edit(self, template_helper, course, task_data, task_errors):
+    def render_edit(self, course, task_data, task_errors):
         """ Returns the formatted task list edition form """
         config_fields = {
             "amount": SectionConfigItem(_("Amount of tasks to be displayed"), "number", 0)
         }
-        return template_helper.render("course_admin/task_dispensers/combinatory_test.html", course=course,
+        return render_template("course_admin/task_dispensers/combinatory_test.html", course=course,
                                       course_structure=self._toc, tasks=task_data, task_errors=task_errors, config_fields=config_fields,
                                       dispenser_config=self._task_config)
 
-    def render(self, template_helper, course, tasks_data, tag_list, username):
+    def render(self, course, tasks_data, tag_list, username):
         """ Returns the formatted task list"""
         accessibilities = course.get_task_dispenser().get_accessibilities(self._task_list_func(), [username])
-        return template_helper.render("task_dispensers/toc.html", course=course, tasks=self._task_list_func(),
+        return render_template("task_dispensers/toc.html", course=course, tasks=self._task_list_func(),
                                       tasks_data=tasks_data, tag_filter_list=tag_list, sections=self._toc,
                                       accessibilities=accessibilities)
 

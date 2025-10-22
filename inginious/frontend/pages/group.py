@@ -7,7 +7,7 @@
 
 import logging
 
-import flask
+from flask import request, render_template
 from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
 
@@ -27,12 +27,12 @@ class GroupPage(INGIniousAuthPage):
 
         error = False
         msg = ""
-        data = flask.request.args
+        data = request.args
         if self.user_manager.has_staff_rights_on_course(course):
             raise Forbidden(description=_("You can't access this page as a member of the staff."))
         elif not (self.user_manager.course_is_open_to_user(course, lti=False)
                   and self.user_manager.course_is_user_registered(course, username)):
-            return self.template_helper.render("course_unavailable.html")
+            return render_template("course_unavailable.html")
         elif "register_group" in data:
             if course.can_students_choose_group():
 
@@ -83,7 +83,7 @@ class GroupPage(INGIniousAuthPage):
 
         users = self.user_manager.get_users_info(self.user_manager.get_course_registered_users(course))
 
-        return self.template_helper.render("group.html",
+        return render_template("group.html",
                                            course=course,
                                            submissions=last_submissions,
                                            allowed_groups=allowed_groups,
