@@ -5,12 +5,30 @@
 
 """ Classes modifying basic tasks, problems and boxes classes """
 
+import os
 import gettext
+import logging
 
+from typing import Any
+
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
+from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
+from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
-from inginious.common.base import id_checker
 from inginious.frontend.accessible_time import AccessibleTime
+from inginious.frontend.plugins import plugin_manager
+from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, TaskUnreadableException
+
+
+def _load_task(task_fs : FileSystemProvider, courseid : str, taskid : str):
+    # Try to open the task file
+    try:
+        task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
+    except Exception as e:
+        raise TaskUnreadableException(str(e))
+
+    return Task(courseid, taskid, task_content)
 
 
 def _migrate_from_v_0_6(content):
@@ -21,8 +39,7 @@ def _migrate_from_v_0_6(content):
         del content["environment"]
         content["environment_parameters"] = {"limits": content.get("limits", {}),
                                              "run_cmd": content.get("run_cmd", ''),
-                                             "network_grading": content.get("network_grading", False),
-                                             "response_is_html": content.get('responseIsHTML', False)}
+                                             "network_grading": content.get("network_grading", False)}
 
     # Retrocompatibility v0.8.5
     if content.get("environment_parameters", {}).get("ssh_allowed", False):
@@ -34,17 +51,13 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, course, taskid, content, filesystem, plugin_manager, task_problem_types):
-        # We load the descriptor of the task here to allow plugins to modify settings of the task before it is read by the Task constructor
-        if not id_checker(taskid):
-            raise Exception("Task with invalid id: " + course.get_id() + "/" + taskid)
+    def __init__(self, courseid : str, taskid : str, content : dict[str, Any]):
+        if not id_checker(courseid) or not id_checker(taskid):
+            raise Exception(f"Task with invalid id: {courseid}/{taskid}")
 
         content = _migrate_from_v_0_6(content)
 
-        self._course = course
         self._taskid = taskid
-        self._fs = filesystem
-        self._plugin_manager = plugin_manager
         self._data = content
 
         if "problems" not in self._data:
@@ -52,34 +65,15 @@ class Task(object):
 
         # i18n
         self._translations = {}
-        self._course_fs = self._fs.from_subfolder(course.get_id())
-        self._course_fs.ensure_exists()
-        self._task_fs = self._course_fs.from_subfolder(taskid)
-        self._task_fs.ensure_exists()
 
-        self._translations_fs = self._task_fs.from_subfolder("$i18n")
-
-        if not self._translations_fs.exists():
-            self._translations_fs = self._task_fs.from_subfolder("student").from_subfolder("$i18n")
-        if not self._translations_fs.exists():
-            self._translations_fs = self._course_fs.from_subfolder("$common").from_subfolder("$i18n")
-        if not self._translations_fs.exists():
-            self._translations_fs = self._course_fs.from_subfolder("$common").from_subfolder(
-                "student").from_subfolder("$i18n")
-
-        if self._translations_fs.exists():
-            for f in self._translations_fs.list(folders=False, files=True, recursive=False):
-                lang = f[0:len(f) - 3]
-                if self._translations_fs.exists(lang + ".mo"):
-                    self._translations[lang] = gettext.GNUTranslations(self._translations_fs.get_fd(lang + ".mo"))
-                else:
-                    self._translations[lang] = gettext.NullTranslations()
+        self._task_fs = get_fs_provider().from_subfolder(courseid).from_subfolder(taskid)
+        self._new_doc = not self._task_fs.exists()
 
         # Check all problems
         self._problems = []
         for problemid in self._data['problems']:
             self._problems.append(
-                self._create_task_problem(problemid, self._data['problems'][problemid], task_problem_types))
+                self._create_task_problem(problemid, self._data['problems'][problemid]))
 
         # Env type
         self._environment_id = self._data.get('environment_id', 'default')
@@ -117,6 +111,9 @@ class Task(object):
         # Regenerate input random
         self._regenerate_input_random = bool(self._data.get("regenerate_input_random", False))
 
+    def set_translations(self, translations : dict[str, gettext.GNUTranslations]):
+        self._translations = translations
+
     def get_translation_obj(self, language):
         return self._translations.get(language, gettext.NullTranslations())
 
@@ -150,43 +147,23 @@ class Task(object):
         """ Get problems dict contained in this task """
         return self._data["problems"]
 
-    def get_course_id(self):
-        """ Return the courseid of the course that contains this task """
-        return self._course.get_id()
-
-    def get_course(self):
-        """ Return the course that contains this task """
-        return self._course
-
     def get_environment_parameters(self):
         """ Returns the raw environment parameters, which is a dictionnary that is envtype dependent. """
         return self._environment_parameters
-
-    def get_response_type(self):
-        """ Returns the method used to parse the output of the task: HTML or rst """
-        return "HTML" if self._environment_parameters.get('response_is_html', False) else "rst"
 
     def get_fs(self):
         """ Returns a FileSystemProvider which points to the folder of this task """
         return self._task_fs
 
-    def get_hook(self):
-        """ Returns the hook manager parameter for this task"""
-        return self._plugin_manager
-
-    def get_translation_fs(self):
-        """ Return the translation_fs parameter for this task"""
-        return self._translations_fs
-
-    def _create_task_problem(self, problemid, problem_content, task_problem_types):
+    def _create_task_problem(self, problemid, problem_content):
         """Creates a new instance of the right class for a given problem."""
         # Basic checks
         if not id_checker(problemid):
             raise Exception("Invalid problem _id: " + problemid)
-        if problem_content.get('type', "") not in task_problem_types:
+        if problem_content.get('type', "") not in get_problem_types():
             raise Exception("Invalid type for problem " + problemid)
 
-        return task_problem_types.get(problem_content.get('type', ""))(problemid, problem_content, self._translations, self._task_fs)
+        return get_problem_types().get(problem_content.get('type', ""))(problemid, problem_content, self._translations, self._task_fs)
 
     def get_name(self, language):
         """ Returns the name of this task """
@@ -195,9 +172,8 @@ class Task(object):
     def get_context(self, language):
         """ Get the context(description) of this task """
         context = self.gettext(language, self._context) if self._context else ""
-        vals = self._plugin_manager.call_hook('task_context', course=self.get_course(), task=self, default=context)
-        return ParsableText(vals[0], "rst", translation=self.get_translation_obj(language)) if len(vals) \
-            else ParsableText(context, "rst", translation=self.get_translation_obj(language))
+        vals = plugin_manager.call_hook('task_context', task=self, default=context)
+        return ParsableText(vals[0], "rst") if len(vals) else ParsableText(context, "rst")
 
     def get_authors(self, language):
         """ Return the list of this task's authors """
@@ -225,3 +201,51 @@ class Task(object):
         """ Fetch the legacy config fields now used by task dispensers """
         return {field_class.get_id(): self._data[field] for field, field_class in fields.items()
                 if field in self._data}
+
+    def drop_legacy_fields(self, legacy_fields : list[str]):
+        for field in legacy_fields:
+            self._data.pop(field, None)
+
+    def save(self):
+        """ Saves the Task into the filesystem """
+        self._task_fs.put("task.yaml", get_json_or_yaml("task.yaml", self._data))
+        if self._new_doc:
+            logging.getLogger("inginious.task").info("Task %s created in the factory.", self._task_fs.prefix)
+
+    @classmethod
+    def get(cls, courseid : str, taskid : str):
+        """ Fetch a task with id taskid from the specified course filesystem"""
+        if not id_checker(courseid) or not id_checker(taskid):
+            raise InvalidNameException(f"Task with invalid name: {courseid}/{taskid}")
+
+        course_fs = get_fs_provider().from_subfolder(courseid)
+        task_fs = course_fs.from_subfolder(taskid)
+        if not task_fs.exists("task.yaml"):
+            raise TaskNotFoundException()
+
+        task = fetch_or_cache(task_fs, "task.yaml", lambda: _load_task(task_fs, courseid, taskid))
+
+        translations = {}
+        i18n_paths = [
+            task_fs.from_subfolder("$i18n"),
+            task_fs.from_subfolder("student").from_subfolder("$i18n"),
+            course_fs.from_subfolder("$common").from_subfolder("$i18n"),
+            course_fs.from_subfolder("$common").from_subfolder("student").from_subfolder("$i18n")
+        ]
+
+        for i18n_fs in i18n_paths:
+            if i18n_fs.exists():
+                for f in i18n_fs.list(folders=False, files=True, recursive=False):
+                    lang, ext = os.path.splitext(f)
+                    if ext == ".mo":
+                        translations[lang] = fetch_or_cache(i18n_fs, f, lambda: gettext.GNUTranslations(i18n_fs.get_fd(f)))
+                break
+
+        task.set_translations(translations)
+        return task
+
+    def delete(self):
+        """ Erase the content of the task folder """
+        invalidate_cache(self._task_fs)
+        self._task_fs.delete()
+        logging.getLogger("inginious.task").info("Task %s erased from the factory.", self._task_fs.prefix)

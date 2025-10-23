@@ -52,13 +52,11 @@ async def _restart_on_cancel(logger, agent):
             logger.exception("Restarting agent")
             pass
 
-def create_arch(configuration, tasks_fs, context, course_factory):
+def create_arch(configuration, context):
     """ Helper that can start a simple complete INGInious arch locally if needed, or a client to a remote backend.
     Intended to be used on command line, makes uses of exit() and the logger inginious.frontend.
     :param configuration: configuration dict
-    :param tasks_fs: FileSystemProvider to the courses/tasks folders
     :param context: a ZMQ context
-    :param course_factory: The course factory to be used by the frontend
     :param is_testing: boolean
     :return: a Client object
     """
@@ -94,8 +92,8 @@ def create_arch(configuration, tasks_fs, context, course_factory):
 
         client = Client(context, "inproc://backend_client")
         backend = Backend(context, "inproc://backend_agent", "inproc://backend_client")
-        agent_docker = DockerAgent(context, "inproc://backend_agent", "Docker - Local agent", concurrency, tasks_fs, debug_host, debug_ports, tmp_dir, ssh_allowed=True)
-        agent_mcq = MCQAgent(context, "inproc://backend_agent", "MCQ - Local agent", 1, tasks_fs, course_factory.get_task_factory().get_problem_types())
+        agent_docker = DockerAgent(context, "inproc://backend_agent", "Docker - Local agent", concurrency, debug_host, debug_ports, tmp_dir, ssh_allowed=True)
+        agent_mcq = MCQAgent(context, "inproc://backend_agent", "MCQ - Local agent", 1)
 
         asyncio.ensure_future(_restart_on_cancel(logger, agent_docker))
         asyncio.ensure_future(_restart_on_cancel(logger, agent_mcq))

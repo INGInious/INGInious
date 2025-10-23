@@ -16,6 +16,7 @@ from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
 
 from inginious.common.base import id_checker
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
@@ -34,7 +35,7 @@ class INGIniousAdminPage(INGIniousAuthPage):
         """
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid)
             if allow_all_staff:
                 if not self.user_manager.has_staff_rights_on_course(course):
                     raise Forbidden(description=_("You don't have staff rights on this course."))
@@ -58,7 +59,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
     def get_course_params(self, course, params):
         users = self.get_users(course)
         audiences = self.user_manager.get_course_audiences(course)
-        tasks = course.get_tasks(True)
+        tasks = course.get_task_dispenser().get_ordered_tasks()
 
         tutored_audiences = [str(audience["_id"]) for audience in audiences if
                              self.user_manager.session_username() in audience["tutors"]]
@@ -327,30 +328,6 @@ def make_csv(data):
     response = Response(response=csv_string.read(), content_type='text/csv; charset=utf-8')
     response.headers['Content-disposition'] = 'attachment; filename=export.csv'
     return response
-
-
-def get_menu(course, current, renderer, plugin_manager, user_manager):
-    """ Returns the HTML of the menu used in the administration. ```current``` is the current page of section """
-    default_entries = []
-    if user_manager.has_admin_rights_on_course(course):
-        default_entries += [("settings", "<i class='fa fa-cogs fa-fw'></i>&nbsp; " + _("Course settings"))]
-
-    default_entries += [("stats", "<i class='fa fa-area-chart fa-fw'></i>&nbsp; " + _("Statistics")),
-                        ("students", "<i class='fa fa-user fa-fw'></i>&nbsp; " + _("User management"))]
-
-    if user_manager.has_admin_rights_on_course(course):
-        default_entries += [("tasks", "<i class='fa fa-tasks fa-fw'></i>&nbsp; " + _("Tasks"))]
-
-    default_entries += [("submissions", "<i class='fa fa-file-code-o fa-fw'></i>&nbsp; " + _("Submissions"))]
-
-    if user_manager.has_admin_rights_on_course(course):
-        default_entries += [("danger", "<i class='fa fa-bomb fa-fw'></i>&nbsp; " + _("Danger zone"))]
-
-    # Hook should return a tuple (link,name) where link is the relative link from the index of the course administration.
-    additional_entries = [entry for entry in plugin_manager.call_hook('course_admin_menu', course=course) if entry is not None]
-
-    return renderer("course_admin/menu.html", course=course,
-                    entries=default_entries + additional_entries, current=current)
 
 
 class CourseRedirectPage(INGIniousAdminPage):

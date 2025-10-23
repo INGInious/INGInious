@@ -11,11 +11,11 @@ import random
 import zipfile
 
 import bson.json_util
-import flask
-from flask import redirect, Response
+from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import NotFound
 
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
 from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
@@ -54,16 +54,18 @@ class CourseDangerZonePage(INGIniousAdminPage):
         if course.is_archive():
             raise CourseNotArchivable()
 
-        # Create archive course
+        # Copy archive course
         archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-        self.course_factory.create_course(archive_course_id, None)
-        self.course_factory.get_fs().copy_to(course_fs.prefix, archive_course_id)
+        archive_course_fs = Course(archive_course_id, {"name": archive_course_id}).get_fs()
+        archive_course_fs.copy_to(course_fs.prefix)
 
         # Update archive YAML file
-        archive_course_content = self.course_factory.get_course(archive_course_id).get_descriptor()
+        archive_course_content = course.get_descriptor()
         archive_course_content["archived"] = True
         archive_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
-        self.course_factory.update_course_descriptor_content(archive_course_id, archive_course_content)
+
+        # Save archived course
+        Course(archive_course_id, archive_course_content).save()
 
         # Update course id in DB
         self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
@@ -79,20 +81,19 @@ class CourseDangerZonePage(INGIniousAdminPage):
         self._logger.info("Course %s archived as %s.", courseid, archive_course_id)
         return courseid, archive_course_id
 
-    def delete_course(self, courseid):
+    def delete_course(self, course):
         """ Erase all course data """
         # Wipes the course (delete database)
-        self.wipe_course(courseid)
+        self.wipe_course(course.get_id())
 
         # Deletes the course from the factory (entire folder)
-        self.course_factory.delete_course(courseid)
+        course.delete()
 
         self._logger.info("Course %s files erased.", courseid)
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
-
         return self.page(course)
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
@@ -102,7 +103,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         msg = ""
         error = False
 
-        data = flask.request.form
+        data = request.form
         if not data.get("token", "") == self.user_manager.session_token():
             msg = _("Operation aborted due to invalid token.")
             error = True
@@ -123,7 +124,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    self.delete_course(courseid)
+                    self.delete_course(course)
                     return redirect(self.app.get_path("index"))
                 except Exception as ex:
                     msg = _("An error occurred while deleting the course data: {}").format(repr(ex))
@@ -137,5 +138,6 @@ class CourseDangerZonePage(INGIniousAdminPage):
         thehash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
         self.user_manager.set_session_token(thehash)
 
-        return self.template_helper.render("course_admin/danger_zone.html", course=course, thehash=thehash,
-                                        msg=msg, error=error)
+
+        return render_template("course_admin/danger_zone.html", course=course, thehash=thehash,
+                               msg=msg, error=error)

@@ -6,9 +6,16 @@
     {% if placeholder %}
         placeholder="{{ placeholder }}"
     {% endif %}
-    value="{{ current_users | map(attribute='username') | join(',') }}"
+    value="{{ current_users | join(',') }}"
 />
 <script type="text/javascript">
     {% set path = get_path('admin', course_id, 'search_user') + '/' %}
-    user_selection($('#{{ id }}'), '{{ path }}', {{ current_users | tojson }}, {% if single %}true{% else %}false{% endif %});
+
+    let current_users_{{ name }} = [
+        {% for x, y in user_manager.get_users_info(current_users).items() %}
+            {"realname": "{{ y.realname if y is not none else x }}", "username": "{{ x }}" },
+        {% endfor %}
+    ]
+
+    user_selection($('#{{ id }}'), '{{ path }}', current_users_{{ name }}, {% if single %}true{% else %}false{% endif %});
 </script>

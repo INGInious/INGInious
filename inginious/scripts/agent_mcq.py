@@ -14,8 +14,9 @@ from zmq.asyncio import ZMQEventLoop, Context
 import asyncio
 
 from inginious.common.entrypoints import get_args_and_filesystem
+from inginious.common.filesystems import init_fs_provider
 from inginious.agent.mcq_agent import MCQAgent
-from inginious.common.tasks_problems import MultipleChoiceProblem, MatchProblem
+from inginious.common.tasks_problems import MultipleChoiceProblem, MatchProblem, register_problem_types
 
 
 def import_class(name):
@@ -40,6 +41,7 @@ def main():
     parser.add_argument("--ptype", nargs="+", help="Python class import path for additionnal subproblem types")
 
     (args, fsprovider) = get_args_and_filesystem(parser)
+    init_fs_provider(fsprovider)
 
     # create logger
     logger = logging.getLogger("inginious")
@@ -60,6 +62,8 @@ def main():
                 logger.exception("Cannot load %s, exiting", ptype_loc)
                 exit(1)
 
+    register_problem_types({problem_type.get_type(): problem_type for problem_type in ptypes})
+
     closing = False
     while not closing:
         # start asyncio and zmq
@@ -70,7 +74,7 @@ def main():
         context = Context()
 
         # Create agent
-        agent = MCQAgent(context, args.backend, args.friendly_name, 1, fsprovider, {problem_type.get_type(): problem_type for problem_type in ptypes})
+        agent = MCQAgent(context, args.backend, args.friendly_name, 1)
 
         # Run!
         try:

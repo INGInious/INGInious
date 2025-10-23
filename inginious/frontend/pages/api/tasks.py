@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Tasks """
-
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
 from inginious.frontend.parsable_text import ParsableText
 
@@ -61,7 +61,7 @@ class APITasks(APIAuthenticatedPage):
         """
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid)
         except:
             raise APINotFound("Course not found")
 
@@ -78,7 +78,7 @@ class APITasks(APIAuthenticatedPage):
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(self.user_manager.session_username(), task.get_course_id(), task.get_id())
+            task_cache = self.user_manager.get_task_cache(self.user_manager.session_username(), course.get_id(), task.get_id())
 
             data = {
                 "id": taskid,

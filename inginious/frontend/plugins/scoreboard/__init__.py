@@ -6,18 +6,23 @@
 """ A scoreboard, based on the usage of the "custom" dict in submissions.
     It uses the key "score" to retrieve score from submissions
 """
+import os
+
 from collections import OrderedDict
+from flask import render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.courses import Course
 
+PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
 class ScoreBoardCourse(INGIniousAuthPage):
     """ Page displaying the different available scoreboards for the course """
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:
@@ -28,8 +33,7 @@ class ScoreBoardCourse(INGIniousAuthPage):
         if len(names) == 0:
             raise NotFound()
 
-        return self.template_helper.render("main.html", template_folder="frontend/plugins/scoreboard",
-                                           course=course, scoreboards=names)
+        return render_template("scoreboard/main.html", course=course, scoreboards=names)
 
 
 def sort_func(overall_result_per_user, reverse):
@@ -46,7 +50,7 @@ class ScoreBoard(INGIniousAuthPage):
 
     def GET_AUTH(self, courseid, scoreboardid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:
@@ -171,23 +175,22 @@ class ScoreBoard(INGIniousAuthPage):
 
             table.append(line)
 
-        return self.template_helper.render("scoreboard.html", template_folder="frontend/plugins/scoreboard",
+        return render_template("scoreboard/scoreboard.html",
                                            course=course, scoreboardid=scoreboardid, scoreboard_name=scoreboard_name,
                                            header=header, table=table, emphasized_columns=emphasized_columns)
 
 
-def course_menu(course, template_helper):
+def course_menu(course):
     """ Displays the link to the scoreboards on the course page, if the plugin is activated for this course """
     scoreboards = course.get_descriptor().get('scoreboard', [])
 
     if scoreboards != []:
-        return template_helper.render("course_menu.html", template_folder='frontend/plugins/scoreboard',
-                                          course=course)
+        return render_template("scoreboard/course_menu.html", course=course)
     else:
         return None
 
 
-def task_menu(course, task, template_helper):
+def task_menu(course, task):
     """ Displays the link to the scoreboards on the task page, if the plugin is activated for this course and the task is used in scoreboards """
     scoreboards = course.get_descriptor().get('scoreboard', [])
     try:
@@ -197,14 +200,13 @@ def task_menu(course, task, template_helper):
                 tolink.append((sid, scoreboard["name"]))
 
         if tolink:
-            return template_helper.render("task_menu.html", template_folder="frontend/plugins/scoreboard",
-                                          course=course, links=tolink)
+            return render_template("scoreboard/task_menu.html", course=course, links=tolink)
         return None
     except:
         return None
 
 
-def init(plugin_manager, _, _2, _3):
+def init(plugin_manager, client, config):
     """
         Init the plugin.
         Available configuration in configuration.yaml:
@@ -228,3 +230,4 @@ def init(plugin_manager, _, _2, _3):
     plugin_manager.add_page('/scoreboard/<courseid>/<scoreboardid>', ScoreBoard.as_view('scoreboard'))
     plugin_manager.add_hook('course_menu', course_menu)
     plugin_manager.add_hook('task_menu', task_menu)
+    plugin_manager.add_template_prefix("scoreboard", PATH_TO_PLUGIN)
