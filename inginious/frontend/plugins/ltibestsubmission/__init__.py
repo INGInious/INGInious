@@ -5,6 +5,7 @@ from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, D
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.courses import Course
 from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models.user import User
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
@@ -21,14 +22,11 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         courseid, taskid = data["task"]
 
         # get the INGInious username from the ToolConsumer-provided username
-        inginious_usernames = list(self.database.users.find(
-            {"ltibindings." + courseid + "." + data[self._field]: data["username"]}
-        ))
-
-        if not inginious_usernames:
+        user_profile = User.objects(**{"ltibindings__" + courseid + "__" + data[self._field]: data["username"]}).first()
+        if not user_profile:
             return json_util.dumps({"status": "error", "message": "user not bound with lti"})
 
-        inginious_username = inginious_usernames[0]["username"]
+        inginious_username = user_profile.username
 
         # get best submission from database
         user_best_sub = UserTask.objects(username=inginious_username, courseid=courseid, taskid=taskid).only("submissionid").get()
