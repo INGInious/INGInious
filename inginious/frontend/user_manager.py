@@ -16,15 +16,16 @@ from functools import reduce
 from natsort import natsorted
 from collections import OrderedDict, namedtuple
 import pymongo
-from pymongo import ReturnDocument
 from binascii import hexlify
 import os
 import re
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from flask.sessions import NullSession
+from mongoengine import Q
 
 from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models.user import User
 
 
 class AuthInvalidInputException(Exception):
@@ -255,13 +256,13 @@ class UserManager:
     def _set_session(self, user):
         """ Init the session. Preserves potential LTI information. """
         self._session["loggedin"] = True
-        self._session["email"] = user["email"]
-        self._session["username"] = user["username"]
-        self._session["realname"] = user["realname"]
-        self._session["language"] = user.get("language", "en")
-        self._session["timezone"] = user.get("timezone", tzlocal.get_localzone_name())
-        self._session["code_indentation"] = user.get("code_indentation", "4")
-        self._session["tos_signed"] = user.get("tos_accepted", False)
+        self._session["email"] = user.email
+        self._session["username"] = user.username
+        self._session["realname"] = user.realname
+        self._session["language"] = user.language
+        self._session["timezone"] = user.timezone
+        self._session["code_indentation"] = user.code_indentation
+        self._session["tos_signed"] = user.tos_accepted
         self._session["token"] = None
 
     def _destroy_session(self):
@@ -330,8 +331,7 @@ class UserManager:
         :param do_connect: indicates if the user must be connected after authentification, True by default
         :return: Returns a dict representing the user, or None if the authentication was not successful
         """
-        user = self._database.users.find_one(
-            {"username": username, "activate": {"$exists": False}})
+        user = User.objects(username=username, activate__exists=False).first()
 
         if user is None:
             return None
@@ -370,16 +370,6 @@ class UserManager:
         except VerifyMismatchError:
             return False
 
-
-    def is_user_activated(self, username):
-        """
-        Verify if user is activated
-        :param username: Username/Login
-        :return Returns a boolean with value of activation"""
-        user = self._database.users.find_one(
-            {"username": username, "activate": {"$exists": True, "$nin": [None]}})
-        return user is None
-
     def connect_user(self, user):
         """ Opens a session for the user
 
@@ -393,10 +383,8 @@ class UserManager:
         if not all(key in user for key in ["realname", "email", "username"]):
             raise AuthInvalidInputException()
 
-        self._database.users.update_one({"email": user["email"]},
-                                        {"$set": {"realname": user["realname"], "username": user["username"],
-                                                  "language": user.get("language", "en")}},
-                                        upsert=True)
+        User.objects(email=user["email"]).update(realname=user["realname"], username=user["username"],
+                                                 language=user.language)
 
         ip = flask.request.remote_addr
         self._logger.info("User %s connected - %s - %s - %s", user["username"], user["realname"], user["email"], ip)
@@ -413,9 +401,6 @@ class UserManager:
                               self.session_email(), ip)
         self._session.clear()
 
-    def get_users_count(self):
-        return self._database.users.estimated_document_count()
-
     def get_users_info(self, usernames, limit=0, skip=0) -> Dict[str, Optional[UserInfo]]:
         """
         :param usernames: a list of usernames
@@ -424,9 +409,8 @@ class UserManager:
         :return: a dict, in the form {username: val}, where val is either None if the user cannot be found,
         or a UserInfo. If the list of usernames is empty, return an empty dict.
         """
-        retval = {username: None for username in usernames} if usernames is not None else {}
-        query = {"username": {"$in": usernames}} if usernames is not None else {}
-        infos = self._database.users.find(query).skip(skip).limit(limit)
+        query = {"username__in": usernames} if usernames is not None else {}
+        infos = User.objects(**query).skip(skip).limit(limit)
 
         retval = {info["username"]: UserInfo(info["realname"], info["email"], info["username"], info["bindings"],
                                              info["language"], info["code_indentation"], "activate" not in info)
@@ -469,30 +453,20 @@ class UserManager:
         :param create: Create the API key if none exists yet
         :return: the API key assigned to the user, or None if none exists and create is False.
         """
-        retval = self._database.users.find_one({"username": username}, {"apikey": 1})
+        retval = User.objects.get(username=username)
         if not retval:
             return None
         elif "apikey" not in retval and create:
-            apikey = self.generate_api_key()
-            self._database.users.update_one({"username": username}, {"$set": {"apikey": apikey}})
-        else:
-            apikey = retval.get("apikey", None)
-        return apikey
-
-    def get_user_activate_hash(self, username):
-        """
-        Get activate hash for a user
-        :return the activate hash
-        """
-        user = self._database.users.find_one({"username": username})
-        return user["activate"] if user and "activate" in user else None
+            retval.apikey = self.generate_api_key()
+            retval.save()
+        return retval.apikey
 
     def activate_user(self, activate_hash):
         """Active a user based on his/her activation hash
         :param activate_hash: The activation hash of a user
         :return A boolean if the user was found and updated
         """
-        user = self._database.users.find_one_and_update({"activate": activate_hash}, {"$unset": {"activate": True}})
+        user = User.objects(activate=activate_hash).modify(unset__activate=True)
         return user is not None
 
     def bind_user(self, auth_id, user):
@@ -513,15 +487,14 @@ class UserManager:
             raise NotFound(description=_("Auth method not found."))
 
         # Look for already bound auth method username
-        user_profile = self._database.users.find_one({"bindings." + auth_id: username})
+        user_profile = User.objects(**{"bindings__" + auth_id: username}).first()
 
         if user_profile and not self.session_logged_in():
             # Sign in
             self.connect_user(user_profile)
         elif user_profile and self.session_username() == user_profile["username"]:
             # Logged in, refresh fields if found profile username matches session username
-            self._database.users.find_one_and_update({"username": self.session_username()},
-                                                     {"$set": {"bindings." + auth_id: [username, additional]}})
+            User.objects(username=self.session_username()).update(**{"bindings__" + auth_id: [username, additional]})
         elif user_profile:
             # Logged in, but already linked to another account
             self._logger.exception("Tried to bind an already bound account !")
@@ -529,23 +502,19 @@ class UserManager:
             # No binding, but logged: add new binding
             # !!! Use email as it may happen that a user is logged with empty username
             # !!! if the binding link is used as is
-            self._database.users.find_one_and_update({"email": self.session_email()},
-                                                     {"$set": {"bindings." + auth_id: [username, additional]}})
-
+            User.objects(email=self.session_email()).update(**{"bindings__" + auth_id: [username, additional]})
         else:
             # No binding, check for email
-            user_profile = self._database.users.find_one({"email": email})
-            if user_profile:
+            if User.objects(email=email).first():
                 # Found an email, existing user account, abort without binding
                 self._logger.exception("The binding email is already used by another account!")
                 return False
             else:
                 # New user, create an account using email address
-                user_profile = {"username": "", "realname": realname, "email": email,
-                                "bindings": {auth_id: [username, additional]}, "language": self.session_language(),
-                                "code_indentation": self.session_code_indentation(), "tos_accepted": False}
+                user_profile = User(username="", realname=realname, email=email,
+                                bindings={auth_id: [username, additional]}, language=self.session_language())
 
-                self._database.users.insert_one(user_profile)
+                user_profile.save()
                 self.connect_user(user_profile)
 
         return True
@@ -557,15 +526,12 @@ class UserManager:
         :param username: username of the user
         :return: Boolean if error occurred and message if necessary
         """
-        user_data = self._database.users.find_one({"username": username})
+        user_data = User.objects(username=username).first()
         if binding_id not in self.get_auth_methods().keys():
             error = True
             msg = _("Incorrect authentication binding.")
-        elif user_data is not None and (len(user_data.get("bindings", {}).keys()) > 1 or "password" in user_data):
-            user_data = self._database.users.find_one_and_update(
-                {"username": username},
-                {"$unset": {"bindings." + binding_id: 1}},
-                return_document=ReturnDocument.AFTER)
+        elif user_data is not None and (len(user_data.bindings.keys()) > 1 or "password" in user_data):
+            User.objects(username=username).update(**{"unset__bindings__" + binding_id: 1})
             msg = ""
             error = False
         else:
@@ -582,7 +548,7 @@ class UserManager:
         """
         query = {"username": username, "email": confirmation_email} \
             if confirmation_email is not None else {"username": username}
-        result = self._database.users.find_one_and_delete(query)
+        result = User.objects(**query).modify(remove=True)
         if not result:
             return False
         else:
@@ -598,17 +564,13 @@ class UserManager:
         :param values: Dictionary of fields
         :return: An error message if something went wrong else None
         """
-        already_exits_user = self._database.users.find_one(
-            {"$or": [{"username": values["username"]}, {"email": values["email"]}]})
-        if already_exits_user is not None:
+        query = Q(username=values["username"]) | Q(email=values["email"])
+        if User.objects(query).first() is not None:
             return _("User could not be created.")
-        self._database.users.insert_one({"username": values["username"],
-                                         "realname": values["realname"],
-                                         "email": values["email"],
-                                         "password": self.hash_password(values["password"]),
-                                         "bindings": values["bindings"],
-                                         "language": values["language"],
-                                         "code_indentation": values["code_indentation"]})
+
+        User(username=values["username"], realname=values["realname"], email=values["email"],
+             password=self.hash_password(values["password"])).save()
+
         return None
 
     ##############################################

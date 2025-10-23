@@ -9,7 +9,6 @@ from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
-
 class DeletePage(INGIniousAuthPage):
     """ Delete account page for DB-authenticated users"""
 
@@ -30,18 +29,14 @@ class DeletePage(INGIniousAuthPage):
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
-        userdata = self.database.users.find_one({"username": self.user_manager.session_username()})
-
-        if not userdata or not self.app.allow_deletion:
+        if not self.app.allow_deletion:
             raise Forbidden(description=_("User unavailable or deletion is forbidden."))
 
         return render_template("preferences/delete.html", msg="", error=False)
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
-        userdata = self.database.users.find_one({"username": self.user_manager.session_username()})
-
-        if not userdata or not self.app.allow_deletion:
+        if not self.app.allow_deletion:
             raise Forbidden(description=_("User unavailable or deletion forbidden."))
 
         msg = ""

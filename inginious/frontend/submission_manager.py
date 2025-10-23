@@ -24,6 +24,7 @@ import inginious.common.custom_yaml
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models.user import User
 
 
 class WebAppSubmissionManager:
@@ -133,7 +134,7 @@ class WebAppSubmissionManager:
             username = self._user_manager.session_username()
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
                 group = self._database.groups.find_one({"courseid": course.get_id(), "students": username})
-                users = self._database.users.find({"username": {"$in": group["students"]}})
+                users = User.objects(username__in=group["students"])
                 inputdata["@username"] = ','.join(group["students"])
                 inputdata["@email"] = ','.join([user["email"] for user in users])
 
