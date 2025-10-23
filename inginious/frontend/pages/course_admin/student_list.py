@@ -15,6 +15,7 @@ from flask import Response, request, render_template
 from io import StringIO
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
+from inginious.frontend.models.user import User
 
 
 class CourseStudentListPage(INGIniousAdminPage):
@@ -242,7 +243,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                             msg["audiences"] = _("Unknown role: ") + role
                             error["audiences"] = True
                             continue
-                        user = self.database.users.find_one({field: user_id})
+                        user = User.objects(**{field: user_id}).first()
                         if user is not None:
                             user_id = user["username"]
                         else:
@@ -297,7 +298,7 @@ class CourseStudentListPage(INGIniousAdminPage):
     def get_requested_field_user_info(self, username, preferred_field):
         if preferred_field != "username":
             # query user
-            username = self.database.users.find_one({"username": username})[preferred_field]
+            username = User.objects.get(username=username)[preferred_field]
 
         return username
 

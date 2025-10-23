@@ -7,7 +7,7 @@
 from flask import request, redirect, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend.models.user import User
 
 class BindingsPage(INGIniousAuthPage):
     """ Bindings page for DB-authenticated users"""
@@ -25,11 +25,7 @@ class BindingsPage(INGIniousAuthPage):
         msg = ""
         error = False
 
-        user_data = self.database.users.find_one({"username": self.user_manager.session_username()})
-
-        if not user_data:
-            raise self.app.notfound(message=_("User doesn't exist."))
-
+        user_data = User.objects.get(username=self.user_manager.session_username())
         user_input = request.form
         auth_methods = self.user_manager.get_auth_methods()
 
@@ -39,7 +35,7 @@ class BindingsPage(INGIniousAuthPage):
             if auth_binding not in auth_methods.keys():
                 error = True
                 msg = _("Incorrect authentication binding.")
-            elif auth_binding not in user_data.get("bindings", {}):
+            elif auth_binding not in user_data.bindings:
                 return redirect("/auth/signin/" + auth_binding)
         elif "revoke_auth_binding" in user_input:
             auth_id = user_input["revoke_auth_binding"]
