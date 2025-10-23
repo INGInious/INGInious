@@ -7,6 +7,7 @@
 
 from flask import request, jsonify, render_template
 
+from inginious.frontend.models.user import User
 from inginious.frontend.pages.utils import INGIniousAdministratorPage
 
 
@@ -27,7 +28,7 @@ class AdministrationUsersPage(INGIniousAdministratorPage):
         page = int(request.form.get("page")) if request.form.get("page") is not None else 1
         user_per_page = 10  # TODO probably better to let user define user_per_page
         all_users = self.user_manager.get_users_info(usernames=None, limit=user_per_page, skip=(page-1)*user_per_page)
-        size_users = self.user_manager.get_users_count()
+        size_users = User.objects.count()
         pages = size_users // user_per_page + (size_users % user_per_page > 0) if user_per_page > 0 else 1
 
         return render_template("admin/admin_users.html", all_users=all_users,
@@ -42,8 +43,8 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
         action = request.form.get("action")
         feedback = None
         if action == "activate":
-            activate_hash = self.user_manager.get_user_activate_hash(username)
-            if not self.user_manager.activate_user(activate_hash):
+            user = User.objects.get(username=username)
+            if not self.user_manager.activate_user(user.activate):
                 feedback = _("User not found")
         elif action == "delete":
             if not self.user_manager.delete_user(username):
@@ -62,10 +63,7 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
                 "username": username,
                 "realname": realname,
                 "email": email,
-                "password": password,
-                "bindings": {},
-                "language": "en",
-                "code_indentation": "4"})
+                "password": password})
         else:
             feedback = _("Unknown action.")
         if feedback:

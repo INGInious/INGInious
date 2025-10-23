@@ -12,6 +12,7 @@ from werkzeug.exceptions import NotFound
 from bson.objectid import ObjectId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.models.user import User
 
 
 class CourseEditAudience(INGIniousAdminPage):
@@ -92,7 +93,7 @@ class CourseEditAudience(INGIniousAdminPage):
             audiences_dict = json.loads(data["audiences"])
             student_list = self.user_manager.get_course_registered_users(course, False)
             for username in audiences_dict[0]["students"]:
-                userdata = self.database.users.find_one({"username": username})
+                userdata = User.objects(username=username).first()
                 if userdata is None:
                     msg = _("User not found : {}".format(username))
                     error = True

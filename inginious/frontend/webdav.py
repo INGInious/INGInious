@@ -11,6 +11,7 @@ from wsgidav.dav_error import DAVError, HTTP_NOT_FOUND, HTTP_FORBIDDEN
 from wsgidav.dc.base_dc import BaseDomainController
 from wsgidav.dav_provider import DAVProvider
 from wsgidav.fs_dav_provider import FolderResource, FileResource
+from mongoengine import connect
 
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
@@ -199,6 +200,8 @@ def get_app(config):
     """ Init the webdav app """
     mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
     database = mongo_client[config.get('mongo_opt', {}).get('database', 'INGInious')]
+
+    connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
     # Create the FS provider
     if "tasks_directory" not in config:

@@ -6,8 +6,10 @@ import json
 import re
 
 from flask import Response
-from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from mongoengine import Q
 
+from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.models.user import User
 
 class CourseAdminSearchUserPage(INGIniousAdminPage):
     """ Return users based on their username or realname """
@@ -18,11 +20,10 @@ class CourseAdminSearchUserPage(INGIniousAdminPage):
         self.get_course_and_check_rights(courseid, allow_all_staff=True)
 
         request = re.escape(request) # escape for safety. Maybe this is not needed...
-        users = list(self.database.users.find({"$and":[{ "activate": { "$exists": False } },
-                                                       {"username":{ "$ne": "" }},
-                                                       {"$or": [{"username": {"$regex": ".*" + request + ".*", "$options": "i"}},
-                                                       {"realname": {"$regex": ".*" + request + ".*", "$options": "i"}}
-                                                      ]}]}, {"username": 1, "realname": 1}).limit(10))
+        query =  ((Q(username__iregex=".*" + request + ".*") or Q(realname__iregex=".*" + request + ".*"))
+                  and Q(activate__exists=False, username__ne=""))
+
+        users = User.objects(query).only("username", "realname").limit(10)
         return Response(content_type='text/json; charset=utf-8',response=json.dumps([[
             {'username': entry['username'], 'realname': entry['realname']}
             for entry in users
