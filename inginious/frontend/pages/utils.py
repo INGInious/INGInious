@@ -9,7 +9,6 @@ import os
 from typing import List, Dict
 
 import flask
-from gridfs import GridFS
 from flask import redirect, render_template
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
@@ -82,11 +81,6 @@ class INGIniousPage(MethodView):
     def database(self) -> Database:
         """ Returns the database singleton """
         return self.app.database
-
-    @property
-    def gridfs(self) -> GridFS:
-        """ Returns the GridFS singleton """
-        return self.app.gridfs
 
     @property
     def client(self) -> Client:
