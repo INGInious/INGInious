@@ -29,7 +29,7 @@
             </li>
             <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id(), 'student', username)}}">{{user_realname}}</a></li>
             <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id(), 'submissions?users=' + username + '&tasks' + task.get_id())}}">{{ task.get_name(user_manager.session_language()) }}</a></li>
-            <li class="breadcrumb-item active"><a href="#">{{ submission['_id'] | string }}<span class="sr-only">{{ _("(current)") }}</span></a></li>
+            <li class="breadcrumb-item active"><a href="#">{{ submission.id | string }}<span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
     </nav>
 {% endblock %}
@@ -38,9 +38,9 @@
 
 {% set is_admin = user_manager.has_admin_rights_on_course(course) %}
 {% set course_tags = course.get_tags() %}
-{% set submission_tags = submission.get("tests", {}) %}
+{% set submission_tags = submission.tests %}
 
-<h2>{{ _("Submission {}").format(str(submission['_id'])[0:10])}} - "{{ task.get_name(user_manager.session_language()) }}" - {{ user_realname }} ({{username}})</h2>
+<h2>{{ _("Submission {}").format(str(submission.id)[0:10])}} - "{{ task.get_name(user_manager.session_language()) }}" - {{ user_realname }} ({{username}})</h2>
 <div class="alert alert-info text-center">
     {{ _("This page show what was shown to the student when (s)he made his/her submission.") }} <br/>
     <form method="post">
@@ -52,7 +52,7 @@
             </div>
             {% if "result"  in submission %}
                 <div class="col-md-12" style="margin:2px 0px 2px 0px;">
-                    <a href="{{ get_path('admin', course.get_id(), 'submissions?download_submission=' + str(submission['_id']) ) }}" class="btn btn-sm btn-block btn-primary">
+                    <a href="{{ get_path('admin', course.get_id(), 'submissions?download_submission=' + str(submission.id) ) }}" class="btn btn-sm btn-block btn-primary">
                         <i class="fa fa-download fa-fw"></i> {{ _("Download full submission") }}
                     </a>
                 </div>
@@ -125,7 +125,7 @@
     <div class="card mb-3 problem">
         <div class="card-header">
             Question {{key}}: {{problem["name"]}}
-            <a href="{{get_path('course', course.get_id(), task.get_id() + '?submissionid=' + str(submission['_id']) + '&questionid=' + problem['id'])}}" class="pull-right" title="_('Download as file') }}"
+            <a href="{{get_path('course', course.get_id(), task.get_id() + '?submissionid=' + str(submission.id) + '&questionid=' + problem['id'])}}" class="pull-right" title="_('Download as file') }}"
                data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-download"></i>
             </a>
@@ -146,8 +146,8 @@
 var problems_types = {{ pdict | safe }};
 
 $(document).ready(function() {
-    loadOldSubmissionInput("{{submission['_id']}}", false);
-    waitForSubmission("{{submission['_id']}}");
+    loadOldSubmissionInput("{{submission.id}}", false);
+    waitForSubmission("{{submission.id}}");
 });
 </script>
 {% endblock %}

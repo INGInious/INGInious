@@ -185,9 +185,9 @@
                 {% endif %}
             </div>
             {% if eval_submission %}
-                <a href="#" id="my_submission" class="submission list-group-item list-group-item-action list-group-item-info" data-submission-id="{{ eval_submission['_id'] }}">
+                <a href="#" id="my_submission" class="submission list-group-item list-group-item-action list-group-item-info" data-submission-id="{{ eval_submission.id }}">
                     <i class="fa fa-chevron-right fa-fw"></i>
-                    {{ show_time(eval_submission['submitted_on']) }} - {{ eval_submission.get("grade",0.0) }}%
+                    {{ show_time(eval_submission['submitted_on']) }} - {{ eval_submission.grade }}%
                 </a>
             {% else %}
                 <div id="my_submission" class="list-group-item list-group-item-info"><i class="fa fa-chevron-right fa-fw"></i> {{ _("No submission") }}</div>
@@ -207,7 +207,7 @@
                             {% else %}
                                 list-group-item-danger
                             {% endif %}"
-                            data-submission-id="{{ submission['_id'] }}">
+                            data-submission-id="{{ submission.id }}">
 
                             <!-- Tags -->
                             {# This display a badge with the number of validated tags in each row of the submission history. #}
@@ -354,7 +354,7 @@
 
 <form id="task" action="{{ path }}" method="post" enctype="multipart/form-data"
     {% for submission in submissions if submission["status"] == "waiting" %}
-        data-wait-submission="{{submission['_id']}}"
+        data-wait-submission="{{submission.id}}"
     {% endfor %}
 >
     {# Hide input random in form #}

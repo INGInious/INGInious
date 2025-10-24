@@ -4,17 +4,13 @@
 # more information about the licensing of this file.
 
 from datetime import datetime, timezone
-import glob
 import logging
-import os
 import random
-import zipfile
 
-import bson.json_util
 from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import NotFound
 
-
+from inginious.frontend.models.submission import Submission
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
@@ -27,18 +23,15 @@ class CourseDangerZonePage(INGIniousAdminPage):
     _logger = logging.getLogger("inginious.webapp.danger_zone")
 
     def wipe_course(self, courseid):
-        submissions = self.database.submissions.find({"courseid": courseid})
-        for submission in submissions:
-            for key in ["input", "archive"]:
-                gridfs = self.submission_manager.get_gridfs()
-                if key in submission and type(submission[key]) == bson.objectid.ObjectId and gridfs.exists(submission[key]):
-                    gridfs.delete(submission[key])
+        for submission in Submission.objects(courseid=courseid):
+            submission.input.delete()
+            submission.archive.delete()
 
         self.database.courses.update_one({"_id": courseid}, {"$set": {"students": []}})
         self.database.audiences.delete_many({"courseid": courseid})
         self.database.groups.delete_many({"courseid": courseid})
         UserTask.objects(courseid=courseid).delete()
-        self.database.submissions.delete_many({"courseid": courseid})
+        Submission.objects(courseid=courseid).delete()
 
         self._logger.info("Course %s wiped.", courseid)
 
@@ -69,7 +62,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         Course(archive_course_id, archive_course_content).save()
 
         # Update course id in DB
-        self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        Submission.objects(courseid=courseid).update(set__courseid=archive_course_id)
         UserTask.objects(courseid=courseid).update(set__courseid=archive_course_id)
         self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
         self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})

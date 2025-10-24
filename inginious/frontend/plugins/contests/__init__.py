@@ -20,6 +20,7 @@ from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers import register_task_dispenser
+from inginious.frontend.models.submission import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -112,12 +113,9 @@ class ContestScoreboard(INGIniousAuthPage):
         users = self.user_manager.get_course_registered_users(course)
         tasks = list(course.get_tasks().keys())
 
-        db_results = self.database.submissions.find({
-            "username": {"$in": users},
-            "courseid": courseid,
-            "submitted_on": {"$gte": start, "$lt": blackout},
-            "status": "done"},
-            {"username": True, "_id": False, "taskid": True, "result": True, "submitted_on": True}).sort([("submitted_on", pymongo.ASCENDING)])
+        db_results = Submission.objects(
+            username__in=users, courseid=courseid, submitted_on__gte=start, submitted_on__lt=blackout, status="done"
+        ).only("username", "id", "taskid", "result", "submitted_on").order_by("submitted_on")
 
         task_status = {taskid: {"status": "NA", "tries": 0} for taskid in tasks}
         results = {username: {"name": self.user_manager.get_user_realname(username), "tasks": copy.deepcopy(task_status)} for username in users}

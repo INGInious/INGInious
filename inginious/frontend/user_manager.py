@@ -24,6 +24,7 @@ from argon2.exceptions import VerifyMismatchError
 from flask.sessions import NullSession
 from mongoengine import Q
 
+from inginious.frontend.models.submission import Submission
 from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.models.user import User
 
@@ -552,7 +553,7 @@ class UserManager:
         if not result:
             return False
         else:
-            self._database.submissions.delete_many({"username": username})
+            Submission.objects(username=username).delete()
             UserTask.objects(username=username).delete()
             user_courses = self._database.courses.find({"students": username})
             for elem in user_courses: self.course_unregister_user(elem['_id'], username)
@@ -711,19 +712,19 @@ class UserManager:
                 old_submission.succeeded = result_str == "success"
                 old_submission.grade = grade
                 old_submission.state = state
-                old_submission.submissionid = submission["_id"]
+                old_submission.submissionid = submission.id
                 old_submission.save()
         else:
             old_submission = UserTask.objects.get(**match_filter)
-            sort_filter = [("grade", pymongo.DESCENDING)] if eval_mode == 'best' else []
-            sort_filter.append(("submitted_on", pymongo.DESCENDING))
-            def_sub = list(self._database.submissions.find(match_filter).sort(sort_filter).limit(1))
+            sort_filter = ["-grade"] if eval_mode == 'best' else []
+            sort_filter.append("-submitted_on")
+            def_sub = Submission.objects(**match_filter).order_by(*sort_filter).first()
 
-            if len(def_sub) > 0:
-                old_submission.succeeded = def_sub[0]["result"] == "success"
-                old_submission.grade = def_sub[0]["grade"]
-                old_submission.state = def_sub[0]["state"]
-                old_submission.submissionid = def_sub[0]['_id']
+            if def_sub:
+                old_submission.succeeded = def_sub["result"] == "success"
+                old_submission.grade = def_sub["grade"]
+                old_submission.state = def_sub["state"]
+                old_submission.submissionid = def_sub.id
                 old_submission.save()
             elif old_submission.submissionid == submission["_id"]: # otherwise, update cache if needed
                 old_submission.succeeded = submission["result"] == "success"

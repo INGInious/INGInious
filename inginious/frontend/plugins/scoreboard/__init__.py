@@ -14,6 +14,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.courses import Course
+from inginious.frontend.models.submission import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -78,12 +79,9 @@ class ScoreBoard(INGIniousAuthPage):
                 raise NotFound(description="Unknown task id "+taskid)
 
         # Get all submissions
-        results = self.database.submissions.find({
-            "courseid": courseid,
-            "taskid": {"$in": list(scoreboard_content.keys())},
-            "custom.score": {"$exists": True},
-            "result": "success"
-        }, ["taskid", "username", "custom.score"])
+        results = Submission.objects(
+            courseid=courseid, taskid__in=list(scoreboard_content.keys()), custom__score__exists=True, result="success"
+        ).only("taskid", "username", "custom__score")
 
         # Get best results per users(/group)
         result_per_user = {}
