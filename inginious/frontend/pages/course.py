@@ -68,7 +68,7 @@ class CoursePage(INGIniousAuthPage):
 
             # Get 5 last submissions
             last_submissions = []
-            for submission in self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid": {"$in": user_task_list}}):
+            for submission in self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid__in": user_task_list}):
                 submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
                 last_submissions.append(submission)
 
