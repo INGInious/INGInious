@@ -183,7 +183,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
         # Tasks (with categories)
         if only_tasks and not only_tasks_with_categories:
             self._validate_list(only_tasks)
-            base_filter["taskid"] = {"$in": only_tasks}
+            base_filter["taskid__in"] = only_tasks
         elif only_tasks_with_categories:
             only_tasks_with_categories = set(only_tasks_with_categories)
             more_tasks = {taskid for taskid, task in course.get_tasks().items() if
@@ -191,12 +191,12 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
             if only_tasks:
                 self._validate_list(only_tasks)
                 more_tasks.intersection_update(only_tasks)
-            base_filter["taskid"] = {"$in": list(more_tasks)}
+            base_filter["taskid__in"] = list(more_tasks)
 
         # Users/audiences
         if only_users and not only_audiences:
             self._validate_list(only_users)
-            base_filter["username"] = {"$in": only_users}
+            base_filter["username__in"] = only_users
         elif only_audiences:
             list_audience_id = [ObjectId(o) for o in only_audiences]
             students = set()
@@ -205,28 +205,28 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
             if only_users:  # do the intersection
                 self._validate_list(only_users)
                 students.intersection_update(only_users)
-            base_filter["username"] = {"$in": list(students)}
+            base_filter["username__in"] = list(students)
 
         # Tags
         for tag_id, should_be_present in with_tags or []:
             if id_checker(tag_id):
-                filter["tests." + tag_id] = {"$in": [None, False]} if not should_be_present else True
+                filter["tests." + tag_id + "__in"] = [None, False] if not should_be_present else [True]
 
         # Grades
         if grade_between and grade_between[0] is not None:
-            filter.setdefault("grade", {})["$gte"] = float(grade_between[0])
+            filter["grade__gte"] = float(grade_between[0])
         if grade_between and grade_between[1] is not None:
-            filter.setdefault("grade", {})["$lte"] = float(grade_between[1])
+            filter["grade__lte"] = float(grade_between[1])
 
         # Submit time
         if submit_time_between and submit_time_between[0] is not None:
-            filter.setdefault("submitted_on", {})["$gte"] = datetime.fromisoformat(submit_time_between[0])
+            filter["submitted_on__gte"] = datetime.fromisoformat(submit_time_between[0])
         if submit_time_between and submit_time_between[1] is not None:
-            filter.setdefault("submitted_on", {})["$lte"] = datetime.fromisoformat(submit_time_between[1])
+            filter["submitted_on__lte"] = datetime.fromisoformat(submit_time_between[1])
 
         # Only crashed or timed-out submissions
         if keep_only_crashes:
-            filter["result"] = {"$in": ["crash", "timeout"]}
+            filter["result__in"] = ["crash", "timeout"]
 
         # Only evaluation submissions
         user_tasks = UserTask.objects(**base_filter)
@@ -234,7 +234,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
                                  user_task['submissionid'] is not None}
 
         if keep_only_evaluation_submissions is True:
-            filter["_id"] = {"$in": list(best_submissions_list)}
+            filter["id__in"] = list(best_submissions_list)
 
         filter.update(base_filter)
 

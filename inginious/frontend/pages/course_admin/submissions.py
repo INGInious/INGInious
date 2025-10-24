@@ -10,7 +10,7 @@ from flask import request, Response, render_template
 from werkzeug.exceptions import NotFound, Forbidden
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
-
+from inginious.frontend.models.submission import Submission
 
 class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
     """ Page that allow search, view, replay an download of submisssions done by students """
@@ -29,7 +29,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
         if "replay_submission" in user_input:
             # Replay a unique submission
-            submission = self.database.submissions.find_one({"_id": ObjectId(user_input["replay_submission"])})
+            submission = Submission.objects(id=user_input["replay_submission"]).first()
             if submission is None:
                 raise NotFound(description=_("This submission doesn't exist."))
 
@@ -93,13 +93,14 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         user_input["org_categories"] = request.args.getlist("org_categories")
 
         if "download_submission" in user_input:
-            submission = self.database.submissions.find_one({"_id": ObjectId(user_input["download_submission"]),
-                                                             "courseid": course.get_id(),
-                                                             "status": {"$in": ["done", "error"]}})
+            submission = Submission.objects(
+                id=user_input["download_submission"],courseid=course.get_id(), status__in=["done", "error"]
+            ).first()
+
             if submission is None:
                 raise NotFound(description=_("The submission doesn't exist."))
 
-            self._logger.info("Downloading submission %s - %s - %s - %s", submission['_id'], submission['courseid'],
+            self._logger.info("Downloading submission %s - %s - %s - %s", submission.id, submission['courseid'],
                               submission['taskid'], submission['username'])
             archive, error = self.submission_manager.get_submission_archive(course, [submission], [])
             if not error:
@@ -199,12 +200,12 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
                                                                     keep_only_evaluation_submissions=keep_only_evaluation_submissions,
                                                                     keep_only_crashes=keep_only_crashes)
 
-        submissions = self.database.submissions.find(filter)
-        submissions_count = self.database.submissions.count_documents(filter)
+        submissions = Submission.objects(**filter)
+        submissions_count = Submission.objects(**filter).count()
 
         if sort_by[0] not in ["submitted_on", "username", "grade", "taskid"]:
             sort_by[0] = "submitted_on"
-        submissions = submissions.sort(sort_by[0], pymongo.ASCENDING if sort_by[1] else pymongo.DESCENDING)
+        submissions = submissions.order_by(("" if sort_by[1] else "-") + sort_by[0])
 
         if skip is not None and skip < submissions_count:
             submissions.skip(skip)
@@ -215,7 +216,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         out = list(submissions)
 
         for d in out:
-            d["best"] = d["_id"] in best_submissions_list  # mark best submissions
+            d.best = d.id in best_submissions_list  # mark best submissions
 
         if limit is not None:
             number_of_pages = max(submissions_count // limit + (submissions_count % limit > 0), 1)

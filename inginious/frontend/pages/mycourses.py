@@ -46,7 +46,7 @@ class MyCoursesPage(INGIniousAuthPage):
                         self.user_manager.course_is_user_registered(course, username)}
         open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
 
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
+        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid__in": list(open_courses.keys())})
         except_free_last_submissions = []
         for submission in last_submissions:
             try:

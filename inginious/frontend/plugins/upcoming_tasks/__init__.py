@@ -63,7 +63,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
                         self.user_manager.course_is_user_registered(course, username)}
 
         # Get last submissions for left panel
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
+        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid__in": list(open_courses.keys())})
         except_free_last_submissions = []
         for submission in last_submissions:
             try:

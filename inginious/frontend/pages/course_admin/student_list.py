@@ -13,6 +13,8 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 from flask import Response, request, render_template
 from io import StringIO
+
+from inginious.frontend.models.submission import Submission
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 from inginious.frontend.models.user import User
@@ -134,16 +136,12 @@ class CourseStudentListPage(INGIniousAdminPage):
                                                ("url", self.submission_url_generator_audience(audience['_id']))
                                                ])
 
-            data = list(self.database.submissions.aggregate(
+            submissions = Submission.objects(
+                courseid=course.get_id(), taskid__in= taskids, username__in=audience["students"]
+            )
+
+            data = submissions.aggregate(
                 [
-                    {
-                        "$match":
-                            {
-                                "courseid": course.get_id(),
-                                "taskid": {"$in": taskids},
-                                "username": {"$in": audience["students"]}
-                            }
-                    },
                     {
                         "$group":
                             {
@@ -153,7 +151,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                             }
                     },
 
-                ]))
+                ])
 
             for c in data:
                 audiences[audience['_id']]["tried"] += 1 if c["tried"] else 0

@@ -12,7 +12,6 @@ import jinja2
 import pymongo
 import oauthlib
 
-from gridfs import GridFS
 from binascii import hexlify
 from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
@@ -24,7 +23,6 @@ from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
-from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__, DB_VERSION
@@ -133,7 +131,6 @@ def get_app(config):
     config = _put_configuration_defaults(config)
     mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
     database = mongo_client.get_database(config.get('database', 'INGInious'), codec_options=CodecOptions(tz_aware=True))
-    gridfs = GridFS(database)
 
     connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
@@ -198,14 +195,12 @@ def get_app(config):
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
-    update_pending_jobs(database)
-
     client = create_arch(config, zmq_context)
 
     lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager),
                             "1.3": LTIGradeManager(database, user_manager)}
 
-    submission_manager = WebAppSubmissionManager(client, user_manager, database, gridfs, lti_score_publishers)
+    submission_manager = WebAppSubmissionManager(client, user_manager, database, lti_score_publishers)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
@@ -260,7 +255,6 @@ def get_app(config):
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.database = database
-    flask_app.gridfs = gridfs
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size

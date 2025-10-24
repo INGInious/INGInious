@@ -16,9 +16,8 @@ import flask
 
 from flask import redirect, Response, render_template
 from werkzeug.exceptions import NotFound, HTTPException
-from bson.objectid import ObjectId
-from pymongo import ReturnDocument
 
+from frontend.models.submission import Submission
 from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundException
 from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
@@ -125,7 +124,7 @@ class BaseTaskPage(object):
             )
 
             submissionid = user_task.submissionid
-            eval_submission = self.database.submissions.find_one({'_id': ObjectId(submissionid)}) if submissionid else None
+            eval_submission = Submission.objects.get(id=submissionid) if submissionid else None
 
             students = [self.user_manager.session_username()]
             if course.get_task_dispenser().get_group_submission(taskid) and not self.user_manager.has_admin_rights_on_course(course, username):
@@ -238,8 +237,7 @@ class BaseTaskPage(object):
                 return Response(content_type='application/json', response=json.dumps({
                     'status': "error",  "title": _("Error"), "text": _("Internal error")
                 }))
-            elif self.submission_manager.is_done(result, user_check=not is_staff):
-                result = self.submission_manager.get_input_from_submission(result)
+            elif self.submission_manager.is_done(result.id, user_check=not is_staff):
                 result = self.submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
 
                 # user_task always exists as we called user_saw_task before
@@ -253,7 +251,7 @@ class BaseTaskPage(object):
                     }))
 
                 return Response(content_type='application/json', response=self.submission_to_json(
-                    task, result, is_admin, False, default_submissionid == result['_id'], tags=course.get_tags()
+                    task, result, is_admin, False, default_submissionid == result.id, tags=course.get_tags()
                 ))
             else:
                 return Response(content_type='application/json', response=self.submission_to_json(
@@ -262,7 +260,6 @@ class BaseTaskPage(object):
 
         elif "@action" in userinput and userinput["@action"] == "load_submission_input" and "submissionid" in userinput:
             submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
-            submission = self.submission_manager.get_input_from_submission(submission)
             submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=is_staff)
             if not submission:
                 raise NotFound(description=_("Submission doesn't exist."))
@@ -313,11 +310,11 @@ class BaseTaskPage(object):
             return json.dumps({'status': "waiting", 'text': text})
 
         tojson = {
-            'status': data['status'],
-            'result': data.get('result', 'crash'),
-            'id': str(data["_id"]),
+            'status': data.status,
+            'result': data.result,
+            'id': str(data.id),
             'submitted_on': data['submitted_on'].isoformat(),
-            'grade': str(data.get("grade", 0.0)),
+            'grade': str(data.grade),
             'replace': replace and not reloading  # Replace the evaluated submission
         }
 
@@ -327,7 +324,7 @@ class BaseTaskPage(object):
             tojson["problems"] = data["problems"]
 
         if debug:
-            tojson["debug"] = self._cut_long_chains(data)
+            tojson["debug"] = self._cut_long_chains(data.to_mongo())
 
         if tojson['status'] == 'waiting':
             tojson["title"] = _("<b>Your submission has been sent...</b>")
@@ -345,17 +342,17 @@ class BaseTaskPage(object):
             tojson["title"] = _("An internal error occurred. Please retry later. "
                                 "If the error persists, send an email to the course administrator.")
 
-        tojson["title"] += " " + _("[Submission #{submissionid} - <b><time datetime='{submissionDate}'>{submissionDate}</time></b>]").format(submissionid=data["_id"], submissionDate=data["submitted_on"].isoformat())
+        tojson["title"] += " " + _("[Submission #{submissionid} - <b><time datetime='{submissionDate}'>{submissionDate}</time></b>]").format(submissionid=data.id, submissionDate=data.submitted_on.isoformat())
         tojson["title"] = plugin_manager.call_hook_recursive("feedback_title", task=task, submission=data, title=tojson["title"])["title"]
         
-        tojson["text"] = data.get("text", "")
+        tojson["text"] = data.text
         tojson["text"] = plugin_manager.call_hook_recursive("feedback_text", task=task, submission=data, text=tojson["text"])["text"]
 
         if reloading:
             # Set status='ok' because we are reloading an old submission.
             tojson["status"] = 'ok'
             # And also include input
-            tojson["input"] = data.get('input', {})
+            tojson["input"] = data.get_input()
 
         if "tests" in data:
             tojson["tests"] = {}

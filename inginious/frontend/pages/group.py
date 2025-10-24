@@ -70,7 +70,7 @@ class GroupPage(INGIniousAuthPage):
                 msg = _("You are not allowed to change group.")
 
         tasks = course.get_tasks()
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": courseid, "taskid": {"$in": list(tasks.keys())}})
+        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": courseid, "taskid__in": list(tasks.keys())})
         for submission in last_submissions:
             submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
 
