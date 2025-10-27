@@ -15,7 +15,6 @@ from abc import ABCMeta, abstractmethod
 from functools import reduce
 from natsort import natsorted
 from collections import OrderedDict, namedtuple
-import pymongo
 from binascii import hexlify
 import os
 import re
@@ -27,6 +26,7 @@ from mongoengine import Q
 from inginious.frontend.models.submission import Submission
 from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.models.user import User
+from inginious.frontend.models.group import Group
 
 
 class AuthInvalidInputException(Exception):
@@ -774,7 +774,7 @@ class UserManager:
 
         # Check for group
         is_group_task = course.get_task_dispenser().get_group_submission(task.get_id())
-        group = self._database.groups.find_one({"courseid": course.get_id(), "students": self.session_username()})
+        group = Group.objects(courseid=course.get_id(), students=self.session_username()).first()
         group_filter = 'groups' in checks and group if is_group_task else True
 
         # Check for tokens
@@ -806,8 +806,7 @@ class UserManager:
 
     def get_course_groups(self, course):
         """ Returns a list of the course groups"""
-        return natsorted(list(self._database.groups.find({"courseid": course.get_id()})),
-                         key=lambda x: x["description"])
+        return natsorted(list(Group.objects(courseid=course.get_id())), key=lambda x: x.description)
 
     def get_course_user_group(self, course, username=None):
         """ Returns the audience whose username belongs to
@@ -818,7 +817,7 @@ class UserManager:
         if username is None:
             username = self.session_username()
 
-        return self._database.groups.find_one({"courseid": course.get_id(), "students": username})
+        return Group.objects(courseid=course.get_id(), students=username).first()
 
     def course_register_user(self, course, username=None, password=None, force=False):
         """ Register a user to the course
@@ -868,15 +867,8 @@ class UserManager:
             {"courseid": course_id, "students": username},
             {"$pull": {"students": username}})
 
-        # Needed if user belongs to a group
-        self._database.groups.find_one_and_update(
-            {"courseid": course_id, "groups.students": username},
-            {"$pull": {"groups.$.students": username, "students": username}})
-
         # If user doesn't belong to a group, will ensure correct deletion
-        self._database.groups.find_one_and_update(
-            {"courseid": course_id, "students": username},
-            {"$pull": {"students": username}})
+        Group.objects(courseid=course_id, students=username).update(pull_students=username)
 
         self._database.courses.find_one_and_update({"_id": course_id}, {"$pull": {"students": username}})
 

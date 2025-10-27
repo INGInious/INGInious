@@ -24,6 +24,7 @@ from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.courses import Course
 from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models.group import Group
 
 
 class BaseTaskPage(object):
@@ -128,8 +129,7 @@ class BaseTaskPage(object):
 
             students = [self.user_manager.session_username()]
             if course.get_task_dispenser().get_group_submission(taskid) and not self.user_manager.has_admin_rights_on_course(course, username):
-                group = self.database.groups.find_one({"courseid": course.get_id(),
-                                                     "students": self.user_manager.session_username()})
+                group = Group.objects(courseid=course.get_id(),students=self.user_manager.session_username()).first()
                 if group is not None:
                     students = group["students"]
                 # we don't care for the other case, as the student won't be able to submit.
