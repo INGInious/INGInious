@@ -200,7 +200,7 @@ def get_app(config):
     lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager),
                             "1.3": LTIGradeManager(database, user_manager)}
 
-    submission_manager = WebAppSubmissionManager(client, user_manager, database, lti_score_publishers)
+    submission_manager = WebAppSubmissionManager(client, user_manager, lti_score_publishers)
 
     is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
