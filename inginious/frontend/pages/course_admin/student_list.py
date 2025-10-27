@@ -18,6 +18,7 @@ from inginious.frontend.models.submission import Submission
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 from inginious.frontend.models.user import User
+from inginious.frontend.models.group import Group
 
 
 class CourseStudentListPage(INGIniousAdminPage):
@@ -47,7 +48,7 @@ class CourseStudentListPage(INGIniousAdminPage):
 
         if "download_groups" in request.args:
             groups = [{"description": group["description"],
-                       "students": group["students"],
+                       "students": list(group["students"]),
                        "size": group["size"],
                        "audiences": [str(c) for c in group["audiences"]]} for group in
                       self.user_manager.get_course_groups(course)]
@@ -174,10 +175,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                     for audience in audiences:
                         audience["students"] = []
                         self.database.audiences.replace_one({"_id": audience["_id"]}, audience)
-                    groups = list(self.database.groups.find({"courseid": course.get_id()}))
-                    for group in groups:
-                        group["students"] = []
-                        self.database.groups.replace_one({"_id": group["_id"]}, group)
+                    Group.objects(courseid=course.get_id()).update(students=[])
                     self.database.courses.find_one_and_update({"_id": course.get_id()}, {"$set": {"students": []}})
                 else:
                     self.user_manager.course_unregister_user(course.get_id(), data["username"])
@@ -315,26 +313,20 @@ class CourseStudentListPage(INGIniousAdminPage):
 
             for classid in data["delete"]:
                 # Get the group
-                group = self.database.groups.find_one(
-                    {"_id": ObjectId(classid), "courseid": course.get_id()}) if ObjectId.is_valid(classid) else None
+                group = Group.objects(id=classid, courseid=course.get_id()).first()
 
                 if group is None:
                     msg["groups"] = ("group with id {} not found.").format(classid)
                     error["groups"] = True
                 else:
-                    self.database.groups.find_one_and_update({"courseid": course.get_id()},
-                                                             {"$push": {
-                                                                 "students": {"$each": group["students"]}
-                                                             }})
-
-                    self.database.groups.delete_one({"_id": ObjectId(classid)})
-                    msg["groups"] = _("Audience updated.")
+                    Group.objects(id=classid).delete()
+                    msg["groups"] = _("Groups updated.")
             active_tab = "tab_groups"
 
         if "upload_groups" in data or "groups" in data:
             try:
                 if "upload_groups" in data:
-                    self.database.groups.delete_many({"courseid": course.get_id()})
+                    Group.objects(courseid=course.get_id()).delete()
                     groups = custom_yaml.load(data["groupfile"].read())
                 else:
                     groups = json.loads(data["groups"])
@@ -370,13 +362,9 @@ class CourseStudentListPage(INGIniousAdminPage):
         student_list = self.user_manager.get_course_registered_users(course, False)
         users_info = self.user_manager.get_users_info(student_list)
 
-        groups_list = list(self.database.groups.aggregate([
-            {"$match": {"courseid": course.get_id()}},
+        groups_list = list(Group.objects(courseid=course.get_id()).aggregate([
             {"$unwind": "$students"},
-            {"$project": {
-                "group": "$_id",
-                "students": 1
-            }}
+            {"$project": {"group": "$_id", "students": 1}}
         ]))
         groups_list = {d["students"]: d["group"] for d in groups_list}
 
@@ -397,15 +385,8 @@ class CourseStudentListPage(INGIniousAdminPage):
             del new_data['_id']
             new_data["courseid"] = course.get_id()
 
-            # Insert the new group
-            result = self.database.groups.insert_one(new_data)
-
-            # Retrieve new group id
-            groupid = result.inserted_id
-            new_data['_id'] = result.inserted_id
-            group = new_data
-        else:
-            group = self.database.groups.find_one({"_id": ObjectId(groupid), "courseid": course.get_id()})
+            # Insert the new group and retrieve its id
+            groupid = Group(**new_data).save().id
 
         # Convert audience ids to ObjectId
         new_data["audiences"] = [ObjectId(s) for s in new_data["audiences"]]
@@ -419,19 +400,16 @@ class CourseStudentListPage(INGIniousAdminPage):
                     set(audience_students.get(student, [])).intersection(new_data["audiences"]))
                 if student in student_list and (student_allowed_in_group or not new_data["audiences"]):
                     # Remove user from the other group
-                    self.database.groups.find_one_and_update({"courseid": course.get_id(), "students": student},
-                                                             {"$pull": {"students": student}})
+                    Group.objects(courseid=course.get_id(), students=student).update(pull__students=student)
                     students.append(student)
                 else:
                     errored_students.append(student)
 
         new_data["students"] = students
 
-        group = self.database.groups.find_one_and_update(
-            {"_id": ObjectId(groupid)},
-            {"$set": {"description": new_data["description"], "audiences": new_data["audiences"],
-                      "size": new_data["size"],
-                      "students": students}}, return_document=ReturnDocument.AFTER)
+        group = Group.objects.get(id=groupid).modify(
+            description=new_data["description"], audiences=new_data["audiences"], size=new_data["size"],
+            students=students)
 
         return group, errored_students
 

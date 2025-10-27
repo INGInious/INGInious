@@ -22,21 +22,20 @@ from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.models.user import User
 from inginious.frontend.models.submission import Submission
+from inginious.frontend.models.group import Group
 
 
 class WebAppSubmissionManager:
     """ Manages submissions. Communicates with the database and the client. """
 
-    def __init__(self, client, user_manager, database, lti_score_publishers):
+    def __init__(self, client, user_manager, lti_score_publishers):
         """
         :type client: inginious.client.client.AbstractClient
         :type user_manager: inginious.frontend.user_manager.UserManager
-        :type database: pymongo.database.Database
         :return:
         """
         self._client = client
         self._user_manager = user_manager
-        self._database = database
         self._logger = logging.getLogger("inginious.webapp.submissions")
         self._lti_score_publishers = lti_score_publishers
 
@@ -108,7 +107,7 @@ class WebAppSubmissionManager:
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
         if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
-            group = self._database.groups.find_one({"courseid": course.get_id(), "students": username})
+            group = Group.objects.get(courseid=course.id, students=username)
             obj.update({"username": group["students"]})
         else:
             obj.update({"username": [username]})
@@ -124,7 +123,7 @@ class WebAppSubmissionManager:
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
             username = self._user_manager.session_username()
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
-                group = self._database.groups.find_one({"courseid": course.get_id(), "students": username})
+                group = Group.objects.get(courseid=course.id, students=username)
                 users = User.objects(username__in=group["students"])
                 inputdata["@username"] = ','.join(group["students"])
                 inputdata["@email"] = ','.join([user["email"] for user in users])

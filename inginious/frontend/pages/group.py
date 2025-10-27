@@ -12,7 +12,7 @@ from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
+from inginious.frontend.models.group import Group
 
 class GroupPage(INGIniousAuthPage):
     """ Group page """
@@ -35,18 +35,15 @@ class GroupPage(INGIniousAuthPage):
             return render_template("course_unavailable.html")
         elif "register_group" in data:
             if course.can_students_choose_group():
-
-                group = self.database.groups.find_one(
-                    {"courseid": course.get_id(), "students": username})
+                group = Group.objects(courseid=course.get_id(), students=username).first()
                 if group is not None:
-                    group["students"].remove(username)
-                    self.database.groups.replace_one({"courseid": course.get_id(), "students": username}, group)
+                    group.students.remove(username)
+                    group.save()
 
                 # Add student in the audience and unique group if group is not full
-                new_group = self.database.groups.find_one_and_update(
-                    {"_id": ObjectId(data["register_group"]),
-                     "$where": "this.students.length<this.size"},
-                    {"$push": {"students": username}})
+                new_group = Group.objects(
+                    id=data["register_group"], __raw__={"$where": "this.students.length<this.size"}
+                ).modify(push__students=username, new=True)
 
                 if new_group is None:
                     error = True
@@ -58,9 +55,10 @@ class GroupPage(INGIniousAuthPage):
                 msg = _("You are not allowed to change group.")
         elif "unregister_group" in data:
             if course.can_students_choose_group():
-                group = self.database.groups.find_one({"courseid": course.get_id(), "students": username})
+                group = Group.objects(courseid=course.get_id(), students=username).first()
                 if group is not None:
-                    self.database.groups.find_one_and_update({"_id": group["_id"]}, {"$pull": {"students": username}})
+                    group.students.remove(username)
+                    group.save()
                     self._logger.info("User %s unregistered from group %s/%s", username, courseid, group["description"])
                 else:
                     error = True
