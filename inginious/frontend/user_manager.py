@@ -28,6 +28,7 @@ from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.models.user import User
 from inginious.frontend.models.group import Group
 from inginious.frontend.models.audience import Audience
+from inginious.frontend.models.course_class import CourseClass
 
 class AuthInvalidInputException(Exception):
     pass
@@ -555,8 +556,8 @@ class UserManager:
         else:
             Submission.objects(username=username).delete()
             UserTask.objects(username=username).delete()
-            user_courses = self._database.courses.find({"students": username})
-            for elem in user_courses: self.course_unregister_user(elem['_id'], username)
+            user_courses = CourseClass.objects(students=username)
+            for elem in user_courses: self.course_unregister_user(elem.id, username)
         return True
 
     def create_user(self, values):
@@ -846,8 +847,7 @@ class UserManager:
         if self.course_is_user_registered(course, username):
             return False  # already registered?
 
-        self._database.courses.find_one_and_update({"_id": course.get_id()}, {"$push": {"students": username}},
-                                                   upsert=True)
+        CourseClass.objects(id=course.get_id()).update(push__students=username, upsert=True)
 
         self._logger.info("User %s registered to course %s", username, course.get_id())
         return True
@@ -867,7 +867,7 @@ class UserManager:
         # If user doesn't belong to a group, will ensure correct deletion
         Group.objects(courseid=course_id, students=username).update(pull_students=username)
 
-        self._database.courses.find_one_and_update({"_id": course_id}, {"$pull": {"students": username}})
+        CourseClass.objects(id=course_id).update(pull__students=username)
 
         self._logger.info("User %s unregistered from course %s", username, course_id)
 
@@ -935,7 +935,7 @@ class UserManager:
         if self.has_staff_rights_on_course(course, username):
             return True
 
-        return self._database.courses.find_one({"students": username, "_id": course.get_id()}) is not None
+        return CourseClass.objects(id=course.get_id(), students=username).first() is not None
 
     def get_course_registered_users(self, course, with_admins=True):
         """
@@ -945,13 +945,12 @@ class UserManager:
         :return: a list of usernames that are registered to the course
         """
 
-        course_obj = self._database.courses.find_one({"_id": course.get_id()})
-        l = course_obj["students"] if course_obj else []
-
+        course_class = CourseClass.objects(id=course.get_id()).first()
+        students = course_class.students if course_class else []
         if with_admins:
-            return list(set(l + course.get_staff()))
+            return list(set(students + course.get_staff()))
         else:
-            return l
+            return students
 
     ##############################################
     #             Rights management              #

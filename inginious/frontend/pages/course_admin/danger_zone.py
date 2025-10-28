@@ -18,6 +18,7 @@ from inginious.frontend.user_manager import UserManager
 from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
 from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.models.group import Group
+from inginious.frontend.models.course_class import CourseClass
 
 
 class CourseDangerZonePage(INGIniousAdminPage):
@@ -29,7 +30,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             submission.input.delete()
             submission.archive.delete()
 
-        self.database.courses.update_one({"_id": courseid}, {"$set": {"students": []}})
+        CourseClass.objects(id=courseid).update(students=[])
         Audience.objects(courseid=courseid).delete()
         Group.objects(courseid=courseid).delete()
         UserTask.objects(courseid=courseid).delete()
@@ -68,11 +69,10 @@ class CourseDangerZonePage(INGIniousAdminPage):
         UserTask.objects(courseid=courseid).update(set__courseid=archive_course_id)
         Group.objects(courseid=courseid).update(set__courseid=archive_course_id)
         Audience.objects(courseid=courseid).update(set__courseid=archive_course_id)
-        old_course_students = self.database.courses.find_one_and_delete({"_id": courseid})
+        old_course_class = CourseClass.objects(id=courseid).modify(remove=True)
 
-        if old_course_students:
-            old_course_students["_id"] = archive_course_id
-            self.database.courses.insert_one(old_course_students)
+        if old_course_class:
+            CourseClass(id=archive_course_id, students=old_course_class.students).save()
 
         self._logger.info("Course %s archived as %s.", courseid, archive_course_id)
         return courseid, archive_course_id
