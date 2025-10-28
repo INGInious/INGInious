@@ -11,6 +11,7 @@ from flask import request, redirect, Response, render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.models.submission import Submission
+from inginious.frontend.models.audience import Audience
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
@@ -29,7 +30,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             submission.archive.delete()
 
         self.database.courses.update_one({"_id": courseid}, {"$set": {"students": []}})
-        self.database.audiences.delete_many({"courseid": courseid})
+        Audience.objects(courseid=courseid).delete()
         Group.objects(courseid=courseid).delete()
         UserTask.objects(courseid=courseid).delete()
         Submission.objects(courseid=courseid).delete()
@@ -66,7 +67,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         Submission.objects(courseid=courseid).update(set__courseid=archive_course_id)
         UserTask.objects(courseid=courseid).update(set__courseid=archive_course_id)
         Group.objects(courseid=courseid).update(set__courseid=archive_course_id)
-        self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
+        Audience.objects(courseid=courseid).update(set__courseid=archive_course_id)
         old_course_students = self.database.courses.find_one_and_delete({"_id": courseid})
 
         if old_course_students:
