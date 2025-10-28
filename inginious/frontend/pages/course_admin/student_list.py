@@ -20,6 +20,7 @@ from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 from inginious.frontend.models.user import User
 from inginious.frontend.models.group import Group
+from inginious.frontend.models.course_class import CourseClass
 
 
 class CourseStudentListPage(INGIniousAdminPage):
@@ -169,7 +170,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                 if data["type"] == "all":
                     Audience.objects(courseid=course.get_id()).update(students=[])
                     Group.objects(courseid=course.get_id()).update(students=[])
-                    self.database.courses.find_one_and_update({"_id": course.get_id()}, {"$set": {"students": []}})
+                    CourseClass.objects(id=course.get_id()).update(students=[])
                 else:
                     self.user_manager.course_unregister_user(course.get_id(), data["username"])
             except:
@@ -258,10 +259,7 @@ class CourseStudentListPage(INGIniousAdminPage):
 
                     # update list of students and tutors of the course.
                     new_students = list(set(stud_list).union(set(course_students)))
-                    new_tutors = list(set(course.get_tutors()).union(set(course_tutors)))
-
-                    self.database.courses.update_one({"_id": courseid}, {"$set": {"students": new_students,
-                                                                                  "tutors": new_tutors}})
+                    CourseClass.objects(id=courseid).update(students=new_students)
 
                     # this is done to avoid removing the audience id and impact the group audience filter.
                     for audience in audiences:
