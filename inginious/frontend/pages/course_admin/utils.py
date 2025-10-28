@@ -19,6 +19,7 @@ from inginious.common.base import id_checker
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models.audience import Audience
 
 
 class INGIniousAdminPage(INGIniousAuthPage):
@@ -200,7 +201,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
         elif only_audiences:
             list_audience_id = [ObjectId(o) for o in only_audiences]
             students = set()
-            for audience in self.database.audiences.find({"_id": {"$in": list_audience_id}}):
+            for audience in Audience.objects(id__in=list_audience_id):
                 students.update(audience["students"])
             if only_users:  # do the intersection
                 self._validate_list(only_users)

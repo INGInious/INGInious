@@ -71,7 +71,7 @@
 </div>
 
 <form method="post" id="audience_form" class="form-horizontal">
-    <input type="hidden" id="_id" name="_id" value="{{audience['_id']}}" />
+    <input type="hidden" id="_id" name="_id" value="{{audience.id}}" />
 
     <div class="card mb-3">
         <div class="card-header">
@@ -86,7 +86,7 @@
                             <input type="text" class="form-control" id="description" name="description" placeholder="{{ _('Audience description') }}" value="{{ audience['description'] }}">
                         </div>
                         <div class="col-xs-12 col-md-4">
-                            <button name="delete" onclick="javascript:audience_delete('{{ audience._id }}')" class="form-control btn btn-block btn-danger"><span class="fa fa-trash"></span> {{ _("Delete audience") }}</button>
+                            <button name="delete" value="{{audience.id}}" type="submit" class="form-control btn btn-block btn-danger"><span class="fa fa-trash"></span> {{ _("Delete audience") }}</button>
                         </div>
                     </div>
                 </div>
@@ -143,7 +143,6 @@
                     <i class="fa fa-plus"></i>
                 </a>
             </div>
-            <input id="size" type="hidden" class="form-control" value="0">
             <ul id="group_0" class="students list-group list-group-flush">
                 {% for username in audience["students"] %}
                     {% if username in users_info %}

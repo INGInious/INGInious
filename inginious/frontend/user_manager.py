@@ -27,7 +27,7 @@ from inginious.frontend.models.submission import Submission
 from inginious.frontend.models.user_task import UserTask
 from inginious.frontend.models.user import User
 from inginious.frontend.models.group import Group
-
+from inginious.frontend.models.audience import Audience
 
 class AuthInvalidInputException(Exception):
     pass
@@ -790,8 +790,7 @@ class UserManager:
 
     def get_course_audiences(self, course):
         """ Returns a list of the course audiences"""
-        return natsorted(list(self._database.audiences.find({"courseid": course.get_id()})),
-                         key=lambda x: x["description"])
+        return natsorted(list(Audience.objects(courseid=course.get_id())), key=lambda x: x["description"])
 
     def get_course_audiences_per_student(self, course):
         """ Returns a dictionnary mapping student -> list of audiences it belongs to, for a given course """
@@ -863,9 +862,7 @@ class UserManager:
             username = self.session_username()
 
         # If user doesn't belong to a group, will ensure correct deletion
-        self._database.audiences.find_one_and_update(
-            {"courseid": course_id, "students": username},
-            {"$pull": {"students": username}})
+        Audience.objects(courseid=course_id, students=username).update(pull__students=username)
 
         # If user doesn't belong to a group, will ensure correct deletion
         Group.objects(courseid=course_id, students=username).update(pull_students=username)
