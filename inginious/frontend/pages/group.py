@@ -9,10 +9,11 @@ import logging
 
 from flask import request, render_template
 from werkzeug.exceptions import Forbidden
-from bson.objectid import ObjectId
+
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models.group import Group
+from inginious.frontend.models.audience import Audience
 
 class GroupPage(INGIniousAuthPage):
     """ Group page """
@@ -73,7 +74,7 @@ class GroupPage(INGIniousAuthPage):
             submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
 
         user_group = self.user_manager.get_course_user_group(course)
-        user_audiences = [audience["_id"] for audience in self.database.audiences.find({"courseid": courseid, "students": username})]
+        user_audiences = [audience.id for audience in Audience.objects(courseid=courseid, students=username)]
         groups = self.user_manager.get_course_groups(course)
 
         student_allowed_in_group = lambda group: any(set(user_audiences).intersection(group["audiences"])) or not group["audiences"]

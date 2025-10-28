@@ -13,6 +13,7 @@ from bson.objectid import ObjectId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.models.user import User
+from inginious.frontend.models.audience import Audience
 
 
 class CourseEditAudience(INGIniousAdminPage):
@@ -24,8 +25,7 @@ class CourseEditAudience(INGIniousAdminPage):
         student_list = self.user_manager.get_course_registered_users(course, False)
         users_info = self.user_manager.get_users_info(student_list + tutor_list)
 
-        audiences_list = list(self.database.audiences.aggregate([
-            {"$match": {"courseid": course.get_id()}},
+        audiences_list = list(Audience.objects(courseid=course.get_id()).aggregate([
             {"$unwind": "$students"},
             {"$project": {
                 "audience": "$_id",
@@ -44,7 +44,7 @@ class CourseEditAudience(INGIniousAdminPage):
             return student_list, tutor_list, users_info
 
     def display_page(self, course, audienceid, msg='', error=False):
-        audience = self.database.audiences.find_one({"_id": ObjectId(audienceid), "courseid": course.get_id()})
+        audience = Audience.objects(id=audienceid).first()
         if not audience:
             raise NotFound(description=_("This audience doesn't exist."))
 
@@ -73,18 +73,13 @@ class CourseEditAudience(INGIniousAdminPage):
 
             for classid in data["delete"]:
                 # Get the audience
-                audience = self.database.audiences.find_one({"_id": ObjectId(classid), "courseid": courseid}) if ObjectId.is_valid(classid) else None
+                audience = Audience.objects(id=classid).first()
 
                 if audience is None:
                     msg = _("Audience with id {} not found.").format(classid)
                     error = True
                 else:
-                    self.database.audiences.find_one_and_update({"courseid": courseid},
-                                                                 {"$push": {
-                                                                     "students": {"$each": audience["students"]}
-                                                                 }})
-
-                    self.database.audiences.delete_one({"_id": ObjectId(classid)})
+                    audience.delete()
                     msg = _("Audience updated.")
 
             if audienceid and audienceid in data["delete"]:
@@ -101,12 +96,12 @@ class CourseEditAudience(INGIniousAdminPage):
                     return self.display_page(course, audienceid, msg, error)
                 elif username not in student_list:
                     self.user_manager.course_register_user(course, username, force=True)
-            self.database.audiences.update_one(
-                {"_id": ObjectId(audiences_dict[0]["_id"])},
-                {"$set": {"students": audiences_dict[0]["students"],
-                          "tutors": audiences_dict[0]["tutors"],
-                          "description": str(audiences_dict[0]["description"])}}) \
-                if ObjectId.is_valid(audiences_dict[0]["_id"]) else None
+
+            Audience.objects(id=audiences_dict[0]["_id"]).update(
+                students=audiences_dict[0]["students"],
+                tutors=audiences_dict[0]["tutors"],
+                description=str(audiences_dict[0]["description"])
+            )
             msg = _("Audience updated.")
 
         # Display the page
