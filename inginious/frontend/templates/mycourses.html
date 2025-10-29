@@ -77,8 +77,8 @@
                     </div>
                 </div>
             {% endfor %}
-            <div class="alert alert-primary" id="no_pin_message" {%if pinned_courses%} hidden {%endif%}>{{ _("You have no pinned courses. Go to the full course list to pin some.") }}</div>
         </div>
+        <div class="alert alert-primary {%if pinned_courses%} d-none {%endif%}" id="no_pin_message" >{{ _("You have no pinned courses. Go to the full course list to pin some.") }}</div>
 
             <h2>{{ _("My courses") }}</h2>
             <div class="pin_alert alert alert-danger" role="alert" hidden>
@@ -239,7 +239,8 @@
                     }
 
                     if( $(document).find(".course_card").length > 0) {
-                        $(document).find("#no_pin_message").hide();
+                        //$(document).find("#no_pin_message").hide();
+                        $(document).find("#no_pin_message").addClass("d-none");
                     }
                     $(document).find('.course_item[data-course-id="' + courseid + '"]').data("temporary_pin_value", "true");
 
@@ -250,7 +251,8 @@
                     $(document).find('.course_item[data-course-id="' + courseid + '"]').data("temporary_pin_value", "false");
 
                     if( $(document).find(".course_card").length < 1) {
-                        $(document).find("#no_pin_message").show(); // not working
+                        //$(document).find("#no_pin_message").show(); // not working
+                        $(document).find("#no_pin_message").removeClass("d-none");
                     }
                 }
             },
