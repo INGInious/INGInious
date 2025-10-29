@@ -5,7 +5,7 @@
 {% block title %}{{ _("My courses") }}{% endblock %}
 
 {% block navbar %}
-    <nav aria-label="breadcrumb">
+<nav aria-label="breadcrumb" xmlns="http://www.w3.org/1999/html">
         <ol class="breadcrumb">
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-th-list"></i> {{ _("My courses") }}
                 <span class="sr-only">{{ _("(current)") }}</span></a>
@@ -52,41 +52,30 @@
 
 {% block content %}
     <h2>{{ _("My pinned courses") }}</h2>
-        <div class="card-deck m-0" id="pinned_list">
+        <div class="row row-cols-1 row-cols-md-2" id="pinned_list">
             {% for courseid, course in pinned_courses.items() %}
-                <div class="card m-2" id="pinned-{{courseid}}">
-                    <div class="card-body course_card">
-                        <h5 class="card-title">
-                            {% if course.is_lti() %}
-                                {% if course.lti_url() %}
-                                <a target="_blank" href="{{ course.lti_url() }}">
-                                    {% endif %}
-                                    {{course.get_name(user_manager.session_language())}}
+                <div class="col mb-4" id="pinned-{{courseid}}">
+                    <div class="card m-2">
+                        <div class="card-body course_card">
+                            <h5 class="card-title">
+                                {% if course.is_lti() %}
                                     {% if course.lti_url() %}
-                                </a>
+                                    <a target="_blank" href="{{ course.lti_url() }}">
+                                        {% endif %}
+                                        {{course.get_name(user_manager.session_language())}}
+                                        {% if course.lti_url() %}
+                                    </a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
                                 {% endif %}
-                            {% else %}
-                                <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
-                            {% endif %}
-                        </h5>
-                        <div class="card-text card-trunc">
-                            {{ course.get_description(user_manager.session_language()) | safe }}
+                            </h5>
+                            <div class="card-text card-trunc">
+                                {{ course.get_description(user_manager.session_language()) | safe }}
+                            </div>
                         </div>
                     </div>
                 </div>
-            {# Resizing logic #}
-                {% if loop.index % 2 == 0 %}
-                    <div class="w-100 d-none d-sm-block d-md-none"><!-- wrap every 2 on sm--></div>
-                {% endif %}
-                {% if loop.index % 3 == 0 %}
-                    <div class="w-100 d-none d-md-block d-lg-none"><!-- wrap every 3 on md--></div>
-                {% endif %}
-                {% if loop.index % 4 == 0 %}
-                    <div class="w-100 d-none d-lg-block d-xl-none"><!-- wrap every 4 on lg--></div>
-                {% endif %}
-                {% if loop.index % 5 == 0 %}
-                    <div class="w-100 d-none d-xl-block"><!-- wrap every 5 on xl--></div>
-                {% endif %}
             {% endfor %}
             <div class="alert alert-primary" id="no_pin_message" {%if pinned_courses%} hidden {%endif%}>{{ _("You have no pinned courses. Go to the full course list to pin some.") }}</div>
         </div>
@@ -95,6 +84,10 @@
             <div class="pin_alert alert alert-danger" role="alert" hidden>
                 {{ _("Something went wrong when pinning/unpinning your course. If the issue persists please contact an administrator.") }}
             </div>
+            <div class="max_pin_alert alert alert-danger d-none" role="alert" >
+                {{ _("You are not allowed to have more than 6 pinned courses.") }}
+            </div>
+
             <div class="form-group">
                 <input class="form-control" id="course_search" type="text" placeholder="Search a course by its name">
             </div>
@@ -119,19 +112,20 @@
                             {% elif not course.is_open_to_non_staff() %}
                                 list-group-item-warning
                             {% endif %}">
-                            <div class="row">
+                            <div class="row align-items-center">
                                 <div class="course_name col-xs-12 col-md-8">
+                                    {% if courseid in pinned_courses %}
+                                        <button type="button" class="btn course_pin " data-course-id="{{courseid}}">
+                                            <i class="fa fa-star text-warning"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn course_pin" data-course-id="{{courseid}}">
+                                            <i class="fa fa-star-o "></i>
+                                        </button>
+                                    {% endif %}
                                     {{ course.get_name(user_manager.session_language()) }}
                                 </div>
-                                <div class="col-xs-12 col-md-1">
-                                    <div class="btn-group-toggle" data-toggle="buttons">
-                                        <label class="btn btn-outline-warning active" >
-                                            <input type="checkbox" class="course_pin" name="course_pinning" data-courseid="{{courseid}}" {% if courseid in pinned_courses %}checked{% endif %}>
-                                            <i class="fa fa-thumb-tack fa-fw"></i>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-xs-12 col-md-3">
+                                <div class="col-xs-12 col-md-4">
                                     <i class="pull-right">
                                         {% if course.is_lti() %}
                                             {{ _("LTI course") }} -
@@ -183,21 +177,38 @@
 
 
 <script>
-    $(document).on('change', '.course_pin', function() {
-        var checkbox = $(this);
+    $(document).on('click', '.course_pin', function(event) {
+        event.preventDefault(); // prevent redirect by <a> tag
+
+        var click_button = $(this);
         $.ajax({
             type: "POST",
             url: "/mycourses",
-            data: "pinning_courseid=" + $(this).data("courseid"),
+            data: "pinning_courseid=" + click_button.data("course-id"),
             success: function(data) {
-                var courseid = checkbox.data("courseid");
-                if (checkbox.is(':checked')) {
-                    // pinned
+                if (!data || data.error) {
+                    $(".max_pin_alert")
+                        .removeClass("d-none")      // make it visible
+                        .fadeIn(0)                  // ensure jQuery knows it's visible -> needed
+                        .delay(3000)
+                        .fadeOut(300, function() {
+                            $(this).addClass("d-none"); // hide it again after animation
+                      });
+
+                     return;
+                }
+
+                var courseid = click_button.data("course-id");
+
+                if (click_button.find("i").hasClass("fa-star-o")) { // pinning
+                    click_button.find("i").removeClass("fa-star-o").addClass("fa-star text-warning");
                     if(data["is_lti"]) {
                         if(data["lti_url"] == null) {
 
                         } else {
-                            $(document).find("#pinned_list").append(`<div class="card m-2" id="pinned-`+ courseid +`">
+                            $(document).find("#pinned_list").append(`
+                                <div class="col mb-4" id="pinned-`+ courseid +`">
+                                    <div class="card m-2">
                                         <div class="card-body course_card">
                                             <h5 class="card-title">
                                             <a target="_blank" href=`+data["lti_url"]+`>
@@ -208,19 +219,23 @@
                                                 `+data["description"]+`
                                             </div>
                                         </div>
-                                    </div>`);
+                                    </div>
+                                </div>`);
                         }
                     } else {
-                        $(document).find("#pinned_list").append(`<div class="card m-2" id="pinned-`+ courseid +`">
+                        $(document).find("#pinned_list").append(`
+                            <div class="col mb-4" id="pinned-`+ courseid +`">
+                                <div class="card m-2">
                                     <div class="card-body course_card">
                                         <h5 class="card-title">
                                         <a href=`+data["path"]+`>`+data["name"]+`</a>
                                         </h5>
                                         <div class="card-text card-trunc">
-                                            `+data["description"]+`
+                                                `+data["description"]+`
                                         </div>
                                     </div>
-                                </div>`);
+                                </div>
+                            </div>`);
                     }
 
                     if( $(document).find(".course_card").length > 0) {
@@ -228,8 +243,9 @@
                     }
                     $(document).find('.course_item[data-course-id="' + courseid + '"]').data("temporary_pin_value", "true");
 
-                } else {
-                    // unpin
+                } else { // unpinning
+                    click_button.find("i").removeClass("fa-star text-warning").addClass("fa-star-o");
+
                     $(document).find("#pinned-" + courseid).remove();
                     $(document).find('.course_item[data-course-id="' + courseid + '"]').data("temporary_pin_value", "false");
 
@@ -239,7 +255,7 @@
                 }
             },
             error: function(data) {
-                 $(".pin_alert").removeAttr("hidden");
+                 $(".pin_alert").removeAttr("hidden").delay(3000).fadeOut(300);
             }
         });
     });
