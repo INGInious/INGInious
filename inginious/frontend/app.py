@@ -107,7 +107,7 @@ def get_path(*path_parts):
     """
     :param path_parts: List of elements in the path to be separated by slashes
     """
-    lti_session_id = flask.request.args.get('session_id', flask.g.get('lti_session_id'))
+    lti_session_id = flask.session.id if flask.session.is_lti else None
     path_parts = (get_homepath(), ) + path_parts
     if lti_session_id:
         query_delimiter = '&' if path_parts and '?' in path_parts[-1] else '?'
@@ -156,12 +156,9 @@ def get_app(config):
     flask_app = flask.Flask(__name__)
 
     flask_app.config.from_mapping(**config)
-    flask_app.session_interface = MongoDBSessionInterface(
-        mongo_client, config.get('mongo_opt', {}).get('database', 'INGInious'),
-        "sessions", config.get('SESSION_USE_SIGNER', False), True  # config.get('SESSION_PERMANENT', True)
-    )
 
-    flask.request_finished.connect(UserManager._lti_session_save, flask_app)
+    # config.get('SESSION_PERMANENT', True)
+    flask_app.session_interface = MongoDBSessionInterface(config.get('SESSION_USE_SIGNER', False), True)
 
     # available indentation types
     available_indentation_types = {

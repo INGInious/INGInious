@@ -41,7 +41,7 @@ class BindingsPage(INGIniousAuthPage):
             auth_id = user_input["revoke_auth_binding"]
             error, msg = self.user_manager.revoke_binding(self.user_manager.session_username(), auth_id)
 
-        bindings = user_data.get("bindings", {})
+        bindings = user_data.bindings
 
         return render_template("preferences/bindings.html", bindings=bindings,
                                            auth_methods=auth_methods, msg=msg, error=error)
