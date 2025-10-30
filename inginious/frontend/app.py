@@ -190,7 +190,7 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    user_manager = UserManager(database, config.get('superadmins', []))
+    user_manager = UserManager(config.get('superadmins', []))
 
     client = create_arch(config, zmq_context)
 
