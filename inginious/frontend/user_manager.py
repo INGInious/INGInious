@@ -10,6 +10,7 @@ import flask
 import tzlocal
 from typing import Dict, Optional
 
+from bson import ObjectId
 from werkzeug.exceptions import NotFound
 from abc import ABCMeta, abstractmethod
 from functools import reduce
@@ -29,6 +30,7 @@ from inginious.frontend.models.user import User
 from inginious.frontend.models.group import Group
 from inginious.frontend.models.audience import Audience
 from inginious.frontend.models.course_class import CourseClass
+from inginious.frontend.models.session import Session
 
 class AuthInvalidInputException(Exception):
     pass
@@ -88,7 +90,7 @@ class UserManager:
         :type superadmins: list(str)
         :param superadmins: list of the super-administrators' usernames
         """
-        self._flask_session = flask.session
+        self._session = flask.session
         self._database = database
         self._superadmins = superadmins
         self._auth_methods = OrderedDict()
@@ -116,37 +118,11 @@ class UserManager:
 
     def session_is_lti(self) -> bool:
         """ Returns whether the current request comes from an LTI session. """
-        return 'session_id' in flask.request.args or 'lti_session_id' in flask.g or isinstance(flask.session, NullSession)
-
-    @property
-    def _lti_session(self):
-        """ Returns the LTI session dict. """
-        assert self.session_is_lti()
-        if 'lti_session' not in flask.g:
-            if 'session_id' in flask.request.args:
-                flask.g.lti_session = self._database.lti_sessions.find_one(
-                    {'session_id': flask.request.args['session_id']})
-        if 'lti_session' not in flask.g or not flask.g.lti_session:
-            flask.g.lti_session = {}
-        return flask.g.lti_session
-
-    @staticmethod
-    def _lti_session_save(app, response):
-        """ Saves in database the LTI session. This function is a Flask event receiver. """
-        if app.user_manager.session_is_lti():
-            lti_session_id = flask.request.args.get('session_id', flask.g.get('lti_session_id'))
-            app.user_manager._database.lti_sessions.find_one_and_update({'session_id': lti_session_id},
-                                                                        {'$set': flask.g.lti_session}, upsert=True)
-        # TODO(mp): Find whether the session should be dropped instead?
-
-    @property
-    def _session(self):
-        """ Returns the session. """
-        return self._flask_session if not self.session_is_lti() else self._lti_session
+        return self._session.is_lti
 
     def session_logged_in(self):
         """ Returns True if a user is currently connected in this session, False else """
-        return "loggedin" in self._session and self._session["loggedin"] is True
+        return self._session.loggedin
 
     def session_username(self):
         """ Returns the username from the session, if one is open. Else, returns None"""
@@ -206,19 +182,19 @@ class UserManager:
 
     def session_auth_storage(self):
         """ Returns the oauth state for login """
-        return self._session.setdefault("auth_storage", {})
+        return self._session.auth_storage
 
     def session_language(self, default="en"):
         """ Returns the current session language """
-        return self._session.get("language", default)
+        return self._session.language
 
     def session_timezone(self):
         """ Returns the current session timezone """
-        return self._session.get("timezone", tzlocal.get_localzone_name())
+        return self._session.timezone
 
     def session_code_indentation(self):
         """ Returns the current session code indentation """
-        return self._session.get("code_indentation", "4")
+        return self._session.code_indentation
 
     def session_api_key(self):
         """ Returns the API key for the current user. Created on first demand. """
@@ -267,26 +243,12 @@ class UserManager:
         self._session["tos_signed"] = user.tos_accepted
         self._session["token"] = None
 
-    def _destroy_session(self):
-        """ Destroy the session """
-        self._session["loggedin"] = False
-        self._session["email"] = None
-        self._session["username"] = None
-        self._session["realname"] = None
-        self._session["code_indentation"] = "4"
-        self._session["token"] = None
-        self._session["lti"] = None
-        self._session["tos_signed"] = False
 
     def create_lti_session(self, session_id, session_dict):
         """ Creates an LTI session. Returns the new session id"""
-
-        self._session.clear()
-        flask.g.lti_session_id = session_id
-        flask.g.lti_session = {}
-
-        self._session["lti"] = session_dict
-
+        self._session.loggedin = False
+        for key, item in session_dict.items():
+            self._session.lti[key] = item
         return session_id
 
     def attempt_lti_login(self):
@@ -401,7 +363,8 @@ class UserManager:
             ip = flask.request.remote_addr
             self._logger.info("User %s disconnected - %s - %s - %s", self.session_username(), self.session_realname(),
                               self.session_email(), ip)
-        self._session.clear()
+
+        self._session.loggedin = False
 
     def get_users_info(self, usernames, limit=0, skip=0) -> Dict[str, Optional[UserInfo]]:
         """

@@ -13,6 +13,7 @@ from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.pages.tasks import BaseTaskPage
 
 from inginious.frontend.models.user import User
+from inginious.frontend.models.session import Session
 
 class LTITaskPage(INGIniousAuthPage):
     def is_lti_page(self):
@@ -56,11 +57,11 @@ class LTIBindPage(INGIniousAuthPage):
         return False
 
     def _get_lti_session_data(self):
-        data = self.database.lti_sessions.find_one({'session_id': request.args['lti_session_id']}) if 'lti_session_id' in request.args else None
-        if data is None or data.get("lti", None) is None:
+        data = Session.objects(id=request.args['lti_session_id']).first() if 'lti_session_id' in request.args else None
+        if data is None:
             return None, render_template("lti/bind.html", success=False,
                                                      data=None, error=_("Invalid LTI session id"))
-        return data.get("lti"), None
+        return data.lti, None
 
     def GET_AUTH(self):
         data, error = self._get_lti_session_data()
