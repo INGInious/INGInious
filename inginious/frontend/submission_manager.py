@@ -262,8 +262,10 @@ class WebAppSubmissionManager:
         inputdata["@state"] = my_user_task.state
 
         # Send LTI information to the client except "consumer_key"
+        # to_dict() to avoid sending mongoengine BaseLists to ZMQ
         lti_info = self._user_manager.session_lti_info()
         if lti_info:
+            lti_info = lti_info.to_mongo().to_dict()
             for key in lti_info:
                 if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
                     continue
