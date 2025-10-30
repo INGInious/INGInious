@@ -84,14 +84,12 @@ UserInfo = namedtuple("UserInfo", ["realname", "email", "username", "bindings", 
 
 
 class UserManager:
-    def __init__(self, database, superadmins):
+    def __init__(self, superadmins):
         """
-        :type database: pymongo.database.Database
         :type superadmins: list(str)
         :param superadmins: list of the super-administrators' usernames
         """
         self._session = flask.session
-        self._database = database
         self._superadmins = superadmins
         self._auth_methods = OrderedDict()
         self._logger = logging.getLogger("inginious.webapp.users")

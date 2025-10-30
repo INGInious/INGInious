@@ -198,9 +198,6 @@ class INGIniousFilesystemProvider(DAVProvider):
 
 def get_app(config):
     """ Init the webdav app """
-    mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client[config.get('mongo_opt', {}).get('database', 'INGInious')]
-
     connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
     # Create the FS provider
@@ -208,7 +205,7 @@ def get_app(config):
         raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
 
     init_fs_provider(LocalFSProvider(config["tasks_directory"]))
-    user_manager = UserManager(database, config.get('superadmins', []))
+    user_manager = UserManager(config.get('superadmins', []))
 
     config = dict(wsgidav_app.DEFAULT_CONFIG)
     config["provider_mapping"] = {"/": INGIniousFilesystemProvider()}
