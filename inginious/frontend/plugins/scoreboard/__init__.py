@@ -14,7 +14,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.courses import Course
-from inginious.frontend.models.submission import Submission
+from inginious.frontend.models import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 

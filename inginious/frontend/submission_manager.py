@@ -10,19 +10,16 @@ import os.path
 import tarfile
 import tempfile
 import time
-from typing import Dict, List
-import pymongo
-
 import flask
-from datetime import datetime, timezone
 
-import inginious.common.custom_yaml
+from typing import Dict, List
+from datetime import datetime, timezone
+from pymongo.errors import DocumentTooLarge
+
+from inginious.common import custom_yaml
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.plugins import plugin_manager
-from inginious.frontend.models.user_task import UserTask
-from inginious.frontend.models.user import User
-from inginious.frontend.models.submission import Submission
-from inginious.frontend.models.group import Group
+from inginious.frontend.models import UserTask, User, Submission, Group
 
 
 class WebAppSubmissionManager:
@@ -81,7 +78,7 @@ class WebAppSubmissionManager:
             for username in submission["username"]:
                 self._user_manager.update_user_stats(username, course, task, submission, result[0], grade, state, newsub, task_dispenser)
         # Check for size as it also takes the MongoDB command into consideration
-        except pymongo.errors.DocumentTooLarge:
+        except DocumentTooLarge:
             update_query = {"status": "error", "text": _("Maximum submission size exceeded. Check feedback, stdout, stderr and state."), "grade": 0.0}
             update_query.update(unset_obj)
             submission = Submission.objects(id=submissionid).modify(**update_query, new=True)
@@ -549,7 +546,7 @@ class WebAppSubmissionManager:
         # each time. Not sure optimizing this is necessary.
         for base_path, submission in file_to_put.items():
             try:
-                submission_yaml = io.BytesIO(inginious.common.custom_yaml.dump(submission.to_mongo().to_dict()).encode('utf-8'))
+                submission_yaml = io.BytesIO(custom_yaml.dump(submission.to_mongo().to_dict()).encode('utf-8'))
                 submission_yaml_fname = base_path + '/submission.test'
 
                 # Avoid putting two times the same submission on the same place

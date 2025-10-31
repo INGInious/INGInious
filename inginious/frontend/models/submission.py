@@ -47,4 +47,13 @@ class Submission(Document):
     def set_input(self, value):
         self.input.put(bson.BSON.encode(value))
 
-    meta = {"collection": "submissions"}
+    meta = {
+        "collection": "submissions",
+        "indexes": [
+            "username",
+            "courseid",
+            ("courseid", "taskid"),
+            "-submitted_on",
+            "status"
+        ]
+    }

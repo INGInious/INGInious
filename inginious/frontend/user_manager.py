@@ -4,33 +4,24 @@
 # more information about the licensing of this file.
 
 """ Manages users data and session """
+import os
+import re
 import logging
 import hashlib
 import flask
-import tzlocal
-from typing import Dict, Optional
 
-from bson import ObjectId
+from typing import Dict, Optional
 from werkzeug.exceptions import NotFound
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from natsort import natsorted
 from collections import OrderedDict, namedtuple
 from binascii import hexlify
-import os
-import re
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from flask.sessions import NullSession
 from mongoengine import Q
 
-from inginious.frontend.models.submission import Submission
-from inginious.frontend.models.user_task import UserTask
-from inginious.frontend.models.user import User
-from inginious.frontend.models.group import Group
-from inginious.frontend.models.audience import Audience
-from inginious.frontend.models.course_class import CourseClass
-from inginious.frontend.models.session import Session
+from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission
 
 class AuthInvalidInputException(Exception):
     pass

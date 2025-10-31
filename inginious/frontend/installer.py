@@ -22,7 +22,7 @@ from mongoengine import connect
 from inginious import __version__
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.user_manager import UserManager
-from inginious.frontend.models.user import User
+from inginious.frontend.models import User
 
 HEADER = '\033[95m'
 INFO = '\033[94m'
