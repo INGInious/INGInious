@@ -131,4 +131,8 @@ class PluginManager(object):
         :param prefix: prefix the template folder is served from.
         :param folder: abolute path to the template folder.
         """
-        self._flask_app.jinja_loader.loaders[1].mapping[prefix] = FileSystemLoader(folder)
+        mapping = self._flask_app.jinja_loader.loaders[1].mapping
+        if prefix in mapping:
+            raise Exception("Template prefix already registered")
+
+        mapping[prefix] = FileSystemLoader(folder)
