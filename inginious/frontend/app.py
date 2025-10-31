@@ -194,8 +194,8 @@ def get_app(config):
 
     client = create_arch(config, zmq_context)
 
-    lti_score_publishers = {"1.1": LTIOutcomeManager(database, user_manager),
-                            "1.3": LTIGradeManager(database, user_manager)}
+    lti_score_publishers = {"1.1": LTIOutcomeManager(user_manager),
+                            "1.3": LTIGradeManager(user_manager)}
 
     submission_manager = WebAppSubmissionManager(client, user_manager, lti_score_publishers)
 
@@ -251,7 +251,6 @@ def get_app(config):
     flask_app.get_path = get_path
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
-    flask_app.database = database
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
