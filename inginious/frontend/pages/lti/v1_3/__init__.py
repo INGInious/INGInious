@@ -37,7 +37,7 @@ class LTI13JWKSPage(INGIniousPage):
 
 
 class LTI13OIDCLoginPage(INGIniousPage):
-    endpoint = 'ltioidcloginpage'
+    endpoint = 'lti13oidcloginpage'
 
     def _handle_oidc_login_request(self, courseid):
         """ Initiates the LTI 1.3 OIDC login. """
@@ -52,7 +52,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
             raise Exception('Missing "target_link_uri" param')
         taskid = target_link_uri.split('/')[-1]
 
-        launch_data_storage = MongoLTILaunchDataStorage(self.database, courseid, taskid)
+        launch_data_storage = MongoLTILaunchDataStorage(courseid, taskid)
         oidc_login = FlaskOIDCLogin(flask_request, course.lti_tool(), launch_data_storage=launch_data_storage)
         return oidc_login.enable_check_cookies().redirect(target_link_uri)
 
@@ -64,7 +64,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
 
 
 class LTI13LaunchPage(INGIniousPage):
-    endpoint = 'ltilaunchpage'
+    endpoint = 'lti13launchpage'
 
     def _handle_message_launch(self, courseid, taskid):
         """ Decrypt and process the LTI Launch message. """
@@ -74,7 +74,7 @@ class LTI13LaunchPage(INGIniousPage):
             raise NotFound(description=_(str(ex)))
 
         tool_conf = course.lti_tool()
-        launch_data_storage = MongoLTILaunchDataStorage(self.database, courseid, taskid)
+        launch_data_storage = MongoLTILaunchDataStorage(courseid, taskid)
         flask_request = FlaskRequest()
         message_launch = FlaskMessageLaunch(flask_request, tool_conf, launch_data_storage=launch_data_storage)
 

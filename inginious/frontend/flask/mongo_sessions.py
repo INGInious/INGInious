@@ -12,6 +12,7 @@ from itsdangerous import Signer, BadSignature
 from flask.sessions import SessionInterface
 from werkzeug.exceptions import HTTPException
 from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage
+from inginious.frontend.pages.lti.v1_3 import LTI13LaunchPage
 
 from inginious.frontend.models.session import Session
 
@@ -39,7 +40,7 @@ class MongoDBSessionInterface(SessionInterface):
         try:
             # request.url_rule is not set yet here.
             endpoint, _ = app.create_url_adapter(request).match()
-            if endpoint == LTI11LaunchPage.endpoint:
+            if endpoint in [LTI11LaunchPage.endpoint, LTI13LaunchPage.endpoint]:
                 return Session(permanent=self.permanent, is_lti=True)
         except HTTPException:
             pass # Could not determine endpoint, continue
