@@ -76,14 +76,6 @@ class Contest(TableOfContents):
         return self._contest_settings
 
 
-def additional_headers():
-    """ Additional HTML headers """
-    return '<link href="' + request.url_root \
-           + '/static/plugins/contests/scoreboard.css" rel="stylesheet">' \
-             '<script src="' + request.url_root + '/static/plugins/contests/jquery.countdown.min.js"></script>' \
-             '<script src="' + request.url_root + '/static/plugins/contests/contests.js"></script>'
-
-
 def course_menu(course):
     """ Displays some informations about the contest on the course page"""
     task_dispenser = course.get_task_dispenser()
@@ -279,7 +271,9 @@ def init(plugin_manager, course_factory, client, config):  # pylint: disable=unu
     plugin_manager.add_page('/contest/<courseid>', ContestScoreboard.as_view('contestscoreboard'))
     plugin_manager.add_page('/admin/<courseid>/contest', ContestAdmin.as_view('contestadmin'))
     plugin_manager.add_hook('course_admin_menu', add_admin_menu)
-    plugin_manager.add_hook('header_html', additional_headers)
+    plugin_manager.add_hook('css', lambda: '/static/plugins/contests/scoreboard.css')
+    plugin_manager.add_hook('javascript_header', lambda : '/static/plugins/contests/jquery.countdown.min.js')
+    plugin_manager.add_hook('javascript_header', lambda : '/static/plugins/contests/contests.js')
     plugin_manager.add_hook('course_menu', course_menu)
     plugin_manager.add_template_prefix("contests", PATH_TO_PLUGIN)
     course_factory.add_task_dispenser(Contest)
