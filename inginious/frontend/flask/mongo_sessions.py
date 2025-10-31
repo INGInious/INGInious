@@ -14,7 +14,7 @@ from werkzeug.exceptions import HTTPException
 from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage
 from inginious.frontend.pages.lti.v1_3 import LTI13LaunchPage
 
-from inginious.frontend.models.session import Session
+from inginious.frontend.models import Session
 
 
 class MongoDBSessionInterface(SessionInterface):

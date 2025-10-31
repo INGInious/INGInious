@@ -12,8 +12,7 @@ from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.models.group import Group
-from inginious.frontend.models.audience import Audience
+from inginious.frontend.models import Group, Audience
 
 class GroupPage(INGIniousAuthPage):
     """ Group page """

@@ -7,18 +7,13 @@ from datetime import datetime, timezone
 import logging
 import random
 
-from flask import request, redirect, Response, render_template
-from werkzeug.exceptions import NotFound
+from flask import request, redirect, render_template
 
-from inginious.frontend.models.submission import Submission
-from inginious.frontend.models.audience import Audience
+from inginious.frontend.models import Submission, Audience, UserTask, Group,  CourseClass
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
 from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
-from inginious.frontend.models.user_task import UserTask
-from inginious.frontend.models.group import Group
-from inginious.frontend.models.course_class import CourseClass
 
 
 class CourseDangerZonePage(INGIniousAdminPage):

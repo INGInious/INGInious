@@ -9,7 +9,7 @@ import flask
 from flask import redirect
 import datetime
 from oauthlib.oauth1 import RequestValidator
-from pymongo.errors import DuplicateKeyError
+from mongoengine.errors import NotUniqueError
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
 from bson import ObjectId
 from lti import ToolProvider
@@ -19,7 +19,7 @@ from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models.lti1_1 import Nonce
+from inginious.frontend.models import Nonce
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -80,7 +80,7 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
             return True
         except ValueError: # invalid timestamp
             return False
-        except DuplicateKeyError:
+        except NotUniqueError:
             return False
 
     def get_client_secret(self, client_key, request):

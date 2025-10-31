@@ -10,7 +10,7 @@ import zoneinfo
 from flask import request, render_template
 from werkzeug.exceptions import NotFound
 
-from inginious.frontend.models.user import User
+from inginious.frontend.models import User
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import UserManager
 

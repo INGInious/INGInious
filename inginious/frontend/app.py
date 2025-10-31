@@ -4,21 +4,16 @@
 # more information about the licensing of this file.
 
 """ Starts the webapp """
-import builtins
 import os
 import sys
 import flask
 import jinja2
-import pymongo
 import oauthlib
 
 from binascii import hexlify
-from pymongo import MongoClient
 from werkzeug.exceptions import InternalServerError
-from bson.codec_options import CodecOptions
-from mongoengine import connect
+from mongoengine import connect, disconnect
 
-import inginious.frontend.pages.preferences.utils as preferences_utils
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.plugins import plugin_manager
@@ -39,6 +34,7 @@ from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.flask.mapping import init_flask_mapping, init_flask_maintenance_mapping
 from inginious.frontend.flask.mongo_sessions import MongoDBSessionInterface
 from inginious.frontend.flask.mail import mail
+from inginious.frontend.models import DBVersion
 
 def _put_configuration_defaults(config):
     """
@@ -115,10 +111,10 @@ def get_path(*path_parts):
     return "/".join(path_parts)
 
 
-def _close_app(mongo_client, client):
+def _close_app(client):
     """ Ensures that the app is properly closed """
     client.close()
-    mongo_client.close()
+    disconnect()
 
 
 def get_app(config):
@@ -126,31 +122,14 @@ def get_app(config):
     :param config: the configuration dict
     :return: A new app
     """
-    # First, disable debug. It will be enabled in the configuration, later.
-
     config = _put_configuration_defaults(config)
-    mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client.get_database(config.get('database', 'INGInious'), codec_options=CodecOptions(tz_aware=True))
 
+    # Init database
     connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
-    # Init database if needed
-    db_version = database.db_version.find_one({})
-    if db_version is None:
-        database.submissions.create_index([("username", pymongo.ASCENDING)])
-        database.submissions.create_index([("courseid", pymongo.ASCENDING)])
-        database.submissions.create_index([("courseid", pymongo.ASCENDING), ("taskid", pymongo.ASCENDING)])
-        database.submissions.create_index([("submitted_on", pymongo.DESCENDING)])  # sort speed
-        database.submissions.create_index([("status", pymongo.ASCENDING)]) # update_pending_jobs speedup
-        database.user_tasks.create_index(
-            [("username", pymongo.ASCENDING), ("courseid", pymongo.ASCENDING), ("taskid", pymongo.ASCENDING)],
-            unique=True)
-        database.user_tasks.create_index([("username", pymongo.ASCENDING), ("courseid", pymongo.ASCENDING)])
-        database.user_tasks.create_index([("courseid", pymongo.ASCENDING), ("taskid", pymongo.ASCENDING)])
-        database.user_tasks.create_index([("courseid", pymongo.ASCENDING)])
-        database.user_tasks.create_index([("username", pymongo.ASCENDING)])
-        database.db_version.insert_one({"db_version": DB_VERSION})
-    elif db_version.get("db_version", 0) != DB_VERSION:
+    # Fetch or init DB version
+    db_version = DBVersion.objects(db_version__exists=True).first() or DBVersion().save()
+    if db_version.db_version != DB_VERSION:
         raise Exception("Please update the database before running INGInious")
 
     flask_app = flask.Flask(__name__)
@@ -273,9 +252,9 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, database, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, user_manager, submission_manager, config.get("plugins", []))
 
     # Start the inginious.backend
     client.start()
 
-    return flask_app.wsgi_app, lambda: _close_app(mongo_client, client)
+    return flask_app.wsgi_app, lambda: _close_app(client)

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from flask import request, send_from_directory, render_template
 
 from inginious.frontend.courses import Course
-from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models import UserTask
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))

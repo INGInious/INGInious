@@ -5,8 +5,7 @@
 
 import tzlocal
 
-from mongoengine import Document,  StringField
-from mongoengine.fields import ListField, MapField, BooleanField, DynamicField
+from mongoengine import Document,  StringField, ListField, MapField, BooleanField, DynamicField
 
 
 class User(Document):

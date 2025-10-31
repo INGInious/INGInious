@@ -12,8 +12,7 @@ from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.pages.tasks import BaseTaskPage
 
-from inginious.frontend.models.user import User
-from inginious.frontend.models.session import Session
+from inginious.frontend.models import User, Session
 
 class LTITaskPage(INGIniousAuthPage):
     def is_lti_page(self):

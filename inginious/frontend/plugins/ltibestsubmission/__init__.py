@@ -4,9 +4,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.courses import Course
-from inginious.frontend.models.user_task import UserTask
-from inginious.frontend.models.user import User
-from inginious.frontend.models.submission import Submission
+from inginious.frontend.models import UserTask,  User,  Submission
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):

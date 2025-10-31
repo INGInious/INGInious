@@ -10,7 +10,6 @@ import copy
 from collections import OrderedDict
 from datetime import datetime, timedelta
 
-import pymongo
 from flask import request, render_template
 
 from werkzeug.exceptions import NotFound
@@ -20,7 +19,7 @@ from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers import register_task_dispenser
-from inginious.frontend.models.submission import Submission
+from inginious.frontend.models import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 

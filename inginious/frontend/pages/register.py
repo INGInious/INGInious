@@ -18,7 +18,7 @@ from mongoengine import Q
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.flask.mail import mail
 from inginious.frontend.user_manager import UserManager
-from inginious.frontend.models.user import User
+from inginious.frontend.models import User
 
 
 class RegistrationPage(INGIniousPage):

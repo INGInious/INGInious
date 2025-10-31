@@ -4,13 +4,11 @@
 # more information about the licensing of this file.
 import json
 import logging
-import pymongo
-from bson import ObjectId
 from flask import request, Response, render_template
 from werkzeug.exceptions import NotFound, Forbidden
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
-from inginious.frontend.models.submission import Submission
+from inginious.frontend.models import Submission
 
 class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
     """ Page that allow search, view, replay an download of submisssions done by students """

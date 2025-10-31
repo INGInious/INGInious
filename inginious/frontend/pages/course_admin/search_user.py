@@ -9,7 +9,7 @@ from flask import Response
 from mongoengine import Q
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-from inginious.frontend.models.user import User
+from inginious.frontend.models import User
 
 class CourseAdminSearchUserPage(INGIniousAdminPage):
     """ Return users based on their username or realname """

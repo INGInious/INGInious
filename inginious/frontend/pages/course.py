@@ -10,7 +10,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models import UserTask
 
 
 def handle_course_unavailable(get_path, user_manager, course):

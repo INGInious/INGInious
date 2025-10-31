@@ -18,8 +18,7 @@ from bson.objectid import ObjectId
 from inginious.common.base import id_checker
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.models.user_task import UserTask
-from inginious.frontend.models.audience import Audience
+from inginious.frontend.models import UserTask, Audience
 
 
 class INGIniousAdminPage(INGIniousAuthPage):

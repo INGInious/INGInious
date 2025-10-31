@@ -7,7 +7,7 @@
 
 from flask import request, jsonify, render_template
 
-from inginious.frontend.models.user import User
+from inginious.frontend.models import User
 from inginious.frontend.pages.utils import INGIniousAdministratorPage
 
 

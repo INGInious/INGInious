@@ -10,7 +10,7 @@ from lti import OutcomeRequest
 from inginious.frontend.lti import LTIScorePublisher
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models.lti1_1 import LISOutcome
+from inginious.frontend.models import LISOutcome
 
 class LTIOutcomeManager(LTIScorePublisher):
     _submission_tags = {"outcome_service_url": "outcome_service_url", "outcome_result_id": "outcome_result_id",

@@ -7,7 +7,7 @@
 from flask import request, redirect, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.models.user import User
+from inginious.frontend.models import User
 
 class BindingsPage(INGIniousAuthPage):
     """ Bindings page for DB-authenticated users"""

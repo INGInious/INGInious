@@ -12,7 +12,7 @@ from pylti1p3.launch_data_storage.base import LaunchDataStorage
 
 from inginious.frontend.lti import LTIScorePublisher
 from inginious.frontend.courses import Course
-from inginious.frontend.models.lti1_3 import LTIGrade, LaunchData
+from inginious.frontend.models import LTIGrade, LaunchData
 
 class MongoLTILaunchDataStorage(LaunchDataStorage):
     """
