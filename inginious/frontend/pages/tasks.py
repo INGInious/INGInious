@@ -23,8 +23,7 @@ from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.courses import Course
-from inginious.frontend.models.user_task import UserTask
-from inginious.frontend.models.group import Group
+from inginious.frontend.models import UserTask, Group
 
 
 class BaseTaskPage(object):

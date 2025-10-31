@@ -12,8 +12,7 @@ from werkzeug.exceptions import NotFound
 from bson.objectid import ObjectId
 
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-from inginious.frontend.models.user import User
-from inginious.frontend.models.audience import Audience
+from inginious.frontend.models import User, Audience
 
 
 class CourseEditAudience(INGIniousAdminPage):

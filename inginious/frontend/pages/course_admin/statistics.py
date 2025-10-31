@@ -9,8 +9,7 @@ import zoneinfo
 
 from flask import request, render_template
 
-from inginious.frontend.models.submission import Submission
-from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models import Submission, UserTask
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
 

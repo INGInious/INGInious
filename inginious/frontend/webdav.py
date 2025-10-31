@@ -4,7 +4,6 @@
 # more information about the licensing of this file.
 
 import os
-from pymongo import MongoClient
 
 from wsgidav import util, wsgidav_app
 from wsgidav.dav_error import DAVError, HTTP_NOT_FOUND, HTTP_FORBIDDEN

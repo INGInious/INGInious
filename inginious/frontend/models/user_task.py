@@ -5,8 +5,8 @@
 
 from datetime import datetime, timedelta
 
-from mongoengine import Document, EmbeddedDocument, StringField, FloatField, ObjectIdField, BooleanField, EmbeddedDocumentField
-from mongoengine.fields import IntField, ListField, DateTimeField
+from mongoengine import Document, EmbeddedDocument, StringField, FloatField, ObjectIdField
+from mongoengine import IntField, ListField, DateTimeField, BooleanField, EmbeddedDocumentField
 
 
 class Tokens(EmbeddedDocument):
@@ -24,8 +24,6 @@ class UserTask(Document):
     random = ListField(FloatField(), default=[])
     tokens = EmbeddedDocumentField(Tokens, default=lambda : Tokens())
     state = StringField(required=True, default="")
-
-    meta = {'collection': 'user_tasks'}
 
     def reset_state(self):
         self.state = ""
@@ -45,3 +43,17 @@ class UserTask(Document):
             tokens_ok = True
 
         return tokens_ok
+
+    meta = {
+        "collection": "user_tasks",
+        "indexes": [
+            {
+                "fields": ["username", "courseid", "taskid"],
+                "unique": True
+             },
+            ("username", "courseid"),
+            ("courseid", "taskid"),
+            "courseid",
+            "username"
+        ]
+    }

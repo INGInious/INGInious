@@ -14,8 +14,7 @@ from inginious.frontend.tasks import Task
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.common.exceptions import TaskAlreadyExistsException
 from inginious.frontend.task_dispensers import get_task_dispensers
-from inginious.frontend.models.user_task import UserTask
-from inginious.frontend.models.submission import Submission
+from inginious.frontend.models import UserTask, Submission
 
 
 class CourseTaskListPage(INGIniousAdminPage):

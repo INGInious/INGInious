@@ -8,7 +8,7 @@ from collections import OrderedDict
 from flask import request, render_template
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
-from inginious.frontend.models.user_task import UserTask
+from inginious.frontend.models import UserTask
 
 class CourseStudentInfoPage(INGIniousAdminPage):
     """ List information about a student """

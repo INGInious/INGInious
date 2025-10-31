@@ -5,22 +5,16 @@
 import io
 import csv
 import json
-
 import yaml
 
 from collections import OrderedDict
 from bson import ObjectId
-from pymongo import ReturnDocument
 from flask import Response, request, render_template
 from io import StringIO
 
-from inginious.frontend.models.audience import Audience
-from inginious.frontend.models.submission import Submission
+from inginious.frontend.models import Audience, Submission, User, Group,  CourseClass
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
-from inginious.frontend.models.user import User
-from inginious.frontend.models.group import Group
-from inginious.frontend.models.course_class import CourseClass
 
 
 class CourseStudentListPage(INGIniousAdminPage):
