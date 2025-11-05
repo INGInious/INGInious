@@ -34,7 +34,7 @@ The plugin is initialized by the plugin manager, which is the frontend-extended 
 This method takes four arguments:
 
 - ``plugin_manager`` which is the plugin manager singleton object. The detailed API is available at
-  :ref:`inginious.frontend.plugin_manager`.
+  :ref:`inginious.frontend.plugins.plugin_manager`.
 
 - ``course_factory`` which is the course factory singleton object, giving you abstraction to the tasks folder. The detailed
   API is available at :ref:`inginious.frontend.course_factory`.
@@ -69,7 +69,7 @@ List of hooks
 
 You may be interested to generate some actions useful for your plugins before or after some INGInious events. You
 would therefore need to add a hook method. This can be done using the ``add_hook`` method of package
-:ref:`inginious.frontend.plugin_manager`. For instance, the following plugin :
+:ref:`inginious.frontend.plugins.plugin_manager`. For instance, the following plugin :
 
 .. code-block:: python
 
@@ -177,10 +177,8 @@ Each hook available in INGInious is described here, starting with its name and p
     ``default`` : Default value as specified in the configuration
 
     Overrides the task limits
-``task_context`` (``course``, ``taskid``, ``default``)
+``task_context`` (``task``, ``default``)
     Returns: inginious.frontend.parsable_text.ParsableText
-
-    ``course`` : inginious.frontend.courses.Course
 
     ``task`` : inginious.frontend.tasks.Task
 

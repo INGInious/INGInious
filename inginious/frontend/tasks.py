@@ -10,7 +10,9 @@ import gettext
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
 from inginious.common.base import id_checker
+from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.accessible_time import AccessibleTime
+from inginious.frontend.plugins import plugin_manager
 
 
 def _migrate_from_v_0_6(content):
@@ -21,8 +23,7 @@ def _migrate_from_v_0_6(content):
         del content["environment"]
         content["environment_parameters"] = {"limits": content.get("limits", {}),
                                              "run_cmd": content.get("run_cmd", ''),
-                                             "network_grading": content.get("network_grading", False),
-                                             "response_is_html": content.get('responseIsHTML', False)}
+                                             "network_grading": content.get("network_grading", False)}
 
     # Retrocompatibility v0.8.5
     if content.get("environment_parameters", {}).get("ssh_allowed", False):
@@ -34,17 +35,13 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, course, taskid, content, filesystem, plugin_manager, task_problem_types):
-        # We load the descriptor of the task here to allow plugins to modify settings of the task before it is read by the Task constructor
+    def __init__(self, taskid, content, course_fs):
         if not id_checker(taskid):
-            raise Exception("Task with invalid id: " + course.get_id() + "/" + taskid)
+            raise Exception("Task with invalid id: " + course_fs.prefix + taskid)
 
         content = _migrate_from_v_0_6(content)
 
-        self._course = course
         self._taskid = taskid
-        self._fs = filesystem
-        self._plugin_manager = plugin_manager
         self._data = content
 
         if "problems" not in self._data:
@@ -52,9 +49,7 @@ class Task(object):
 
         # i18n
         self._translations = {}
-        self._course_fs = self._fs.from_subfolder(course.get_id())
-        self._course_fs.ensure_exists()
-        self._task_fs = self._course_fs.from_subfolder(taskid)
+        self._task_fs = course_fs.from_subfolder(taskid)
         self._task_fs.ensure_exists()
 
         self._translations_fs = self._task_fs.from_subfolder("$i18n")
@@ -62,9 +57,9 @@ class Task(object):
         if not self._translations_fs.exists():
             self._translations_fs = self._task_fs.from_subfolder("student").from_subfolder("$i18n")
         if not self._translations_fs.exists():
-            self._translations_fs = self._course_fs.from_subfolder("$common").from_subfolder("$i18n")
+            self._translations_fs = course_fs.from_subfolder("$common").from_subfolder("$i18n")
         if not self._translations_fs.exists():
-            self._translations_fs = self._course_fs.from_subfolder("$common").from_subfolder(
+            self._translations_fs = course_fs.from_subfolder("$common").from_subfolder(
                 "student").from_subfolder("$i18n")
 
         if self._translations_fs.exists():
@@ -79,7 +74,7 @@ class Task(object):
         self._problems = []
         for problemid in self._data['problems']:
             self._problems.append(
-                self._create_task_problem(problemid, self._data['problems'][problemid], task_problem_types))
+                self._create_task_problem(problemid, self._data['problems'][problemid]))
 
         # Env type
         self._environment_id = self._data.get('environment_id', 'default')
@@ -150,43 +145,23 @@ class Task(object):
         """ Get problems dict contained in this task """
         return self._data["problems"]
 
-    def get_course_id(self):
-        """ Return the courseid of the course that contains this task """
-        return self._course.get_id()
-
-    def get_course(self):
-        """ Return the course that contains this task """
-        return self._course
-
     def get_environment_parameters(self):
         """ Returns the raw environment parameters, which is a dictionnary that is envtype dependent. """
         return self._environment_parameters
-
-    def get_response_type(self):
-        """ Returns the method used to parse the output of the task: HTML or rst """
-        return "HTML" if self._environment_parameters.get('response_is_html', False) else "rst"
 
     def get_fs(self):
         """ Returns a FileSystemProvider which points to the folder of this task """
         return self._task_fs
 
-    def get_hook(self):
-        """ Returns the hook manager parameter for this task"""
-        return self._plugin_manager
-
-    def get_translation_fs(self):
-        """ Return the translation_fs parameter for this task"""
-        return self._translations_fs
-
-    def _create_task_problem(self, problemid, problem_content, task_problem_types):
+    def _create_task_problem(self, problemid, problem_content):
         """Creates a new instance of the right class for a given problem."""
         # Basic checks
         if not id_checker(problemid):
             raise Exception("Invalid problem _id: " + problemid)
-        if problem_content.get('type', "") not in task_problem_types:
+        if problem_content.get('type', "") not in get_problem_types():
             raise Exception("Invalid type for problem " + problemid)
 
-        return task_problem_types.get(problem_content.get('type', ""))(problemid, problem_content, self._translations, self._task_fs)
+        return get_problem_types().get(problem_content.get('type', ""))(problemid, problem_content, self._translations, self._task_fs)
 
     def get_name(self, language):
         """ Returns the name of this task """
@@ -195,7 +170,7 @@ class Task(object):
     def get_context(self, language):
         """ Get the context(description) of this task """
         context = self.gettext(language, self._context) if self._context else ""
-        vals = self._plugin_manager.call_hook('task_context', course=self.get_course(), task=self, default=context)
+        vals = plugin_manager.call_hook('task_context', task=self, default=context)
         return ParsableText(vals[0], "rst") if len(vals) else ParsableText(context, "rst")
 
     def get_authors(self, language):

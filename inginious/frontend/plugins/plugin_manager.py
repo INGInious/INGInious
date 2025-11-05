@@ -11,8 +11,8 @@ import bisect
 from jinja2 import  FileSystemLoader
 
 from inginious.frontend.user_manager import AuthMethod
-from inginious.frontend.task_problems import get_displayable_problem_types
-from inginious.common.tasks_problems import get_problem_types
+from inginious.frontend.task_problems import inspect_displayable_problem_types
+from inginious.common.tasks_problems import register_problem_types
 
 
 class PluginManagerNotLoadedException(Exception):
@@ -80,13 +80,9 @@ class PluginManager(object):
             module_name = entry["plugin_module"]
             module = importlib.import_module(module_name)
 
-            """ Load Problem sub-classes """
-            pbl_types = get_problem_types(module_name)
-            self._task_factory.set_problem_types(pbl_types)
-
             """ Load DisplayableProblem sub-classes """
-            displayable_pbl_types = get_displayable_problem_types(module_name)
-            self._task_factory.set_problem_types(displayable_pbl_types)
+            displayable_pbl_types = inspect_displayable_problem_types(module_name)
+            register_problem_types(displayable_pbl_types)
 
             """ Initialize the module """
             module.init(self, course_factory, client, entry)
@@ -97,12 +93,6 @@ class PluginManager(object):
             raise PluginManagerNotLoadedException()
 
         self._flask_app.add_url_rule("/" + pattern[1:], view_func=classname_or_viewfunc)
-
-    def add_task_file_manager(self, task_file_manager):
-        """ Add a task file manager. Only available after that the Plugin Manager is loaded """
-        if not self._loaded:
-            raise PluginManagerNotLoadedException()
-        self._task_factory.add_custom_task_file_manager(task_file_manager)
 
     def register_auth_method(self, auth_method: AuthMethod):
         """

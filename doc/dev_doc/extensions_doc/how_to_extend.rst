@@ -35,8 +35,3 @@ not mandatory.
 
     An **expected** timeout in seconds. Allows INGInious to predict the size of the queue, and maybe other things in the
     future. Any value above (>=) 0 is taken into account. Any value below (<) will be displayed as "unknown".
-
-``response_is_html``
-
-    If true, the output of the agent will be displayed directly as HTML. This is deprecated and you should probably
-    not use it.

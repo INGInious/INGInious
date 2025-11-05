@@ -381,8 +381,8 @@
         </div>
     {% endfor %}
     {# no need to check with lti=True/False here as it was already checked by the calling python script. #}
-    {% set groups_ok = user_manager.task_can_user_submit(task, user_manager.session_username(), 'groups') %}
-    {% set tokens_ok = user_manager.task_can_user_submit(task, user_manager.session_username(), 'tokens') %}
+    {% set groups_ok = user_manager.task_can_user_submit(course, task, user_manager.session_username(), 'groups') %}
+    {% set tokens_ok = user_manager.task_can_user_submit(course, task, user_manager.session_username(), 'tokens') %}
 
     {% if not registered %}
         <button type="submit" class="btn btn-secondary btn-lg btn-block center-block" disabled="disabled">{{ _("Please enroll in the course to submit.") }}</button>
