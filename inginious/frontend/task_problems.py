@@ -80,8 +80,7 @@ class DisplayableCodeProblem(CodeProblem, DisplayableProblem):
 
     def show_input(self, language, seed):
         """ Show BasicCodeProblem and derivatives """
-        header = ParsableText(self.gettext(language,self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language,self._header), "rst")
         return render_template("tasks/code.html", inputId=self.get_id(), header=header,
                                       lines=8, first_line=self._first_line, maxChars=0, language=self._language, optional=self._optional,
                                       default=self._default)
@@ -110,8 +109,7 @@ class DisplayableCodeSingleLineProblem(CodeSingleLineProblem, DisplayableProblem
 
     def show_input(self, language, seed):
         """ Show InputBox """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language, self._header), "rst")
         return render_template("tasks/single_line_code.html", inputId=self.get_id(), header=header, type="text",
                                       maxChars=0, optional=self._optional, default=self._default)
 
@@ -148,8 +146,7 @@ class DisplayableFileProblem(FileProblem, DisplayableProblem):
 
     def show_input(self, language, seed):
         """ Show FileBox """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language, self._header), "rst")
         return render_template("tasks/file.html", inputId=self.get_id(), header=header,
                                       max_size=self._max_size, allowed_exts=self._allowed_exts)
 
@@ -168,13 +165,28 @@ class DisplayableMultipleChoiceProblem(MultipleChoiceProblem, DisplayableProblem
     def get_type_name(cls, language):
         return _("multiple choice")
 
+    def _filter_choices(self, pre_shuffled_choices : list[dict]):
+        choices = []
+        limit = self._limit or len(self._choices)
+
+        valid_choices = [entry for entry in pre_shuffled_choices if entry['valid']]
+        invalid_choices = [entry for entry in pre_shuffled_choices if not entry['valid']]
+
+        if self._multiple:
+            # take the valid choices and complete with invalid choices up to the limit
+            limit = max(limit - len(valid_choices), 0)
+            choices += valid_choices + invalid_choices[:limit]
+        else:
+            # Keep at least one valid entry
+            choices += invalid_choices[:limit-1]
+            limit = max(limit - len(choices), 0)
+            choices += valid_choices[:limit]
+
+        return choices
+
+
     def show_input(self, language, seed):
         """ Show multiple choice problems """
-        choices = []
-        limit = self._limit
-        if limit == 0:
-            limit = len(self._choices)  # no limit
-
         rand = Random("{}#{}#{}".format(self.get_id(), language, seed))
 
         # Ensure that the choices are random
@@ -183,41 +195,19 @@ class DisplayableMultipleChoiceProblem(MultipleChoiceProblem, DisplayableProblem
         if not self._unshuffle:
             rand.shuffle(random_order_choices)
 
-        if self._multiple:
-            # take only the valid choices in the first pass
-            for entry in random_order_choices:
-                if entry['valid']:
-                    choices.append(entry)
-                    limit = limit - 1
-            # take everything else in a second pass
-            for entry in random_order_choices:
-                if limit == 0:
-                    break
-                if not entry['valid']:
-                    choices.append(entry)
-                    limit = limit - 1
-        else:
-            # need to have ONE valid entry
-            for entry in random_order_choices:
-                if not entry['valid'] and limit > 1:
-                    choices.append(entry)
-                    limit = limit - 1
-            for entry in random_order_choices:
-                if entry['valid'] and limit > 0:
-                    choices.append(entry)
-                    limit = limit - 1
+        choices = self._filter_choices(random_order_choices)
+
         if not self._unshuffle:
             rand.shuffle(choices)
         else:
             choices = sorted(choices, key=lambda k: k['index'])
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
-        return render_template("tasks/multiple_choice.html", pid=self.get_id(), header=header,
-                                      checkbox=self._multiple, choices=choices,
-                                      func=lambda text: ParsableText(
-                                          self.gettext(language, text) if text else "", "rst",
-                                          translation=self.get_translation_obj(language))
-                                      )
+
+        header = ParsableText(self.gettext(language, self._header), "rst")
+        return render_template(
+            "tasks/multiple_choice.html",
+            pid=self.get_id(), header=header, checkbox=self._multiple, choices=choices,
+            func=lambda text: ParsableText(self.gettext(language, text) if text else "", "rst")
+        )
 
     @classmethod
     def show_editbox(cls, key, language):
@@ -240,8 +230,7 @@ class DisplayableMatchProblem(MatchProblem, DisplayableProblem):
 
     def show_input(self, language, seed):
         """ Show MatchProblem """
-        header = ParsableText(self.gettext(language, self._header), "rst",
-                              translation=self.get_translation_obj(language))
+        header = ParsableText(self.gettext(language, self._header), "rst")
         return render_template("tasks/match.html", inputId=self.get_id(), header=header)
 
     @classmethod

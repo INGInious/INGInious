@@ -54,11 +54,7 @@ class SubmissionPage(INGIniousAdminPage):
     def page(self, course, task, submission):
         """ Get all data and display the page """
         submission = self.submission_manager.get_input_from_submission(submission)
-        submission = self.submission_manager.get_feedback_from_submission(
-            submission,
-            show_everything=True,
-            translation=self.app.l10n_manager.get_translation_obj()
-        )
+        submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=True)
 
         to_display = {
             problem.get_id(): {
