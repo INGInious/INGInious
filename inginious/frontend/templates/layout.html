@@ -114,22 +114,28 @@
         CodeMirror.modeURL = "{{get_homepath()}}/static/js/codemirror/mode/%N/%N.js";
     </script>
 
-    {{ template_helper.call('css') | safe }}
-    {{ template_helper.call('javascript_header') | safe }}
-    {{ template_helper.call('header_hook') | safe }}
+    {% for entry in plugin_manager.call_hook("css") %}
+        <link href="{{ entry }}" rel='stylesheet'>
+    {% endfor %}
+    {% for entry in plugin_manager.call_hook("javascript_header") %}
+        <script src="{{ entry }}" type='text/javascript' charset='utf-8'></script>
+    {% endfor %}
+    {% for entry in plugin_manager.call_hook('header_html') %}
+        {{ entry | safe }}
+    {% endfor %}
     {% endblock %}
 </head>
 
 <body class="sidebar-state-0">
     <div class="row" id="inginious-top">
         <div id="inginious-sidebar-top" class="col">
-            <a id="inginious-logo" class="col" href="{{ get_path('index' if not is_lti() else '#') }}">
+            <a id="inginious-logo" class="col" href="{{ get_path('index' if not user_manager.session_is_lti() else '#') }}">
                 <div id="inginious-logo-text"><img src="{{get_homepath()}}/static/images/header.png" alt="logo"/> INGInious</div>
             </a>
             <button class="col" onclick="$('body').toggleClass('sidebar-state-0'); $('body').toggleClass('sidebar-state-1');" id="inginious-sidebar-toggle" title="{{ _('Open menu') }}"><i class="fa fa-bars fa-fw"></i></button>
         </div>
         <div id="inginious-topbar" class="col flex-grow-1 flex-shrink-1">
-            {% if not is_lti() %}
+            {% if not user_manager.session_is_lti() %}
                 {% block navbar %}{% endblock %}
             {% endif %}
         </div>
@@ -138,7 +144,7 @@
     <div class="row" id="main-container">
         <div id="inginious-sidebar" class="col">
             <div id="inginious-sidebar-content">
-                {% if not is_lti() %}
+                {% if not user_manager.session_is_lti() %}
                     <div class="list-group">
                         {% if user_manager is defined and user_manager.session_logged_in() %}
                             {# Change to teacher privilege when created #}
@@ -196,7 +202,7 @@
             {% block content %}{% endblock %}
 
             <div id="footer" class="mt-3">
-                {% if is_lti() %}
+                {% if user_manager.session_is_lti() %}
                     {{ _('Powered by <a href="http://www.inginious.org" target="_blank">INGInious</a> v.{} , a free and open-source grading tool.').format(pkg_version)  | safe }}
                 {% else %}
                     {{ _("Running INGInious v.{}").format(pkg_version) }} <br /> &copy; 2014-2025 Universit&eacute; catholique de Louvain.<br />
@@ -213,7 +219,9 @@
 
     <!-- Placed at the end of the document so the pages load faster -->
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    {{ template_helper.call('javascript_footer') | safe }}
+    {% for entry in plugin_manager.call_hook("javascript_footer") %}
+        <script src="{{ entry }}" type='text/javascript' charset='utf-8'></script>
+    {% endfor %}
     <script>
         user_indentation_type = {{ available_indentation_types[user_manager.session_code_indentation()] | tojson }};
         dtf = new Intl.DateTimeFormat({{ user_manager.session_language() | tojson }}, {

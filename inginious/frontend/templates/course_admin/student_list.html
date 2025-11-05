@@ -6,7 +6,7 @@
 {% block title %} {{ course.get_name(user_manager.session_language()) }} {% endblock %}
 
 {% block column %}
-{{ template_helper.call('course_admin_menu',course=course,current='students') | safe }}
+    {% with current='students' %}  {% include 'course_admin/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}
@@ -62,7 +62,9 @@
                 <form method="post">
                     <div class="form-group row">
                         <div class="col-sm-9">
-                            {{ user_selection_box(course_id=course.get_id(), current_users=[], name="username", id="username_search", placeholder=_("Enter something here to search for a user"), single=True) | safe }}
+                            {% with course_id=course.get_id(), current_users=[], name="username", id="username_search", placeholder=_("Enter something here to search for a user"), single=True %}
+                                {% include "course_admin/user_selection_box.html" %}
+                            {% endwith %}
                         </div>
                         <div class="col-sm-3"><button name="register_student" type="submit" class="btn btn-warning btn-block"><i class="fa fa-plus fa-lg"></i>{{ _("Add student") }}</button></div>
                     </div>

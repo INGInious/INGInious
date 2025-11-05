@@ -6,7 +6,7 @@
 {% block title %} {{ _("Delete my account") }} {% endblock %}
 
 {% block column %}
-{{ template_helper.call('preferences_menu',current='delete') | safe }}
+{% with current='delete' %}{% include 'preferences/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}

@@ -2,9 +2,33 @@
 {# more information about the licensing of this file. #}
 
 <div class="list-group mb-3">
-    {% for link, name in entries %}
+    {% if user_manager.has_admin_rights_on_course(course) %}
+    <a href="{{ get_path('admin', course.get_id(), 'settings') }}" class="list-group-item list-group-item-action {% if current == 'settings' %}active{% endif %}">
+        <i class='fa fa-cogs fa-fw mr-2'></i>{{ _("Course settings") }}
+    </a>
+    {% endif %}
+    <a href="{{ get_path('admin', course.get_id(), 'stats') }}" class="list-group-item list-group-item-action {% if current == 'stats' %}active{% endif %}">
+        <i class='fa fa-area-chart fa-fw mr-2'></i>{{ _("Statistics") }}
+    </a>
+    <a href="{{ get_path('admin', course.get_id(), 'students') }}" class="list-group-item list-group-item-action {% if current == 'students' %}active{% endif %}">
+        <i class='fa fa-user fa-fw mr-2'></i>{{ _("User management") }}
+    </a>
+    {% if user_manager.has_admin_rights_on_course(course) %}
+    <a href="{{ get_path('admin', course.get_id(), 'tasks') }}" class="list-group-item list-group-item-action {% if current == 'tasks' %}active{% endif %}">
+        <i class='fa fa-tasks fa-fw mr-2'></i>{{ _("Tasks") }}
+    </a>
+    {% endif %}
+    <a href="{{ get_path('admin', course.get_id(), 'submissions') }}" class="list-group-item list-group-item-action {% if current == 'submissions' %}active{% endif %}">
+        <i class='fa fa-file-code-o fa-fw mr-2'></i>{{ _("Submissions") }}
+    </a>
+    {% if user_manager.has_admin_rights_on_course(course) %}
+    <a href="{{ get_path('admin', course.get_id(), 'danger') }}" class="list-group-item list-group-item-action list-group-item-danger {% if current == 'danger' %}active{% endif %}">
+        <i class='fa fa-bomb fa-fw mr-2'></i>{{ _("Danger zone") }}
+    </a>
+    {% endif %}
+
+    {% for link, name in plugin_manager.call_hook('course_admin_menu', course=course) %}
         <a href="{{ get_path('admin', course.get_id(), link) }}" class="list-group-item list-group-item-action
-        {% if link=='danger' %}list-group-item-danger{% endif %}
         {% if current == link %}active{% endif %}">
             {{ name | safe }}
         </a>
@@ -12,6 +36,6 @@
 </div>
 
 <div class="list-group">
-    <a class="list-group-item list-group-item-action list-group-item-info" href="http://inginious.readthedocs.org/en/latest/teacher_doc/task_tuto.html">{{ _("How to create a task?") }}</a>
-    <a class="list-group-item list-group-item-action list-group-item-info" href="http://inginious.readthedocs.org/en/latest/teacher_documentation.html">{{ _("Documentation") }}</a>
+    <a class="list-group-item list-group-item-action list-group-item-info" href="https://docs.inginious.org/en/latest/teacher_doc/task_tuto.html">{{ _("How to create a task?") }}</a>
+    <a class="list-group-item list-group-item-action list-group-item-info" href="https://docs.inginious.org/en/latest/teacher_documentation.html">{{ _("Documentation") }}</a>
 </div>

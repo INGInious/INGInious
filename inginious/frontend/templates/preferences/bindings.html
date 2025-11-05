@@ -5,7 +5,7 @@
 {% block title %} {{ _("Authentication bindings") }} {% endblock %}
 
 {% block column %}
-{{ template_helper.call('preferences_menu',current='bindings') | safe }}
+{% with current='bindings' %}{% include 'preferences/menu.html' %}{% endwith %}
 {% endblock %}
 
 {% block navbar %}

@@ -6,7 +6,9 @@
 {% block title %} {{course.get_name(user_manager.session_language())}} - Contest settings {% endblock %}
 
 {% block column %}
-    {{ template_helper.call('course_admin_menu',course=course,current='contest') | safe }}
+    {% with current='contest' %}
+        {% include 'course_admin/menu.html' %}
+    {% endwith %}
 {% endblock %}
 
 {% block navbar %}

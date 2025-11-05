@@ -24,7 +24,7 @@
                 <td><a href="{{ task.get_contact_url(user_manager.session_language()).format(course_id=course.get_id(), task_id=task.get_id(), username=user_manager.session_username()) }}" target="_blank">{{ _("Contact link") }}</a></td>
             </tr>
         {% endif %}
-        {% if not is_lti() %}
+        {% if not user_manager.session_is_lti() %}
             <tr class="
             {% if task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()).is_open() and not task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()).is_open_with_soft_deadline() %}
                 list-group-item-danger
@@ -124,7 +124,7 @@
     {% endif %}
     <!-- End Tags -->
     
-    {%if not is_lti() and staff %}
+    {%if not user_manager.session_is_lti() and staff %}
         <h3> {{ _("Administration") }}</h3>
         {% if not course.is_open_to_non_staff() %}
             <div class="alert alert-warning" role="alert">
@@ -149,7 +149,7 @@
                 </a>
             {% endif %}
         </div>
-    {%elif not is_lti() and registered %}
+    {%elif not user_manager.session_is_lti() and registered %}
         <h3>{{ _("Submitting as") }}</h3>
         <div class="list-group mb-3">
             <div class="list-group-item list-group-item-action list-group-item-info">
@@ -171,7 +171,9 @@
         </div>
     {% endif %}
 
-    {{ template_helper.call('task_menu', course=course, task=task, template_helper=template_helper) | safe }}
+    {% for entry in plugin_manager.call_hook('task_menu', course=course, task=task, template_helper=template_helper) %}
+        {{ entry | safe }}
+    {% endfor %}
     {% if registered %}
         <h3> {{ _("For evaluation") }}</h3>
         <div class="list-group mb-3">
@@ -269,7 +271,7 @@
     <div class="row">
     <div class="col-md-10">{{ task.get_name(user_manager.session_language()) }}</div>
     <div class="col-md-2">
-        {% if not is_lti() %}
+        {% if not user_manager.session_is_lti() %}
             <div class="pull-right">
                 <div class="btn-group">
                     <button type="button" id="load_loc" class="btn btn-info mr-1" onclick="load_from_storage('{{course.get_id()}}','{{task.get_id()}}')" title="{{ _('Load my work from memory') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-arrow-circle-o-down"></i></button>
@@ -344,7 +346,7 @@
     </div>
 {% endif %}
 
-{% if is_lti() %}
+{% if user_manager.session_is_lti() %}
     {% set path = get_path("lti", "task") %}
 {% else %}
     {% set path = get_path("/course/", course.get_id(), task.get_id()) %}
