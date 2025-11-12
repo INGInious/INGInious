@@ -228,37 +228,43 @@ class DockerAgent(Agent):
                 source = AsyncIteratorWrapper(
                     self._docker.sync.event_stream(filters={"event": ["die", "oom"]}, since=since))
                 self._logger.info("Docker event stream started")
-                async for i in source:
-                    since = i.get('time', since)  # update time if available.
+                async for event in source:
+                    try:
+                        since = event.get('time', since)  # update time if available.
 
-                    if i["Type"] == "container" and i["status"] == "die":
-                        container_id = i["id"]
-                        try:
-                            retval = int(i["Actor"]["Attributes"]["exitCode"])
-
-                        except asyncio.CancelledError:
-                            raise
-                        except:
-                            self._logger.exception("Cannot parse exitCode for container %s", container_id)
-                            retval = -1
-
-                        if container_id in self._containers_running:
-                            self._create_safe_task(self.handle_job_closing(container_id, retval))
-                        elif container_id in self._student_containers_running:
-                            self._create_safe_task(self.handle_student_job_closing(container_id, retval))
-                    elif i["Type"] == "container" and i["status"] == "oom":
-                        container_id = i["id"]
-                        if container_id in self._containers_running or container_id in self._student_containers_running:
-                            self._logger.info("Container %s did OOM, killing it", container_id)
-                            self._containers_killed[container_id] = "overflow"
+                        if event["Type"] == "container" and event["Action"] == "die":
+                            container_id = event["Actor"]["ID"]
                             try:
-                                self._create_safe_task(self._docker.kill_container(container_id))
+                                retval = int(event["Actor"]["Attributes"]["exitCode"])
                             except asyncio.CancelledError:
                                 raise
-                            except:  # this call can sometimes fail, and that is normal.
-                                pass
-                    else:
-                        raise TypeError(str(i))
+                            except:
+                                self._logger.exception("Cannot parse exitCode for container %s", container_id)
+                                retval = -1
+
+                            if container_id in self._containers_running:
+                                self._create_safe_task(self.handle_job_closing(container_id, retval))
+                            elif container_id in self._student_containers_running:
+                                self._create_safe_task(self.handle_student_job_closing(container_id, retval))
+                        elif event["Type"] == "container" and event["Action"] == "oom":
+                            container_id = event["Actor"]["ID"]
+                            if container_id in self._containers_running or container_id in self._student_containers_running:
+                                self._logger.info("Container %s did OOM, killing it", container_id)
+                                self._containers_killed[container_id] = "overflow"
+                                try:
+                                    self._create_safe_task(self._docker.kill_container(container_id))
+                                except asyncio.CancelledError:
+                                    raise
+                                except:  # this call can sometimes fail, and that is normal.
+                                    pass
+                        else:
+                            raise ValueError("Unknown docker event format")
+
+                    except asyncio.CancelledError:
+                        raise
+                    except:
+                        self._logger.exception("Docker event parsing failed: %s", str(event))
+
                 raise Exception(
                     "Docker stopped feeding the event stream. This should not happen. Restarting the event stream...")
             except asyncio.CancelledError:
