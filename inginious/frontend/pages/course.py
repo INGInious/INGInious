@@ -8,7 +8,9 @@ import flask
 from flask import redirect, render_template
 from werkzeug.exceptions import NotFound
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.models import UserTask
 
 
 def handle_course_unavailable(get_path, user_manager, course):
@@ -32,7 +34,7 @@ class CoursePage(INGIniousAuthPage):
     def get_course(self, courseid):
         """ Return the course """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid)
         except:
             raise NotFound(description=_("Course not found."))
 
@@ -66,19 +68,19 @@ class CoursePage(INGIniousAuthPage):
 
             # Get 5 last submissions
             last_submissions = []
-            for submission in self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid": {"$in": user_task_list}}):
+            for submission in self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid__in": user_task_list}):
                 submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
                 last_submissions.append(submission)
 
             # Compute course/tasks scores
             tasks_data = {taskid: {"succeeded": False, "grade": 0.0} for taskid in user_task_list}
-            user_tasks = self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": user_task_list}})
+            user_tasks = UserTask.objects(username=username, courseid=course.get_id(), taskid__in=user_task_list)
 
             for user_task in user_tasks:
                 tasks_data[user_task["taskid"]]["succeeded"] = user_task["succeeded"]
                 tasks_data[user_task["taskid"]]["grade"] = user_task["grade"]
 
-            course_grade = course.get_task_dispenser().get_course_grade(username)
+            course_grade = course.get_task_dispenser().get_course_grade(user_tasks, username)
 
             # Get tag list
             categories = course.get_task_dispenser().get_all_categories()

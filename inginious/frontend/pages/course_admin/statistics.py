@@ -9,13 +9,14 @@ import zoneinfo
 
 from flask import request, render_template
 
+from inginious.frontend.models import Submission, UserTask
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
 
 
 class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
     def _tasks_stats(self, tasks, filter, limit):
-        stats_tasks = self.database.submissions.aggregate(
+        stats_tasks = Submission.objects(**filter).aggregate(
             [{"$match": filter},
              {"$limit": limit},
              {"$project": {"taskid": "$taskid", "result": "$result"}},
@@ -32,8 +33,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         ]
 
     def _users_stats(self, filter, limit):
-        stats_users = self.database.submissions.aggregate([
-            {"$match": filter},
+        stats_users = Submission.objects(**filter).aggregate([
             {"$limit": limit},
             {"$project": {"username": "$username", "result": "$result"}},
             {"$unwind": "$username"},
@@ -77,9 +77,8 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
         filter["submitted_on"] = {"$gte": min_date, "$lt": max_date + delta1}
 
-        stats_graph = self.database.submissions.aggregate(
-            [{"$match": filter},
-             {"$limit": limit},
+        stats_graph = Submission.objects(**filter).aggregate(
+            [{"$limit": limit},
              {"$project": project},
              {"$group": {"_id": groupby, "submissions": {"$sum": 1}, "validSubmissions":
                  {"$sum": {"$cond": {"if": {"$eq": ["$result", "success"]}, "then": 1, "else": 0}}}}
@@ -111,26 +110,19 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         return "?tasks=" + taskid
 
     def _progress_stats(self, course):
-        data = list(self.database.user_tasks.aggregate(
-            [
+        registered_users = self.user_manager.get_course_registered_users(course, False)
+        user_tasks = UserTask.objects(courseid=course.get_id(), username__in=registered_users)
+        data = user_tasks.aggregate([
+            {"$group":
                 {
-                    "$match":
-                        {
-                            "courseid": course.get_id(),
-                            "username": {"$in": self.user_manager.get_course_registered_users(course, False)}
-                        }
-                },
-                {
-                    "$group":
-                        {
-                            "_id": "$taskid",
-                            "viewed": {"$sum": 1},
-                            "attempted": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
-                            "attempts": {"$sum": "$tried"},
-                            "succeeded": {"$sum": {"$cond": ["$succeeded", 1, 0]}}
-                        }
+                    "_id": "$taskid",
+                    "viewed": {"$sum": 1},
+                    "attempted": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
+                    "attempts": {"$sum": "$tried"},
+                    "succeeded": {"$sum": {"$cond": ["$succeeded", 1, 0]}}
                 }
-            ]))
+            }
+        ])
         tasks = course.get_task_dispenser().get_ordered_tasks()
 
         # Now load additional information
@@ -147,7 +139,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         return result
 
     def _global_stats(self, course, tasks, filter, limit, best_submissions_list, pond_stat):
-        submissions = self.database.submissions.find(filter)
+        submissions = Submission.objects(**filter)
         if limit is not None:
             submissions.limit(limit)
 

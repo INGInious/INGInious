@@ -9,11 +9,11 @@ import os
 from typing import List, Dict
 
 import flask
-from gridfs import GridFS
 from flask import redirect, render_template
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
+from inginious.common.filesystems import FileSystemProvider
 from inginious.client.client import Client
 from inginious.common import custom_yaml
 from inginious.frontend.environment_types import get_all_env_types
@@ -22,10 +22,6 @@ from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.i18n import available_languages
-from pymongo.database import Database
-
-from inginious.frontend.course_factory import CourseFactory
-from inginious.frontend.task_factory import TaskFactory
 
 
 class INGIniousPage(MethodView):
@@ -71,16 +67,6 @@ class INGIniousPage(MethodView):
         return self.POST(*args, **kwargs)
 
     @property
-    def course_factory(self) -> CourseFactory:
-        """ Returns the course factory singleton """
-        return self.app.course_factory
-
-    @property
-    def task_factory(self) -> TaskFactory:
-        """ Returns the task factory singleton """
-        return self.app.task_factory
-
-    @property
     def submission_manager(self) -> WebAppSubmissionManager:
         """ Returns the submission manager singleton"""
         return self.app.submission_manager
@@ -89,16 +75,6 @@ class INGIniousPage(MethodView):
     def user_manager(self) -> UserManager:
         """ Returns the user manager singleton """
         return self.app.user_manager
-
-    @property
-    def database(self) -> Database:
-        """ Returns the database singleton """
-        return self.app.database
-
-    @property
-    def gridfs(self) -> GridFS:
-        """ Returns the GridFS singleton """
-        return self.app.gridfs
 
     @property
     def client(self) -> Client:

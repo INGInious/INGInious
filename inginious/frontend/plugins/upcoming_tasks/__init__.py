@@ -10,6 +10,8 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from flask import request, send_from_directory, render_template
 
+from inginious.frontend.courses import Course
+from inginious.frontend.models import UserTask
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
@@ -52,7 +54,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
     def page(self, time_planner):
         """ General main method called for GET and POST """
         username = self.user_manager.session_username()
-        all_courses = self.course_factory.get_all_courses()
+        all_courses = Course.get_all()
         time_planner = self.time_planner_conversion(time_planner)
 
         # Get the courses id
@@ -61,7 +63,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
                         self.user_manager.course_is_user_registered(course, username)}
 
         # Get last submissions for left panel
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": {"$in": list(open_courses.keys())}})
+        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid__in": list(open_courses.keys())})
         except_free_last_submissions = []
         for submission in last_submissions:
             try:
@@ -86,7 +88,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
             new_user_task_list = [taskid for taskid, accessibility in accessibilities.items() if accessibility.after_start() and taskid not in outdated_tasks]
 
             tasks_data[courseid] = {taskid: {"succeeded": False, "grade": 0.0} for taskid in new_user_task_list}
-            user_tasks = self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": new_user_task_list}})
+            user_tasks = UserTask.objects(username=username, courseid=course.get_id(), taskid__in=new_user_task_list)
             for user_task in user_tasks:
                 if not user_task["succeeded"]:
                     tasks_data[courseid][user_task["taskid"]]["succeeded"] = user_task["succeeded"]
@@ -117,7 +119,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
                                            submissions=except_free_last_submissions)
 
 
-def init(plugin_manager, _, _2, config):
+def init(plugin_manager, client, config):
     """ Init the plugin """
     plugin_manager.add_page('/coming_tasks', UpComingTasksBoard.as_view("upcomingtasksboardpage"))
     plugin_manager.add_page('/plugins/coming_tasks/static/<path:path>', StaticMockPage.as_view("upcomingtasksstaticmockpage"))

@@ -13,6 +13,8 @@ from flask import render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.courses import Course
+from inginious.frontend.models import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -21,7 +23,7 @@ class ScoreBoardCourse(INGIniousAuthPage):
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:
@@ -49,7 +51,7 @@ class ScoreBoard(INGIniousAuthPage):
 
     def GET_AUTH(self, courseid, scoreboardid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:
@@ -77,12 +79,9 @@ class ScoreBoard(INGIniousAuthPage):
                 raise NotFound(description="Unknown task id "+taskid)
 
         # Get all submissions
-        results = self.database.submissions.find({
-            "courseid": courseid,
-            "taskid": {"$in": list(scoreboard_content.keys())},
-            "custom.score": {"$exists": True},
-            "result": "success"
-        }, ["taskid", "username", "custom.score"])
+        results = Submission.objects(
+            courseid=courseid, taskid__in=list(scoreboard_content.keys()), custom__score__exists=True, result="success"
+        ).only("taskid", "username", "custom__score")
 
         # Get best results per users(/group)
         result_per_user = {}
@@ -205,7 +204,7 @@ def task_menu(course, task):
         return None
 
 
-def init(plugin_manager, _, _2, _3):
+def init(plugin_manager, client, config):
     """
         Init the plugin.
         Available configuration in configuration.yaml:

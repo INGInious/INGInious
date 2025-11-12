@@ -23,7 +23,6 @@ from inginious.agent.docker_agent._docker_runtime import DockerRuntime
 from inginious.agent.docker_agent._timeout_watcher import TimeoutWatcher
 from inginious.common.asyncio_utils import AsyncIteratorWrapper, AsyncProxy
 from inginious.common.base import id_checker, id_checker_tests
-from inginious.common.filesystems import FileSystemProvider
 from inginious.common.messages import BackendNewJob, BackendKillJob
 
 
@@ -64,14 +63,13 @@ class DockerRunningStudentContainer:
 
 
 class DockerAgent(Agent):
-    def __init__(self, context, backend_addr, friendly_name, concurrency, tasks_fs: FileSystemProvider,
+    def __init__(self, context, backend_addr, friendly_name, concurrency,
                  address_host=None, external_ports=None, tmp_dir="./agent_tmp", runtimes=None, ssh_allowed=False):
         """
         :param context: ZeroMQ context for this process
         :param backend_addr: address of the backend (for example, "tcp://127.0.0.1:2222")
         :param friendly_name: a string containing a friendly name to identify agent
         :param concurrency: number of simultaneous jobs that can be run by this agent
-        :param tasks_fs: FileSystemProvider for the course / tasks
         :param address_host: hostname/ip/... to which external client should connect to access to the docker
         :param external_ports: iterable containing ports to which the docker instance can bind internal ports
         :param tmp_dir: temp dir that is used by the agent to start new containers
@@ -79,7 +77,7 @@ class DockerAgent(Agent):
         :param runtime: runtime used by docker (the defaults are "runc" with docker or "kata-runtime" with kata)
         :param ssh_allowed: boolean to make this agent accept tasks with ssh or not
         """
-        super(DockerAgent, self).__init__(context, backend_addr, friendly_name, concurrency, tasks_fs)
+        super(DockerAgent, self).__init__(context, backend_addr, friendly_name, concurrency)
 
         self._runtimes = {x.envtype: x for x in runtimes} if runtimes is not None else None
 

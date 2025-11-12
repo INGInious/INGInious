@@ -137,16 +137,16 @@
         {% set index = loop.index %}
         <div class="card mb-3">
             <div class="card-header
-            {% if not mygroup or username not in mygroup['students'] and (group['size']-(group['students']|length)) > 0 and course.can_students_choose_group() %}
+            {% if (not mygroup or username not in mygroup['students']) and (group['size']-(group['students']|length)) > 0 and course.can_students_choose_group() %}
                  bg-success text-white
             {% endif %}"
             role="tab" id="heading_{{index}}">
 
                 {{ group["description"] }}
-                {% if not mygroup or username not in mygroup["students"] and (group["size"]-(group["students"]|length)) > 0 and course.can_students_choose_group() %}
+                {% if (not mygroup or username not in mygroup["students"]) and (group["size"]-(group["students"]|length)) > 0 and course.can_students_choose_group() %}
                     {{ _("(available : {})").format(group["size"]-(group["students"]|length)) }}
                     <div class="pull-right">
-                        <a href="?register_group={{ group['_id'] }}" data-toggle="tooltip" data-placement="left" title="{{ _('Join in') }}">
+                        <a href="?register_group={{ group.id }}" data-toggle="tooltip" data-placement="left" title="{{ _('Join in') }}">
                             <i style="color:white;" class="fa fa-sign-in"></i>
                         </a>
                     </div>

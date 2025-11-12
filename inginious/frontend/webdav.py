@@ -4,19 +4,20 @@
 # more information about the licensing of this file.
 
 import os
-from pymongo import MongoClient
 
 from wsgidav import util, wsgidav_app
 from wsgidav.dav_error import DAVError, HTTP_NOT_FOUND, HTTP_FORBIDDEN
 from wsgidav.dc.base_dc import BaseDomainController
 from wsgidav.dav_provider import DAVProvider
 from wsgidav.fs_dav_provider import FolderResource, FileResource
+from mongoengine import connect
 
-from inginious.frontend.course_factory import create_factories
+from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.user_manager import UserManager
+from inginious.frontend.courses import Course
 
-def get_dc(course_factory, user_manager, filesystem):
+def get_dc(user_manager):
 
     class INGIniousDAVDomainController(BaseDomainController):
         """ Authenticates users using the API key and their username """
@@ -46,7 +47,7 @@ def get_dc(course_factory, user_manager, filesystem):
 
         def is_user_realm_admin(self, realm, user_name):
             try:
-                course = course_factory.get_course(realm)
+                course = Course.get(realm)
             except Exception as ex:
                 return True  # Not a course: static file,...
 
@@ -69,9 +70,8 @@ def get_dc(course_factory, user_manager, filesystem):
 
 class INGIniousDAVCourseFile(FileResource):
     """ Protects the course description file. """
-    def __init__(self, path, environ, filePath, course_factory, course_id):
+    def __init__(self, path, environ, filePath, course_id):
         super(INGIniousDAVCourseFile, self).__init__(path, environ, filePath)
-        self._course_factory = course_factory
         self._course_id = course_id
 
     def delete(self):
@@ -118,7 +118,7 @@ class INGIniousDAVCourseFile(FileResource):
 
             # Now we check if we can still load the course...
             try:
-                self._course_factory.get_course(self._course_id)
+                Course.get(self._course_id)
                 # Everything ok, let's leave things as-is
             except:
                 # We can't load the new file, rollback!
@@ -131,11 +131,8 @@ class INGIniousDAVCourseFile(FileResource):
 
 class INGIniousFilesystemProvider(DAVProvider):
     """ A DAVProvider adapted to the structure of INGInious """
-    def __init__(self, course_factory, task_factory):
+    def __init__(self):
         super(INGIniousFilesystemProvider, self).__init__()
-
-        self.course_factory = course_factory
-        self.task_factory = task_factory
         self.readonly = False
 
     def _get_course_id(self, path):
@@ -158,7 +155,7 @@ class INGIniousFilesystemProvider(DAVProvider):
     def _loc_to_file_path(self, path, environ=None):
         course_id = self._get_course_id(path)
         try:
-            course = self.course_factory.get_course(course_id)
+            course = Course.get(course_id)
         except:
             raise DAVError(HTTP_NOT_FOUND, "Unknown course {}".format(course_id))
 
@@ -192,27 +189,25 @@ class INGIniousFilesystemProvider(DAVProvider):
         # course.yaml needs a special protection
         inner_path = self._get_inner_path(path)
         if len(inner_path) == 1 and inner_path[0] in ["course.yaml", "course.json"]:
-            return INGIniousDAVCourseFile(path, environ, fp, self.course_factory, self._get_course_id(path))
+            return INGIniousDAVCourseFile(path, environ, fp, self._get_course_id(path))
 
         return FileResource(path, environ, fp)
 
 
 def get_app(config):
     """ Init the webdav app """
-    mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client[config.get('mongo_opt', {}).get('database', 'INGInious')]
+    connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
     # Create the FS provider
     if "tasks_directory" not in config:
         raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
 
-    fs_provider = LocalFSProvider(config["tasks_directory"])
-    course_factory, task_factory = create_factories(fs_provider, {}, {}, None)
-    user_manager = UserManager(database, config.get('superadmins', []))
+    init_fs_provider(LocalFSProvider(config["tasks_directory"]))
+    user_manager = UserManager(config.get('superadmins', []))
 
     config = dict(wsgidav_app.DEFAULT_CONFIG)
-    config["provider_mapping"] = {"/": INGIniousFilesystemProvider(course_factory, task_factory)}
-    config["http_authenticator"]["domain_controller"] = get_dc(course_factory, user_manager, fs_provider)
+    config["provider_mapping"] = {"/": INGIniousFilesystemProvider()}
+    config["http_authenticator"]["domain_controller"] = get_dc(user_manager)
     config["verbose"] = 0
 
     app = wsgidav_app.WsgiDAVApp(config)

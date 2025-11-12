@@ -10,7 +10,11 @@ from collections import OrderedDict
 from flask import request, render_template
 from natsort import natsorted
 
+from inginious.frontend.tasks import Task
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.common.exceptions import TaskAlreadyExistsException
+from inginious.frontend.task_dispensers import get_task_dispensers
+from inginious.frontend.models import UserTask, Submission
 
 
 class CourseTaskListPage(INGIniousAdminPage):
@@ -29,10 +33,11 @@ class CourseTaskListPage(INGIniousAdminPage):
         user_input = request.form
         if "task_dispenser" in user_input:
             selected_task_dispenser = user_input.get("task_dispenser", "toc")
-            task_dispenser_class = self.course_factory.get_task_dispensers().get(selected_task_dispenser, None)
+            task_dispenser_class = get_task_dispensers().get(selected_task_dispenser, None)
             if task_dispenser_class:
-                self.course_factory.update_course_descriptor_element(courseid, 'task_dispenser', task_dispenser_class.get_id())
-                self.course_factory.update_course_descriptor_element(courseid, 'dispenser_data', {})
+                course.set_descriptor_element('task_dispenser', task_dispenser_class.get_id())
+                course.set_descriptor_element('dispenser_data', {})
+                course.save()
             else:
                 errors.append(_("Invalid task dispenser"))
         elif "migrate_tasks" in user_input:
@@ -51,13 +56,18 @@ class CourseTaskListPage(INGIniousAdminPage):
 
             for taskid in json.loads(user_input.get("new_tasks", "[]")):
                 try:
-                    self.task_factory.create_task(course, taskid, {
-                        "name": taskid, "problems": {}, "environment_type": "mcq"})
+                    task_fs = course.get_fs().from_subfolder(taskid)
+                    if task_fs.exists("task.yaml"):
+                        raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
+
+                    t = Task(taskid, {"name": taskid, "problems": {}, "environment_type": "mcq"}, task_fs)
+                    t.save()
                 except Exception as ex:
                     errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
             for taskid in json.loads(user_input.get("deleted_tasks", "[]")):
                 try:
-                    self.task_factory.delete_task(courseid, taskid)
+                    t = Task.get(taskid, course.get_fs())
+                    t.delete()
                 except Exception as ex:
                     errors.append(_("Couldn't delete task {} : ").format(taskid) + str(ex))
             for taskid in json.loads(user_input.get("wiped_tasks", "[]")):
@@ -75,20 +85,18 @@ class CourseTaskListPage(INGIniousAdminPage):
         task_dispenser = course.get_task_dispenser()
         data, msg = task_dispenser.check_dispenser_data(dispenser_data)
         if data:
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'task_dispenser',
-                                                                 task_dispenser.get_id())
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'dispenser_data', data)
+            course.set_descriptor_element('task_dispenser',task_dispenser.get_id())
+            course.set_descriptor_element('dispenser_data', data)
+            course.save()
         else:
             raise Exception(_("Invalid course structure: ") + msg)
 
     def clean_task_files(self, course):
         task_dispenser = course.get_task_dispenser()
         legacy_fields = task_dispenser.legacy_fields.keys()
-        for taskid in course.get_tasks():
-            descriptor = self.task_factory.get_task_descriptor_content(course.get_id(), taskid)
-            for field in legacy_fields:
-                descriptor.pop(field, None)
-            self.task_factory.update_task_descriptor_content(course.get_id(), taskid, descriptor)
+        for taskid, task in course.get_tasks().items():
+            task.drop_legacy_fields(legacy_fields)
+            task.save()
 
     def submission_url_generator(self, taskid):
         """ Generates a submission url """
@@ -96,14 +104,12 @@ class CourseTaskListPage(INGIniousAdminPage):
 
     def wipe_task(self, courseid, taskid):
         """ Wipe the data associated to the taskid from DB"""
-        submissions = self.database.submissions.find({"courseid": courseid, "taskid": taskid})
-        for submission in submissions:
-            for key in ["input", "archive"]:
-                if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                    self.submission_manager.get_gridfs().delete(submission[key])
+        for submission in Submission.objects(courseid=courseid, taskid=taskid):
+            submission.archive.delete()
+            submission.input.delete()
 
-        self.database.user_tasks.delete_many({"courseid": courseid, "taskid": taskid})
-        self.database.submissions.delete_many({"courseid": courseid, "taskid": taskid})
+        UserTask.objects(courseid=courseid, taskid=taskid).delete()
+        Submission.objects(courseid=courseid, taskid=taskid).delete()
 
         logging.getLogger("inginious.webapp.task_edit").info("Task %s/%s wiped.", courseid, taskid)
 
@@ -111,7 +117,7 @@ class CourseTaskListPage(INGIniousAdminPage):
         """ Get all data and display the page """
 
         # Load tasks and verify exceptions
-        files = self.task_factory.get_readable_tasks(course)
+        files = course.get_readable_tasks()
 
         tasks = {}
         if errors is None:
@@ -129,7 +135,7 @@ class CourseTaskListPage(INGIniousAdminPage):
                             key=lambda x: x[1]["name"])
         tasks_data = OrderedDict(tasks_data)
 
-        task_dispensers = self.course_factory.get_task_dispensers()
+        task_dispensers = get_task_dispensers()
 
         return render_template("course_admin/task_list.html", course=course,
                                            task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,
