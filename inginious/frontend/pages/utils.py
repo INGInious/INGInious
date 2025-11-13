@@ -25,7 +25,6 @@ from inginious.frontend.i18n import available_languages
 from pymongo.database import Database
 
 from inginious.frontend.course_factory import CourseFactory
-from inginious.frontend.task_factory import TaskFactory
 
 
 class INGIniousPage(MethodView):
@@ -74,11 +73,6 @@ class INGIniousPage(MethodView):
     def course_factory(self) -> CourseFactory:
         """ Returns the course factory singleton """
         return self.app.course_factory
-
-    @property
-    def task_factory(self) -> TaskFactory:
-        """ Returns the task factory singleton """
-        return self.app.task_factory
 
     @property
     def submission_manager(self) -> WebAppSubmissionManager:
