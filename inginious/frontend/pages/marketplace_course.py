@@ -46,7 +46,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
         if "new_courseid" in user_input:
             new_courseid = user_input["new_courseid"]
             try:
-                import_course(course, new_courseid, self.user_manager.session_username(), self.course_factory)
+                import_course(course, new_courseid, self.user_manager.session_username(), self.fs_provider)
             except ImportCourseException as e:
                 errors.append(str(e))
             if not errors:

@@ -13,6 +13,7 @@ from flask import render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.courses import Course
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -21,7 +22,7 @@ class ScoreBoardCourse(INGIniousAuthPage):
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid, self.fs_provider)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:
@@ -49,7 +50,7 @@ class ScoreBoard(INGIniousAuthPage):
 
     def GET_AUTH(self, courseid, scoreboardid):  # pylint: disable=arguments-differ
         """ GET request """
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid, self.fs_provider)
         scoreboards = course.get_descriptor().get('scoreboard', [])
 
         try:

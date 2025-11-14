@@ -10,7 +10,7 @@ import logging
 from flask import request, render_template
 from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
-
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
@@ -22,7 +22,7 @@ class GroupPage(INGIniousAuthPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
 
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid, self.fs_provider)
         username = self.user_manager.session_username()
 
         error = False

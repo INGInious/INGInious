@@ -44,16 +44,6 @@ inginious.frontend.app module
     :undoc-members:
     :show-inheritance:
 
-.. _inginious.frontend.course_factory:
-
-inginious.frontend.course_factory module
--------------------------------------------
-
-.. automodule:: inginious.frontend.course_factory
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 .. _inginious.frontend.courses.Course:
 
 inginious.frontend.courses module
@@ -102,14 +92,6 @@ inginious.frontend.task_problems module
 ----------------------------------------------
 
 .. automodule:: inginious.frontend.task_problems
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-inginious.frontend.task_factory module
---------------------------------------------
-
-.. automodule:: inginious.frontend.task_factory
     :members:
     :undoc-members:
     :show-inheritance:
