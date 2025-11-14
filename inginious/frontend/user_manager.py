@@ -670,8 +670,9 @@ class UserManager:
 
         retval = {username: {"task_succeeded": 0, "task_grades": [], "grade": 0} for username in usernames}
 
+        user_tasks = self._database.user_tasks.find(match)
         users_tasks_list = course.get_task_dispenser().get_user_task_list(usernames)
-        users_grade = course.get_task_dispenser().get_course_grades(usernames)
+        users_grade = course.get_task_dispenser().get_course_grades(user_tasks, usernames)
 
         for result in data:
             username = result["_id"]

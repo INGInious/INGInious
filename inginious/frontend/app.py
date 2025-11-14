@@ -27,13 +27,14 @@ from inginious.frontend.submission_manager import update_pending_jobs
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
 from inginious import get_root_path, __version__, DB_VERSION
-from inginious.frontend.course_factory import create_factories
+from inginious.frontend.course_factory import CourseFactory
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.lti.v1_1 import LTIOutcomeManager
 from inginious.frontend.lti.v1_3 import LTIGradeManager
 from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
+from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.flask.mapping import init_flask_mapping, init_flask_maintenance_mapping
@@ -185,13 +186,12 @@ def get_app(config):
         task_directory = config["tasks_directory"]
         fs_provider = LocalFSProvider(task_directory)
 
-    default_task_dispensers = {
-        task_dispenser.get_id(): task_dispenser for task_dispenser in [TableOfContents, CombinatoryTest]
-    }
+    register_task_dispenser(TableOfContents)
+    register_task_dispenser(CombinatoryTest)
 
     register_problem_types(get_default_displayable_problem_types())
 
-    course_factory, task_factory = create_factories(fs_provider, default_task_dispensers, database)
+    course_factory = CourseFactory(fs_provider)
 
     user_manager = UserManager(database, config.get('superadmins', []))
 
@@ -255,7 +255,6 @@ def get_app(config):
     # Insert the needed singletons into the application, to allow pages to call them
     flask_app.get_path = get_path
     flask_app.course_factory = course_factory
-    flask_app.task_factory = task_factory
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.database = database
@@ -282,7 +281,7 @@ def get_app(config):
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, course_factory, task_factory, database, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, course_factory, database, user_manager, submission_manager, config.get("plugins", []))
 
     # Start the inginious.backend
     client.start()
