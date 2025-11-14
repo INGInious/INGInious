@@ -5,6 +5,9 @@
 
 """ Some type of exceptions used by parts of INGInious """
 
+class NotLoadedException(Exception):
+    pass
+
 
 class InvalidNameException(Exception):
     pass

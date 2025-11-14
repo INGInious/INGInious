@@ -5,9 +5,8 @@
 
 """ Index page """
 from collections import OrderedDict
-
 from flask import request, render_template
-
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
@@ -27,7 +26,7 @@ class MyCoursesPage(INGIniousAuthPage):
         if "new_courseid" in user_input and self.user_manager.user_is_superadmin():
             try:
                 courseid = user_input["new_courseid"]
-                self.course_factory.create_course(courseid, {"name": courseid, "accessible": False})
+                Course(courseid, {"name": courseid, "accessible": False}).save()
                 success = True
             except:
                 success = False
@@ -39,7 +38,7 @@ class MyCoursesPage(INGIniousAuthPage):
         username = self.user_manager.session_username()
         user_info = self.user_manager.get_user_info(username)
 
-        all_courses = self.course_factory.get_all_courses()
+        all_courses = Course.get_all()
 
         # Display
         open_courses = {courseid: course for courseid, course in all_courses.items()

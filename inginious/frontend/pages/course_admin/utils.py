@@ -16,6 +16,7 @@ from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
 
 from inginious.common.base import id_checker
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
@@ -34,7 +35,7 @@ class INGIniousAdminPage(INGIniousAuthPage):
         """
 
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid)
             if allow_all_staff:
                 if not self.user_manager.has_staff_rights_on_course(course):
                     raise Forbidden(description=_("You don't have staff rights on this course."))
@@ -58,7 +59,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
     def get_course_params(self, course, params):
         users = self.get_users(course)
         audiences = self.user_manager.get_course_audiences(course)
-        tasks = course.get_tasks(True)
+        tasks = course.get_task_dispenser().get_ordered_tasks()
 
         tutored_audiences = [str(audience["_id"]) for audience in audiences if
                              self.user_manager.session_username() in audience["tutors"]]

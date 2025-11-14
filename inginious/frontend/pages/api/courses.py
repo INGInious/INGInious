@@ -5,6 +5,7 @@
 
 """ Courses """
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
 
 
@@ -45,10 +46,10 @@ class APICourses(APIAuthenticatedPage):
         output = []
 
         if courseid is None:
-            courses = self.course_factory.get_all_courses()
+            courses = Course.get_all()
         else:
             try:
-                courses = {courseid: self.course_factory.get_course(courseid)}
+                courses = {courseid: Course.get(courseid)}
             except:
                 raise APINotFound("Course not found")
 

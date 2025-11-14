@@ -6,10 +6,13 @@
 """
 Abstract class for filesystems providers.
 """
-
 from __future__ import annotations
+
+from typing import Callable, TypeVar, Optional
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
+
+from inginious.common.exceptions import NotLoadedException
 
 
 class FileSystemProvider(metaclass=ABCMeta):
@@ -140,3 +143,38 @@ class FileSystemProvider(metaclass=ABCMeta):
             ("url", None, url) where url is a url to a distant server which possess the file.
             ("invalid", None, None) if the file cannot be distributed
         """
+
+_fs_provider = None
+_cache = {}
+T = TypeVar('T')
+
+def fetch_or_cache(course_fs : FileSystemProvider, path : str, get_resource : Callable[[], T]) -> T:
+    """ Fetch the cached content for course_fs.prefix + path or put the get_resource() result in cache """
+    last_modif = course_fs.get_last_modification_time(path)
+    cached_data = _cache.get(course_fs.prefix + path, (None, 0))
+    if cached_data[1] < last_modif:
+        _cache[course_fs.prefix + path] = get_resource(), last_modif
+    return _cache[course_fs.prefix + path][0]
+
+
+def invalidate_cache(course_fs : FileSystemProvider, path : Optional[str] = None) -> None:
+    """ Removes the cache content for the specified path or the whole prefix """
+    if path:
+        del _cache[course_fs.prefix + path]
+    else:
+        for key in list(_cache.keys()):
+            if key.startswith(course_fs.prefix):
+                del _cache[key]
+
+
+def get_fs_provider() -> FileSystemProvider:
+    """ Returns the global FileSystemProvider """
+    if not _fs_provider:
+        raise NotLoadedException("FileSystemProvider not loaded")
+    return _fs_provider
+
+
+def init_fs_provider(fs_provider: FileSystemProvider):
+    """ Set the global FileSystemProvider """
+    global _fs_provider
+    _fs_provider = fs_provider
