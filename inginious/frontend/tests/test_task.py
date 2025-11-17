@@ -13,7 +13,7 @@ from inginious.common.exceptions import InvalidNameException, TaskUnreadableExce
 from inginious.common.tasks_problems import *
 
 from inginious.frontend.tasks import Task
-from inginious.frontend.course_factory import create_factories
+from inginious.frontend.course_factory import CourseFactory
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
@@ -29,7 +29,7 @@ problem_types = {"code": CodeProblem, "code_single_line": CodeSingleLineProblem,
 def ressource(request):
     register_base_env_types()
     fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
-    course_factory, _ = create_factories(fs, task_dispensers)
+    course_factory = CourseFactory(fs, task_dispensers, None)
     register_problem_types(get_default_displayable_problem_types())
     yield course_factory
 

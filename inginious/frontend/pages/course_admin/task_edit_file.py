@@ -22,53 +22,54 @@ class CourseTaskFiles(INGIniousAdminPage):
         if not id_checker(taskid):
             raise NotFound(description=_("Invalid task id"))
 
-        self.get_course_and_check_rights(courseid, allow_all_staff=False)
+        course, task = self.get_course_and_check_rights(courseid, taskid=taskid, allow_all_staff=False)
+        task_fs = task.get_fs()
 
         user_input = request.args
         if user_input.get("action") == "download" and user_input.get('path') is not None:
-            return self.action_download(courseid, taskid, user_input.get('path'))
+            return self.action_download(task_fs, course, task, user_input.get('path'))
         elif user_input.get("action") == "delete" and user_input.get('path') is not None:
-            return self.action_delete(courseid, taskid, user_input.get('path'))
+            return self.action_delete(task_fs, course, task, user_input.get('path'))
         elif user_input.get("action") == "rename" and user_input.get('path') is not None and user_input.get('new_path') is not None:
-            return self.action_rename(courseid, taskid, user_input.get('path'), user_input.get('new_path'))
+            return self.action_rename(task_fs, course, task, user_input.get('path'), user_input.get('new_path'))
         elif user_input.get("action") == "create" and user_input.get('path') is not None:
-            return self.action_create(courseid, taskid, user_input.get('path'))
+            return self.action_create(task_fs, course, task, user_input.get('path'))
         elif user_input.get("action") == "edit" and user_input.get('path') is not None:
-            return self.action_edit(courseid, taskid, user_input.get('path'))
+            return self.action_edit(task_fs, course, task, user_input.get('path'))
         else:
-            return self.show_tab_file(courseid, taskid)
+            return self.show_tab_file(course, task)
 
     def POST_AUTH(self, courseid, taskid):  # pylint: disable=arguments-differ
         """ Upload or modify a file """
         if not id_checker(taskid):
             raise NotFound(description=_("Invalid task id"))
 
-        self.get_course_and_check_rights(courseid, allow_all_staff=False)
+        course, task = self.get_course_and_check_rights(courseid, taskid=taskid, allow_all_staff=False)
+        task_fs = task.get_fs()
 
         user_input = request.form.copy()
         user_input["file"] = request.files.get("file")
 
         if user_input.get("action") == "upload" and user_input.get('path') is not None and user_input.get('file') is not None:
-            return self.action_upload(courseid, taskid, user_input.get('path'), user_input.get('file'))
+            return self.action_upload(task_fs, course, task, user_input.get('path'), user_input.get('file'))
         elif user_input.get("action") == "edit_save" and user_input.get('path') is not None and user_input.get('content') is not None:
-            return self.action_edit_save(courseid, taskid, user_input.get('path'), user_input.get('content'))
+            return self.action_edit_save(task_fs, course, task, user_input.get('path'), user_input.get('content'))
         else:
-            return self.show_tab_file(courseid, taskid)
+            return self.show_tab_file(course, task)
 
-    def show_tab_file(self, courseid, taskid, error=None):
+    def show_tab_file(self, course, task, error=None):
         """ Return the file tab """
         return render_template("course_admin/edit_tabs/files.html",
-                                           course=self.course_factory.get_course(courseid),
-                                           taskid=taskid,
-                                           file_list=self.get_task_filelist(self.task_factory, courseid, taskid),
+                                           course=course,
+                                           taskid=task.get_id(),
+                                           file_list=self.get_task_filelist(task.get_fs()),
                                            error=error)
 
     @classmethod
-    def get_task_filelist(cls, task_factory, courseid, taskid):
+    def get_task_filelist(cls, task_fs):
         """ Returns a flattened version of all the files inside the task directory, excluding the files task.* and hidden files.
             It returns a list of tuples, of the type (Integer Level, Boolean IsDirectory, String Name, String CompleteName)
         """
-        task_fs = task_factory.get_task_fs(courseid, taskid)
         if not task_fs.exists():
             return []
 
@@ -104,9 +105,8 @@ class CourseTaskFiles(INGIniousAdminPage):
         recur_print(tmp_out, 0, '')
         return recur_print.flattened
 
-    def verify_path(self, courseid, taskid, path, new_path=False):
+    def verify_path(self, task_fs, path, new_path=False):
         """ Return the real wanted path (relative to the INGInious root) or None if the path is not valid/allowed """
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
         # verify that the dir exists
         if not task_fs.exists():
             return None
@@ -128,46 +128,45 @@ class CourseTaskFiles(INGIniousAdminPage):
 
         return path
 
-    def action_edit(self, courseid, taskid, path):
+    def action_edit(self, task_fs, course, task, path):
         """ Edit a file """
-        wanted_path = self.verify_path(courseid, taskid, path)
+        wanted_path = self.verify_path(task_fs, path)
         if wanted_path is None:
             return "Internal error"
         try:
-            content = self.task_factory.get_task_fs(courseid, taskid).get(wanted_path).decode("utf-8")
+            content = task_fs.get(wanted_path).decode("utf-8")
             return json.dumps({"content": content})
         except:
             return json.dumps({"error": "not-readable"})
 
-    def action_edit_save(self, courseid, taskid, path, content):
+    def action_edit_save(self, task_fs, course, task, path, content):
         """ Save an edited file """
-        wanted_path = self.verify_path(courseid, taskid, path)
+        wanted_path = self.verify_path(task_fs, path)
         if wanted_path is None:
             return json.dumps({"error": True})
         try:
-            self.task_factory.get_task_fs(courseid, taskid).put(wanted_path, content.encode("utf-8"))
+            task_fs.put(wanted_path, content.encode("utf-8"))
             return json.dumps({"ok": True})
         except:
             return json.dumps({"error": True})
 
-    def action_upload(self, courseid, taskid, path, fileobj):
+    def action_upload(self, task_fs, course, task, path, fileobj):
         """ Upload a file """
         # the path is given by the user. Let's normalize it
         path = path.strip()
         if not path.startswith("/"):
             path = "/" + path
-        wanted_path = self.verify_path(courseid, taskid, path, True)
+        wanted_path = self.verify_path(task_fs, path, True)
         if wanted_path is None:
-            return self.show_tab_file(courseid, taskid, _("Invalid new path"))
+            return self.show_tab_file(course, task, _("Invalid new path"))
 
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
         try:
             task_fs.put(wanted_path, fileobj.read())
         except:
-            return self.show_tab_file(courseid, taskid, _("An error occurred while writing the file"))
-        return self.show_tab_file(courseid, taskid)
+            return self.show_tab_file(course, task, _("An error occurred while writing the file"))
+        return self.show_tab_file(course, task)
 
-    def action_create(self, courseid, taskid, path):
+    def action_create(self, task_fs, course, task, path):
         """ Delete a file or a directory """
         # the path is given by the user. Let's normalize it
         path = path.strip()
@@ -176,18 +175,17 @@ class CourseTaskFiles(INGIniousAdminPage):
 
         want_directory = path.endswith("/")
 
-        wanted_path = self.verify_path(courseid, taskid, path, True)
+        wanted_path = self.verify_path(task_fs, path, True)
         if wanted_path is None:
-            return self.show_tab_file(courseid, taskid, _("Invalid new path"))
+            return self.show_tab_file(course, task, _("Invalid new path"))
 
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
         if want_directory:
             task_fs.from_subfolder(wanted_path).ensure_exists()
         else:
             task_fs.put(wanted_path, b"")
-        return self.show_tab_file(courseid, taskid)
+        return self.show_tab_file(course, task)
 
-    def action_rename(self, courseid, taskid, path, new_path):
+    def action_rename(self, task_fs, course, task, path, new_path):
         """ Delete a file or a directory """
         # normalize
         path = path.strip()
@@ -197,49 +195,47 @@ class CourseTaskFiles(INGIniousAdminPage):
         if not new_path.startswith("/"):
             new_path = "/" + new_path
 
-        old_path = self.verify_path(courseid, taskid, path)
+        old_path = self.verify_path(task_fs, path)
         if old_path is None:
-            return self.show_tab_file(courseid, taskid, _("Internal error"))
+            return self.show_tab_file(course, task, _("Internal error"))
 
-        wanted_path = self.verify_path(courseid, taskid, new_path, True)
+        wanted_path = self.verify_path(task_fs, new_path, True)
         if wanted_path is None:
-            return self.show_tab_file(courseid, taskid, _("Invalid new path"))
+            return self.show_tab_file(course, task, _("Invalid new path"))
 
         try:
-            self.task_factory.get_task_fs(courseid, taskid).move(old_path, wanted_path)
-            return self.show_tab_file(courseid, taskid)
+            task_fs.move(old_path, wanted_path)
+            return self.show_tab_file(course, task)
         except:
-            return self.show_tab_file(courseid, taskid, _("An error occurred while moving the files"))
+            return self.show_tab_file(course, task, _("An error occurred while moving the files"))
 
-    def action_delete(self, courseid, taskid, path):
+    def action_delete(self, task_fs, course, task, path):
         """ Delete a file or a directory """
         # normalize
         path = path.strip()
         if not path.startswith("/"):
             path = "/" + path
 
-        wanted_path = self.verify_path(courseid, taskid, path)
+        wanted_path = self.verify_path(task_fs, path)
         if wanted_path is None:
-            return self.show_tab_file(courseid, taskid, _("Internal error"))
+            return self.show_tab_file(course, task, _("Internal error"))
 
         # special case: cannot delete current directory of the task
         if "/" == wanted_path:
-            return self.show_tab_file(courseid, taskid, _("Internal error"))
+            return self.show_tab_file(course, task, _("Internal error"))
 
         try:
-            self.task_factory.get_task_fs(courseid, taskid).delete(wanted_path)
-            return self.show_tab_file(courseid, taskid)
+            task_fs.delete(wanted_path)
+            return self.show_tab_file(course, task)
         except:
-            return self.show_tab_file(courseid, taskid, _("An error occurred while deleting the files"))
+            return self.show_tab_file(course, task, _("An error occurred while deleting the files"))
 
-    def action_download(self, courseid, taskid, path):
+    def action_download(self, task_fs, course, task, path):
         """ Download a file or a directory """
-
-        wanted_path = self.verify_path(courseid, taskid, path)
+        wanted_path = self.verify_path(task_fs, path)
         if wanted_path is None:
             raise NotFound(description=_("This path doesn't exist."))
 
-        task_fs = self.task_factory.get_task_fs(courseid, taskid)
         (method, mimetype_or_none, file_or_url) = task_fs.distribute(wanted_path)
 
         if method == "local":

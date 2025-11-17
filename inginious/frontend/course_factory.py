@@ -12,16 +12,14 @@ from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_ya
 from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException, CourseAlreadyExistsException
 
 from inginious.frontend.courses import Course
-from inginious.frontend.task_factory import TaskFactory
 
 
 class CourseFactory(object):
     """ Load courses from disk """
     _logger = logging.getLogger("inginious.course_factory")
 
-    def __init__(self, filesystem: FileSystemProvider, task_factory, task_dispensers, database):
+    def __init__(self, filesystem: FileSystemProvider, task_dispensers, database):
         self._filesystem = filesystem
-        self._task_factory = task_factory
         self._task_dispensers = task_dispensers
         self._cache = {}
         self._database = database
@@ -60,12 +58,6 @@ class CourseFactory(object):
         :return: an object representing the task, of the type given in the constructor
         """
         return self.get_course(courseid).get_task(taskid)
-
-    def get_task_factory(self):
-        """
-        :return: the associated task factory
-        """
-        return self._task_factory
 
     def get_course_descriptor_content(self, courseid):
         """
@@ -229,19 +221,6 @@ class CourseFactory(object):
                     last_modif["$i18n/" + lang + ".mo"] = translations_fs.get_last_modification_time(lang + ".mo")
 
         self._cache[courseid] = (
-            Course(courseid, course_descriptor, self.get_course_fs(courseid), self._task_factory, self._task_dispensers, self._database),
+            Course(courseid, course_descriptor, self.get_course_fs(courseid), self._task_dispensers, self._database),
             last_modif
         )
-
-        self._task_factory.update_cache_for_course(courseid)
-
-
-def create_factories(fs_provider, task_dispensers, database=None):
-    """
-    Shorthand for creating Factories
-    :param fs_provider: A FileSystemProvider leading to the courses
-    :param task_class:
-    :return: a tuple with two objects: the first being of type CourseFactory, the second of type TaskFactory
-    """
-    task_factory = TaskFactory(fs_provider)
-    return CourseFactory(fs_provider, task_factory, task_dispensers, database), task_factory

@@ -5,14 +5,42 @@
 
 """ Classes modifying basic tasks, problems and boxes classes """
 
+import os
 import gettext
+import logging
 
+from typing import Callable, Any, TypeVar
+
+from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
+from inginious.common.filesystems import FileSystemProvider
+from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.environment_types import get_env_type
 from inginious.frontend.parsable_text import ParsableText
-from inginious.common.base import id_checker
-from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.plugins import plugin_manager
+from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, TaskUnreadableException
+
+
+_cache = {}
+
+def _load_task(task_fs : FileSystemProvider, taskid : str):
+    # Try to open the task file
+    try:
+        task_content = loads_json_or_yaml("task.yaml", task_fs.get("task.yaml"))
+    except Exception as e:
+        raise TaskUnreadableException(str(e))
+
+    return Task(taskid, task_content, task_fs)
+
+T = TypeVar('T')
+
+def _fetch_from_cache(course_fs : FileSystemProvider, path : str, get_resource : Callable[[], T]) -> T:
+    """ Fetch the cached content for course_fs.prefix + path or put the get_resource() result in cache """
+    last_modif = course_fs.get_last_modification_time(path)
+    cached_data = _cache.get(course_fs.prefix + path, (None, 0))
+    if cached_data[1] < last_modif:
+        _cache[course_fs.prefix + path] = get_resource(), last_modif
+    return _cache[course_fs.prefix + path][0]
 
 
 def _migrate_from_v_0_6(content):
@@ -35,9 +63,9 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, taskid, content, course_fs):
+    def __init__(self, taskid : str, content : dict[str, Any], task_fs : FileSystemProvider):
         if not id_checker(taskid):
-            raise Exception("Task with invalid id: " + course_fs.prefix + taskid)
+            raise Exception("Task with invalid id: " + task_fs.prefix)
 
         content = _migrate_from_v_0_6(content)
 
@@ -49,26 +77,9 @@ class Task(object):
 
         # i18n
         self._translations = {}
-        self._task_fs = course_fs.from_subfolder(taskid)
-        self._task_fs.ensure_exists()
 
-        self._translations_fs = self._task_fs.from_subfolder("$i18n")
-
-        if not self._translations_fs.exists():
-            self._translations_fs = self._task_fs.from_subfolder("student").from_subfolder("$i18n")
-        if not self._translations_fs.exists():
-            self._translations_fs = course_fs.from_subfolder("$common").from_subfolder("$i18n")
-        if not self._translations_fs.exists():
-            self._translations_fs = course_fs.from_subfolder("$common").from_subfolder(
-                "student").from_subfolder("$i18n")
-
-        if self._translations_fs.exists():
-            for f in self._translations_fs.list(folders=False, files=True, recursive=False):
-                lang = f[0:len(f) - 3]
-                if self._translations_fs.exists(lang + ".mo"):
-                    self._translations[lang] = gettext.GNUTranslations(self._translations_fs.get_fd(lang + ".mo"))
-                else:
-                    self._translations[lang] = gettext.NullTranslations()
+        self._task_fs = task_fs
+        self._new_doc = not self._task_fs.exists()
 
         # Check all problems
         self._problems = []
@@ -111,6 +122,9 @@ class Task(object):
         
         # Regenerate input random
         self._regenerate_input_random = bool(self._data.get("regenerate_input_random", False))
+
+    def set_translations(self, translations : dict[str, gettext.GNUTranslations]):
+        self._translations = translations
 
     def get_translation_obj(self, language):
         return self._translations.get(language, gettext.NullTranslations())
@@ -199,3 +213,51 @@ class Task(object):
         """ Fetch the legacy config fields now used by task dispensers """
         return {field_class.get_id(): self._data[field] for field, field_class in fields.items()
                 if field in self._data}
+
+    def drop_legacy_fields(self, legacy_fields : list[str]):
+        for field in legacy_fields:
+            self._data.pop(field, None)
+
+    def save(self):
+        """ Saves the Task into the filesystem """
+        self._task_fs.put("task.yaml", get_json_or_yaml("task.yaml", self._data))
+        if self._new_doc:
+            logging.getLogger("inginious.task").info("Task %s created in the factory.", self._task_fs.prefix)
+
+    @classmethod
+    def get(cls, taskid : str, course_fs : FileSystemProvider):
+        """ Fetch a task with id taskid from the specified course filesystem"""
+        if not id_checker(taskid):
+            raise InvalidNameException("Task with invalid name: " + taskid)
+
+        task_fs = course_fs.from_subfolder(taskid)
+        if not task_fs.exists("task.yaml"):
+            raise TaskNotFoundException()
+
+        task = _fetch_from_cache(task_fs, "task.yaml", lambda: _load_task(task_fs, taskid))
+
+        translations = {}
+        i18n_paths = [
+            task_fs.from_subfolder("$i18n"),
+            task_fs.from_subfolder("student").from_subfolder("$i18n"),
+            course_fs.from_subfolder("$common").from_subfolder("$i18n"),
+            course_fs.from_subfolder("$common").from_subfolder("student").from_subfolder("$i18n")
+        ]
+
+        for i18n_fs in i18n_paths:
+            if i18n_fs.exists():
+                for f in i18n_fs.list(folders=False, files=True, recursive=False):
+                    lang, ext = os.path.splitext(f)
+                    if ext == ".mo":
+                        translations[lang] = _fetch_from_cache(i18n_fs, f, lambda: gettext.GNUTranslations(i18n_fs.get_fd(f)))
+                break
+
+        task.set_translations(translations)
+        return task
+
+    def delete(self):
+        """ Erase the content of the task folder """
+        if self._task_fs.prefix in _cache:
+            del _cache[self._task_fs.prefix]
+        self._task_fs.delete()
+        logging.getLogger("inginious.task").info("Task %s erased from the factory.", self._task_fs.prefix)

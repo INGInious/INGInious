@@ -106,14 +106,6 @@ inginious.frontend.task_problems module
     :undoc-members:
     :show-inheritance:
 
-inginious.frontend.task_factory module
---------------------------------------------
-
-.. automodule:: inginious.frontend.task_factory
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 .. _inginious.frontend.tasks.Task:
 
 inginious.frontend.tasks module
