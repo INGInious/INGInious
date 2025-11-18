@@ -13,6 +13,7 @@ from natsort import natsorted
 from inginious.frontend.tasks import Task
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.common.exceptions import TaskAlreadyExistsException
+from inginious.frontend.task_dispensers import get_task_dispensers
 
 
 class CourseTaskListPage(INGIniousAdminPage):
@@ -31,10 +32,11 @@ class CourseTaskListPage(INGIniousAdminPage):
         user_input = request.form
         if "task_dispenser" in user_input:
             selected_task_dispenser = user_input.get("task_dispenser", "toc")
-            task_dispenser_class = self.course_factory.get_task_dispensers().get(selected_task_dispenser, None)
+            task_dispenser_class = get_task_dispensers().get(selected_task_dispenser, None)
             if task_dispenser_class:
-                self.course_factory.update_course_descriptor_element(courseid, 'task_dispenser', task_dispenser_class.get_id())
-                self.course_factory.update_course_descriptor_element(courseid, 'dispenser_data', {})
+                course.set_descriptor_element('task_dispenser', task_dispenser_class.get_id())
+                course.set_descriptor_element('dispenser_data', {})
+                course.save()
             else:
                 errors.append(_("Invalid task dispenser"))
         elif "migrate_tasks" in user_input:
@@ -82,9 +84,9 @@ class CourseTaskListPage(INGIniousAdminPage):
         task_dispenser = course.get_task_dispenser()
         data, msg = task_dispenser.check_dispenser_data(dispenser_data)
         if data:
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'task_dispenser',
-                                                                 task_dispenser.get_id())
-            self.course_factory.update_course_descriptor_element(course.get_id(), 'dispenser_data', data)
+            course.set_descriptor_element('task_dispenser',task_dispenser.get_id())
+            course.set_descriptor_element('dispenser_data', data)
+            course.save()
         else:
             raise Exception(_("Invalid course structure: ") + msg)
 
@@ -134,7 +136,7 @@ class CourseTaskListPage(INGIniousAdminPage):
                             key=lambda x: x[1]["name"])
         tasks_data = OrderedDict(tasks_data)
 
-        task_dispensers = self.course_factory.get_task_dispensers()
+        task_dispensers = get_task_dispensers()
 
         return render_template("course_admin/task_list.html", course=course,
                                            task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,

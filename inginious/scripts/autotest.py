@@ -185,7 +185,7 @@ def test_submission_yaml(client, course_factory, path, output, client_sync):
     # print(os.path.join(test_path, yaml_file.name))
     with open(path, 'r') as yaml:
         yaml_data = load(yaml, Loader=SafeLoader)
-        res = test_task(yaml_data, course_factory.get_course(yaml_data["courseid"]), course_factory.get_task(yaml_data["courseid"], yaml_data["taskid"]), client, client_sync)
+        res = test_task(yaml_data, course_factory.get_course(yaml_data["courseid"]), course_factory.get_course(yaml_data["courseid"]).get_task(yaml_data["taskid"]), client, client_sync)
         if res != {}:
             output[path] = res
 
@@ -203,7 +203,7 @@ def test_task_yaml(path, output, course_factory, task_name, course_name, config)
     """
     with open(path, 'r') as yaml_file:
         yaml_data = load(yaml_file, Loader=SafeLoader)
-    res = test_web_task(yaml_data, course_factory.get_course(course_name), course_factory.get_task(course_name, task_name), config, path)
+    res = test_web_task(yaml_data, course_factory.get_course(course_name), course_factory.get_course(course_name).get_task(task_name), config, path)
     if res != {}:
         output[path] = res
 

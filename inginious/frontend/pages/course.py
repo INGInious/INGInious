@@ -72,13 +72,13 @@ class CoursePage(INGIniousAuthPage):
 
             # Compute course/tasks scores
             tasks_data = {taskid: {"succeeded": False, "grade": 0.0} for taskid in user_task_list}
-            user_tasks = self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": user_task_list}})
+            user_tasks = list(self.database.user_tasks.find({"username": username, "courseid": course.get_id(), "taskid": {"$in": user_task_list}}))
 
             for user_task in user_tasks:
                 tasks_data[user_task["taskid"]]["succeeded"] = user_task["succeeded"]
                 tasks_data[user_task["taskid"]]["grade"] = user_task["grade"]
 
-            course_grade = course.get_task_dispenser().get_course_grade(username)
+            course_grade = course.get_task_dispenser().get_course_grade(user_tasks, username)
 
             # Get tag list
             categories = course.get_task_dispenser().get_all_categories()

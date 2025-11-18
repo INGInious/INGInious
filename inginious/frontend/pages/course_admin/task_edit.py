@@ -35,7 +35,7 @@ class CourseEditTask(INGIniousAdminPage):
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
         try:
-            task = self.course_factory.get_task(courseid, taskid)
+            task = course.get_task(taskid)
             task_data = task._data
         except TaskNotFoundException:
             raise NotFound()
@@ -122,7 +122,7 @@ class CourseEditTask(INGIniousAdminPage):
             return error
 
         try:
-            t = Task(taskid, data, self.course_factory.get_course_fs(courseid).from_subfolder(taskid))
+            t = Task(taskid, data, course.get_fs().from_subfolder(taskid))
         except Exception as message:
             return json.dumps({"status": "error", "message": _("Invalid data: {}").format(str(message))})
 

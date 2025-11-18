@@ -12,6 +12,7 @@ from pylti1p3.tool_config import ToolConfDict
 from jwcrypto.jwk import JWK
 
 from inginious.common.base import dict_from_prefix, id_checker
+from inginious.frontend.courses import Course
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
@@ -32,7 +33,7 @@ class CourseSettingsPage(INGIniousAdminPage):
         course_content = {}
 
         data = flask.request.form
-        course_content = self.course_factory.get_course_descriptor_content(courseid)
+        course_content = course.get_descriptor()
         course_content['name'] = data['name']
         if course_content['name'] == "":
             errors.append(_('Invalid name'))
@@ -138,7 +139,7 @@ class CourseSettingsPage(INGIniousAdminPage):
 
 
         if len(errors) == 0:
-            self.course_factory.update_course_descriptor_content(courseid, course_content)
+            Course(courseid, course_content, course.get_fs()).save()
             errors = None
             course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)  # don't forget to reload the modified course
 
@@ -169,7 +170,8 @@ class CourseSettingsPage(INGIniousAdminPage):
             del tag["id"]
 
         course_content["tags"] = tags
-        self.course_factory.update_course_descriptor_content(course.get_id(), course_content)
+        Course(course.get_id(), course_content, course.get_fs()).save()
+        return None
 
     def prepare_datas(self, data, prefix: str):
         # prepare dict
