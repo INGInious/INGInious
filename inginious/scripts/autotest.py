@@ -19,12 +19,12 @@ from inginious.common.tags import Tag
 from inginious.frontend.tasks import Task
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.common.log import init_logging
-from inginious.frontend.course_factory import CourseFactory
 from inginious.client.client_sync import ClientSync
 from inginious.frontend.arch_helper import start_asyncio_and_zmq, create_arch
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.parsable_text import ParsableText
+from inginious.frontend.courses import Course
 
 
 def import_class(name):
@@ -36,14 +36,14 @@ def import_class(name):
     return mod
 
 
-def create_client(config, course_factory, fs_provider):
+def create_client(config, fs_provider):
     """
     Create a new client and return it
     :param config: dict for configuration
     :return: a Client object
     """
     zmq_context, t = start_asyncio_and_zmq(config.get("debug_asyncio", False))
-    return create_arch(config, fs_provider, zmq_context, course_factory)
+    return create_arch(config, fs_provider, zmq_context)
 
 
 def compare_all_outputs(output1, output2, keys):
@@ -171,12 +171,12 @@ def test_web_task(yaml_data, course, task, config, yaml_path):
         return yaml_data
 
 
-def test_submission_yaml(client, course_factory, path, output, client_sync):
+def test_submission_yaml(client, fs_provider, path, output, client_sync):
     """
     Test the content of a submission.test yaml by comparing it to the output of the client for this task and the same
     input.
     :param client: Client object
-    :param course_factory: CourseFactory object
+    :param fs_provider: FileSystemProvider object
     :param path: String, path to the submission.test
     :param output: dict, output variable
     :param client_sync: ClientSync object, client_sync = ClientSync(client)
@@ -185,17 +185,18 @@ def test_submission_yaml(client, course_factory, path, output, client_sync):
     # print(os.path.join(test_path, yaml_file.name))
     with open(path, 'r') as yaml:
         yaml_data = load(yaml, Loader=SafeLoader)
-        res = test_task(yaml_data, course_factory.get_course(yaml_data["courseid"]), course_factory.get_course(yaml_data["courseid"]).get_task(yaml_data["taskid"]), client, client_sync)
+        course = Course.get(yaml_data["courseid"], fs_provider)
+        res = test_task(yaml_data, course, course.get_task(yaml_data["taskid"]), client, client_sync)
         if res != {}:
             output[path] = res
 
 
-def test_task_yaml(path, output, course_factory, task_name, course_name, config):
+def test_task_yaml(path, output, fs_provider, task_name, course_name, config):
     """
     Test the format and content of a task.yaml file and, if incorrect, the data is stored in the output dict
     :param path: path to the task.yaml
     :param output: output dictionary
-    :param course_factory: CourseFactory object
+    :param fs_provider: FileSystemProvider object
     :param task_name: String, name of the task
     :param course_name: String, name of the course
     :param config: dict, contains configuration variable
@@ -203,18 +204,19 @@ def test_task_yaml(path, output, course_factory, task_name, course_name, config)
     """
     with open(path, 'r') as yaml_file:
         yaml_data = load(yaml_file, Loader=SafeLoader)
-    res = test_web_task(yaml_data, course_factory.get_course(course_name), course_factory.get_course(course_name).get_task(task_name), config, path)
+    course = Course.get(course_name, fs_provider)
+    res = test_web_task(yaml_data, course, course.get_task(task_name), config, path)
     if res != {}:
         output[path] = res
 
 
-def test_all_files(config, client, course_factory):
+def test_all_files(config, client, fs_provider):
     """
     Test each yaml file contained in the dir_path directory, with dir_path specified in the config var, as specified in
     the test_task function
     :param config: dict for configuration
     :param client: backend client of type Client
-    :param course_factory: CourseFactory object
+    :param fs_provider: FilesytemProvider object
     :return: None
     """
     test_output = {}
@@ -231,9 +233,9 @@ def test_all_files(config, client, course_factory):
                     test_files = os.scandir(test_path)
                     for yaml_file in test_files:
                         if not yaml_file.name.startswith('.') and yaml_file.is_file():  # Exclude possible failures
-                            test_submission_yaml(client, course_factory, yaml_file.path, test_output, client_sync)
+                            test_submission_yaml(client, fs_provider, yaml_file.path, test_output, client_sync)
                 task_yaml_path = os.path.join(task.path, "task.yaml")
-                test_task_yaml(task_yaml_path, test_output, course_factory, task.name, os.path.split(dir_path)[1], config)
+                test_task_yaml(task_yaml_path, test_output, fs_provider, task.name, os.path.split(dir_path)[1], config)
     if test_output != {}:  # errors in task.yaml ou submission.test
         output = json.dumps(test_output)
         if "file" in config:
@@ -298,14 +300,9 @@ def main():
     fs_provider = LocalFSProvider(config["task_directory"])
 
     try:
-        course_factory = CourseFactory(fs_provider, task_dispensers, None)  # used for getting tasks
-
-        client = create_client(config, course_factory, fs_provider)
-
+        client = create_client(config, fs_provider)
         client.start()
-
-        test_all_files(config, client, course_factory)
-
+        test_all_files(config, client, fs_provider)
     except BaseException as e:
         print("\nAn error has occured: {}\n".format(e), file=sys.stderr)
         exit(66)

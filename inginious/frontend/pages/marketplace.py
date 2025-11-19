@@ -45,7 +45,7 @@ class MarketplacePage(INGIniousAuthPage):
             new_courseid = user_input["new_courseid"]
             try:
                 course = get_marketplace_course(user_input["courseid"])
-                import_course(course, new_courseid, self.user_manager.session_username(), self.course_factory)
+                import_course(course, new_courseid, self.user_manager.session_username(), self.fs_provider)
             except ImportCourseException as e:
                 errors.append(str(e))
             except:
@@ -62,10 +62,10 @@ class MarketplacePage(INGIniousAuthPage):
         return render_template("marketplace.html", courses=courses, errors=errors)
 
 
-def import_course(course, new_courseid, username, course_factory):
+def import_course(course, new_courseid, username, fs_provider):
     if not id_checker(new_courseid):
         raise ImportCourseException("Course with invalid name: " + new_courseid)
-    course_fs = course_factory.get_course_fs(new_courseid)
+    course_fs = fs_provider.from_subfolder(new_courseid)
 
     if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
         raise ImportCourseException("Course with id " + new_courseid + " already exists.")
@@ -76,7 +76,7 @@ def import_course(course, new_courseid, username, course_factory):
         raise ImportCourseException(_("Couldn't clone course into your instance"))
 
     try:
-        old_descriptor = course_factory.get_course(new_courseid).get_descriptor()
+        old_descriptor = Course.get(new_courseid, fs_provider).get_descriptor()
     except:
         old_descriptor ={}
 

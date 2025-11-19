@@ -8,6 +8,7 @@ import flask
 from flask import redirect, render_template
 from werkzeug.exceptions import NotFound
 
+from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
@@ -32,7 +33,7 @@ class CoursePage(INGIniousAuthPage):
     def get_course(self, courseid):
         """ Return the course """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = Course.get(courseid, self.fs_provider)
         except:
             raise NotFound(description=_("Course not found."))
 

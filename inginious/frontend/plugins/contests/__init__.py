@@ -19,6 +19,7 @@ from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.frontend.task_dispensers import register_task_dispenser
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -97,7 +98,7 @@ class ContestScoreboard(INGIniousAuthPage):
     """ Displays the scoreboard of the contest """
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        course = self.course_factory.get_course(courseid)
+        course = Course.get(courseid, self.fs_provider)
         task_dispenser = course.get_task_dispenser()
         if not task_dispenser.get_id() == Contest.get_id():
             raise NotFound()
@@ -259,7 +260,7 @@ class ContestAdmin(INGIniousAdminPage):
             return render_template("contests/admin.html", course=course, data=contest_data, errors=errors, saved=False)
 
 
-def init(plugin_manager, course_factory, client, config):  # pylint: disable=unused-argument
+def init(plugin_manager, fs_provider, client, config):  # pylint: disable=unused-argument
     """
         Init the contest plugin.
         Available configuration:
@@ -278,4 +279,4 @@ def init(plugin_manager, course_factory, client, config):  # pylint: disable=unu
     plugin_manager.add_hook('javascript_header', lambda : '/static/plugins/contests/contests.js')
     plugin_manager.add_hook('course_menu', course_menu)
     plugin_manager.add_template_prefix("contests", PATH_TO_PLUGIN)
-    course_factory.add_task_dispenser(Contest)
+    register_task_dispenser(Contest)

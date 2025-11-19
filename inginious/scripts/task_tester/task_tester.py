@@ -20,15 +20,16 @@ import os
 # If INGInious files are not installed in Python path
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(os.path.realpath(__file__))),'..'))
 
-from inginious.common.tasks_problems import get_default_problem_types, get_problem_types
+from inginious.common.tasks_problems import register_problem_types
+from inginious.frontend.task_problems import get_default_displayable_problem_types
+from inginious.frontend.task_problems import inspect_displayable_problem_types
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.common.filesystems.local import LocalFSProvider
-from inginious.frontend.course_factory import CourseFactory
 from inginious.client.client_sync import ClientSync
 from inginious.common.base import load_json_or_yaml
-import inginious.frontend.tasks
+from inginious.frontend.courses import Course
 
 
 class TaskTesterLogger(logging.Logger):
@@ -286,21 +287,20 @@ def main():
     task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.get_id(): CombinatoryTest}
 
     """ Set basic problem types available """
-    task_problem_types = get_default_problem_types()
+    register_problem_types(get_default_displayable_problem_types())
 
     """ Load additional problem types from plugins if any """
     if plugins:
         for plugin in plugins:
-            pbl_types = get_problem_types(plugin)
-            task_problem_types.update(pbl_types)
+            displayable_pbl_types = inspect_displayable_problem_types(plugin)
+            register_problem_types(displayable_pbl_types)
 
     """ Intialize the LocalFileSystemProvider of the instance """
     local_fsp = LocalFSProvider(task_directory)
-    course_factory = CourseFactory(local_fsp, task_dispensers, None)
 
     """ Initialize client """
     zmq_context, asyncio_thread = start_asyncio_and_zmq()
-    client = create_arch(config, local_fsp, zmq_context, course_factory)
+    client = create_arch(config, local_fsp, zmq_context)
     client.start()
 
     """ Get the client synchronous """
@@ -318,7 +318,7 @@ def main():
         print('\x1b[1m.\033[0m', end='', flush=True)
     print()
 
-    course = course_factory.get_course(courseid)
+    course = Course.get(courseid, local_fsp)
     course_fs = course.get_fs()
 
     banned = ['.git/', '$common/', '.github/']

@@ -32,6 +32,7 @@ from inginious.common.exceptions import InvalidNameException, CourseNotFoundExce
 def _load_course(course_fs : FileSystemProvider, courseid : str):
     # Try to open the course file
     try:
+        logging.getLogger("inginious.course").info("Caching course %s", courseid)
         task_content = loads_json_or_yaml("course.yaml", course_fs.get("course.yaml"))
     except Exception as e:
         raise CourseUnreadableException(str(e))
@@ -175,7 +176,7 @@ class Course(object):
             task[0:len(task)-1]  # remove trailing /
             for task in self._fs.list(folders=True, files=False, recursive=False)
             if self._fs.from_subfolder(task).exists("task.yaml")
-        ]
+        ] if self._fs.exists() else []
 
     def get_tasks(self) -> dict[str, Task]:
         """ Returns """
@@ -337,3 +338,14 @@ class Course(object):
         invalidate_cache(self._fs)
         self._fs.delete()
         logging.getLogger("inginious.course").info("Course %s erased from the factory.", self._fs.prefix)
+
+    @classmethod
+    def get_all(cls, fs_provider: FileSystemProvider) -> dict[str, Course]:
+        """ Returns a dictionnary with courseid=>Course mapping """
+        output = {}
+        for courseid in [f[0:len(f) - 1] for f in fs_provider.list(folders=True, files=False, recursive=False)]:
+            try:
+                output[courseid] = Course.get(courseid, fs_provider)
+            except Exception as e:
+                logging.getLogger("inginious.course").warning("Cannot open course : %s", courseid)
+        return output
