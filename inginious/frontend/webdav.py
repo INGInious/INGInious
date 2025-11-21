@@ -4,13 +4,13 @@
 # more information about the licensing of this file.
 
 import os
-from pymongo import MongoClient
 
 from wsgidav import util, wsgidav_app
 from wsgidav.dav_error import DAVError, HTTP_NOT_FOUND, HTTP_FORBIDDEN
 from wsgidav.dc.base_dc import BaseDomainController
 from wsgidav.dav_provider import DAVProvider
 from wsgidav.fs_dav_provider import FolderResource, FileResource
+from mongoengine import connect
 
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
@@ -197,15 +197,14 @@ class INGIniousFilesystemProvider(DAVProvider):
 
 def get_app(config):
     """ Init the webdav app """
-    mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client[config.get('mongo_opt', {}).get('database', 'INGInious')]
+    connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
     # Create the FS provider
     if "tasks_directory" not in config:
         raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
 
     init_fs_provider(LocalFSProvider(config["tasks_directory"]))
-    user_manager = UserManager(database, config.get('superadmins', []))
+    user_manager = UserManager(config.get('superadmins', []))
 
     config = dict(wsgidav_app.DEFAULT_CONFIG)
     config["provider_mapping"] = {"/": INGIniousFilesystemProvider()}

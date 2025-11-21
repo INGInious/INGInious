@@ -119,13 +119,3 @@ function audiences_student_remove(username) {
 
     $(".group-entry[data-username='" + username + "']").remove();
 }
-
-function audience_delete(id) {
-    jQuery('<input/>', {
-        type:'hidden',
-        name: 'delete',
-        value: id
-    }).appendTo($('form'));
-
-    $('form').submit();
-}
