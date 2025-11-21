@@ -90,12 +90,16 @@ class TableOfContents(TaskDispenser):
         tasks_weight = {taskid: self.get_weight(taskid) for taskid in taskids}
         tasks_scores = {username: [0.0, 0.0] for username in usernames}
 
+        for username in usernames:
+            for taskid in taskids:
+                if task_list[username][taskid].after_start():
+                    tasks_scores[username][1] += tasks_weight[taskid]
+
         for user_task in user_tasks:
             username = user_task["username"]
             if task_list[username][user_task["taskid"]].after_start():
                 weighted_score = user_task["grade"] * tasks_weight[user_task["taskid"]]
                 tasks_scores[username][0] += weighted_score
-                tasks_scores[username][1] += tasks_weight[user_task["taskid"]]
 
         return {username: round(tasks_scores[username][0]/tasks_scores[username][1])
                 if tasks_scores[username][1] > 0 else 0 for username in usernames}
