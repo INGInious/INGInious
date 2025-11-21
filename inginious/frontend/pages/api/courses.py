@@ -46,10 +46,10 @@ class APICourses(APIAuthenticatedPage):
         output = []
 
         if courseid is None:
-            courses = Course.get_all(self.fs_provider)
+            courses = Course.get_all()
         else:
             try:
-                courses = {courseid: Course.get(courseid, self.fs_provider)}
+                courses = {courseid: Course.get(courseid)}
             except:
                 raise APINotFound("Course not found")
 

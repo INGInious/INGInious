@@ -14,9 +14,9 @@ class LTIOutcomeManager(LTIScorePublisher):
     _submission_tags = {"outcome_service_url": "outcome_service_url", "outcome_result_id": "outcome_result_id",
                         "outcome_consumer_key": "consumer_key"}
 
-    def __init__(self, database, user_manager, fs_provider):
+    def __init__(self, database, user_manager):
         self._logger = logging.getLogger("inginious.webapp.lti1_1.outcome_manager")
-        super(LTIOutcomeManager, self).__init__(database.lis_outcome_queue, user_manager, fs_provider)
+        super(LTIOutcomeManager, self).__init__(database.lis_outcome_queue, user_manager)
 
     def process(self, mongo_entry, grade):
         courseid, consumer_key, service_url, result_id = (mongo_entry["courseid"], mongo_entry["outcome_consumer_key"], mongo_entry["outcome_service_url"], mongo_entry["outcome_result_id"])
@@ -25,7 +25,7 @@ class LTIOutcomeManager(LTIScorePublisher):
             clip = lambda n, minn, maxn: min(max(n, minn), maxn)
             grade = clip(grade / 100.0, 0.0, 1.0)
 
-            course = Course.get(courseid, self._fs_provider)
+            course = Course.get(courseid)
             consumer_secret = course.lti_keys()[consumer_key]
             outcome_response = OutcomeRequest({"consumer_key": consumer_key,
                                                "consumer_secret": consumer_secret,

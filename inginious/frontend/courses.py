@@ -16,7 +16,7 @@ from typing import Iterable, List, Any
 from pylti1p3.tool_config import ToolConfDict
 from datetime import datetime
 
-from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache
+from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
 from inginious.common.tags import Tag
 from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.frontend.accessible_time import AccessibleTime
@@ -37,15 +37,15 @@ def _load_course(course_fs : FileSystemProvider, courseid : str):
     except Exception as e:
         raise CourseUnreadableException(str(e))
 
-    return Course(courseid, task_content, course_fs)
+    return Course(courseid, task_content)
 
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs):
+    def __init__(self, courseid, content):
         self._id = courseid
         self._content = content
-        self._fs = course_fs
+        self._fs = get_fs_provider().from_subfolder(courseid)
         self._new_doc = not self._fs.exists()
 
         self._translations = {}
@@ -124,7 +124,7 @@ class Course(object):
 
     def get_task(self, taskid):
         """ Returns a Task object """
-        return Task.get(taskid, self.get_fs())
+        return Task.get(self._id, taskid)
 
     def get_descriptor(self):
         """ Get (a copy) the description of the course """
@@ -311,12 +311,12 @@ class Course(object):
             logging.getLogger("inginious.course").info("Course %s created in the factory.", self._fs.prefix)
 
     @classmethod
-    def get(cls, courseid : str, fs_provider: FileSystemProvider) -> Course:
+    def get(cls, courseid : str) -> Course:
         """ Fetch a course with id courseid from the specified course filesystem"""
         if not id_checker(courseid):
             raise InvalidNameException("Course with invalid name: " + courseid)
 
-        course_fs = fs_provider.from_subfolder(courseid)
+        course_fs = get_fs_provider().from_subfolder(courseid)
         if not course_fs.exists("course.yaml"):
             raise CourseNotFoundException()
 
@@ -340,12 +340,12 @@ class Course(object):
         logging.getLogger("inginious.course").info("Course %s erased from the factory.", self._fs.prefix)
 
     @classmethod
-    def get_all(cls, fs_provider: FileSystemProvider) -> dict[str, Course]:
+    def get_all(cls) -> dict[str, Course]:
         """ Returns a dictionnary with courseid=>Course mapping """
         output = {}
-        for courseid in [f[0:len(f) - 1] for f in fs_provider.list(folders=True, files=False, recursive=False)]:
+        for courseid in [f[0:len(f) - 1] for f in get_fs_provider().list(folders=True, files=False, recursive=False)]:
             try:
-                output[courseid] = Course.get(courseid, fs_provider)
+                output[courseid] = Course.get(courseid)
             except Exception as e:
                 logging.getLogger("inginious.course").warning("Cannot open course : %s", courseid)
         return output

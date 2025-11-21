@@ -35,7 +35,7 @@ class INGIniousAdminPage(INGIniousAuthPage):
         """
 
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
             if allow_all_staff:
                 if not self.user_manager.has_staff_rights_on_course(course):
                     raise Forbidden(description=_("You don't have staff rights on this course."))

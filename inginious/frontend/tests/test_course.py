@@ -10,6 +10,7 @@ import os
 import tempfile
 import shutil
 
+from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.courses import Course
 from inginious.frontend.task_dispensers.toc import TableOfContents
@@ -26,17 +27,16 @@ task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.ge
 def ressource(request):
     register_base_env_types()
     dir_path = tempfile.mkdtemp()
-    fs = LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks'))
+    init_fs_provider(LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks')))
     register_problem_types(get_default_displayable_problem_types())
     register_task_dispenser(TableOfContents)
     register_task_dispenser(CombinatoryTest)
-    yield fs, dir_path
+    yield dir_path
     c = Course("test",
                {
                    "name": "Unit test 1", "admins": ["testadmin1","testadmin2"],
                    "accessible": True
-               },
-               fs.from_subfolder("test") )
+               })
     c.save()
     shutil.rmtree(dir_path)
 
@@ -45,21 +45,20 @@ class TestCourse(object):
 
     def test_course_loading(self, ressource):
         """Tests if a course file loads correctly"""
-        fs, temp_dir = ressource
         print("\033[1m-> common-courses: course loading\033[0m")
-        c = Course.get('test', fs)
+        c = Course.get('test')
         assert c.get_id() == 'test'
         assert c._content['accessible'] == True
         assert c._content['admins'] == ['testadmin1', 'testadmin2']
         assert c._content['name'] == 'Unit test 1'
 
-        c = Course.get('test2', fs)
+        c = Course.get('test2')
         assert c.get_id() == 'test2'
         assert c._content['accessible'] == '1970-01-01/2033-01-01'
         assert c._content['admins'] == ['testadmin1']
         assert c._content['name'] == 'Unit test 2'
 
-        c = Course.get('test3', fs)
+        c = Course.get('test3')
         assert c.get_id() == 'test3'
         assert c._content['accessible'] == '1970-01-01/1970-12-31'
         assert c._content['admins'] == ['testadmin1', 'testadmin2']
@@ -67,16 +66,14 @@ class TestCourse(object):
 
     def test_invalid_coursename(self, ressource):
         try:
-            fs, temp_dir = ressource
-            Course.get('invalid/name', fs)
+            Course.get('invalid/name')
         except:
             return
         assert False
 
     def test_unreadable_course(self, ressource):
         try:
-            fs, temp_dir = ressource
-            Course.get('invalid_course', fs)
+            Course.get('invalid_course')
         except:
             return
         assert False
@@ -84,8 +81,7 @@ class TestCourse(object):
     def test_all_courses_loading(self, ressource):
         '''Tests if all courses are loaded by Course.get_all_courses()'''
         print("\033[1m-> common-courses: all courses loading\033[0m")
-        fs, temp_dir = ressource
-        c = Course.get_all(fs)
+        c = Course.get_all()
         assert 'test' in c
         assert 'test2' in c
         assert 'test3' in c
@@ -93,8 +89,7 @@ class TestCourse(object):
     def test_tasks_loading(self, ressource):
         '''Tests loading tasks from the get_tasks method'''
         print("\033[1m-> common-courses: course tasks loading\033[0m")
-        fs, temp_dir = ressource
-        c = Course.get('test', fs)
+        c = Course.get('test')
         t = c.get_tasks()
         assert 'task1' in t
         assert 'task2' in t
@@ -102,8 +97,7 @@ class TestCourse(object):
         assert 'task4' in t
 
     def test_tasks_loading_invalid(self, ressource):
-        fs, temp_dir = ressource
-        c = Course.get('test3', fs)
+        c = Course.get('test3')
         t = c.get_tasks()
         assert t == {}
 
@@ -112,7 +106,7 @@ class TestCourseWrite(object):
     """ Test the course update function """
 
     def test_course_update(self, ressource):
-        fs, temp_dir = ressource
+        temp_dir = ressource
         os.mkdir(os.path.join(temp_dir, "test"))
         with open(os.path.join(temp_dir, "test", "course.yaml"), "w") as f:
             f.write("""
@@ -120,11 +114,10 @@ class TestCourseWrite(object):
                 admins: ["a"]
                 accessible: "1970-01-01/2033-01-01"
                         """)
-        assert dict(Course.get("test", fs).get_descriptor()) != {"name": "a", "admins": ["a"],
+        assert dict(Course.get("test").get_descriptor()) != {"name": "a", "admins": ["a"],
                                                                                     "accessible": "1970-01-01/2033-01-01"}
 
-        c = Course("test", {"name": "b", "admins": ["b"],"accessible": "1970-01-01/2030-01-01"}, fs.from_subfolder("test"))
-        c.save()
+        Course("test", {"name": "b", "admins": ["b"],"accessible": "1970-01-01/2030-01-01"}).save()
 
-        assert dict(Course.get("test", fs).get_descriptor()) == {"name": "b", "admins": ["b"],
+        assert dict(Course.get("test").get_descriptor()) == {"name": "b", "admins": ["b"],
                                                                               "accessible": "1970-01-01/2030-01-01"}

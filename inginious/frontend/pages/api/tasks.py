@@ -61,7 +61,7 @@ class APITasks(APIAuthenticatedPage):
         """
 
         try:
-            course = Course.get(courseid, self.fs_provider)
+            course = Course.get(courseid)
         except:
             raise APINotFound("Course not found")
 
