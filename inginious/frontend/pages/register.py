@@ -13,9 +13,12 @@ import logging
 from flask import render_template
 from flask_mail import Message
 from werkzeug.exceptions import Forbidden
+from mongoengine import Q
+
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.flask.mail import mail
 from inginious.frontend.user_manager import UserManager
+from inginious.frontend.models import User
 
 
 class RegistrationPage(INGIniousPage):
@@ -34,7 +37,7 @@ class RegistrationPage(INGIniousPage):
         data = flask.request.args
 
         if "activate" in data:
-            error = self.user_manager.activate_user(data["activate"])
+            error = not self.user_manager.activate_user(data["activate"])
             msg = _("Invalid activation hash.") if error else _("User successfully activated.")
         elif "reset" in data:
             msg, error, reset = self.get_reset_data(data)
@@ -47,7 +50,7 @@ class RegistrationPage(INGIniousPage):
         error = False
         reset = None
         msg = ""
-        user = self.database.users.find_one({"reset": data.get("reset", "")})
+        user = User.objects(reset=data.get("reset", "")).first()
         if user is None:
             error = True
             msg = "Invalid reset hash."
@@ -81,8 +84,7 @@ class RegistrationPage(INGIniousPage):
             msg = _("Please accept the Terms of Service and Data Privacy")
 
         if not error:
-            existing_user = self.database.users.find_one(
-                {"$or": [{"username": data["username"]}, {"email": email}]})
+            existing_user = User.objects(Q(username=data["username"]) | Q(email=email)).first()
             if existing_user is not None:
                 error = True
                 if existing_user["username"] == data["username"]:
@@ -92,16 +94,9 @@ class RegistrationPage(INGIniousPage):
             else:
                 passwd_hash = UserManager.hash_password(data["passwd"])
                 activate_hash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
-                self.database.users.insert_one({"username": data["username"],
-                                                "realname": data["realname"],
-                                                "email": email,
-                                                "password": passwd_hash,
-                                                "activate": activate_hash,
-                                                "bindings": {},
-                                                "language": self.user_manager._session.get("language", "en"),
-                                                "code_indentation": "4",
-                                                "tos_accepted": True
-                                                })
+                User(username= data["username"], realname=data["realname"], email=email,
+                     password=passwd_hash, activate=activate_hash,
+                     language=self.user_manager.session_language(), tos_accepted=True).save()
                 try:
                     subject = _("Welcome on INGInious")
                     body = _("""Welcome on INGInious !
@@ -116,7 +111,7 @@ To activate your account, please click on the following link :
                     msg = _("You are succesfully registered. An email has been sent to you for activation.")
                 except Exception as ex:
                     # Remove newly inserted user (do not add after to prevent email sending in case of failure)
-                    self.database.users.delete_one({"username": data["username"]})
+                    User.objects(username=data["username"]).delete()
                     error = True
                     msg = _("Something went wrong while sending you activation email. Please contact the administrator.")
                     self._logger.error("Couldn't send email : {}".format(str(ex)))
@@ -139,8 +134,7 @@ To activate your account, please click on the following link :
 
         if not error:
             reset_hash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
-            user = self.database.users.find_one_and_update({"email": data["recovery_email"]},
-                                                           {"$set": {"reset": reset_hash}})
+            user = User.objects(email=data["recovery_email"]).modify(reset=reset_hash, new=True)
             if user is None:
                 error = True
                 msg = _("This email address was not found in database.")
@@ -181,9 +175,8 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
 
         if not error:
             passwd_hash = UserManager.hash_password(data["passwd"])
-            user = self.database.users.find_one_and_update({"reset": data["reset"]},
-                                                           {"$set": {"password": passwd_hash},
-                                                            "$unset": {"reset": True, "activate": True}})
+            user = User.objects(reset=data["reset"]).modify(set__password=passwd_hash,
+                                                            unset__reset=True, unset__activate=True, new=True)
             if user is None:
                 error = True
                 msg = _("Invalid reset hash.")

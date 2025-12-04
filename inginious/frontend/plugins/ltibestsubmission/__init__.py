@@ -4,6 +4,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.courses import Course
+from inginious.frontend.models import UserTask,  User,  Submission
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
@@ -20,31 +21,26 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         courseid, taskid = data["task"]
 
         # get the INGInious username from the ToolConsumer-provided username
-        inginious_usernames = list(self.database.users.find(
-            {"ltibindings." + courseid + "." + data[self._field]: data["username"]}
-        ))
-
-        if not inginious_usernames:
+        user_profile = User.objects(**{"ltibindings__" + courseid + "__" + data[self._field]: data["username"]}).first()
+        if not user_profile:
             return json_util.dumps({"status": "error", "message": "user not bound with lti"})
 
-        inginious_username = inginious_usernames[0]["username"]
+        inginious_username = user_profile.username
 
         # get best submission from database
-        user_best_sub = list(self.database.user_tasks.find(
-            {"username": inginious_username, "courseid": courseid, "taskid": taskid},
-            {"submissionid": 1, "_id": 0}))
+        user_best_sub = UserTask.objects(username=inginious_username, courseid=courseid, taskid=taskid).only("submissionid").get()
 
         if not user_best_sub:
             # no submission to retrieve
             return json_util.dumps({"status": "success", "submission": None})
 
-        user_best_sub_id = user_best_sub[0]["submissionid"]
+        user_best_sub_id = user_best_sub.submissionid
 
         if user_best_sub_id is None:
             # no best submission
             return json_util.dumps({"status": "success", "submission": None})
 
-        best_sub = list(self.database.submissions.find({"_id": ObjectId(user_best_sub_id)}))[0]
+        best_sub = Submission.objects.get(id=user_best_sub_id)
 
         # attach the input to the submission
         best_sub = self.submission_manager.get_input_from_submission(best_sub)

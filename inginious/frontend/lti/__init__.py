@@ -9,20 +9,21 @@ import threading
 import queue
 import time
 
+from typing import Type
 from abc import ABCMeta, abstractmethod
-from pymongo import ReturnDocument
+from mongoengine import Document
 
 
 class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
     _submission_tags = {}
 
-    def __init__(self, mongo_collection, user_manager):
+    def __init__(self, mongo_document : Type[Document], user_manager):
         super(LTIScorePublisher, self).__init__()
         self.daemon = True
         self._queue = queue.Queue()
         self._stopped = False
 
-        self._mongo_collection = mongo_collection
+        self._mongo_document = mongo_document
         self._user_manager = user_manager
         self.start()
 
@@ -31,7 +32,7 @@ class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
 
     def run(self):
         # Load old tasks from the database
-        for todo in self._mongo_collection.find({}):
+        for todo in self._mongo_document.objects():
             self._queue.put(todo)
 
         try:
@@ -46,16 +47,18 @@ class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
                     return False
 
                 if self.process(data, grade):
-                    self._delete_in_db(data["_id"])
-                    self._logger.debug("Successfully sent grade to TC: %s", str(data))
+                    data.delete()
+                    self._logger.debug("Successfully sent grade to TC: %s", str(data.to_mongo().to_dict()))
                     continue
 
                 if data["nb_attempt"] < 5:
                     self._logger.debug("An error occurred while sending a grade to the TC. Retrying...")
-                    self._increment_attempt(data["_id"])
+                    data.nb_attempt += 1
+                    data.save()
+                    self._queue.put(data)
                 else:
                     self._logger.error("An error occurred while sending a grade to the TC. Maximum number of retries reached.")
-                    self._delete_in_db(data["_id"])
+                    data.delete()
         except KeyboardInterrupt:
             pass
 
@@ -74,26 +77,9 @@ class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
         for username in submission["username"]:
             search = {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]}
             search.update({key: submission[key] for key in self._submission_tags.keys()})
-            entry = self._mongo_collection.find_one_and_update(search, {"$set": {"nb_attempt": 0}}, return_document=ReturnDocument.BEFORE, upsert=True)
+            entry = self._mongo_document.objects(**search).modify(nb_attempt=0, upsert=True, new=False)
             if entry is None:  # and it should be
-                self._queue.put(self._mongo_collection.find_one(search))
-
-    def _delete_in_db(self, mongo_id):
-        """
-        Delete an element from the queue in the database
-        :param mongo_id:
-        :return:
-        """
-        self._mongo_collection.delete_one({"_id": mongo_id})
-
-    def _increment_attempt(self, mongo_id):
-        """
-        Increment the number of attempt for an entry and
-        :param mongo_id:
-        :return:
-        """
-        entry = self._mongo_collection.find_one_and_update({"_id": mongo_id}, {"$inc": {"nb_attempt": 1}})
-        self._queue.put(entry)
+                self._queue.put(self._mongo_document.objects.get(**search))
 
     def tag_submission(self, submission, lti_info):
         """

@@ -4,17 +4,12 @@
 # more information about the licensing of this file.
 
 from datetime import datetime, timezone
-import glob
 import logging
-import os
 import random
-import zipfile
 
-import bson.json_util
-from flask import request, redirect, Response, render_template
-from werkzeug.exceptions import NotFound
+from flask import request, redirect, render_template
 
-
+from inginious.frontend.models import Submission, Audience, UserTask, Group,  CourseClass
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.user_manager import UserManager
@@ -26,18 +21,15 @@ class CourseDangerZonePage(INGIniousAdminPage):
     _logger = logging.getLogger("inginious.webapp.danger_zone")
 
     def wipe_course(self, courseid):
-        submissions = self.database.submissions.find({"courseid": courseid})
-        for submission in submissions:
-            for key in ["input", "archive"]:
-                gridfs = self.submission_manager.get_gridfs()
-                if key in submission and type(submission[key]) == bson.objectid.ObjectId and gridfs.exists(submission[key]):
-                    gridfs.delete(submission[key])
+        for submission in Submission.objects(courseid=courseid):
+            submission.input.delete()
+            submission.archive.delete()
 
-        self.database.courses.update_one({"_id": courseid}, {"$set": {"students": []}})
-        self.database.audiences.delete_many({"courseid": courseid})
-        self.database.groups.delete_many({"courseid": courseid})
-        self.database.user_tasks.delete_many({"courseid": courseid})
-        self.database.submissions.delete_many({"courseid": courseid})
+        CourseClass.objects(id=courseid).update(students=[])
+        Audience.objects(courseid=courseid).delete()
+        Group.objects(courseid=courseid).delete()
+        UserTask.objects(courseid=courseid).delete()
+        Submission.objects(courseid=courseid).delete()
 
         self._logger.info("Course %s wiped.", courseid)
 
@@ -68,15 +60,14 @@ class CourseDangerZonePage(INGIniousAdminPage):
         Course(archive_course_id, archive_course_content).save()
 
         # Update course id in DB
-        self.database.submissions.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
-        self.database.user_tasks.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
-        self.database.groups.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
-        self.database.audiences.update_many({"courseid": courseid}, {"$set": {"courseid": archive_course_id}})
-        old_course_students = self.database.courses.find_one_and_delete({"_id": courseid})
+        Submission.objects(courseid=courseid).update(set__courseid=archive_course_id)
+        UserTask.objects(courseid=courseid).update(set__courseid=archive_course_id)
+        Group.objects(courseid=courseid).update(set__courseid=archive_course_id)
+        Audience.objects(courseid=courseid).update(set__courseid=archive_course_id)
+        old_course_class = CourseClass.objects(id=courseid).modify(remove=True)
 
-        if old_course_students:
-            old_course_students["_id"] = archive_course_id
-            self.database.courses.insert_one(old_course_students)
+        if old_course_class:
+            CourseClass(id=archive_course_id, students=old_course_class.students).save()
 
         self._logger.info("Course %s archived as %s.", courseid, archive_course_id)
         return courseid, archive_course_id
@@ -89,7 +80,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         # Deletes the course from the factory (entire folder)
         course.delete()
 
-        self._logger.info("Course %s files erased.", courseid)
+        self._logger.info("Course %s files erased.", course.get_id())
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """

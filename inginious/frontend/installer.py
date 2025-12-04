@@ -16,9 +16,13 @@ import docker
 from docker.errors import BuildError
 from gridfs import GridFS
 from pymongo import MongoClient
+from mongoengine import connect
+
+
 from inginious import __version__
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.user_manager import UserManager
+from inginious.frontend.models import User
 
 HEADER = '\033[95m'
 INFO = '\033[94m'
@@ -164,11 +168,11 @@ class Installer:
         misc_opt = self.configure_misc()
         options.update(misc_opt)
 
-        database = self.try_mongodb_opts(options["mongo_opt"]["host"], options["mongo_opt"]["database"])
-
+        self.try_mongodb_opts(options["mongo_opt"]["host"], options["mongo_opt"]["database"])
+        connect(options["mongo_opt"]["database"], host=options["mongo_opt"]["host"])
 
         self._display_header("AUTHENTIFICATION")
-        auth_opts = self.configure_authentication(database)
+        auth_opts = self.configure_authentication()
         options.update(auth_opts)
 
         self._display_info("You may want to add additional plugins to the configuration file.")
@@ -539,7 +543,7 @@ class Installer:
             "require_cert": require_cert
         }
 
-    def configure_authentication(self, database):
+    def configure_authentication(self):
         """ Configure the authentication """
         options = {"plugins": [], "superadmins": []}
 
@@ -556,13 +560,7 @@ class Installer:
 
         password = self._ask_with_default("Enter the password of the superadmin", "superadmin")
 
-        database.users.insert_one({"username": username,
-                                   "realname": realname,
-                                   "email": email,
-                                   "password": UserManager.hash_password(password),
-                                   "bindings": {},
-                                   "code_indentation": "4",
-                                   "language": "en"})
+        User(username=username, realname=realname, email=email, password=UserManager.hash_password(password)).save()
 
         options["superadmins"].append(username)
 

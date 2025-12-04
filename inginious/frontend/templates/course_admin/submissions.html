@@ -100,7 +100,7 @@
             {%endif %}">
                 <td>
                     {% if "best" in submission and submission["best"] %}
-                        <i class="fa fa-star" title="{{ submission['_id'] }}" data-toggle="tooltip" data-placement="bottom"></i>
+                        <i class="fa fa-star" title="{{ submission.id }}" data-toggle="tooltip" data-placement="bottom"></i>
                     {% endif %}
                 </td>
                 <td>
@@ -118,7 +118,7 @@
                     <td>{{ submission["taskid"] }}</td>
                 {% endif %}
                 {% if "show_id" in old_params %}
-                    <td>{{ submission["_id"] }}</td>
+                    <td>{{ submission.id }}</td>
                 {% endif %}
                 <td>{{ show_time(submission['submitted_on'])}}</td>
                 <td>
@@ -136,7 +136,7 @@
                     {% else %}
                         {{_("Failed")}}
                     {% endif %}
-                    ({{ submission.get("grade", 0.0) }}%)
+                    ({{ submission.grade }}%)
                 </td>
 
                 <!-- TAGS td -->
@@ -177,12 +177,12 @@
 
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
-                        <a href="{{get_path('submission', str(submission['_id']))}}"
+                        <a href="{{get_path('submission', str(submission.id))}}"
                            class="btn btn-secondary" title="{{ _('View submission') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-file-code-o fa-fw"></i></a>
-                        <a href="{{get_path('admin', course.get_id(), 'submissions?download_submission=' + str(submission['_id']) + '#alerts')}}" class="btn btn-secondary" title="{{ _('Download submission') }}" data-toggle="tooltip"
+                        <a href="{{get_path('admin', course.get_id(), 'submissions?download_submission=' + str(submission.id) + '#alerts')}}" class="btn btn-secondary" title="{{ _('Download submission') }}" data-toggle="tooltip"
                            data-placement="bottom"><i class="fa fa-download"></i></a>
                         {% if is_admin %}
-                            <a href="#alerts" class="replay btn btn-secondary" title=" {{ _('Replay submission') }}" data-toggle="tooltip" data-submissionid="{{ submission['_id'] }}"
+                            <a href="#alerts" class="replay btn btn-secondary" title=" {{ _('Replay submission') }}" data-toggle="tooltip" data-submissionid="{{ submission.id }}"
                                data-placement="bottom"><i class="fa fa-refresh"></i></a>
                         {% endif %}
                     </div>

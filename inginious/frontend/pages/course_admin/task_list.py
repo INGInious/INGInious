@@ -14,6 +14,7 @@ from inginious.frontend.tasks import Task
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.common.exceptions import TaskAlreadyExistsException
 from inginious.frontend.task_dispensers import get_task_dispensers
+from inginious.frontend.models import UserTask, Submission
 
 
 class CourseTaskListPage(INGIniousAdminPage):
@@ -103,14 +104,12 @@ class CourseTaskListPage(INGIniousAdminPage):
 
     def wipe_task(self, courseid, taskid):
         """ Wipe the data associated to the taskid from DB"""
-        submissions = self.database.submissions.find({"courseid": courseid, "taskid": taskid})
-        for submission in submissions:
-            for key in ["input", "archive"]:
-                if key in submission and type(submission[key]) == bson.objectid.ObjectId:
-                    self.submission_manager.get_gridfs().delete(submission[key])
+        for submission in Submission.objects(courseid=courseid, taskid=taskid):
+            submission.archive.delete()
+            submission.input.delete()
 
-        self.database.user_tasks.delete_many({"courseid": courseid, "taskid": taskid})
-        self.database.submissions.delete_many({"courseid": courseid, "taskid": taskid})
+        UserTask.objects(courseid=courseid, taskid=taskid).delete()
+        Submission.objects(courseid=courseid, taskid=taskid).delete()
 
         logging.getLogger("inginious.webapp.task_edit").info("Task %s/%s wiped.", courseid, taskid)
 
