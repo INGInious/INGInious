@@ -17,7 +17,7 @@ import flask
 from flask import redirect, Response, render_template
 from werkzeug.exceptions import NotFound, HTTPException
 
-from frontend.models.submission import Submission
+from inginious.frontend.models import Submission
 from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundException
 from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
