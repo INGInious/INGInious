@@ -5,7 +5,7 @@
 {% block title %}{{ _("My courses") }}{% endblock %}
 
 {% block navbar %}
-    <nav aria-label="breadcrumb">
+<nav aria-label="breadcrumb" xmlns="http://www.w3.org/1999/html">
         <ol class="breadcrumb">
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-th-list"></i> {{ _("My courses") }}
                 <span class="sr-only">{{ _("(current)") }}</span></a>
@@ -51,70 +51,266 @@
 {% endblock %}
 
 {% block content %}
-<h2>{{ _("My courses") }}</h2>
-<div class="list-group">
-	{%if open_courses %}
-        {% set username = user_manager.session_username() %}
-        {% for courseid, course in open_courses.items() %}
-            <a href="{{ get_path('course', courseid) }}" class="list-group-item list-group-item-action
-                {% if course.is_lti() %}
-                    list-group-item-info
-                {% elif course.is_archive() %}
-                    list-group-item-dark
-                {% elif not course.is_open_to_non_staff() %}
-                    list-group-item-warning
-                {% endif %}">
-                <div class="row">
-                    <div class="col-xs-12 col-md-8">
-                        {{ course.get_name(user_manager.session_language()) }}
-                    </div>
-                    <div class="col-xs-12 col-md-4">
-                        <i class="pull-right">
-                            {% if course.is_lti() %}
-                                {{ _("LTI course") }} -
-                            {% elif course.is_archive() %}
-                                {{ _("Archive") }} - {{show_time(course.get_archiving_date())}}
-                            {% elif not course.is_open_to_non_staff() %}
-                                {{ _("Hidden course") }} -
-                            {% endif %}
-
-                            {% if username in course.get_admins() or user_manager.user_is_superadmin() %}
-                                {{ _("Administrator") }}
-                            {% elif username in course.get_tutors() %}
-                                {{ _("Tutor") }}
-                            {% elif user_manager.course_is_user_registered(course) %}
-                                {{ _("Student") }}
-                            {% endif %}
-                        </i>
+    <h2>{{ _("My pinned courses") }}</h2>
+        <div class="row row-cols-1 row-cols-md-2" id="pinned_list">
+            {% for courseid, course in pinned_courses.items() %}
+                <div class="col mb-4" id="pinned-{{courseid}}">
+                    <div class="card m-2">
+                        <div class="card-body course_card">
+                            <h5 class="card-title">
+                                {% if course.is_lti() %}
+                                    {% if course.lti_url() %}
+                                    <a target="_blank" href="{{ course.lti_url() }}">
+                                        {% endif %}
+                                        {{course.get_name(user_manager.session_language())}}
+                                        {% if course.lti_url() %}
+                                    </a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
+                                {% endif %}
+                            </h5>
+                            <div class="card-text card-trunc">
+                                {{ course.get_description(user_manager.session_language()) | safe }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </a>
+            {% endfor %}
+        </div>
+        <div class="alert alert-primary {%if pinned_courses%} d-none {%endif%}" id="no_pin_message" >{{ _("You have no pinned courses. Go to the full course list to pin some.") }}</div>
+
+            <h2>{{ _("My courses") }}</h2>
+            <div class="pin_alert alert alert-danger" role="alert" hidden>
+                {{ _("Something went wrong when pinning/unpinning your course. If the issue persists please contact an administrator.") }}
+            </div>
+            <div class="max_pin_alert alert alert-danger d-none" role="alert" >
+                {{ _("You are not allowed to have more than 6 pinned courses.") }}
+            </div>
+
+            <div class="form-group">
+                <input class="form-control" id="course_search" type="text" placeholder="Search a course by its name">
+            </div>
+            <div class="form_group" id="course_filters">
+                <div >
+                    <button type="button" id="is_archive" class="btn btn-light course_filter" data-value="null">Archive</button>
+                    <button type="button" id="is_lti" class="btn btn-light course_filter" data-value="null">LTI</button>
+                    <button type="button" id="is_hidden" class="btn btn-light course_filter" data-value="null">Hidden</button>
+                    <button type="button" id="is_pinned" class="btn btn-light course_filter" data-value="null">Pinned</button>
+                </div>
+            </div>
+            <hr>
+            <div class="course_list list-group">
+                {%if open_courses %}
+                    {% set username = user_manager.session_username() %}
+                    {% for courseid, course in open_courses.items() %}
+                        <a href="{{ get_path('course', courseid) }}" data-course-id="{{courseid}}" class="course_item list-group-item list-group-item-action
+                            {% if course.is_lti() %}
+                                list-group-item-info
+                            {% elif course.is_archive() %}
+                                list-group-item-dark
+                            {% elif not course.is_open_to_non_staff() %}
+                                list-group-item-warning
+                            {% endif %}">
+                            <div class="row align-items-center">
+                                <div class="course_name col-xs-12 col-md-8">
+                                    {% if courseid in pinned_courses %}
+                                        <button type="button" class="btn course_pin " data-course-id="{{courseid}}">
+                                            <i class="fa fa-star text-warning"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn course_pin" data-course-id="{{courseid}}">
+                                            <i class="fa fa-star-o "></i>
+                                        </button>
+                                    {% endif %}
+                                    {{ course.get_name(user_manager.session_language()) }}
+                                </div>
+                                <div class="col-xs-12 col-md-4">
+                                    <i class="pull-right">
+                                        {% if course.is_lti() %}
+                                            {{ _("LTI course") }} -
+                                        {% elif course.is_archive() %}
+                                            {{ _("Archive") }} - {{show_time(course.get_archiving_date())}}
+                                        {% elif not course.is_open_to_non_staff() %}
+                                            {{ _("Hidden course") }} -
+                                        {% endif %}
+
+                                        {% if username in course.get_admins() or user_manager.user_is_superadmin() %}
+                                            {{ _("Administrator") }}
+                                        {% elif username in course.get_tutors() %}
+                                            {{ _("Tutor") }}
+                                        {% elif user_manager.course_is_user_registered(course) %}
+                                            {{ _("Student") }}
+                                        {% endif %}
+                                    </i>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <a href="#register" >{{ _("You are not registered to any course") }}</a>
+                {% endif %}
+            </div>
+            {% if user_manager.user_is_superadmin() %}
+                <hr/>
+                {% if success == True %}
+                    <div class="alert alert-success alert-dismissable" role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        {{ _("Course created.") }}
+                    </div>
+                {% elif success == False %}
+                    <div class="alert alert-danger alert-dismissable" role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        {{ _("Failed to create the course.") }}
+                    </div>
+                {% endif %}
+                <form class="form row" role="form" method="post">
+                    <div class="form-group col-sm-8">
+                        <label class="sr-only" for="new_courseid">{{ _("Course") }}</label>
+                        <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder="{{ _('New course id') }}">
+                    </div>
+                    <div class="form-group col-sm-4">
+                        <button type="submit" class="btn btn-block btn-primary">{{ _("Create new course") }}</button>
+                    </div>
+                </form>
+            {% endif %}
+
+
+<script>
+    $(document).on('click', '.course_pin', function(event) {
+        event.preventDefault(); // prevent redirect by <a> tag
+
+        var click_button = $(this);
+        courseid = click_button.data("course-id");
+
+        $.ajax({
+            type: "POST",
+            url: "/mycourses",
+            data: `pinning_courseid=${courseid}`,
+            success: function(data) {
+                if (!data || data.error) {
+                    $(".max_pin_alert")
+                        .removeClass("d-none")      // make it visible
+                        .show()               // ensure jQuery knows it's visible -> needed
+                        .delay(3000)
+                        .fadeOut(300, function() {
+                            $(this).addClass("d-none");
+                      });
+                     return;
+                }
+
+                if (click_button.find("i").hasClass("fa-star-o")) { // pinning
+
+                    click_button.find("i").removeClass("fa-star-o").addClass("fa-star text-warning");
+
+                    const pinnedItem = `
+                        <div class="col mb-4" id="pinned-${courseid}">
+                            <div class="card m-2">
+                                <div class="card-body course_card">
+                                    <h5 class="card-title">
+                                        <a ${data["is_lti"] && data["lti_url"] ? `target="_blank" href=${data["lti_url"]}` : `href=${data["path"]}`}>
+                                            ${data["name"]}
+                                        </a>
+                                    </h5>
+                                    <div class="card-text card-trunc">
+                                        ${data["description"]}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    $(document).find("#pinned_list").append(pinnedItem);
+
+                    if( $(document).find(".course_card").length > 0) {
+                        $(document).find("#no_pin_message").addClass("d-none");
+                    }
+                    $(document).find(`.course_item[data-course-id=${courseid}]`).data("temporary_pin_value", "true");
+
+                } else { // unpinning
+                    click_button.find("i").removeClass("fa-star text-warning").addClass("fa-star-o");
+
+                    $(document).find(`#pinned-${courseid}`).remove();
+                    $(document).find(`.course_item[data-course-id=${courseid}]`).data("temporary_pin_value", "false");
+
+                    if( $(document).find(".course_card").length < 1) {
+                        $(document).find("#no_pin_message").removeClass("d-none");
+                    }
+                }
+            },
+            error: function(data) {
+                $(".pin_alert")
+                    .removeClass("d-none")      // make it visible
+                    .show()               // ensure jQuery knows it's visible -> needed
+                    .delay(3000)
+                    .fadeOut(300, function() {
+                        $(this).addClass("d-none");
+                });
+            }
+        });
+    });
+
+    $(document).on("click", ".course_filter", function() {
+        // change button color
+        classes = ["btn-light", "btn-success", "btn-danger"];
+        old_class = $(this).attr("class").split(' ').filter(element => classes.includes(element));
+
+        if (old_class == "btn-light") {
+            $(this).removeClass("btn-light");
+            $(this).addClass("btn-success");
+            $(this).data("value", "true");
+        } else if (old_class == "btn-success") {
+            $(this).removeClass("btn-success");
+            $(this).addClass("btn-danger");
+            $(this).data("value", "false");
+        } else if (old_class == "btn-danger") {
+            $(this).removeClass("btn-danger");
+            $(this).addClass("btn-light");
+            $(this).data("value", "null");
+        }
+    });
+
+
+    $(document).on("click keyup", ".course_filter, #course_search", function() {
+        // search
+        var value = $(this).val().toLowerCase();
+
+        // filter
+        var filter_values = Object({"is_archive": null, "is_lti": null, "is_hidden": null, "is_exam": null, "is_pinned": null});
+        $(".course_filter").each(function() {
+            filter_values[$(this).attr("id")] = eval($(this).data("value"));
+        });
+
+        var filtered_courses = [];
+
+        {% for courseid, course in open_courses.items() %}
+            filtered_courses.push("{{courseid}}");
+
+            // use temporary pin value from DOM if exists. Used to make filtering work directly after pinning/unpinning
+            temp_is_pinned = eval($(document).find('.course_item[data-course-id="{{courseid}}"]').data("temporary_pin_value"))
+            is_pinned = (temp_is_pinned === undefined) ? ({{ 'true' if courseid in pinned_courses else 'false' }}) : temp_is_pinned;
+
+            var course_values = Object({"is_archive": eval({{ 'true' if course.is_archive() else 'false' }}),
+                                         "is_lti": eval({{ 'true' if course.is_lti() else 'false' }}),
+                                         "is_hidden": eval({{ 'true' if not course.is_open_to_non_staff() else 'false' }}),
+                                         "is_pinned": is_pinned
+                                         });
+
+            for (filter of Object.keys(course_values)) {
+                if (filter_values[filter] === null) {
+                    continue;
+                }
+                else if (filter_values[filter] !== course_values[filter]) {
+                    filtered_courses.pop();
+                    break;
+                }
+            }
         {% endfor %}
-    {% else %}
-        <a href="#register" class="list-group-item list-group-item-action disabled">{{ _("You are not registered to any course") }}</a>
-    {% endif %}
-</div>
-{% if user_manager.user_is_superadmin() %}
-    <hr/>
-    {% if success == True %}
-        <div class="alert alert-success alert-dismissable" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            {{ _("Course created.") }}
-        </div>
-    {% elif success == False %}
-        <div class="alert alert-danger alert-dismissable" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            {{ _("Failed to create the course.") }}
-        </div>
-    {% endif %}
-    <form class="form row" role="form" method="post">
-        <div class="form-group col-sm-8">
-            <label class="sr-only" for="new_courseid">{{ _("Course") }}</label>
-            <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder="{{ _('New course id') }}">
-        </div>
-        <div class="form-group col-sm-4">
-            <button type="submit" class="btn btn-block btn-primary">{{ _("Create new course") }}</button>
-        </div>
-    </form>
-{% endif %}
+
+        // show/hide courses
+        $(".course_list .course_item").filter(function() {
+            $(this).toggle(($.inArray($(this).data("course-id"), filtered_courses) > -1)
+                            && $(this).find(".course_name").text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+</script>
 {% endblock %}
