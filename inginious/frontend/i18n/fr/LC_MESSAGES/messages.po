@@ -8,7 +8,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2025-04-17 09:59+0200\n"
 "PO-Revision-Date: 2025-12-08 16:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Alexandre Doneux <alexandre.doneux@uclouvain.be>\n"
 "Language-Team: French <https://weblate.info.ucl.ac.be/projects/inginious/"
 "frontend/fr/>\n"
 "Language: fr\n"
@@ -281,9 +281,9 @@ msgid ""
 msgstr ""
 "Cher {realname},\n"
 "\n"
-"Une personne (probablement vous) a demandé la réinitialisation de votre "
-"mot de passe INGInious. S'il s'agit de vous, veuillez cliquer sur le lien"
-" suivant :\n"
+"Une personne (probablement vous) a demandé la réinitialisation de votre mot "
+"de passe INGInious. S'il s'agit de vous, veuillez cliquer sur le lien "
+"suivant :\n"
 
 #: inginious/frontend/pages/register.py:162
 msgid "An email has been sent to you to reset your password."
@@ -647,8 +647,7 @@ msgstr "ObjectId inavlide."
 #, python-brace-format
 msgid "The following submission could not be prepared for download: {}"
 msgstr ""
-"La soumission suivante n'a pas pu être préparée pour le téléchargement : "
-"{}"
+"La soumission suivante n'a pas pu être préparée pour le téléchargement : {}"
 
 #: inginious/frontend/pages/course_admin/submissions.py:67
 #: inginious/frontend/pages/course_admin/utils.py:43
@@ -1618,9 +1617,8 @@ msgid ""
 "This page lists all the courses you are currently enrolled in. You can "
 "find new courses on the course list page."
 msgstr ""
-"Cette page liste tous les cours auxquels vous êtes actuellement "
-"enregistré. Vous pouvez trouver de nouveaux cours dans la Liste des "
-"cours."
+"Cette page liste tous les cours auxquels vous êtes actuellement enregistré. "
+"Vous pouvez trouver de nouveaux cours dans la Liste des cours."
 
 #: inginious/frontend/templates/mycourses.html:70
 msgid "LTI course"
@@ -2379,9 +2377,9 @@ msgid ""
 "Learning Management Systems (LMS) such as Moodle or edX. Note that this "
 "will deactivate the group system."
 msgstr ""
-"Activez cette option pour permettre à votre cours INGInious d'être "
-"utilisé par des Learning Management Systems (LMS) externes tels que "
-"Moodle ou edX. Notez que cela désactivera le système de groupes."
+"Activez cette option pour permettre à votre cours INGInious d'être utilisé "
+"par des Learning Management Systems (LMS) externes tels que Moodle ou edX. "
+"Notez que cela désactivera le système de groupes."
 
 #: inginious/frontend/templates/course_admin/settings.html:118
 msgid "Course preview"
@@ -2870,8 +2868,8 @@ msgstr "note actuelle"
 #: inginious/frontend/templates/course_admin/student_list_table.html:21
 msgid "The current grade is computed over the tasks that are visible for users."
 msgstr ""
-"La note actuelle est calculée sur base des exercices qui sont visibles "
-"pour l'utilisateur."
+"La note actuelle est calculée sur base des exercices qui sont visibles pour "
+"l'utilisateur."
 
 #: inginious/frontend/templates/course_admin/student_list_table.html:28
 msgid "View  all submissions"
@@ -3415,8 +3413,8 @@ msgstr "Décalage de numérotation de ligne pour le code. Doit être un nombre."
 #: inginious/frontend/templates/course_admin/subproblems/file.html:11
 msgid "Allowed file extensions (including the dot, separated by commas)"
 msgstr ""
-"Extensions de fichier autorisées (incluant le point, séparées par des "
-"espaces)"
+"Extensions de fichier autorisées "
+"(incluant le point, séparées par des espaces)"
 
 #: inginious/frontend/templates/course_admin/subproblems/file.html:17
 msgid "Maximum file size (in bytes)"
@@ -3502,10 +3500,10 @@ msgid ""
 "section position or section title will affect the effective task set a "
 "user will be displayed."
 msgstr ""
-"Seul le nombre spécifié d'exercices sera affiché à l'utilisateur. Ceci "
-"est calculé sans état: modifier la quantité d'exercice par section, la "
-"position de la section, ou le titre de la section affectera le jeu "
-"d'exercices effectivement affiché à l'utilisateur."
+"Seul le nombre spécifié d'exercices sera affiché à l'utilisateur. Ceci est "
+"calculé sans état: modifier la quantité d'exercice par section, la position "
+"de la section, ou le titre de la section affectera le jeu d'exercices "
+"effectivement affiché à l'utilisateur."
 
 #: inginious/frontend/templates/course_admin/task_dispensers/combinatory_test.html:11
 msgid ""
@@ -3729,8 +3727,7 @@ msgstr "Limite dure: {nbr_submissions} soumission(s)"
 #, python-brace-format
 msgid "Soft limit: {nbr_submissions} submission(s) every {nbr_hours} hour(s)"
 msgstr ""
-"Limite douce: {nbr_submissions} soumission(s) toutes les {nbr_hours} "
-"heure(s)"
+"Limite douce: {nbr_submissions} soumission(s) toutes les {nbr_hours} heure(s)"
 
 #: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:9
 #: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:22
