@@ -7,15 +7,16 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2025-04-17 09:59+0200\n"
-"PO-Revision-Date: 2024-03-01 08:26+0000\n"
-"Last-Translator: Alexandre Doneux <alexandre.doneux@uclouvain.be>\n"
+"PO-Revision-Date: 2025-12-08 16:22+0000\n"
+"Last-Translator: Ludovic Taffin <ludovic.taffin@uclouvain.be>\n"
+"Language-Team: French <https://weblate.info.ucl.ac.be/projects/inginious/"
+"frontend/fr/>\n"
 "Language: fr\n"
-"Language-Team: French "
-"<https://weblate.info.ucl.ac.be/projects/inginious/frontend/fr/>\n"
-"Plural-Forms: nplurals=2; plural=n > 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 5.14.3\n"
 "Generated-By: Babel 2.17.0\n"
 
 #: inginious/frontend/courses.py:31
@@ -577,8 +578,7 @@ msgstr "Identifiant d'étiquette invalide : {}"
 #: inginious/frontend/pages/course_admin/settings.py:182
 msgid "Some datas have the same id! The id must be unique."
 msgstr ""
-"Plusieurs données ont le même identifiant ! L'identifiant doit être "
-"unique."
+"Plusieurs données ont le même identifiant ! L'identifiant doit être unique."
 
 #: inginious/frontend/pages/course_admin/statistics.py:192
 #: inginious/frontend/pages/course_admin/submissions.py:138
@@ -3897,4 +3897,3 @@ msgstr "Extensions autorisées :"
 
 #~ msgid "LTI keys"
 #~ msgstr "Clés LTI"
-
