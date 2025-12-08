@@ -8,7 +8,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2025-04-17 09:59+0200\n"
 "PO-Revision-Date: 2025-12-08 16:23+0000\n"
-"Last-Translator: Noa Quenon <noa.quenon@student.uclouvain.be>\n"
+"Last-Translator: Mathieu Jadin <mathieu.jadin@uclouvain.be>\n"
 "Language-Team: French <https://weblate.info.ucl.ac.be/projects/inginious/"
 "frontend/fr/>\n"
 "Language: fr\n"
@@ -628,7 +628,8 @@ msgstr "Une erreur s'est produite lors du traitement des données."
 
 #: inginious/frontend/pages/course_admin/student_list.py:353
 msgid "Changes couldn't be applied for following students :"
-msgstr "Les changements n'ont pas pu être appliqués pour les étudiants suivants :"
+msgstr ""
+"Les changements n'ont pas pu être appliqués pour les étudiants suivants :"
 
 #: inginious/frontend/pages/course_admin/student_list.py:360
 msgid "Groups updated."
@@ -1533,8 +1534,8 @@ msgid ""
 "<b>This INGInious instance is currently under maintenance.</b> Please "
 "come back in a few minutes!"
 msgstr ""
-"<b>Cette instance d'INGInious est sous maintenance.</b> Veuillez "
-"réessayer dans quelques minutes !"
+"<b>Cette instance d'INGInious est sous maintenance.</b> Veuillez réessayer "
+"dans quelques minutes !"
 
 #: inginious/frontend/templates/marketplace.html:10
 msgid "How to use"
@@ -1986,7 +1987,8 @@ msgstr "Exercice suivant"
 
 #: inginious/frontend/templates/task.html:315
 msgid "Alternatively, you can also paste this command into your terminal:"
-msgstr "Vous pouvez également copier/coller cette commande dans votre terminal :"
+msgstr ""
+"Vous pouvez également copier/coller cette commande dans votre terminal :"
 
 #: inginious/frontend/templates/task.html:317
 msgid "Paste this command into your terminal:"
@@ -3798,8 +3800,8 @@ msgid ""
 "In order to use INGInious via this platform, please bind your existing "
 "account or create a new one."
 msgstr ""
-"Afin d'utiliser INGInious via cette platforme, veuillez lier votre compte"
-" existant ou en créer un nouveau."
+"Afin d'utiliser INGInious via cette platforme, veuillez lier votre compte "
+"existant ou en créer un nouveau."
 
 #: inginious/frontend/templates/lti/login.html:33
 msgid "Bind your INGInious account"
