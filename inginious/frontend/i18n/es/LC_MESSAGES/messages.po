@@ -9,7 +9,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2023-04-04 15:06+0200\n"
 "PO-Revision-Date: 2025-12-08 16:23+0000\n"
-"Last-Translator: Nicolás Gómez Solano <nicolasgomezsolano@yahoo.es>\n"
+"Last-Translator: Raziel CG <raziel.carvajal-gomez@uclouvain.be>\n"
 "Language-Team: Spanish <https://weblate.info.ucl.ac.be/projects/inginious/"
 "frontend/es/>\n"
 "Language: es\n"
@@ -1547,8 +1547,7 @@ msgstr "Actualizar"
 msgid ""
 "<b>This INGInious instance is currently under maintenance.</b> Please come "
 "back in a few minutes!"
-msgstr ""
-"<b>INGInious esta actualmente en mantenimiento.</b> ¡Regrese más tarde!"
+msgstr "<b>INGInious esta actualmente en mantenimiento.</b> ¡Regrese más tarde!"
 
 #: inginious/frontend/templates/marketplace.html:10
 msgid "How to use"
@@ -2261,8 +2260,8 @@ msgid ""
 "groups, user statistics) from the database.</p><p>To confirm your will, "
 "please type the course id below :</p>"
 msgstr ""
-"<p>Esta acción hará un respaldo y eliminará la información del curso (tareas "
-"enviadas, grupos y estadísticas de usuarios) de la base de datos. </"
+"<p>Esta acción hará un respaldo y eliminará la información del curso "
+"(tareas enviadas, grupos y estadísticas de usuarios) de la base de datos. </"
 "p><p>Para confirmar esta acción, escriba el identificador del curso:</p>"
 
 #: inginious/frontend/templates/course_admin/danger_zone.html:75
@@ -2272,8 +2271,8 @@ msgstr "Restaurar une respaldo de {}"
 #: inginious/frontend/templates/course_admin/danger_zone.html:79
 msgid "<p>This will restore your course data to {}. Are you sure ?</p>"
 msgstr ""
-"<p>Esta acción restaurará la información del curso a {}. ¿Esta usted seguro?"
-"</p>"
+"<p>Esta acción restaurará la información del curso a {}. ¿Esta usted "
+"seguro?</p>"
 
 #: inginious/frontend/templates/course_admin/danger_zone.html:86
 #: inginious/frontend/templates/course_admin/danger_zone.html:110
@@ -2389,8 +2388,8 @@ msgstr "Vista previa de los cursos"
 #: inginious/frontend/templates/course_admin/settings.html:128
 msgid "Allowed (read-only for non-registered users)"
 msgstr ""
-"Acceso permitido (los usuarios no registrados solo pueden consultar el "
-"contenido)"
+"Acceso permitido "
+"(los usuarios no registrados solo pueden consultar el contenido)"
 
 #: inginious/frontend/templates/course_admin/settings.html:135
 msgid "Not allowed"
