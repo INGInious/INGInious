@@ -8,15 +8,16 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2023-04-04 15:06+0200\n"
-"PO-Revision-Date: 2019-12-02 15:03+0000\n"
+"PO-Revision-Date: 2025-12-08 16:23+0000\n"
 "Last-Translator: Mathieu Jadin <mathieu.jadin@uclouvain.be>\n"
-"Language-Team: Greek <http://weblate.info.ucl.ac.be/projects/inginious/"
+"Language-Team: Greek <https://weblate.info.ucl.ac.be/projects/inginious/"
 "frontend/el/>\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.14.3\n"
 "Generated-By: Babel 2.11.0\n"
 
 #: inginious/frontend/courses.py:30
@@ -684,8 +685,7 @@ msgstr "Λάθος δεδομένα: {}"
 
 #: inginious/frontend/pages/course_admin/task_edit.py:182
 msgid "Cannot read zip file. Files were not modified"
-msgstr ""
-"Δεν μπορείτε να διαβάσαμε του αρχείου zip. Τα αρχεία δεν τροποποιήθηκαν"
+msgstr "Δεν μπορείτε να διαβάσαμε του αρχείου zip. Τα αρχεία δεν τροποποιήθηκαν"
 
 #: inginious/frontend/pages/course_admin/task_edit.py:189
 msgid ""
@@ -1474,8 +1474,8 @@ msgid ""
 "You are going to bind your INGInious account <strong>{realname} "
 "[{username}]</strong> with the following LTI tool and context:"
 msgstr ""
-"Θα δεσμέψετε τον λογαριασμό σας στο INGInious <strong>{realname} "
-"[{username}]</strong> με το επόμενο LTI εργαλείο και συμφραζόμενα:"
+"Θα δεσμέψετε τον λογαριασμό σας στο INGInious <strong>{realname} [{username}]"
+"</strong> με το επόμενο LTI εργαλείο και συμφραζόμενα:"
 
 #: inginious/frontend/templates/lti_bind.html:20
 msgid "Tool name:"
