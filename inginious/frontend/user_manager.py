@@ -653,12 +653,12 @@ class UserManager:
 
     def get_user_pinned_courses(self, username):
         data = User.objects(username=username).first()
-        return data.get("pinned_courses", []) if data else []
+        return data.pinned_courses if data else []
 
     def pin_course(self, username, courseid):
         data = User.objects(username=username).first()
         if data:
-            pinned_courses = data.get("pinned_courses", [])
+            pinned_courses = data.pinned_courses if data else []
             if courseid not in pinned_courses:
                 pinned_courses.append(courseid)
                 User.objects(username=username).update(pinned_courses=pinned_courses)
@@ -669,7 +669,7 @@ class UserManager:
     def unpin_course(self, username, courseid):
         data = User.objects(username=username).first()
         if data:
-            pinned_courses = data.get("pinned_courses", [])
+            pinned_courses = data.pinned_courses if data else []
             if courseid in pinned_courses:
                 pinned_courses.remove(courseid)
                 User.objects(username=username).update(pinned_courses=pinned_courses)
