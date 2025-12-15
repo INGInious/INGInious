@@ -153,7 +153,8 @@ class TableOfContents(TaskDispenser):
         dispenser_data = copy.deepcopy(self._dispenser_data)
         for taskid, task in self._task_list_func().items():
             try:
-                dispenser_data["config"][taskid] = task.get_dispenser_settings(self.legacy_fields)
+                # Preserve dispenser settings and only overwrite imported data
+                dispenser_data["config"][taskid].update(task.get_dispenser_settings(self.legacy_fields))
             except Exception as e:
                 raise Exception(f"In task {taskid} : {e}")
         return dispenser_data
