@@ -130,9 +130,9 @@ class TableOfContents(TaskDispenser):
         result, errors = check_toc(new_toc.get("toc", {}))
         if result:
             result, errors = check_task_config(result.get_tasks(), self.config_items, new_toc.get("config", {}))
-        if result and new_toc:
+        if result is not None and new_toc:
             new_toc["imported"] = dispenser_data.get("imported", False) or self._dispenser_data.get("imported", False)
-        return new_toc if result else None, errors
+        return new_toc if result is not None else None, errors
 
     def get_ordered_tasks(self):
         """ Returns a serialized version of the tasks structure as an OrderedDict"""
