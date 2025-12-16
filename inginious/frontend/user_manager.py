@@ -667,14 +667,8 @@ class UserManager:
 
 
     def unpin_course(self, username, courseid):
-        data = User.objects(username=username).first()
-        if data:
-            pinned_courses = data.pinned_courses if data else []
-            if courseid in pinned_courses:
-                pinned_courses.remove(courseid)
-                User.objects(username=username).update(pinned_courses=pinned_courses)
-                return True
-        return False
+        modified = User.objects(username=username, pinned_courses=courseid).update(pull__pinned_courses=courseid)
+        return modified is not None
 
 
     def update_user_stats(self, username, task, submission, result_str, grade, state, newsub, task_dispenser):
