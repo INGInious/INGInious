@@ -53,13 +53,13 @@ function course_pin(event){
                 if( $(document).find(".course_card").length > 0) {
                     $(document).find("#no_pin_message").addClass("d-none");
                 }
-                $(document).find(`.course_item[data-course-id=${courseid}]`).data("temporary_pin_value", "true");
+                $(document).find(`.course_item[data-course-id=${courseid}]`).addClass("temp_pin").removeClass("temp_unpin");
 
             } else { // unpinning
                 click_button.find("i").removeClass("fa-star text-warning").addClass("fa-star-o");
 
                 $(document).find(`#pinned-${courseid}`).remove();
-                $(document).find(`.course_item[data-course-id=${courseid}]`).data("temporary_pin_value", "false");
+                $(document).find(`.course_item[data-course-id=${courseid}]`).removeClass("temp_pin").addClass("temp_unpin");
 
                 if( $(document).find(".course_card").length < 1) {
                     $(document).find("#no_pin_message").removeClass("d-none");
@@ -100,9 +100,9 @@ function change_button_color(){
 }
 
 
-function search_course(event, open_courses, pinned_courses){
+function search_course(open_courses, pinned_courses){
     // search
-    var value = $(this).val().toLowerCase();
+    var value = $("#course_search").val().toLowerCase();
 
     // filter
     var filter_values = Object({"is_archive": null, "is_lti": null, "is_hidden": null, "is_exam": null, "is_pinned": null});
@@ -111,19 +111,28 @@ function search_course(event, open_courses, pinned_courses){
     });
 
     var filtered_courses = [];
-    var temp_is_pinned;
+    var is_temp_pinned;
+    var is_temp_unpinned;
     var is_pinned;
 
     for (const [courseid, course] of Object.entries(open_courses)) {
         filtered_courses.push(courseid);
+        is_temp_pinned = $(document).find('.course_item[data-course-id='+courseid+']').hasClass("temp_pin")
+        is_temp_unpinned = $(document).find('.course_item[data-course-id='+courseid+']').hasClass("temp_unpin")
 
-        // use temporary pin value from DOM if exists. Used to make filtering work directly after pinning/unpinning
-        temp_is_pinned = eval($(document).find('.course_item[data-course-id='+courseid+']').data("temporary_pin_value"))
-        is_pinned = (temp_is_pinned === undefined) ? ( pinned_courses.includes(courseid) ? true : false ) : temp_is_pinned;
+        if (is_temp_pinned) {
+            is_pinned = true;
+        }
+        else if (is_temp_unpinned) {
+            is_pinned = false;
+        }
+        else {
+            is_pinned =  pinned_courses.includes(courseid) ? true : false ;
+        }
 
-        var course_values = Object({"is_archive": course.is_archive ? true : false,
-                                     "is_lti": course.is_lti ? true : false,
-                                     "is_hidden": course.is_open_to_non_staff ? true : false,
+        var course_values = Object({"is_archive": course.is_archive,
+                                     "is_lti": course.is_lti,
+                                     "is_hidden": course.is_open_to_non_staff,
                                      "is_pinned": is_pinned
                                      });
 

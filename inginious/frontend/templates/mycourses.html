@@ -115,11 +115,11 @@
                             <div class="row align-items-center">
                                 <div class="course_name col-xs-12 col-md-8">
                                     {% if courseid in pinned_courses %}
-                                        <button type="button" class="btn course_pin " data-course-id="{{courseid}}">
+                                        <button type="button" class="btn course_pin " data-course-id="{{courseid}}" onclick="course_pin.call(this, event)">
                                             <i class="fa fa-star text-warning"></i>
                                         </button>
                                     {% else %}
-                                        <button type="button" class="btn course_pin" data-course-id="{{courseid}}">
+                                        <button type="button" class="btn course_pin" data-course-id="{{courseid}}" onclick="course_pin.call(this, event)">
                                             <i class="fa fa-star-o "></i>
                                         </button>
                                     {% endif %}
@@ -176,29 +176,25 @@
             {% endif %}
 
 
-<script>
-    $(document).on('click', '.course_pin', function(event){
-        course_pin.call(this, event);
-    });
+    <script>
+        $(document).on("click", ".course_filter", function() {
+            change_button_color.call(this);
+        });
 
-    $(document).on("click", ".course_filter", function() {
-        change_button_color.call(this);
-    });
+        $(document).on("click keyup", ".course_filter, #course_search", function(event) {
 
-    $(document).on("click keyup", ".course_filter, #course_search", function(event) {
+            var open_courses = {
+                {% for courseid, course in open_courses.items() %}
+                "{{ courseid }}": {
+                    is_archive: {{ course.is_archive()|tojson }},
+                    is_lti: {{ course.is_lti()|tojson }},
+                    is_open_to_non_staff: {{ course.is_open_to_non_staff()|tojson }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            };
 
-        var open_courses = {
-            {% for courseid, course in open_courses.items() %}
-            "{{ courseid }}": {
-                is_archive: {{ course.is_archive()|tojson }},
-                is_lti: {{ course.is_lti()|tojson }},
-                is_open_to_non_staff: {{ course.is_open_to_non_staff()|tojson }}
-            }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        };
-
-        var pinned_courses = {{ pinned_courses.keys()|list|tojson|safe }};
-        search_course.call(this, event, open_courses, pinned_courses);
-    });
-</script>
+            var pinned_courses = {{ pinned_courses.keys()|list|tojson|safe }};
+            search_course(open_courses, pinned_courses);
+        });
+    </script>
 {% endblock %}
