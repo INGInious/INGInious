@@ -81,21 +81,16 @@ function course_pin(event){
 
 function change_button_color(){
     // change button color
-    var classes = ["btn-light", "btn-success", "btn-danger"];
-    var old_class = $(this).attr("class").split(' ').filter(element => classes.includes(element));
 
-    if (old_class == "btn-light") {
-        $(this).removeClass("btn-light");
-        $(this).addClass("btn-success");
-        $(this).data("value", "true");
-    } else if (old_class == "btn-success") {
-        $(this).removeClass("btn-success");
-        $(this).addClass("btn-danger");
-        $(this).data("value", "false");
-    } else if (old_class == "btn-danger") {
-        $(this).removeClass("btn-danger");
-        $(this).addClass("btn-light");
-        $(this).data("value", "null");
+    const classes = ["btn-light", "btn-success", "btn-danger"];
+    const values = { "btn-light": "null", "btn-success": "true", "btn-danger": "false" };
+    const old_class = classes.find(cls => $(this).hasClass(cls));
+
+    if (old_class) {
+        const next_class = classes[(classes.indexOf(old_class) + 1) % classes.length];
+        $(this).removeClass(old_class).addClass(next_class);
+
+        $(this).data("value", values[next_class]);
     }
 }
 
