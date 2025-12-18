@@ -349,7 +349,7 @@
 {% if user_manager.session_is_lti() %}
     {% set path = get_path("lti", "task") %}
 {% else %}
-    {% set path = get_path("/course/", course.get_id(), task.get_id()) %}
+    {% set path = get_path("course", course.get_id(), task.get_id()) %}
 {% endif %}
 
 <form id="task" action="{{ path }}" method="post" enctype="multipart/form-data"
