@@ -111,7 +111,13 @@
                                 list-group-item-dark
                             {% elif not course.is_open_to_non_staff() %}
                                 list-group-item-warning
-                            {% endif %}">
+                            {% endif %}
+
+                            {% if course.is_lti() %} is_lti {% endif %}
+                            {% if course.is_archive() %} is_archive {% endif %}
+                            {% if not course.is_open_to_non_staff() %} is_hidden {% endif %}
+                            {% if courseid in pinned_courses %} is_pinned {% endif %}
+                            ">
                             <div class="row align-items-center">
                                 <div class="course_name col-xs-12 col-md-8">
                                     {% if courseid in pinned_courses %}
@@ -181,20 +187,8 @@
             change_button_color.call(this);
         });
 
-        $(document).on("click keyup", ".course_filter, #course_search", function(event) {
-
-            var open_courses = {
-                {% for courseid, course in open_courses.items() %}
-                "{{ courseid }}": {
-                    is_archive: {{ course.is_archive()|tojson }},
-                    is_lti: {{ course.is_lti()|tojson }},
-                    is_open_to_non_staff: {{ course.is_open_to_non_staff()|tojson }}
-                }{% if not loop.last %},{% endif %}
-                {% endfor %}
-            };
-
-            var pinned_courses = {{ pinned_courses.keys()|list|tojson|safe }};
-            search_course(open_courses, pinned_courses);
+        $(document).on("click keyup", ".course_filter, #course_search", function() {
+            search_course();
         });
     </script>
 {% endblock %}

@@ -100,58 +100,32 @@ function change_button_color(){
 }
 
 
-function search_course(open_courses, pinned_courses){
+function search_course(){
     // search
-    var value = $("#course_search").val().toLowerCase();
 
-    // filter
-    var filter_values = Object({"is_archive": null, "is_lti": null, "is_hidden": null, "is_exam": null, "is_pinned": null});
-    $(".course_filter").each(function() {
-        filter_values[$(this).attr("id")] = eval($(this).data("value"));
+    $(".course_list .course_item").each(function () {
+    var $item = $(this);
+    var visible = true;
+
+    $(".course_filter").each(function () {
+        var filter_id = this.id;
+        var filter_value = eval($(this).data("value"));
+
+        if (filter_value === true && !$item.hasClass(filter_id)) {
+            visible = false;
+        }
+        if (filter_value === false && $item.hasClass(filter_id)) {
+            visible = false;
+        }
     });
 
-    var filtered_courses = [];
-    var is_temp_pinned;
-    var is_temp_unpinned;
-    var is_pinned;
-
-    for (const [courseid, course] of Object.entries(open_courses)) {
-        filtered_courses.push(courseid);
-        is_temp_pinned = $(document).find('.course_item[data-course-id='+courseid+']').hasClass("temp_pin")
-        is_temp_unpinned = $(document).find('.course_item[data-course-id='+courseid+']').hasClass("temp_unpin")
-
-        if (is_temp_pinned) {
-            is_pinned = true;
-        }
-        else if (is_temp_unpinned) {
-            is_pinned = false;
-        }
-        else {
-            is_pinned =  pinned_courses.includes(courseid) ? true : false ;
-        }
-
-        var course_values = Object({"is_archive": course.is_archive,
-                                     "is_lti": course.is_lti,
-                                     "is_hidden": course.is_open_to_non_staff,
-                                     "is_pinned": is_pinned
-                                     });
-
-        for (var filter of Object.keys(course_values)) {
-            if (filter_values[filter] === null) {
-                continue;
-            }
-            else if (filter_values[filter] !== course_values[filter]) {
-                filtered_courses.pop();
-                break;
-            }
-        }
+    var search_value = $("#course_search").val().toLowerCase();
+    if ($item.find(".course_name").text().toLowerCase().indexOf(search_value) === -1) {
+        visible = false;
     }
 
-    //show/hide courses
-    $(".course_list .course_item").filter(function() {
-        $(this).toggle(($.inArray($(this).data("course-id"), filtered_courses) > -1)
-                        && $(this).find(".course_name").text().toLowerCase().indexOf(value) > -1)
-    });
+    $item.toggle(visible);
+});
 }
 
 
