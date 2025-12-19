@@ -63,7 +63,7 @@ function course_pin(event){
                 }
             }
         },
-        error: function(data) {
+        error: function() {
             $(".pin_alert")
                 .removeClass("d-none")      // make it visible
                 .show()               // ensure jQuery knows it's visible -> needed
@@ -101,12 +101,12 @@ function search_course(){
 
     $(".course_filter").each(function () {
         var filter_id = this.id;
-        var filter_value = eval($(this).data("value"));
+        var filter_value = $(this).data("value");
 
-        if (filter_value === true && !$item.hasClass(filter_id)) {
+        if (filter_value === "true" && !$item.hasClass(filter_id)) {
             visible = false;
         }
-        if (filter_value === false && $item.hasClass(filter_id)) {
+        if (filter_value === "false" && $item.hasClass(filter_id)) {
             visible = false;
         }
     });
