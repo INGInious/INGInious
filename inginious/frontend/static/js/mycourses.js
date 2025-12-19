@@ -32,34 +32,31 @@ function course_pin(event){
 
                 click_button.find("i").removeClass("fa-star-o").addClass("fa-star text-warning");
 
-                const pinnedItem = `
-                    <div class="col mb-4" id="pinned-${courseid}">
-                        <div class="card m-2">
-                            <div class="card-body course_card">
-                                <h5 class="card-title">
-                                    <a ${data["is_lti"] && data["lti_url"] ? `target="_blank" href=${data["lti_url"]}` : `href=${data["path"]}`}>
-                                        ${data["name"]}
-                                    </a>
-                                </h5>
-                                <div class="card-text card-trunc">
-                                    ${data["description"]}
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
+                var pinnedItem = $("#hidden_pin_card").clone()
+                $(pinnedItem).attr("id", `pinned-${courseid}`);
+
+                $(pinnedItem).find(".hidden_pin_title").text(data["name"]);
+                $(pinnedItem).find(".hidden_pin_description").html(data["description"]);
+                if (data["is_lti"] && data["lti_url"]) {
+                    $(pinnedItem).find(".hidden_pin_link").attr("href", data["lti_url"]);
+                    $(pinnedItem).find(".hidden_pin_link").attr("target", "_blank");
+                } else {
+                    $(pinnedItem).find(".hidden_pin_link").attr("href", data["path"]);
+                }
+                $(pinnedItem).removeClass("d-none");
 
                 $(document).find("#pinned_list").append(pinnedItem);
+                $(document).find(`.course_item[data-course-id=${courseid}]`).addClass("is_pinned");
 
                 if( $(document).find(".course_card").length > 0) {
                     $(document).find("#no_pin_message").addClass("d-none");
                 }
-                $(document).find(`.course_item[data-course-id=${courseid}]`).addClass("temp_pin").removeClass("temp_unpin");
 
             } else { // unpinning
                 click_button.find("i").removeClass("fa-star text-warning").addClass("fa-star-o");
 
                 $(document).find(`#pinned-${courseid}`).remove();
-                $(document).find(`.course_item[data-course-id=${courseid}]`).removeClass("temp_pin").addClass("temp_unpin");
+                $(document).find(`.course_item[data-course-id=${courseid}]`).removeClass("is_pinned");
 
                 if( $(document).find(".course_card").length < 1) {
                     $(document).find("#no_pin_message").removeClass("d-none");
