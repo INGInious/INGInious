@@ -20,6 +20,7 @@ class User(Document):
     tos_accepted = BooleanField(default=False)
     apikey = StringField(default=None)
     timezone = StringField(default=lambda: tzlocal.get_localzone_name())
+    pinned_courses = ListField(StringField(), default=[])
     activate = StringField()
     reset = StringField()
 
