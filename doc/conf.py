@@ -54,7 +54,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'INGInious'
-copyright = '2014-2025, Université catholique de Louvain'
+copyright = '2014-2026, Université catholique de Louvain'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
