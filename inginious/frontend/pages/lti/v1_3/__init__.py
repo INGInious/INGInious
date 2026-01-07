@@ -5,9 +5,8 @@
 
 """ LTI v1.3 """
 
-from flask import jsonify, redirect
+from flask import jsonify, redirect, session
 from werkzeug.exceptions import NotFound
-from bson import ObjectId
 from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest
 
 from inginious.common import exceptions
@@ -97,29 +96,25 @@ class LTI13LaunchPage(INGIniousPage):
         auth_token_url = tool_conf.get_iss_config(iss=message_launch.get_iss(), client_id=message_launch.get_client_id()).get('auth_token_url')
         can_report_grades = message_launch.has_ags() and auth_token_url
 
-        session_id = str(ObjectId())
-        session_dict = {
-            "version": "1.3",
-            "email": email,
-            "username": user_id,
-            "realname": realname,
-            "roles": roles,
-            "task": (courseid, taskid),
-            "platform_instance_id": platform_instance_id,
-            "message_launch_id": launch_id if can_report_grades else None,
-            "context_title": context_title,
-            "context_label": context_label,
-            "tool_description": tool_desc,
-            "tool_name": tool_name,
-            "tool_url": tool_url
-        }
-        self.user_manager.create_lti_session(session_id, session_dict)
+        if not session.is_lti:
+            raise Exception("Not an LTI session")
 
-        loggedin = self.user_manager.attempt_lti_login()
-        if loggedin:
-            return redirect(self.app.get_path("lti", "task"))
-        else:
-            return redirect(self.app.get_path("lti1.3", "login"))
+        session.loggedin = False
+        session.lti.version = "1.3"
+        session.lti.email =email
+        session.lti.username = user_id
+        session.lti.realname = realname
+        session.lti.roles = roles
+        session.lti.task = courseid, taskid
+        session.lti.platform_instance_id = platform_instance_id
+        session.lti.message_launch_id = launch_id if can_report_grades else None
+        session.lti.context_title = context_title
+        session.lti.context_label = context_label
+        session.lti.tool_description = tool_desc
+        session.lti.tool_name = tool_name
+        session.lti.tool_url = tool_url
+
+        return redirect(self.app.get_path("lti1.3", "login"))
 
     def GET(self, courseid, taskid):
         return self._handle_message_launch(courseid, taskid)

@@ -179,25 +179,6 @@ class UserManager:
         """ Returns the API key for the current user. Created on first demand. """
         return self.get_user_api_key(self.session_username())
 
-    def create_lti_session(self, session_id, session_dict):
-        """ Creates an LTI session. Returns the new session id"""
-        session.loggedin = False
-        for key, item in session_dict.items():
-            session.lti[key] = item
-        return session_id
-
-    def attempt_lti_login(self):
-        """ Given that the current session is an LTI one (session_lti_info does not return None), attempt to find an INGInious user
-            linked to this lti username/consumer_key. If such user exists, logs in using it.
-             
-            Returns True (resp. False) if the login was successful
-        """
-        if not session.is_lti:
-            raise Exception("Not an LTI session")
-
-        # TODO allow user to be automagically connected if the TC uses the same user id
-        return False
-
     ##############################################
     #      User searching and authentication     #
     ##############################################
