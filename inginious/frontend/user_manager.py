@@ -10,6 +10,7 @@ import logging
 import hashlib
 import flask
 
+from flask import session
 from typing import Dict, Optional
 from werkzeug.exceptions import NotFound
 from abc import ABCMeta, abstractmethod
@@ -80,7 +81,6 @@ class UserManager:
         :type superadmins: list(str)
         :param superadmins: list of the super-administrators' usernames
         """
-        self._session = flask.session
         self._superadmins = superadmins
         self._auth_methods = OrderedDict()
         self._logger = logging.getLogger("inginious.webapp.users")
@@ -107,41 +107,31 @@ class UserManager:
 
     def session_is_lti(self) -> bool:
         """ Returns whether the current request comes from an LTI session. """
-        return self._session.is_lti
+        return session.is_lti
 
     def session_logged_in(self):
         """ Returns True if a user is currently connected in this session, False else """
-        return self._session.loggedin
+        return session.loggedin
 
     def session_username(self):
         """ Returns the username from the session, if one is open. Else, returns None"""
-        if not self.session_logged_in():
-            return None
-        return self._session["username"]
+        return session["username"]
 
     def session_email(self):
         """ Returns the email of the current user in the session, if one is open. Else, returns None"""
-        if not self.session_logged_in():
-            return None
-        return self._session["email"]
+        return session["email"]
 
     def session_realname(self):
         """ Returns the real name of the current user in the session, if one is open. Else, returns None"""
-        if not self.session_logged_in():
-            return None
-        return self._session["realname"]
+        return session["realname"]
 
     def session_tos_signed(self):
         """ Returns True if the current user has signed the tos"""
-        if not self.session_logged_in():
-            return None
-        return self._session["tos_signed"]
+        return session["tos_signed"]
 
     def session_token(self):
         """ Returns the token of the current user in the session, if one is open. Else, returns None"""
-        if not self.session_logged_in():
-            return None
-        return self._session["token"]
+        return session["token"]
 
     def session_lti_info(self):
         """ If the current session is an LTI one, returns a dict in the form
@@ -161,83 +151,39 @@ class UserManager:
 
             If the current session is not an LTI one, returns None.
         """
-        if self.session_is_lti() and "lti" in self._session:
-            return self._session["lti"]
+        if session.is_lti:
+            return session["lti"]
         return None
 
     def session_id(self):
         """ Returns the current session id"""
-        return self._session.sid
+        return session.sid
 
     def session_auth_storage(self):
         """ Returns the oauth state for login """
-        return self._session.auth_storage
+        return session.auth_storage
 
     def session_language(self, default="en"):
         """ Returns the current session language """
-        return self._session.language
+        return session.language
 
     def session_timezone(self):
         """ Returns the current session timezone """
-        return self._session.timezone
+        return session.timezone
 
     def session_code_indentation(self):
         """ Returns the current session code indentation """
-        return self._session.code_indentation
+        return session.code_indentation
 
     def session_api_key(self):
         """ Returns the API key for the current user. Created on first demand. """
         return self.get_user_api_key(self.session_username())
 
-    def set_session_token(self, token):
-        """ Sets the token of the current user in the session, if one is open."""
-        if self.session_logged_in():
-            self._session["token"] = token
-
-    def set_session_username(self, username):
-        """ Sets the username of the current user in the session, if one is open."""
-        if self.session_logged_in():
-            self._session["username"] = username
-
-    def set_session_realname(self, realname):
-        """ Sets the real name of the current user in the session, if one is open."""
-        if self.session_logged_in():
-            self._session["realname"] = realname
-
-    def set_session_tos_signed(self):
-        """ Sets the real name of the current user in the session, if one is open."""
-        if self.session_logged_in():
-            self._session["tos_signed"] = True
-
-    def set_session_language(self, language):
-        self._session["language"] = language
-
-    def set_session_timezone(self, timezone):
-        self._session["timezone"] = timezone
-
-    def set_session_code_indentation(self, code_indentation):
-        """ Sets the code indentation of the current user in the session, if one is open."""
-        if self.session_logged_in():
-            self._session["code_indentation"] = code_indentation
-
-    def _set_session(self, user):
-        """ Init the session. Preserves potential LTI information. """
-        self._session["loggedin"] = True
-        self._session["email"] = user.email
-        self._session["username"] = user.username
-        self._session["realname"] = user.realname
-        self._session["language"] = user.language
-        self._session["timezone"] = user.timezone
-        self._session["code_indentation"] = user.code_indentation
-        self._session["tos_signed"] = user.tos_accepted
-        self._session["token"] = None
-
-
     def create_lti_session(self, session_id, session_dict):
         """ Creates an LTI session. Returns the new session id"""
-        self._session.loggedin = False
+        session.loggedin = False
         for key, item in session_dict.items():
-            self._session.lti[key] = item
+            session.lti[key] = item
         return session_id
 
     def attempt_lti_login(self):
@@ -246,7 +192,7 @@ class UserManager:
              
             Returns True (resp. False) if the login was successful
         """
-        if not self.session_is_lti():
+        if not session.is_lti:
             raise Exception("Not an LTI session")
 
         # TODO allow user to be automagically connected if the TC uses the same user id
@@ -340,8 +286,19 @@ class UserManager:
                                                  language=user.language)
 
         ip = flask.request.remote_addr
+
+        session.loggedin = True
+        session.email = user.email
+        session.username = user.username
+        session.realname = user.realname
+        session.language = user.language
+        session.timezone = user.timezone
+        session.code_indentation = user.code_indentation
+        session.tos_signed = user.tos_accepted
+        session.token = None
+
         self._logger.info("User %s connected - %s - %s - %s", user["username"], user["realname"], user["email"], ip)
-        self._set_session(user)
+
         return True
 
     def disconnect_user(self):
@@ -353,7 +310,7 @@ class UserManager:
             self._logger.info("User %s disconnected - %s - %s - %s", self.session_username(), self.session_realname(),
                               self.session_email(), ip)
 
-        self._session.loggedin = False
+        session.loggedin = False
 
     def get_users_info(self, usernames, limit=0, skip=0) -> Dict[str, Optional[UserInfo]]:
         """

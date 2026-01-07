@@ -45,9 +45,9 @@ class Session(Document):
     email = StringField()
     language = StringField(default="en")
     realname = StringField()
-    token = StringField()
+    token = StringField(default=None)
     tos_signed = BooleanField()
-    username = StringField()
+    username = StringField(default=None)
     timezone = StringField(default=lambda: tzlocal.get_localzone_name())
 
     meta = {"collection": "sessions", "indexes": ["expiration"]}

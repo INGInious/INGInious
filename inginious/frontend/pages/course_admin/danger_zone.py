@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import logging
 import random
 
-from flask import request, redirect, render_template
+from flask import request, redirect, render_template, session
 
 from inginious.frontend.models import Submission, Audience, UserTask, Group,  CourseClass
 from inginious.frontend.courses import Course
@@ -127,7 +127,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
     def page(self, course, msg="", error=False):
         """ Get all data and display the page """
         thehash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
-        self.user_manager.set_session_token(thehash)
+        session.token = thehash
 
 
         return render_template("course_admin/danger_zone.html", course=course, thehash=thehash,

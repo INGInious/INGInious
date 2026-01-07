@@ -9,7 +9,7 @@ import os
 from typing import List, Dict
 
 import flask
-from flask import redirect, render_template
+from flask import redirect, render_template, session
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
@@ -43,10 +43,10 @@ class INGIniousPage(MethodView):
     def _pre_check(self):
         """ Checks for language. """
         if "lang" in flask.request.args and flask.request.args["lang"] in available_languages:
-            self.user_manager.set_session_language(flask.request.args["lang"])
+            session.language = flask.request.args["lang"]
         elif not self.user_manager.session_language(default=None):
             best_lang = flask.request.accept_languages.best_match(available_languages,default="en")
-            self.user_manager.set_session_language(best_lang)
+            session.language = best_lang
 
     def GET(self, *args, **kwargs):
         """ Handles GET requests. It should be redefined by subclasses. """
