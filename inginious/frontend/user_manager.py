@@ -133,28 +133,6 @@ class UserManager:
         """ Returns the token of the current user in the session, if one is open. Else, returns None"""
         return session["token"]
 
-    def session_lti_info(self):
-        """ If the current session is an LTI one, returns a dict in the form
-            ::
-
-                {
-                    "email": email,
-                    "username": username
-                    "realname": realname,
-                    "roles": roles,
-                    "task": (course_id, task_id),
-                    <lti version dependent fields>
-                }
-
-            where all these data where provided by the LTI consumer, and MAY NOT be equivalent to the data
-            contained in database for the currently connected user.
-
-            If the current session is not an LTI one, returns None.
-        """
-        if session.is_lti:
-            return session["lti"]
-        return None
-
     def session_id(self):
         """ Returns the current session id"""
         return session.sid
@@ -802,7 +780,7 @@ class UserManager:
         if username is None:
             username = self.session_username()
         if lti == "auto":
-            lti = self.session_lti_info() is not None
+            lti = session.is_lti
 
         if self.has_staff_rights_on_course(course, username):
             return True

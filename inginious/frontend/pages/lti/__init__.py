@@ -5,7 +5,7 @@
 
 """ LTI """
 
-from flask import redirect, request, render_template
+from flask import redirect, request, render_template, session
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.courses import Course
@@ -19,7 +19,7 @@ class LTITaskPage(INGIniousAuthPage):
         return True
 
     def GET_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, taskid) = data['task']
@@ -27,7 +27,7 @@ class LTITaskPage(INGIniousAuthPage):
         return BaseTaskPage(self).GET(courseid, taskid, True)
 
     def POST_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, taskid) = data['task']
@@ -40,7 +40,7 @@ class LTIAssetPage(INGIniousAuthPage):
         return True
 
     def GET_AUTH(self, asset_url):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, _) = data['task']
@@ -119,7 +119,7 @@ class LTILoginPage(INGIniousPage):
             Checks if user is authenticated and calls POST_AUTH or performs login and calls GET_AUTH.
             Otherwise, returns the login template.
         """
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
 

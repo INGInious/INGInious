@@ -12,6 +12,7 @@ import tempfile
 import time
 import flask
 
+from flask import session
 from typing import Dict, List
 from datetime import datetime, timezone
 from pymongo.errors import DocumentTooLarge
@@ -109,7 +110,7 @@ class WebAppSubmissionManager:
         else:
             obj.update({"username": [username]})
 
-        lti_info = self._user_manager.session_lti_info()
+        lti_info = session.lti
         if lti_info is not None and course.lti_send_back_grade():
             lti_score_publisher = self._lti_score_publishers.get(lti_info["version"], None)
             if lti_score_publisher:
@@ -260,9 +261,8 @@ class WebAppSubmissionManager:
 
         # Send LTI information to the client except "consumer_key"
         # to_dict() to avoid sending mongoengine BaseLists to ZMQ
-        lti_info = self._user_manager.session_lti_info()
-        if lti_info:
-            lti_info = lti_info.to_mongo().to_dict()
+        if session.is_lti:
+            lti_info = session.lti.to_mongo().to_dict()
             for key in lti_info:
                 if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
                     continue

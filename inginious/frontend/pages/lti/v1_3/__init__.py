@@ -15,6 +15,8 @@ from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.lti.v1_3 import MongoLTILaunchDataStorage
 from inginious.frontend.courses import Course
 
+from inginious.frontend.models import LTIData
+
 
 class LTI13JWKSPage(INGIniousPage):
     endpoint = 'ltijwkspage'
@@ -100,19 +102,21 @@ class LTI13LaunchPage(INGIniousPage):
             raise Exception("Not an LTI session")
 
         session.loggedin = False
-        session.lti.version = "1.3"
-        session.lti.email =email
-        session.lti.username = user_id
-        session.lti.realname = realname
-        session.lti.roles = roles
-        session.lti.task = courseid, taskid
-        session.lti.platform_instance_id = platform_instance_id
-        session.lti.message_launch_id = launch_id if can_report_grades else None
-        session.lti.context_title = context_title
-        session.lti.context_label = context_label
-        session.lti.tool_description = tool_desc
-        session.lti.tool_name = tool_name
-        session.lti.tool_url = tool_url
+        session.lti = LTIData(
+            version = "1.3",
+            email =email,
+            username = user_id,
+            realname = realname,
+            roles = roles,
+            task = (courseid, taskid),
+            platform_instance_id = platform_instance_id,
+            message_launch_id = launch_id if can_report_grades else None,
+            context_title = context_title,
+            context_label = context_label,
+            tool_description = tool_desc,
+            tool_name = tool_name,
+            tool_url = tool_url,
+        )
 
         return redirect(self.app.get_path("lti1.3", "login"))
 

@@ -40,7 +40,7 @@ class Session(Document):
     loggedin = BooleanField(required=True, default=False)
     auth_storage = MapField(DynamicField(), default={})
     expiration = DateTimeField()
-    lti = EmbeddedDocumentField(LTIData, default=lambda: LTIData())
+    lti = EmbeddedDocumentField(LTIData, default=lambda: None)
     code_indentation = StringField(choices=["2", "3", "4", "tabs"], default="4")
     email = StringField()
     language = StringField(default="en")

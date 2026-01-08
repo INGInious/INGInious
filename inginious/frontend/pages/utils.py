@@ -140,7 +140,7 @@ class INGIniousAuthPage(INGIniousPage):
                     and not self.__class__.__name__ == "ProfilePage":
                 return redirect(self.app.get_path("preferences/profile"))
 
-            if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
+            if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
                 return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
@@ -167,7 +167,7 @@ class INGIniousAuthPage(INGIniousPage):
             if not self.user_manager.session_username() and not self.__class__.__name__ == "ProfilePage":
                 return redirect(self.app.get_path("preferences/profile"))
 
-            if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
+            if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
                 return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 

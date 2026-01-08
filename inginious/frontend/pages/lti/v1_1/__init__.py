@@ -19,7 +19,7 @@ from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models import Nonce
+from inginious.frontend.models import Nonce, LTIData
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -144,20 +144,22 @@ class LTI11LaunchPage(INGIniousPage):
                 raise Exception("Not an LTI session")
 
             session.loggedin = False
-            session.lti.version = "1.1"
-            session.lti.email = email
-            session.lti.username = user_id
-            session.lti.realname = realname
-            session.lti.roles = roles
-            session.lti.task = courseid, taskid
-            session.lti.outcome_service_url = lis_outcome_service_url
-            session.lti.outcome_result_id = outcome_result_id
-            session.lti.consumer_key = consumer_key
-            session.lti.context_title = context_title
-            session.lti.context_label = context_label
-            session.lti.tool_description = tool_desc
-            session.lti.tool_name = tool_name
-            session.lti.tool_url = tool_url
+            session.lti = LTIData(
+                version="1.1",
+                email=email,
+                username=user_id,
+                realname=realname,
+                roles=roles,
+                task=(courseid, taskid),
+                outcome_service_url=lis_outcome_service_url,
+                outcome_result_id=outcome_result_id,
+                consumer_key=consumer_key,
+                context_title=context_title,
+                context_label=context_label,
+                tool_description=tool_desc,
+                tool_name=tool_name,
+                tool_url=tool_url
+            )
 
             return redirect(self.app.get_path("lti", "login"))
         else:

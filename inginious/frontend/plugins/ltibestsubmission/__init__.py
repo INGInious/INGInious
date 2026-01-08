@@ -1,5 +1,5 @@
 from bson import ObjectId, json_util
-
+from flask import session
 from werkzeug.exceptions import NotFound
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
@@ -14,7 +14,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         return True
 
     def GET_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise NotFound()
 

@@ -11,7 +11,7 @@ from inginious.frontend.models.course_class import CourseClass
 from inginious.frontend.models.group import Group
 from inginious.frontend.models.lti1_1 import LISOutcome, Nonce
 from inginious.frontend.models.lti1_3 import LTIGrade, LaunchData
-from inginious.frontend.models.session import Session
+from inginious.frontend.models.session import Session, LTIData
 from inginious.frontend.models.submission import Submission
 from inginious.frontend.models.user import User
 from inginious.frontend.models.user_task import UserTask
