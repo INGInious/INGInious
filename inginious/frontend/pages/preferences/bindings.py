@@ -36,7 +36,7 @@ class BindingsPage(INGIniousAuthPage):
                 error = True
                 msg = _("Incorrect authentication binding.")
             elif auth_binding not in user_data.bindings:
-                return redirect("/auth/signin/" + auth_binding)
+                return redirect(self.app.get_path("auth/signin/" + auth_binding))
         elif "revoke_auth_binding" in user_input:
             auth_id = user_input["revoke_auth_binding"]
             error, msg = self.user_manager.revoke_binding(self.user_manager.session_username(), auth_id)
