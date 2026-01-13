@@ -179,7 +179,7 @@ class INGIniousAuthPage(INGIniousPage):
                                                              self.app.privacy_page is not None and
                                                              not self.user_manager.session_tos_signed())) \
                     and not self.__class__.__name__ == "ProfilePage":
-                return redirect("/preferences/profile")
+                return redirect(self.app.get_path("preferences/profile"))
 
             if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
                 self.user_manager.disconnect_user()
@@ -206,7 +206,7 @@ class INGIniousAuthPage(INGIniousPage):
         """
         if self.user_manager.session_logged_in():
             if not self.user_manager.session_username() and not self.__class__.__name__ == "ProfilePage":
-                return redirect("/preferences/profile")
+                return redirect(self.app.get_path("preferences/profile"))
 
             if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
                 self.user_manager.disconnect_user()
@@ -267,10 +267,10 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
 
 class SignInPage(INGIniousAuthPage):
     def GET_AUTH(self, *args, **kwargs):
-        return redirect("/mycourses")
+        return redirect(self.app.get_path("mycourses"))
 
     def POST_AUTH(self, *args, **kwargs):
-        return redirect("/mycourses")
+        return redirect(self.app.get_path("mycourses"))
 
     def GET(self):
         return INGIniousAuthPage.GET(self)
@@ -279,11 +279,11 @@ class SignInPage(INGIniousAuthPage):
 class LogOutPage(INGIniousAuthPage):
     def GET_AUTH(self, *args, **kwargs):
         self.user_manager.disconnect_user()
-        return redirect("/courselist")
+        return redirect(self.app.get_path("courselist"))
 
     def POST_AUTH(self, *args, **kwargs):
         self.user_manager.disconnect_user()
-        return redirect("/courselist")
+        return redirect(self.app.get_path("courselist"))
 
 
 class INGIniousStaticPage(INGIniousPage):

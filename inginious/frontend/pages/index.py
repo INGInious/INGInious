@@ -14,11 +14,11 @@ class IndexPage(INGIniousStaticPage):
     def GET(self):  # pylint: disable=arguments-differ
         """ Display main course list page """
         if not self.app.welcome_page:
-            return redirect("/courselist")
+            return redirect(self.app.get_path("courselist"))
         return self.show_page(self.app.welcome_page)
 
     def POST(self):  # pylint: disable=arguments-differ
         """ Display main course list page """
         if not self.app.welcome_page:
-            return redirect("/courselist")
+            return redirect(self.app.get_path("courselist"))
         return self.show_page(self.app.welcome_page)

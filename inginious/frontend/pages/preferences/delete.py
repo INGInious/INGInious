@@ -51,6 +51,6 @@ class DeletePage(INGIniousAuthPage):
         if "delete" in data:
             msg, error = self.delete_account(data)
             if not error:
-                return redirect("/index")
+                return redirect(self.app.get_path("index"))
 
         return self.template_helper.render("preferences/delete.html", msg=msg, error=error)
