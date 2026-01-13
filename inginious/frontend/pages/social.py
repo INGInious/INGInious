@@ -24,7 +24,7 @@ class AuthenticationPage(INGIniousPage):
 
     def GET(self, auth_id):
         if self.user_manager.session_is_lti():
-            return redirect("/auth/signin/" + auth_id)
+            return redirect(self.app.get_path("auth/signin/" + auth_id))
         return self.process_signin(auth_id)
 
     def POST(self, auth_id):
@@ -40,15 +40,15 @@ class CallbackPage(INGIniousPage):
         auth_storage = self.user_manager.session_auth_storage().setdefault(auth_id, {})
         user = auth_method.callback(auth_storage)
         if not user:
-            return redirect("/signin?callbackerror")
+            return redirect(self.app.get_path("signin?callbackerror"))
         if not self.user_manager.bind_user(auth_id, user):
-            return redirect("/signin?binderror")
+            return redirect(self.app.get_path("signin?binderror"))
 
         return redirect(auth_storage.get("redir_url", "/"))
 
     def GET(self, auth_id):
         if self.user_manager.session_is_lti():
-            return redirect("/auth/signin/" + auth_id)
+            return redirect(self.app.get_path("auth/signin/" + auth_id))
         return self.process_callback(auth_id)
 
     def POST(self, auth_id):

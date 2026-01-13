@@ -119,8 +119,8 @@ class LDAPAuthenticationPage(AuthenticationPage):
                 conn.unbind()
 
             if not self.user_manager.bind_user(id, (username, realname, email, {})):
-                return redirect("/signin?binderror")
-            
+                return redirect(self.app.get_path("signin?binderror"))
+
             auth_storage = self.user_manager.session_auth_storage().setdefault(id, {})
             return redirect(auth_storage.get("redir_url", "/"))
         else:
