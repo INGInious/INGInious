@@ -60,7 +60,7 @@ class CourseTaskListPage(INGIniousAdminPage):
                     if task_fs.exists("task.yaml"):
                         raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
 
-                    t = Task(taskid, {"name": taskid, "problems": {}, "environment_type": "mcq"}, task_fs)
+                    t = Task(courseid, taskid, {"name": taskid, "problems": {}, "environment_type": "mcq"})
                     t.save()
                 except Exception as ex:
                     errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
@@ -140,4 +140,3 @@ class CourseTaskListPage(INGIniousAdminPage):
         return render_template("course_admin/task_list.html", course=course,
                                            task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,
                                            tasks_errors=tasks_errors, validated=validated, webdav_host=self.webdav_host)
-
