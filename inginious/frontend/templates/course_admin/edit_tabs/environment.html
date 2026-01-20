@@ -22,7 +22,7 @@
                 <select id="environment-id-{{ envtype }}" class="form-control" name="environment_id[{{ envtype }}]">
                     {% for env_envtype, envs in environments.items() %}
                         {% if envtype == env_envtype %}
-                            {% for env in envs %}
+                            {% for env in envs | sort %}
                                 <option value="{{env}}" {{ 'selected="selected"' if env == task_data.get('environment_id') }}>
                                     {{ env }}
                                 </option>
