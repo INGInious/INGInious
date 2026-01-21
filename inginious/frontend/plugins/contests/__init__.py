@@ -124,8 +124,7 @@ class Contest(TableOfContents):
         if len(errors) == 0:
             self.save_contest_data(course, contest_data)
 
-        #TODO : indicate error on page
-
+        return errors
 
     def check_dispenser_data(self, dispenser_data):
         """ Checks the dispenser data as formatted by the form from render_edit function """
