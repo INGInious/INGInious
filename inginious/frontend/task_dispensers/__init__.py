@@ -9,7 +9,6 @@ class TaskDispenser(metaclass=ABCMeta):
         Instantiate a new TaskDispenser
         :param task_list_func: A function returning the list of available course tasks from the task factory
         :param dispenser_data: The dispenser data structure/configuration
-        :param database: The MongoDB database
         :param course_id: A String that is the id of the course
         """
         self._task_list_func = task_list_func
@@ -80,6 +79,10 @@ class TaskDispenser(metaclass=ABCMeta):
     @abstractmethod
     def render(self, course, tasks_data, tag_list,username):
         """ Returns the formatted task list"""
+        pass
+
+    def handle_settings(self, course, dispenser_settings):
+        """ Handles the setting of the dispenser data from the possible task list edition form """
         pass
 
     @abstractmethod

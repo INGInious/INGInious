@@ -1,0 +1,33 @@
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+
+{% include "contests/admin.html" %}
+
+{% include "course_admin/task_dispensers/util.html" %}
+
+<div id="course_structure" data-level="2" class="sections_list pb-3">
+    <div class="content">
+        {% with sections=course_structure,level=3,display_subsections=False,config_fields=config_fields %}
+            {% include "course_admin/task_dispensers/section.html" %}
+        {% endwith %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <button class="btn btn-secondary btn-block" onclick="dispenser_util_create_section($('#course_structure'))">
+            <i class="fa fa-plus"></i> {{ _("Add section") }}
+        </button>
+    </div>
+</div>
+
+<!-- Invisible element (for copy) -->
+{% with id="empty_section", title=_("New section"), config={}, level=0, hidden=True, display_subsections=False %}
+   {% include "course_admin/task_dispensers/empty_section.html" %}
+{% endwith %}
+
+<script>
+    $(function() {
+        dispenser_config = JSON.parse('{{ dispenser_config | tojson }}');
+    });
+</script>

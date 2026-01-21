@@ -76,6 +76,10 @@ class CourseTaskListPage(INGIniousAdminPage):
                 except Exception as ex:
                     errors.append(_("Couldn't wipe task {} : ").format(taskid) + str(ex))
 
+            task_dispenser = course.get_task_dispenser()
+            task_dispenser.handle_settings(course, json.loads(user_input.get("dispenser_settings")))
+
+
         # don't forget to reload the modified course
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
         return self.page(course, errors, not errors)

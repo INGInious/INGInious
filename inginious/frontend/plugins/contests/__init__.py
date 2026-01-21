@@ -16,9 +16,13 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.courses import Course
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.pages.course_admin.task_list import CourseTaskListPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers import register_task_dispenser
+from inginious.frontend.task_dispensers.util import check_toc, parse_tasks_config, check_task_config,\
+    SectionsList, SectionConfigItem, GroupSubmission, Weight, SubmissionStorage, EvaluationMode, Categories, \
+    SubmissionLimit, Accessibility
 from inginious.frontend.models import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
@@ -34,8 +38,8 @@ def add_admin_menu(course): # pylint: disable=unused-argument
 
 class Contest(TableOfContents):
 
-    def __init__(self, task_list_func, dispenser_data, database, course_id):
-        TableOfContents.__init__(self, task_list_func, dispenser_data.get("toc_data", {}), database, course_id)
+    def __init__(self, task_list_func, dispenser_data, course_id):
+        TableOfContents.__init__(self, task_list_func, dispenser_data.get("toc_data", {}), course_id)
         self._contest_settings = dispenser_data.get(
             'contest_settings',
             {"enabled": False,
@@ -52,6 +56,76 @@ class Contest(TableOfContents):
     @classmethod
     def get_name(cls, language):
         return "Contest"
+
+    def render_edit(self, course, task_data, task_errors):
+        """ Returns the formatted task list edition form """
+        config_fields = {}
+
+        task_dispenser = course.get_task_dispenser()
+        if not task_dispenser.get_id() == Contest.get_id():
+            raise NotFound()
+        contest_data = task_dispenser.get_contest_data()
+
+        return render_template("contests/contests.html", course=course,
+                                      course_structure=self._toc, tasks=task_data, task_errors=task_errors,
+                                      config_fields=config_fields, dispenser_config=self._task_config, data=contest_data, errors=None, saved=False)
+
+    def save_contest_data(self, course, contest_data):
+        """ Saves updated contest data for the course """
+        course_content = course.get_descriptor()
+        course_content["dispenser_data"]["contest_settings"] = contest_data
+
+        Course(course.get_id(), course_content).save()
+
+    def handle_settings(self, course, dispenser_settings):
+        """ Handles the setting of the dispenser data from the possible task list edition form """
+        task_dispenser = course.get_task_dispenser()
+        if not task_dispenser.get_id() == Contest.get_id():
+            raise NotFound()
+        contest_data = task_dispenser.get_contest_data()
+
+        new_data = dispenser_settings
+        errors = []
+        try:
+            contest_data['enabled'] = new_data.get('enabled', False) == True
+            contest_data['start'] = new_data["start"]
+            contest_data['end'] = new_data["end"]
+
+            try:
+                start = datetime.fromisoformat(contest_data['start'])
+            except:
+                errors.append('Invalid start date')
+
+            try:
+                end = datetime.fromisoformat(contest_data['end'])
+            except:
+                errors.append('Invalid end date')
+
+            if len(errors) == 0:
+                if start >= end:
+                    errors.append('Start date should be before end date')
+
+            try:
+                contest_data['blackout'] = int(new_data["blackout"])
+                if contest_data['blackout'] < 0:
+                    errors.append('Invalid number of hours for the blackout: should be greater than 0')
+            except:
+                errors.append('Invalid number of hours for the blackout')
+
+            try:
+                contest_data['penalty'] = int(new_data["penalty"])
+                if contest_data['penalty'] < 0:
+                    errors.append('Invalid number of minutes for the penalty: should be greater than 0')
+            except:
+                errors.append('Invalid number of minutes for the penalty')
+        except:
+            errors.append('User returned an invalid form')
+
+        if len(errors) == 0:
+            self.save_contest_data(course, contest_data)
+
+        #TODO : indicate error on page
+
 
     def check_dispenser_data(self, dispenser_data):
         """ Checks the dispenser data as formatted by the form from render_edit function """
