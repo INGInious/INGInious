@@ -77,15 +77,16 @@ class Contest(TableOfContents):
 
         Course(course.get_id(), course_content).save()
 
-    def handle_settings(self, course, dispenser_settings):
-        """ Handles the setting of the dispenser data from the possible task list edition form """
-        task_dispenser = course.get_task_dispenser()
-        if not task_dispenser.get_id() == Contest.get_id():
-            raise NotFound()
-        contest_data = task_dispenser.get_contest_data()
+    def check_dispenser_data(self, dispenser_data):
+        """ Checks the dispenser data as formatted by the form from render_edit function """
+        data, errors = TableOfContents.check_dispenser_data(self, dispenser_data)
 
-        new_data = dispenser_settings
-        errors = []
+        # check if can be simplified ....
+
+        contest_data = self.get_contest_data()
+
+        # handle settings here
+        new_data = dispenser_data['settings']
         try:
             contest_data['enabled'] = new_data.get('enabled', False) == True
             contest_data['start'] = new_data["start"]
@@ -121,14 +122,6 @@ class Contest(TableOfContents):
         except:
             errors.append('User returned an invalid form')
 
-        if len(errors) == 0:
-            self.save_contest_data(course, contest_data)
-
-        return errors
-
-    def check_dispenser_data(self, dispenser_data):
-        """ Checks the dispenser data as formatted by the form from render_edit function """
-        data, errors = TableOfContents.check_dispenser_data(self, dispenser_data)
         return {"toc_data": data, "contest_settings": self._contest_settings} if data else None, errors
 
     def get_accessibilities(self, taskids, usernames): # pylint: disable=unused-argument
