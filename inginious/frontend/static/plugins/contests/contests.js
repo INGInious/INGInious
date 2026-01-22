@@ -53,5 +53,12 @@ function contest_blackout_time()
 }
 
 function dispenser_structure_contest() {
-    return dispenser_util_structure();
+	var course_structure = dispenser_util_structure()
+	course_structure['settings'] = {}
+
+    $("#task_dispenser_settings_form input").each(function () {
+        course_structure['settings'][$(this).attr("name")] = $(this).is(":checkbox") ? $(this).is(":checked") : $(this).val();
+    });
+
+    return JSON.stringify(course_structure);
 }

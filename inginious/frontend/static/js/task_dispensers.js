@@ -492,41 +492,28 @@ function dispenser_util_get_task_config() {
 }
 
 function dispenser_util_structure() {
-    return JSON.stringify({
+    return {
         "toc": dispenser_util_get_sections_list($('#course_structure').children(".content")),
         "config": dispenser_config
-    });
+    };
 }
 
 function dispenser_structure_toc() {
-    return dispenser_util_structure();
+    return JSON.stringify(dispenser_util_structure());
 }
 
 function dispenser_structure_combinatory_test() {
-    return dispenser_util_structure();
-}
-
-function dispenser_util_get_settings() {
-    const settings = {};
-    $("#task_dispenser_settings_form input").each(function () {
-        console.log($(this).attr("name"))
-        console.log($(this).is(":checkbox"))
-        settings[$(this).attr("name")] = $(this).is(":checkbox") ? $(this).is(":checked") : $(this).val();
-    });
-    return settings;
+    return JSON.stringify(dispenser_util_structure());
 }
 
 function dispenser_submit(dispenser_id) {
     var structure_json = window['dispenser_structure_' + dispenser_id]();
-    var dispenser_settings = dispenser_util_get_settings();
     warn_before_exit = false;
     $("<form>").attr("method", "post").appendTo($("#dispenser_data")).hide()
         .append($("<input>").attr("name", "course_structure").val(structure_json))
         .append($("<input>").attr("name", "new_tasks").val(JSON.stringify(dispenser_new_tasks)))
         .append($("<input>").attr("name", "deleted_tasks").val(JSON.stringify(dispenser_deleted_tasks)))
-        .append($("<input>").attr("name", "wiped_tasks").val(JSON.stringify(dispenser_wiped_tasks)))
-        .append($("<input>").attr("name", "dispenser_settings").val(JSON.stringify(dispenser_settings)))
-        .submit();
+        .append($("<input>").attr("name", "wiped_tasks").val(JSON.stringify(dispenser_wiped_tasks))).submit();
 }
 
 /************************
