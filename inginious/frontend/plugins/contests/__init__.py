@@ -15,14 +15,9 @@ from flask import request, render_template
 from werkzeug.exceptions import NotFound
 from inginious.frontend.courses import Course
 from inginious.frontend.accessible_time import AccessibleTime
-from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-from inginious.frontend.pages.course_admin.task_list import CourseTaskListPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers import register_task_dispenser
-from inginious.frontend.task_dispensers.util import check_toc, parse_tasks_config, check_task_config,\
-    SectionsList, SectionConfigItem, GroupSubmission, Weight, SubmissionStorage, EvaluationMode, Categories, \
-    SubmissionLimit, Accessibility
 from inginious.frontend.models import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
@@ -81,11 +76,7 @@ class Contest(TableOfContents):
         """ Checks the dispenser data as formatted by the form from render_edit function """
         data, errors = TableOfContents.check_dispenser_data(self, dispenser_data)
 
-        # check if can be simplified ....
-
         contest_data = self.get_contest_data()
-
-        # handle settings here
         new_data = dispenser_data['settings']
         try:
             contest_data['enabled'] = new_data.get('enabled', False) == True
@@ -95,33 +86,35 @@ class Contest(TableOfContents):
             try:
                 start = datetime.fromisoformat(contest_data['start'])
             except:
-                errors.append('Invalid start date')
+                errors ='Invalid start date'
 
             try:
                 end = datetime.fromisoformat(contest_data['end'])
             except:
-                errors.append('Invalid end date')
+                errors = 'Invalid end date'
 
             if len(errors) == 0:
                 if start >= end:
-                    errors.append('Start date should be before end date')
+                    errors = 'Start date should be before end date'
 
             try:
                 contest_data['blackout'] = int(new_data["blackout"])
                 if contest_data['blackout'] < 0:
-                    errors.append('Invalid number of hours for the blackout: should be greater than 0')
+                    errors = 'Invalid number of hours for the blackout: should be greater than 0'
             except:
-                errors.append('Invalid number of hours for the blackout')
+                errors = 'Invalid number of hours for the blackout'
 
             try:
                 contest_data['penalty'] = int(new_data["penalty"])
                 if contest_data['penalty'] < 0:
-                    errors.append('Invalid number of minutes for the penalty: should be greater than 0')
+                    errors = 'Invalid number of minutes for the penalty: should be greater than 0'
             except:
-                errors.append('Invalid number of minutes for the penalty')
+                errors = 'Invalid number of minutes for the penalty'
         except:
-            errors.append('User returned an invalid form')
+            errors = 'User returned an invalid form'
 
+        if len(errors) != 0:
+            return None, errors
         return {"toc_data": data, "contest_settings": self._contest_settings} if data else None, errors
 
     def get_accessibilities(self, taskids, usernames): # pylint: disable=unused-argument
