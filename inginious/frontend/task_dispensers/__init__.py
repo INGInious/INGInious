@@ -81,10 +81,6 @@ class TaskDispenser(metaclass=ABCMeta):
         """ Returns the formatted task list"""
         pass
 
-    def handle_settings(self, course, dispenser_settings):
-        """ Handles the setting of the dispenser data from the possible task list edition form """
-        pass
-
     @abstractmethod
     def check_dispenser_data(self, dispenser_data):
         """ Checks the dispenser data as formatted by the form from render_edit function """
