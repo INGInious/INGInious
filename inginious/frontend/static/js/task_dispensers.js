@@ -482,28 +482,19 @@ function dispenser_add_task(taskid) {
     dispenser_new_tasks.push(taskid);
 }
 
-function dispenser_util_get_task_config() {
-    let tasks_config = {};
-    dispenser_util_get_tasks_list($('#course_structure .content')).forEach(function (elem) {
-        tasks_config[elem] = {};
-    });
-
-    return tasks_config;
-}
-
 function dispenser_util_structure() {
-    return JSON.stringify({
+    return {
         "toc": dispenser_util_get_sections_list($('#course_structure').children(".content")),
         "config": dispenser_config
-    });
+    };
 }
 
 function dispenser_structure_toc() {
-    return dispenser_util_structure();
+    return JSON.stringify(dispenser_util_structure());
 }
 
 function dispenser_structure_combinatory_test() {
-    return dispenser_util_structure();
+    return JSON.stringify(dispenser_util_structure());
 }
 
 function dispenser_submit(dispenser_id) {

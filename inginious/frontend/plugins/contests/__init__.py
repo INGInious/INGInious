@@ -15,7 +15,6 @@ from flask import request, render_template
 from werkzeug.exceptions import NotFound
 from inginious.frontend.courses import Course
 from inginious.frontend.accessible_time import AccessibleTime
-from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.task_dispensers import register_task_dispenser
@@ -34,8 +33,8 @@ def add_admin_menu(course): # pylint: disable=unused-argument
 
 class Contest(TableOfContents):
 
-    def __init__(self, task_list_func, dispenser_data, database, course_id):
-        TableOfContents.__init__(self, task_list_func, dispenser_data.get("toc_data", {}), database, course_id)
+    def __init__(self, task_list_func, dispenser_data, course_id):
+        TableOfContents.__init__(self, task_list_func, dispenser_data.get("toc_data", {}), course_id)
         self._contest_settings = dispenser_data.get(
             'contest_settings',
             {"enabled": False,
@@ -53,9 +52,69 @@ class Contest(TableOfContents):
     def get_name(cls, language):
         return "Contest"
 
+    def render_edit(self, course, task_data, task_errors):
+        """ Returns the formatted task list edition form """
+        config_fields = {}
+
+        task_dispenser = course.get_task_dispenser()
+        if not task_dispenser.get_id() == Contest.get_id():
+            raise NotFound()
+        contest_data = task_dispenser.get_contest_data()
+
+        return render_template("contests/contests.html", course=course,
+                                      course_structure=self._toc, tasks=task_data, task_errors=task_errors,
+                                      config_fields=config_fields, dispenser_config=self._task_config, data=contest_data, errors=None, saved=False)
+
+    def save_contest_data(self, course, contest_data):
+        """ Saves updated contest data for the course """
+        course_content = course.get_descriptor()
+        course_content["dispenser_data"]["contest_settings"] = contest_data
+
+        Course(course.get_id(), course_content).save()
+
     def check_dispenser_data(self, dispenser_data):
         """ Checks the dispenser data as formatted by the form from render_edit function """
         data, errors = TableOfContents.check_dispenser_data(self, dispenser_data)
+
+        contest_data = self.get_contest_data()
+        new_data = dispenser_data['settings']
+        try:
+            contest_data['enabled'] = new_data.get('enabled', False) == True
+            contest_data['start'] = new_data["start"]
+            contest_data['end'] = new_data["end"]
+
+            try:
+                start = datetime.fromisoformat(contest_data['start'])
+            except:
+                errors ='Invalid start date'
+
+            try:
+                end = datetime.fromisoformat(contest_data['end'])
+            except:
+                errors = 'Invalid end date'
+
+            if len(errors) == 0:
+                if start >= end:
+                    errors = 'Start date should be before end date'
+
+            try:
+                contest_data['blackout'] = int(new_data["blackout"])
+                if contest_data['blackout'] < 0:
+                    errors = 'Invalid number of hours for the blackout: should be greater than 0'
+            except:
+                errors = 'Invalid number of hours for the blackout'
+
+            try:
+                contest_data['penalty'] = int(new_data["penalty"])
+                if contest_data['penalty'] < 0:
+                    errors = 'Invalid number of minutes for the penalty: should be greater than 0'
+            except:
+                errors = 'Invalid number of minutes for the penalty'
+        except:
+            errors = 'User returned an invalid form'
+
+        if len(errors) != 0:
+            return None, errors
         return {"toc_data": data, "contest_settings": self._contest_settings} if data else None, errors
 
     def get_accessibilities(self, taskids, usernames): # pylint: disable=unused-argument
@@ -186,77 +245,6 @@ class ContestScoreboard(INGIniousAuthPage):
                                            results=results, activity=activity)
 
 
-class ContestAdmin(INGIniousAdminPage):
-    """ Contest settings for a course """
-
-    def save_contest_data(self, course, contest_data):
-        """ Saves updated contest data for the course """
-        course_content = course.get_descriptor()
-        course_content["dispenser_data"]["contest_settings"] = contest_data
-
-        Course(course.get_id(), course_content).save()
-
-    def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ GET request: simply display the form """
-        course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
-        task_dispenser = course.get_task_dispenser()
-        if not task_dispenser.get_id() == Contest.get_id():
-            raise NotFound()
-        contest_data = task_dispenser.get_contest_data()
-        return render_template("contests/admin.html", course=course, data=contest_data, errors=None, saved=False)
-
-    def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ POST request: update the settings """
-        course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
-        task_dispenser = course.get_task_dispenser()
-        if not task_dispenser.get_id() == Contest.get_id():
-            raise NotFound()
-        contest_data = task_dispenser.get_contest_data()
-
-        new_data = request.form
-        errors = []
-        try:
-            contest_data['enabled'] = new_data.get('enabled', '0') == '1'
-            contest_data['start'] = new_data["start"]
-            contest_data['end'] = new_data["end"]
-
-            try:
-                start = datetime.fromisoformat(contest_data['start'])
-            except:
-                errors.append('Invalid start date')
-
-            try:
-                end = datetime.fromisoformat(contest_data['end'])
-            except:
-                errors.append('Invalid end date')
-
-            if len(errors) == 0:
-                if start >= end:
-                    errors.append('Start date should be before end date')
-
-            try:
-                contest_data['blackout'] = int(new_data["blackout"])
-                if contest_data['blackout'] < 0:
-                    errors.append('Invalid number of hours for the blackout: should be greater than 0')
-            except:
-                errors.append('Invalid number of hours for the blackout')
-
-            try:
-                contest_data['penalty'] = int(new_data["penalty"])
-                if contest_data['penalty'] < 0:
-                    errors.append('Invalid number of minutes for the penalty: should be greater than 0')
-            except:
-                errors.append('Invalid number of minutes for the penalty')
-        except:
-            errors.append('User returned an invalid form')
-
-        if len(errors) == 0:
-            self.save_contest_data(course, contest_data)
-            return render_template("contests/admin.html", course=course, data=contest_data, errors=None, saved=True)
-        else:
-            return render_template("contests/admin.html", course=course, data=contest_data, errors=errors, saved=False)
-
-
 def init(plugin_manager, client, config):  # pylint: disable=unused-argument
     """
         Init the contest plugin.
@@ -269,8 +257,6 @@ def init(plugin_manager, client, config):  # pylint: disable=unused-argument
     """
 
     plugin_manager.add_page('/contest/<courseid>', ContestScoreboard.as_view('contestscoreboard'))
-    plugin_manager.add_page('/admin/<courseid>/contest', ContestAdmin.as_view('contestadmin'))
-    plugin_manager.add_hook('course_admin_menu', add_admin_menu)
     plugin_manager.add_hook('css', lambda: '/static/plugins/contests/scoreboard.css')
     plugin_manager.add_hook('javascript_header', lambda : '/static/plugins/contests/jquery.countdown.min.js')
     plugin_manager.add_hook('javascript_header', lambda : '/static/plugins/contests/contests.js')

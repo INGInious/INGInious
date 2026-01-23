@@ -1,27 +1,6 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-{% extends "layout.html" %}
-
-{% block title %} {{course.get_name(user_manager.session_language())}} - Contest settings {% endblock %}
-
-{% block column %}
-    {% with current='contest' %}
-        {% include 'course_admin/menu.html' %}
-    {% endwith %}
-{% endblock %}
-
-{% block navbar %}
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(user_manager.session_language()) }}</a></li>
-            <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="Administration" data-toggle="tooltip" data-placement="bottom">
-                <i class="fa fa-user-secret"></i></a></li>
-            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-trophy"></i> Contest plugin <span class="sr-only">(current)</span></a></li>
-        </ol>
-    </nav>
-{% endblock %}
-
 {% block content %}
 <h2>Contest settings</h2>
 {% if errors is not none %}
@@ -41,7 +20,7 @@ Tasks will never be hidden after the end of the contest, but newer submissions w
 You may want to configure the course such that:<br/>
 accessibility date of the course &lt; registration start date &lt; registration end date &lt; contest start &lt; contest end.<br/>
 </p>
-<form id="edit_contest_form" action="{{get_path('admin', course.get_id(), 'contest')}}" method="post" class="form-horizontal">
+<form id="task_dispenser_settings_form" class="form-horizontal">
     <div class="form-group row">
         <label for="enabled" class="col-sm-2 control-label">Enable contest plugin</label>
         <div class="col-sm-10">
@@ -95,7 +74,6 @@ accessibility date of the course &lt; registration start date &lt; registration 
              <input type="text" class="form-control" id="penalty" name="penalty" placeholder="0" value="{{data['penalty']}}">
         </div>
     </div>
-    <button class="btn btn-primary btn-block" type="submit"><i class="fa fa-floppy-o"></i> Save changes</button>
 </form>
 
 {% endblock %}
