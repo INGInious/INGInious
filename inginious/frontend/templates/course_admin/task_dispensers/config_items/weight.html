@@ -14,9 +14,8 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
-        if (!("weight" in dispenser_config[taskid]))
-            return;
-        $(this).find(".weight").val(dispenser_config[taskid]["weight"]);
+        var weight = dispenser_config[taskid]["weight"] ?? {{ config_item.default | tojson  }};
+        $(this).find(".weight").val(weight);
     });
 
     // Catch modals changes

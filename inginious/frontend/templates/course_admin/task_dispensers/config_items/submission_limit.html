@@ -44,7 +44,7 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
-        let sub_limit = dispenser_config[taskid]["submission_limit"] ?? {'amount': -1, 'period': -1};
+        let sub_limit = dispenser_config[taskid]["submission_limit"] ?? {{ config_item.default | tojson  }};
         var value = 'none';
 
         if (sub_limit['amount'] > -1 && sub_limit['period'] == -1) {
