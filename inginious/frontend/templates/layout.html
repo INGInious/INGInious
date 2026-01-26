@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {#  more information about the licensing of this file. #}
-{% set static_ver = 1 %}
+{% set static_ver = 2 %}
 {% macro show_time(datetime) -%}
     <time datetime="{{datetime.isoformat()}}">{{datetime.isoformat()}}</time>
 {%- endmacro %}
@@ -108,6 +108,7 @@
     <script src="{{get_homepath()}}/static/js/groups.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
     <script src="{{get_homepath()}}/static/js/task_dispensers.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
     <script src="{{get_homepath()}}/static/js/admin.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{get_homepath()}}/static/js/mycourses.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
     {% endif %}
 
     <script type="text/javascript">
