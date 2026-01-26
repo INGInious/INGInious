@@ -11,16 +11,16 @@ LABEL org.opencontainers.image.description="Base INGInious grading environment."
 LABEL org.inginious.grading.agent_version=3
 
 # Install python, needed for scripts used in INGInious + locale support
+COPY     . /INGInious
 RUN     dnf clean metadata && \
         dnf -y install langpacks-en glibc-langpack-en && \
         dnf -y install epel-release && \
         dnf -y upgrade && \
         dnf -y install python38 python38-pip python38-devel zip unzip tar sed openssh-server openssl bind-utils iproute file jq procps-ng man curl net-tools screen nano bc  && \
-        pip3.8 install msgpack pyzmq jinja2 PyYAML timeout-decorator ipython mypy && \
+        pip3.8 install -r /INGInious/requirements.txt && \
         dnf clean all
 
 # Allow to run commands
-ADD     . /INGInious
 RUN     chmod -R 755 /INGInious/bin && \
         chmod 700 /INGInious/bin/INGInious && \
         mv /INGInious/bin/* /bin
