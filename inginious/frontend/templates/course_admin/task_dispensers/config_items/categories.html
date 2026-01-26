@@ -18,11 +18,9 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
-        if (!("categories" in dispenser_config[taskid]))
-            return;
+        var categories = dispenser_config[taskid]["categories"] ?? {{ config_item.default | tojson  }};
         var field = $(this).find(".categories input");
-
-        field.val(dispenser_config[taskid]["categories"].join(','));
+        field.val(categories.join(','));
     });
 
     // Catch modal changes

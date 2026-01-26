@@ -83,9 +83,7 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         let button = $(event.relatedTarget);
         let taskid = button.data('taskid');
-        if (!("accessibility" in dispenser_config[taskid]))
-            return;
-        let accessibility = dispenser_config[taskid]["accessibility"];
+        let accessibility = dispenser_config[taskid]["accessibility"] ?? {{ config_item.default | tojson }};
         let value = 'custom';
 
         if (accessibility === true) {

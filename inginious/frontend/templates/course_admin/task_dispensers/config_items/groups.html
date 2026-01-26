@@ -35,9 +35,7 @@
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var taskid = button.data('taskid');
-        if (!("group_submission" in dispenser_config[taskid]))
-            return;
-        var value = dispenser_config[taskid]["group_submission"];
+        var value = dispenser_config[taskid]["group_submission"] ?? {{ config_item.default | tojson  }};
         var field = $(this).find(".group_submissions input[value=" + value + "]");
         field.prop("checked", true);
     });
