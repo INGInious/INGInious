@@ -47,6 +47,7 @@
         let sub_limit = dispenser_config[taskid]["submission_limit"] ?? {{ config_item.default | tojson  }};
         var value = 'none';
 
+        $(this).find(".submission_limits input[type='number']").val(""); // reset inner numeric fields
         if (sub_limit['amount'] > -1 && sub_limit['period'] == -1) {
             value = 'hard';
             $(this).find("#submission_limit_hard").val(sub_limit['amount']);
