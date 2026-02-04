@@ -34,6 +34,7 @@
         var no_stored_subs = dispenser_config[taskid]["no_stored_submissions"] ?? {{ config_item.default | tojson  }};
         var value = 'store_all';
 
+        $(this).find(".no_stored_submissions input[type='number']").val(""); // reset inner numeric fields
         if (no_stored_subs > 0) {
             value = 'store_not_all';
             $(this).find("#no_stored_submissions_value").val(no_stored_subs);

@@ -88,6 +88,7 @@
         let accessibility = dispenser_config[taskid]["accessibility"] ?? {{ config_item.default | tojson }};
         let value = 'custom';
 
+        $(this).find(".accessibility input[type='text']").val(""); // reset inner date fields
         if (accessibility === true) {
             value = 'true';
         } else if (accessibility === false) {
