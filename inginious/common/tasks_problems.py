@@ -144,7 +144,7 @@ class CodeProblem(Problem):
 
     def __init__(self, problemid, content, translations, taskfs):
         Problem.__init__(self, problemid, content, translations, taskfs)
-        self._header = content['header'] if "header" in content else ""
+        self._header = content.get("header", "") or ""
         self._optional = content.get("optional", False)
 
         if re.match(r'[a-z0-9\-_\.]+$', content.get("language", ""), re.IGNORECASE):
