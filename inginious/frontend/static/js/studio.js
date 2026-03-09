@@ -385,7 +385,7 @@ function studio_init_template(pid, problem)
     if("name" in problem)
         $('#name-' + pid, well).val(problem["name"]);
     var header_editor = registerCodeEditor($('#header-' + pid)[0], 'rst', 10);
-    if("header" in problem)
+    if("header" in problem && problem["header"])
         header_editor.setValue(problem["header"]);
 
     //Custom values for each problem type
