@@ -190,12 +190,12 @@ Once found, the template is parsed using `Jinja2 <http://jinja.pocoo.org/docs/2.
 
         # format:
         # set_feedback_from_tpl(template_name, template_options, problem_id=None, append=False)
-        # template_name is the file to format. See above for details.
+        # template_name is the file to format without extension. See above for details.
         # template_options is a dict in the form {name: value}. See below
         # problem_id is the problem id to which the feedback must be assigned. If None, the feedback is global
         # append is a boolean indicating if the feedback must be appended or not (overwritting the current feedback)
 
-        set_feedback_from_tpl("feedback.tpl", {"option1":"value1", "anothername":"anothervalue"})
+        set_feedback_from_tpl("feedback", {"option1":"value1", "anothername":"anothervalue"})
 
     .. code-tab:: py
 
@@ -203,23 +203,23 @@ Once found, the template is parsed using `Jinja2 <http://jinja.pocoo.org/docs/2.
 
         # format:
         # feedback.set_feedback_from_tpl(template_name, template_options, problem_id=None, append=False)
-        # template_name is the file to format. See above for details.
+        # template_name is the file to format without extension. See above for details.
         # template_options is a dict in the form {name: value}. See below
         # problem_id is the problem id to which the feedback must be assigned. If None, the feedback is global
         # append is a boolean indicating if the feedback must be appended or not (overwritting the current feedback)
 
-        feedback.set_feedback_from_tpl("feedback.tpl", {"option1":"value1", "anothername":"anothervalue"})
+        feedback.set_feedback_from_tpl("feedback", {"option1":"value1", "anothername":"anothervalue"})
 
     .. code-tab:: bash
 
         # format: feedback-msg-tpl [-a | --append] [-i | --id PROBLEM_ID] TPLNAME [option1=value1 option2=value2 ...]
-        # TPLNAME is the file to format. See above for details.
+        # TPLNAME is the file to format without extension. See above for details.
         # Options can be indicated at the end of the command, and will be passed to the template (see below)
         # --append is a boolean flag indicating if the feedback must be appended or not (overwritting the current feedback)
         # --id PROBLEM_ID. PROBLEM_ID is the problem id to which the feedback must be assigned.
         #                  If not indicated, the feedback is global
 
-        feedback-msg-tpl "feedback.tpl" option1=value1 anothername=anothervalue
+        feedback-msg-tpl feedback option1=value1 anothername=anothervalue
 
 
 Inside your template (named `feedback.tpl` in the examples above), you can use these parameters like this:
