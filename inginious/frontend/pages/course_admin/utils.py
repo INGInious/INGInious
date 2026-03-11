@@ -11,7 +11,7 @@ import io
 from collections import OrderedDict
 from datetime import datetime
 
-from flask import redirect, Response
+from flask import session, redirect, Response
 from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
 
@@ -63,10 +63,10 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
         tasks = course.get_task_dispenser().get_ordered_tasks()
 
         tutored_audiences = [str(audience["_id"]) for audience in audiences if
-                             self.user_manager.session_username() in audience["tutors"]]
+                             session.username in audience["tutors"]]
         tutored_users = []
         for audience in audiences:
-            if self.user_manager.session_username() in audience["tutors"]:
+            if session.username in audience["tutors"]:
                 tutored_users += audience["students"]
 
         limit = params.get("limit", 50) if params.get("limit", 50) > 0 else 50
@@ -337,7 +337,7 @@ class CourseRedirectPage(INGIniousAdminPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
-        if self.user_manager.session_username() in course.get_tutors():
+        if session.username in course.get_tutors():
             return redirect(self.app.get_path("admin", courseid, "tasks"))
         else:
             return redirect(self.app.get_path("admin", courseid, "settings"))

@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Course page """
-from flask import redirect, request, render_template
+from flask import session, redirect, request, render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException
@@ -21,7 +21,7 @@ class CourseRegisterPage(INGIniousAuthPage):
         except (InvalidNameException, CourseNotFoundException, CourseUnreadableException) as e:
             raise NotFound(description=_("This course doesn't exist."))
 
-        username = self.user_manager.session_username()
+        username = session.username
         user_info = self.user_manager.get_user_info(username)
 
         if self.user_manager.course_is_user_registered(course, username) or not course.is_registration_possible(user_info):

@@ -68,7 +68,7 @@
                                     data-type="single" data-toggle="modal"
                                     data-target="#binding_modal"
                                     class="btn btn-secondary binding_user" title="{{ _('Bindings') }}"><i class="fa fa-cloud"></i></button>
-                        {% if all_users[user]["username"] != user_manager.session_username() %}
+                        {% if all_users[user]["username"] != session.username %}
                             {% if not all_users[user]["activated"] %}
                                 <button type="button" data-username="{{all_users[user]['username']}}"
                                     data-type="single" data-toggle="modal"

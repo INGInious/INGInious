@@ -7,7 +7,7 @@ import json
 import logging
 from collections import OrderedDict
 
-from flask import request, render_template
+from flask import session, request, render_template
 from natsort import natsorted
 
 from inginious.frontend.tasks import Task
@@ -130,7 +130,7 @@ class CourseTaskListPage(INGIniousAdminPage):
             except Exception as ex:
                 tasks_errors[taskid] = str(ex)
 
-        tasks_data = natsorted([(taskid, {"name": tasks[taskid].get_name(self.user_manager.session_language()),
+        tasks_data = natsorted([(taskid, {"name": tasks[taskid].get_name(session.language),
                                        "url": self.submission_url_generator(taskid)}) for taskid in tasks],
                             key=lambda x: x[1]["name"])
         tasks_data = OrderedDict(tasks_data)

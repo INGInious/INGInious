@@ -4,7 +4,7 @@
 {% extends "layout.html" %}
 {% block title %}{{_("Course list") }}{% endblock %}
 {% block column %}
-    {% if not user_manager.session_logged_in() %}
+    {% if not session.loggedin %}
         {% include "signin_button.html" %}
     {% else %}
         <h3> {{ _("Public courses") }}</h3>
@@ -35,7 +35,7 @@
 <h2>{{ _("Course list") }}</h2>
 <div class="card-deck m-0">
 
-    {% set username = user_manager.session_username() %}
+    {% set username = session.username %}
     {% for courseid, course in open_courses.items() %}
         <div class="card m-2">
             <div class="card-body">
@@ -44,16 +44,16 @@
                         {% if course.lti_url() %}
                             <a target="_blank" href="{{ course.lti_url() }}">
                         {% endif %}
-                        {{course.get_name(user_manager.session_language())}}
+                        {{course.get_name(session.language)}}
                         {% if course.lti_url() %}
                             </a>
                         {% endif %}
                     {% else %}
-                        <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
+                        <a href="{{ get_path('course', courseid) }}">{{course.get_name(session.language)}}</a>
                     {% endif %}
                 </h5>
                 <div class="card-text card-trunc">
-                    {{ course.get_description(user_manager.session_language()) | safe }}
+                    {{ course.get_description(session.language) | safe }}
                 </div>
             </div>
             <div class="card-footer">

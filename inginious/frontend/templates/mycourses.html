@@ -37,7 +37,7 @@
                             list-group-item-danger
                         {% endif %}"
                         href="{{ get_path('course', submission['courseid'], submission['taskid']) }}">
-                        <b>{{ course.get_name(user_manager.session_language()) }}</b>: {{ submission["task"].get_name(user_manager.session_language()) }}
+                        <b>{{ course.get_name(session.language) }}</b>: {{ submission["task"].get_name(session.language) }}
                     </a>
                 {% endif %}
             {% endfor %}
@@ -77,7 +77,7 @@
                                             <i class="fa fa-star text-warning"></i>
                                         </button>
                                     {% endif %}
-                                    {{course.get_name(user_manager.session_language())}}
+                                    {{course.get_name(session.language)}}
                                 </a>
                             </h5>
                         </div>
@@ -109,7 +109,7 @@
             <hr>
             <div id="course_list" class="list-group">
                 {%if open_courses %}
-                    {% set username = user_manager.session_username() %}
+                    {% set username = session.username %}
                     {% for courseid, course in open_courses.items() %}
                         <a href="{{ get_path('course', courseid) }}" data-course-id="{{courseid}}" class="course_item list-group-item list-group-item-action
                             {% if course.is_lti() %}
@@ -136,7 +136,7 @@
                                             <i class="fa fa-star-o "></i>
                                         </button>
                                     {% endif %}
-                                    {{ course.get_name(user_manager.session_language()) }}
+                                    {{ course.get_name(session.language) }}
                                 </div>
                                 <div class="col-xs-12 col-md-4">
                                     <i class="pull-right">

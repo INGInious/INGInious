@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Profile page """
-from flask import request, redirect, render_template
+from flask import session, request, redirect, render_template
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
@@ -17,7 +17,7 @@ class DeletePage(INGIniousAuthPage):
         error = False
         msg = ""
 
-        username = self.user_manager.session_username()
+        username = session.username
         result = self.user_manager.delete_user(username, data.get("delete_email", ""))
 
         if not result:

@@ -5,7 +5,7 @@
 
 import logging
 
-from flask import request, redirect, render_template
+from flask import session, request, redirect, render_template
 from werkzeug.exceptions import NotFound, Forbidden
 from bson.errors import InvalidId
 
@@ -58,7 +58,7 @@ class SubmissionPage(INGIniousAdminPage):
         to_display = {
             problem.get_id(): {
                 "id": problem.get_id(),
-                "name": problem.get_name(self.user_manager.session_language()),
+                "name": problem.get_name(session.language),
                 "defined": True
             } for problem in task.get_problems()
         }

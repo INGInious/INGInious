@@ -13,7 +13,7 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{course.get_name(user_manager.session_language())}}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{course.get_name(session.language)}}</a></li>
             <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
 	    <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id(), 'tasks') }}" title="{{ _('Tasks') }}" data-toggle="tooltip" data-placement="bottom">
@@ -126,13 +126,13 @@
                                 <input type="text" class="form-control" id="name-PID" name="problem[PID][name]" placeholder="{{ _('A title for this question') }}"/>
                             </div>
                         </div>
-                        {{ problem_type.show_editbox(key, user_manager.session_language()) | safe }}
+                        {{ problem_type.show_editbox(key, session.language) | safe }}
                     </div>
                 </div>
             </div>
         </div>
         <div id="subproblem_{{key}}_templates">
-            {{ problem_type.show_editbox_templates(key, user_manager.session_language()) | safe }}
+            {{ problem_type.show_editbox_templates(key, session.language) | safe }}
         </div>
     {% endfor %}
 </div>

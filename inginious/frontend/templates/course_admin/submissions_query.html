@@ -3,8 +3,8 @@
 
 <script>
     $(function() {
-        $('#date_before_picker').datetimepicker({locale: '{{ user_manager.session_language() }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
-        $('#date_after_picker').datetimepicker({locale: '{{ user_manager.session_language() }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
+        $('#date_before_picker').datetimepicker({locale: '{{ session.language }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{session.timezone}}'});
+        $('#date_after_picker').datetimepicker({locale: '{{ session.language }}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{session.timezone}}'});
 
         $('#panel-user-audience').find('a[data-toggle="tab"]').on('shown.bs.tab', function(e)
         {
@@ -106,7 +106,7 @@
                     <ul class="list-group list-group-flush checked-list-box">
                         {% for taskid, task in tasks.items() %}
                             <li class="list-group-item" data-value="{{taskid}}" data-name="tasks" data-checked="{{ 'true' if taskid in old_params['tasks'] else 'false' }}">
-                                {{ task.get_name(user_manager.session_language()) }}
+                                {{ task.get_name(session.language) }}
                             </li>
                         {% endfor %}
                     </ul>

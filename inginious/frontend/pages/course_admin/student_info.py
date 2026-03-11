@@ -5,7 +5,7 @@
 
 from collections import OrderedDict
 
-from flask import request, render_template
+from flask import session, request, render_template
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 from inginious.frontend.models import UserTask
@@ -37,7 +37,7 @@ class CourseStudentInfoPage(INGIniousAdminPage):
 
         tasks = course.get_task_dispenser().get_ordered_tasks()
         user_task_list = course.get_task_dispenser().get_user_task_list([username])[username]
-        result = OrderedDict([(taskid, {"taskid": taskid, "name": tasks[taskid].get_name(self.user_manager.session_language()),
+        result = OrderedDict([(taskid, {"taskid": taskid, "name": tasks[taskid].get_name(session.language),
                                  "tried": 0, "status": "notviewed", "grade": 0, "visible": False,
                                  "url": self.submission_url_generator(username, taskid)}) for taskid in tasks])
 

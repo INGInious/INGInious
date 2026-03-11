@@ -102,62 +102,6 @@ class UserManager:
         return "%s@%s" % (email[0], email[1].lower())
 
     ##############################################
-    #           User session management          #
-    ##############################################
-
-    def session_is_lti(self) -> bool:
-        """ Returns whether the current request comes from an LTI session. """
-        return session.is_lti
-
-    def session_logged_in(self):
-        """ Returns True if a user is currently connected in this session, False else """
-        return session.loggedin
-
-    def session_username(self):
-        """ Returns the username from the session, if one is open. Else, returns None"""
-        return session["username"]
-
-    def session_email(self):
-        """ Returns the email of the current user in the session, if one is open. Else, returns None"""
-        return session["email"]
-
-    def session_realname(self):
-        """ Returns the real name of the current user in the session, if one is open. Else, returns None"""
-        return session["realname"]
-
-    def session_tos_signed(self):
-        """ Returns True if the current user has signed the tos"""
-        return session["tos_signed"]
-
-    def session_token(self):
-        """ Returns the token of the current user in the session, if one is open. Else, returns None"""
-        return session["token"]
-
-    def session_id(self):
-        """ Returns the current session id"""
-        return session.sid
-
-    def session_auth_storage(self):
-        """ Returns the oauth state for login """
-        return session.auth_storage
-
-    def session_language(self, default="en"):
-        """ Returns the current session language """
-        return session.language
-
-    def session_timezone(self):
-        """ Returns the current session timezone """
-        return session.timezone
-
-    def session_code_indentation(self):
-        """ Returns the current session code indentation """
-        return session.code_indentation
-
-    def session_api_key(self):
-        """ Returns the API key for the current user. Created on first demand. """
-        return self.get_user_api_key(self.session_username())
-
-    ##############################################
     #      User searching and authentication     #
     ##############################################
 
@@ -264,10 +208,10 @@ class UserManager:
         """
         Disconnects the user currently logged-in
         """
-        if self.session_logged_in():
+        if session.loggedin:
             ip = flask.request.remote_addr
-            self._logger.info("User %s disconnected - %s - %s - %s", self.session_username(), self.session_realname(),
-                              self.session_email(), ip)
+            self._logger.info("User %s disconnected - %s - %s - %s", session.username, session.realname,
+                              session.email, ip)
 
         session.loggedin = False
 
@@ -359,20 +303,20 @@ class UserManager:
         # Look for already bound auth method username
         user_profile = User.objects(**{"bindings__" + auth_id: username}).first()
 
-        if user_profile and not self.session_logged_in():
+        if user_profile and not session.loggedin:
             # Sign in
             self.connect_user(user_profile)
-        elif user_profile and self.session_username() == user_profile["username"]:
+        elif user_profile and session.username == user_profile["username"]:
             # Logged in, refresh fields if found profile username matches session username
-            User.objects(username=self.session_username()).update(**{"bindings__" + auth_id: [username, additional]})
+            User.objects(username=session.username).update(**{"bindings__" + auth_id: [username, additional]})
         elif user_profile:
             # Logged in, but already linked to another account
             self._logger.exception("Tried to bind an already bound account !")
-        elif self.session_logged_in():
+        elif session.loggedin:
             # No binding, but logged: add new binding
             # !!! Use email as it may happen that a user is logged with empty username
             # !!! if the binding link is used as is
-            User.objects(email=self.session_email()).update(**{"bindings__" + auth_id: [username, additional]})
+            User.objects(email=session.email).update(**{"bindings__" + auth_id: [username, additional]})
         else:
             # No binding, check for email
             if User.objects(email=email).first():
@@ -382,7 +326,7 @@ class UserManager:
             else:
                 # New user, create an account using email address
                 user_profile = User(username="", realname=realname, email=email,
-                                bindings={auth_id: [username, additional]}, language=self.session_language())
+                                bindings={auth_id: [username, additional]}, language=session.language)
 
                 user_profile.save()
                 self.connect_user(user_profile)
@@ -627,7 +571,7 @@ class UserManager:
             - "auto" to enable the check and take the information from the current session
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         dispenser_filter = course.get_task_dispenser().get_accessibility(task.get_id(), username).after_start()
         return (self.course_is_open_to_user(course, username, lti) and dispenser_filter) \
@@ -645,7 +589,7 @@ class UserManager:
         checks = [only_check] if only_check is not None else ["groups", "tokens"]
 
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         if self.has_staff_rights_on_course(course, username):
             return True
@@ -658,11 +602,11 @@ class UserManager:
 
         # Check for group
         is_group_task = course.get_task_dispenser().get_group_submission(task.get_id())
-        group = Group.objects(courseid=course.get_id(), students=self.session_username()).first()
+        group = Group.objects(courseid=course.get_id(), students=session.username).first()
         group_filter = 'groups' in checks and group if is_group_task else True
 
         # Check for tokens
-        students = group["students"] if (group is not None and is_group_task) else [self.session_username()]
+        students = group["students"] if (group is not None and is_group_task) else [session.username]
         token_filter = True
         submission_limit = course.get_task_dispenser().get_submission_limit(task.get_id())
         if 'tokens' in checks and submission_limit != {"amount": -1, "period": -1}:
@@ -694,11 +638,11 @@ class UserManager:
     def get_course_user_group(self, course, username=None):
         """ Returns the audience whose username belongs to
         :param course: a Course object
-        :param username: The username of the user that we want to register. If None, uses self.session_username()
+        :param username: The username of the user that we want to register. If None, uses session.username
         :return: the audience description
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         return Group.objects(courseid=course.get_id(), students=username).first()
 
@@ -706,13 +650,13 @@ class UserManager:
         """ Register a user to the course
 
         :param course: a Course object
-        :param username: The username of the user that we want to register. If None, uses self.session_username()
+        :param username: The username of the user that we want to register. If None, uses session.username
         :param password: Password for the course. Needed if course.is_password_needed_for_registration() and force != True
         :param force: Force registration
         :return: True if the registration succeeded, False else
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         # Do not continue registering the user in the course if username is empty
         # or if the user is not in DB (should never happen, anyway).
@@ -739,10 +683,10 @@ class UserManager:
         """
         Unregister a user to the course
         :param course_id: a course id
-        :param username: The username of the user that we want to unregister. If None, uses self.session_username()
+        :param username: The username of the user that we want to unregister. If None, uses session.username
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         # If user doesn't belong to a group, will ensure correct deletion
         Audience.objects(courseid=course_id, students=username).update(pull__students=username)
@@ -758,7 +702,7 @@ class UserManager:
         """ Checks if a user is can access a course
 
         :param course: a Course object
-        :param username: The username of the user that we want to check. If None, uses self.session_username()
+        :param username: The username of the user that we want to check. If None, uses session.username
         :param lti: indicates if the user is currently in a LTI session or not.
 
             - None to ignore the check
@@ -778,7 +722,7 @@ class UserManager:
         :return: True if the user can access the course, False (or the reason if return_reason is True) otherwise
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
         if lti == "auto":
             lti = session.is_lti
 
@@ -809,11 +753,11 @@ class UserManager:
         """ Checks if a user is registered
 
         :param course: a Course object
-        :param username: The username of the user that we want to check. If None, uses self.session_username()
+        :param username: The username of the user that we want to check. If None, uses session.username
         :return: True if the user is registered, False else
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         if self.has_staff_rights_on_course(course, username):
             return True
@@ -845,7 +789,7 @@ class UserManager:
         :return: True if the user is superadmin, False else
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         return username in self._superadmins
 
@@ -858,7 +802,7 @@ class UserManager:
         :return: True if the user has admin rights, False else
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         return (username in course.get_admins()) or (include_superadmins and self.user_is_superadmin(username))
 
@@ -871,7 +815,7 @@ class UserManager:
         :return: True if the user has staff rights, False else
         """
         if username is None:
-            username = self.session_username()
+            username = session.username
 
         return (username in course.get_staff()) or (include_superadmins and self.user_is_superadmin(username))
 

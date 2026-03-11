@@ -4,7 +4,7 @@
 {% extends "layout.html" %}
 {% block title %}{{_("Marketplace") }}{% endblock %}}
 {% block column %}
-    {% if not user_manager.session_logged_in() %}
+    {% if not session.loggedin %}
         {% include "signin_button.html" %}
     {% else %}
         <h3> {{ _("How to use") }}</h3>
@@ -37,16 +37,16 @@
         </div>
     {% endfor %}
     <div id="templates_div" class="card-deck m-0">
-        {% set username = user_manager.session_username() %}
+        {% set username = session.username %}
         {% if courses |length !=0 %}
             {% for courseid, course in courses.items() %}
                 <div class="card m-2">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <a href="{{ get_path("marketplace", courseid) }}">{{ course.get_name(user_manager.session_language()) }}</a>
+                            <a href="{{ get_path("marketplace", courseid) }}">{{ course.get_name(session.language) }}</a>
                         </h5>
                         <span class="card-text m-0 wrap-h6">
-                            {{ course.get_short_desc(user_manager.session_language()) | safe }}
+                            {{ course.get_short_desc(session.language) | safe }}
                         </span>
                     </div>
                     <div class="card-footer">

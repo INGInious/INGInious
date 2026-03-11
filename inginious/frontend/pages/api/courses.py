@@ -4,6 +4,7 @@
 # more information about the licensing of this file.
 
 """ Courses """
+from flask import session
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
@@ -53,19 +54,19 @@ class APICourses(APIAuthenticatedPage):
             except:
                 raise APINotFound("Course not found")
 
-        username = self.user_manager.session_username()
+        username = session.username
         user_info = self.user_manager.get_user_info(username)
 
         for courseid, course in courses.items():
             if self.user_manager.course_is_open_to_user(course, username, False) or course.is_registration_possible(user_info):
                 data = {
                     "id": courseid,
-                    "name": course.get_name(self.user_manager.session_language()),
+                    "name": course.get_name(session.language),
                     "require_password": course.is_password_needed_for_registration(),
                     "is_registered": self.user_manager.course_is_open_to_user(course, username, False)
                 }
                 if self.user_manager.course_is_open_to_user(course, username, False):
-                    data["tasks"] = {taskid: task.get_name(self.user_manager.session_language()) for taskid, task in course.get_tasks().items()}
+                    data["tasks"] = {taskid: task.get_name(session.language) for taskid, task in course.get_tasks().items()}
                     data["grade"] = self.user_manager.get_course_cache(username, course)["grade"]
                 output.append(data)
 

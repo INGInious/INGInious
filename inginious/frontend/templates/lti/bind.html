@@ -15,7 +15,7 @@
     <div class="card border-warning">
         <div class="card-header bg-warning text-white">{{ _("Authorization required") }}</div>
       <div class="card-body">
-          {{ _("You are going to bind your INGInious account <strong>{realname} [{username}]</strong> with the following LTI tool and context:").format(realname=user_manager.session_realname(), username=user_manager.session_username()) | safe }}
+          {{ _("You are going to bind your INGInious account <strong>{realname} [{username}]</strong> with the following LTI tool and context:").format(realname=session.realname, username=session.username) | safe }}
           <ul>
               <li><strong>{{ _("Tool name:") }}</strong> {{ data["tool_name"] }}</li>
               <li><strong>{{ _("Tool description:") }}</strong> {{ data["tool_description"] }}</li>

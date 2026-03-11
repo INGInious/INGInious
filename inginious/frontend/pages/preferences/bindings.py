@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Auth bindings page """
-from flask import request, redirect, render_template
+from flask import session, request, redirect, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User
@@ -15,7 +15,7 @@ class BindingsPage(INGIniousAuthPage):
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
         auth_methods = self.user_manager.get_auth_methods()
-        user_data = self.user_manager.get_user_info(self.user_manager.session_username())
+        user_data = self.user_manager.get_user_info(session.username)
         bindings = user_data.bindings
         return render_template("preferences/bindings.html", bindings=bindings,
                                            auth_methods=auth_methods, msg="", error=False)
@@ -25,7 +25,7 @@ class BindingsPage(INGIniousAuthPage):
         msg = ""
         error = False
 
-        user_data = User.objects.get(username=self.user_manager.session_username())
+        user_data = User.objects.get(username=session.username)
         user_input = request.form
         auth_methods = self.user_manager.get_auth_methods()
 
@@ -39,7 +39,7 @@ class BindingsPage(INGIniousAuthPage):
                 return redirect(self.app.get_path("auth/signin/" + auth_binding))
         elif "revoke_auth_binding" in user_input:
             auth_id = user_input["revoke_auth_binding"]
-            error, msg = self.user_manager.revoke_binding(self.user_manager.session_username(), auth_id)
+            error, msg = self.user_manager.revoke_binding(session.username, auth_id)
 
         bindings = user_data.bindings
 

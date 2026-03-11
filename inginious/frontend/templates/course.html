@@ -6,7 +6,7 @@
 {% set registered = user_manager.course_is_user_registered(course) %}
 {% set staff = user_manager.has_staff_rights_on_course(course) %}
 
-{% block title %}{{ course.get_name(user_manager.session_language()) }}{% endblock %}
+{% block title %}{{ course.get_name(session.language) }}{% endblock %}
 
 {% block column %}
     {% for entry in plugin_manager.call_hook('course_menu', course=course) %}
@@ -59,7 +59,7 @@
             <a class="list-group-item list-group-item-action list-group-item-info" href="{{ get_path('group', course.get_id()) }}">
                 <i class="fa fa-group fa-fw"></i>&nbsp;
                 {% set mygroup = user_manager.get_course_user_group(course) %}
-                {% if mygroup and user_manager.session_username() in mygroup['students'] %}
+                {% if mygroup and session.username in mygroup['students'] %}
                     {{ _("Group : {}").format(mygroup['description']) }}
                 {% else %}
                     {{ _("Group management") }}
@@ -71,7 +71,7 @@
                 </a>
             {% endif %}
         </div>
-    {% elif not user_manager.session_logged_in() %}
+    {% elif not session.loggedin %}
         {% include "signin_button.html" %}
     {% elif course.is_registration_possible(user_info) %}
         <h3>{{ _("Enroll in the course") }}</h3>
@@ -95,7 +95,7 @@
             {% else %}
                 <li class="breadcrumb-item"><a href="{{ get_path('courselist') }}" title="{{ _('Course list') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
             {% endif %}
-            <li class="breadcrumb-item active"><a href="#">{{ course.get_name(user_manager.session_language()) }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
+            <li class="breadcrumb-item active"><a href="#">{{ course.get_name(session.language) }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
     </nav>
 {% endblock %}
@@ -103,7 +103,7 @@
 {% block content %}
 <div class="row pr-3">
     <div class="col-md-8">
-        <h2>{{ course.get_name(user_manager.session_language()) }}</h2>
+        <h2>{{ course.get_name(session.language) }}</h2>
     </div>
 
     {%if category_filter_list %}
@@ -128,7 +128,7 @@
             </div>
             <div id="course_desc" class="collapse" role="tabpanel" aria-labelledby="course_desc_head">
                 <div class="card-body">
-                    {{ course.get_description(user_manager.session_language()) | safe}}
+                    {{ course.get_description(session.language) | safe}}
                 </div>
             </div>
         </div>
@@ -175,7 +175,7 @@ function filter_tag(tag) {
     }
 </style>
 
-{{ course.get_task_dispenser().render(course, tasks_data, category_filter_list,user_manager.session_username()) | safe }}
+{{ course.get_task_dispenser().render(course, tasks_data, category_filter_list,session.username) | safe }}
 
 {% include "unregister_modal.html" %}
 

@@ -101,7 +101,7 @@ class WebAppSubmissionManager:
         :param debug: True, False or "ssh". See add_job.
         :param obj: the new document that will be inserted
         """
-        username = self._user_manager.session_username()
+        username = session.username
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
         if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
@@ -119,7 +119,7 @@ class WebAppSubmissionManager:
 
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
-            username = self._user_manager.session_username()
+            username = session.username
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
                 group = Group.objects.get(courseid=course.id, students=username)
                 users = User.objects(username__in=group["students"])
@@ -136,7 +136,7 @@ class WebAppSubmissionManager:
                 :param submissionid: submission id of the submission
                 """
 
-        return self._delete_exceeding_submissions(self._user_manager.session_username(), course, task, task_dispenser)
+        return self._delete_exceeding_submissions(session.username, course, task, task_dispenser)
 
     def replay_job(self, course, task, submission, task_dispenser, copy=False, debug=False):
         """
@@ -145,7 +145,7 @@ class WebAppSubmissionManager:
         :param copy: If copy is true, the submission will be copied to admin submissions before replay
         :param debug: If debug is true, more debug data will be saved
         """
-        if not self._user_manager.session_logged_in():
+        if not session.loggedin:
             raise Exception("A user must be logged in to submit an object")
 
         # Load input data and add username to dict
@@ -167,7 +167,7 @@ class WebAppSubmissionManager:
             Submission.objects(id=submissionid).update(status="waiting", **unset_query)
 
         else:
-            username = self._user_manager.session_username()
+            username = session.username
             submission = Submission(username=[username], courseid=course.get_id(), taskid=task.get_id(),
                                     submitted_on=datetime.now().astimezone(), status="waiting",
                                     user_ip=flask.request.remote_addr)
@@ -177,8 +177,8 @@ class WebAppSubmissionManager:
             tried_count = my_user_task.tried
             inputdata["@attempts"] = str(tried_count + 1)
             inputdata["@username"] = username
-            inputdata["@email"] = self._user_manager.session_email()
-            inputdata["@lang"] = self._user_manager.session_language()
+            inputdata["@email"] = session.email
+            inputdata["@lang"] = session.language
 
             submission.set_input(inputdata)
             submissionid = submission.save().id
@@ -201,7 +201,7 @@ class WebAppSubmissionManager:
         else:
             self._logger.info("Copying submission %s - %s - %s - %s as %s", submission["username"],
                               submission["courseid"],
-                              submission["taskid"], submissionid, self._user_manager.session_username())
+                              submission["taskid"], submissionid, session.username)
 
     def get_available_environments(self) -> Dict[str, List[str]]:
         """:return a list of available environments """
@@ -225,10 +225,10 @@ class WebAppSubmissionManager:
         :type debug: bool or string
         :returns: the new submission id and the removed submission id
         """
-        if not self._user_manager.session_logged_in():
+        if not session.loggedin:
             raise Exception("A user must be logged in to submit an object")
 
-        username = self._user_manager.session_username()
+        username = session.username
 
         # Prevent student from submitting several submissions together
         waiting_submission = Submission.objects(
@@ -250,8 +250,8 @@ class WebAppSubmissionManager:
         # Send additional data to the client in inputdata. For now, the username and the language. New fields can be added with the
         # new_submission hook
         inputdata["@username"] = username
-        inputdata["@email"] = self._user_manager.session_email()
-        inputdata["@lang"] = self._user_manager.session_language()
+        inputdata["@email"] = session.email
+        inputdata["@lang"] = session.language
         inputdata["@time"] = str(obj["submitted_on"])
 
         my_user_task = UserTask.objects.get(courseid=course.get_id(), taskid=task.get_id(), username=username)
@@ -291,9 +291,8 @@ class WebAppSubmissionManager:
         # Submission may already have been modified by callback,
         Submission.objects(id=submissionid).update(jobid=jobid)
 
-        self._logger.info("New submission from %s - %s - %s/%s - %s", self._user_manager.session_username(),
-                          self._user_manager.session_email(), course.get_id(), task.get_id(),
-                          flask.request.remote_addr)
+        self._logger.info("New submission from %s - %s - %s/%s - %s", session.username,
+                          session.email, course.get_id(), task.get_id(), flask.request.remote_addr)
 
         return submissionid, to_remove
 
@@ -412,18 +411,18 @@ class WebAppSubmissionManager:
 
     def user_is_submission_owner(self, submission):
         """ Returns true if the current user is the owner of this jobid, false else """
-        if not self._user_manager.session_logged_in():
+        if not session.loggedin:
             raise Exception("A user must be logged in to verify if he owns a jobid")
 
-        return self._user_manager.session_username() in submission["username"]
+        return session.username in submission["username"]
 
     def get_user_submissions(self, course, task):
         """ Get all the user's submissions for a given task """
-        if not self._user_manager.session_logged_in():
+        if not session.loggedin:
             raise Exception("A user must be logged in to get his submissions")
 
         cursor = Submission.objects(
-            username=self._user_manager.session_username(), taskid=task.get_id(), courseid=course.get_id()
+            username=session.username, taskid=task.get_id(), courseid=course.get_id()
         ).order_by("-submitted_on")
 
         return list(cursor)
@@ -433,7 +432,7 @@ class WebAppSubmissionManager:
         if query is None:
             query = {}
 
-        query.update({"username": self._user_manager.session_username()})
+        query.update({"username": session.username})
 
         # Before, submissions were first sorted by submission date, then grouped
         # and then resorted by submission date before limiting. Actually, grouping

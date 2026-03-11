@@ -2,7 +2,7 @@
 {# more information about the licensing of this file. #}
 
 {% extends "layout.html" %}
-{% block title %}{{ course.get_name(user_manager.session_language()) }}{% endblock %}}
+{% block title %}{{ course.get_name(session.language) }}{% endblock %}}
 {% block column %}
 <h3>{{ _("Information") }}</h3>
     <table class="table table-sm">
@@ -43,14 +43,14 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ get_path('marketplace') }}" title="{{ _("Marketplace") }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-shopping-bag"></i></a></li>
-            <li class="breadcrumb-item active"><a href="#"> {{ course.get_name(user_manager.session_language()) }}
+            <li class="breadcrumb-item active"><a href="#"> {{ course.get_name(session.language) }}
                 <span class="sr-only">{{_("(current)")}}</span></a></li>
         </ol>
     </nav>
 {% endblock %}
 
 {% block content %}
-    <h2>{{ course.get_name(user_manager.session_language()) }}</h2>
+    <h2>{{ course.get_name(session.language) }}</h2>
     {% for error in errors %}
         <div class="alert alert-danger alert-dismissable" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
@@ -58,7 +58,7 @@
         </div>
     {% endfor %}
     <div id="course_description">
-        {{ course.get_description(user_manager.session_language()) | safe }}
+        {{ course.get_description(session.language) | safe }}
     </div>
     <form class="form row" method="post">
         <div class="form-group col-sm-8">

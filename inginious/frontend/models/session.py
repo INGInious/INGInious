@@ -43,7 +43,7 @@ class Session(Document):
     lti = EmbeddedDocumentField(LTIData, default=lambda: None)
     code_indentation = StringField(choices=["2", "3", "4", "tabs"], default="4")
     email = StringField()
-    language = StringField(default="en")
+    language = StringField(default="") # will be autodetected
     realname = StringField()
     token = StringField(default=None)
     tos_signed = BooleanField()

@@ -12,7 +12,7 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(user_manager.session_language()) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
             <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-file-code-o fa-fw"></i> {{ _("Submissions") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
@@ -113,7 +113,7 @@
                     {% endfor %}
                 </td>
                 {% if "show_task_name" in old_params %}
-                    <td>{{ tasks[submission["taskid"]].get_name(user_manager.session_language()) }}</td>
+                    <td>{{ tasks[submission["taskid"]].get_name(session.language) }}</td>
                 {% else %}
                     <td>{{ submission["taskid"] }}</td>
                 {% endif %}
@@ -148,11 +148,11 @@
                             {% set tag = course_tags[tag_submission] %}
                             {% if tag.get_type() == 0  %}
                                 <span style="line-height: 18px;">
-                                    <span class="badge alert-success" id="{{ tag.get_id() }}" style="border:1px solid green;">{{ tag.get_name(user_manager.session_language()) }}</span>
+                                    <span class="badge alert-success" id="{{ tag.get_id() }}" style="border:1px solid green;">{{ tag.get_name(session.language) }}</span>
                                 </span>
                             {% elif tag.get_type() == 1 %}
                                 <span style="line-height: 18px;">
-                                    <span class="badge alert-danger" id="{{ tag.get_id() }}"> {{ tag.get_name(user_manager.session_language()) }}</span>
+                                    <span class="badge alert-danger" id="{{ tag.get_id() }}"> {{ tag.get_name(session.language) }}</span>
                                 </span>
                             {% endif %}
                         {% endif %}

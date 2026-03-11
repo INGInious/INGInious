@@ -8,7 +8,7 @@
 import os
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from flask import request, send_from_directory, render_template
+from flask import session, request, send_from_directory, render_template
 
 from inginious.frontend.courses import Course
 from inginious.frontend.models import UserTask
@@ -53,7 +53,7 @@ class UpComingTasksBoard(INGIniousAuthPage):
 
     def page(self, time_planner):
         """ General main method called for GET and POST """
-        username = self.user_manager.session_username()
+        username = session.username
         all_courses = Course.get_all()
         time_planner = self.time_planner_conversion(time_planner)
 

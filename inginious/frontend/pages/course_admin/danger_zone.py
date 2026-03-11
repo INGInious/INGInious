@@ -95,7 +95,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
         error = False
 
         data = request.form
-        if not data.get("token", "") == self.user_manager.session_token():
+        if not data.get("token", "") == session.token:
             msg = _("Operation aborted due to invalid token.")
             error = True
         elif "wipeall" in data:

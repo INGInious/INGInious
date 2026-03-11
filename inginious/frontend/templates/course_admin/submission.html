@@ -7,7 +7,7 @@
 {% set user_realname= user_manager.get_user_realname(username) %}
 
 
-{% block title %} {{task.get_name(user_manager.session_language()) }} - {{ user_realname }} - {{ course.get_name(user_manager.session_language()) }} {% endblock %}
+{% block title %} {{task.get_name(session.language) }} - {{ user_realname }} - {{ course.get_name(session.language) }} {% endblock %}
 
 {% block column %}
     {% with current='submissions' %}{% include 'course_admin/menu.html' %}{% endwith %}
@@ -16,7 +16,7 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(user_manager.session_language()) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
             <li class="breadcrumb-item">
                 <a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                     <i class="fa fa-user-secret"></i>
@@ -28,7 +28,7 @@
                 </a>
             </li>
             <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id(), 'student', username)}}">{{user_realname}}</a></li>
-            <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id(), 'submissions?users=' + username + '&tasks' + task.get_id())}}">{{ task.get_name(user_manager.session_language()) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id(), 'submissions?users=' + username + '&tasks' + task.get_id())}}">{{ task.get_name(session.language) }}</a></li>
             <li class="breadcrumb-item active"><a href="#">{{ submission.id | string }}<span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
     </nav>
@@ -40,7 +40,7 @@
 {% set course_tags = course.get_tags() %}
 {% set submission_tags = submission.tests %}
 
-<h2>{{ _("Submission {}").format(str(submission.id)[0:10])}} - "{{ task.get_name(user_manager.session_language()) }}" - {{ user_realname }} ({{username}})</h2>
+<h2>{{ _("Submission {}").format(str(submission.id)[0:10])}} - "{{ task.get_name(session.language) }}" - {{ user_realname }} ({{username}})</h2>
 <div class="alert alert-info text-center">
     {{ _("This page show what was shown to the student when (s)he made his/her submission.") }} <br/>
     <form method="post">
@@ -66,13 +66,13 @@
             {% endif %}
             <div class="col-md-{{ ('4' if is_admin else '12') }}" style="margin:2px 0px 2px 0px;">
                 <button type="submit" name="replay-copy" class="btn btn-sm btn-block btn-primary">
-                    <i class="fa fa-copy fa-fw"></i> {{ _("Replay as {}").format(user_manager.session_realname()) }}
+                    <i class="fa fa-copy fa-fw"></i> {{ _("Replay as {}").format(session.realname) }}
                 </button>
             </div>
             {% if is_admin %}
                 <div class="col-md-4" style="margin:2px 0px 2px 0px;">
                     <button type="submit" name="replay-debug" class="btn btn-sm btn-block btn-primary">
-                        <i class="fa fa-terminal fa-fw"></i> {{ _("Replay/debug as {}").format(user_manager.session_realname()) }}
+                        <i class="fa fa-terminal fa-fw"></i> {{ _("Replay/debug as {}").format(session.realname) }}
                     </button>
                 </div>
             {% endif %}
@@ -83,7 +83,7 @@
     </form>
 </div>
 <div class="student_view">
-    {{ task.get_context(user_manager.session_language()) | safe }}
+    {{ task.get_context(session.language) | safe }}
 </div>
 
 <!-- Tags -->
@@ -101,9 +101,9 @@
     <div class="mb-3" id="main_tag_group">
     {% for tag in ns.visible_tags %}
         {% if tag.get_type() == 0 %}
-            <span class="badge alert-info" id="{{tag.get_id()}}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(user_manager.session_language())}}">{{ tag.get_name(user_manager.session_language()) }}</span>
+            <span class="badge alert-info" id="{{tag.get_id()}}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(session.language)}}">{{ tag.get_name(session.language) }}</span>
         {% elif tag.get_type() == 1 %}
-            <span class="badge alert-danger" id="{{tag.get_id()}}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(user_manager.session_language()) }}" style="display:none;">{{ tag.get_name(user_manager.session_language()) }}</span>
+            <span class="badge alert-danger" id="{{tag.get_id()}}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(session.language) }}" style="display:none;">{{ tag.get_name(session.language) }}</span>
         {% endif %}
     {% endfor %}
     </div>
@@ -132,7 +132,7 @@
         </div>
         <div class="card-body">
             {% if problem["id"] in task_problems %}
-                {{ task_problems[problem["id"]].show_input(user_manager.session_language(), username) | safe }}
+                {{ task_problems[problem["id"]].show_input(session.language, username) | safe }}
             {% elif not problem["defined"] %}
                 <span class="text-warning">{{_("This problem id is not defined in the task.")}}</span>
             {% else %}

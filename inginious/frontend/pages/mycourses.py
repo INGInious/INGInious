@@ -5,7 +5,7 @@
 
 """ Index page """
 from collections import OrderedDict
-from flask import request, render_template
+from flask import session, request, render_template
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
@@ -31,7 +31,7 @@ class MyCoursesPage(INGIniousAuthPage):
             except:
                 success = False
         elif "pinning_courseid" in user_input:
-            pinned_courses = self.user_manager.get_user_pinned_courses(self.user_manager.session_username())
+            pinned_courses = self.user_manager.get_user_pinned_courses(session.username)
             pinned_courses = [course for course in pinned_courses if course in Course.get_all()]
 
             courseid = user_input["pinning_courseid"]
@@ -39,27 +39,27 @@ class MyCoursesPage(INGIniousAuthPage):
                 if len(pinned_courses) == 6:
                     return {"error": "Maximum number of pins"}
 
-                self.user_manager.pin_course(self.user_manager.session_username(), courseid)
+                self.user_manager.pin_course(session.username, courseid)
                 # return data for html
                 course = Course.get(courseid)
                 pin_html_data = {
                     "courseid": courseid,
                     "is_lti" : course.is_lti(),
                     "lti_url" : course.lti_url(),
-                    "name": course.get_name(self.user_manager.session_language()),
+                    "name": course.get_name(session.language),
                     "path": self.app.get_path("course", courseid),
-                    "description": str(course.get_description(self.user_manager.session_language()))
+                    "description": str(course.get_description(session.language))
                 }
                 return pin_html_data
             else:
-                self.user_manager.unpin_course(self.user_manager.session_username(), courseid)
+                self.user_manager.unpin_course(session.username, courseid)
                 return {"courseid": courseid}
 
         return self.show_page(success)
 
     def show_page(self, success):
         """  Display main course list page """
-        username = self.user_manager.session_username()
+        username = session.username
         user_info = self.user_manager.get_user_info(username)
 
         all_courses = Course.get_all()
@@ -68,7 +68,8 @@ class MyCoursesPage(INGIniousAuthPage):
         open_courses = {courseid: course for courseid, course in all_courses.items()
                         if self.user_manager.course_is_open_to_user(course, username, False) and
                         self.user_manager.course_is_user_registered(course, username)}
-        open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
+
+        open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(session.language)))
         pinned_courses_ids = [course for course in self.user_manager.get_user_pinned_courses(username) if course in open_courses]
         pinned_courses = {courseid: Course.get(courseid) for courseid in pinned_courses_ids if courseid in open_courses}
 
@@ -85,7 +86,7 @@ class MyCoursesPage(INGIniousAuthPage):
                                 not self.user_manager.course_is_user_registered(course, username) and
                                 course.is_registration_possible(user_info)}
 
-        registerable_courses = OrderedDict(sorted(iter(registerable_courses.items()), key=lambda x: x[1].get_name(self.user_manager.session_language())))
+        registerable_courses = OrderedDict(sorted(iter(registerable_courses.items()), key=lambda x: x[1].get_name(session.language)))
 
         return render_template("mycourses.html",
                                            open_courses=open_courses,

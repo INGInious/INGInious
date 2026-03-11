@@ -43,7 +43,7 @@
                             list-group-item-danger
                         {% endif %}"
                         href="{{ get_path('course', submission['courseid'], submission['taskid']) }}">
-                        <b>{{ course.get_name(user_manager.session_language()) }}</b>: {{ submission["task"].get_name(user_manager.session_language()) }}
+                        <b>{{ course.get_name(session.language) }}</b>: {{ submission["task"].get_name(session.language) }}
                     </a>
                 {% endif %}
             {% endfor %}

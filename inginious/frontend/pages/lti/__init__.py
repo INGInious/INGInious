@@ -84,7 +84,7 @@ class LTIBindPage(INGIniousAuthPage):
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
 
         if data:
-            user_profile = User.objects.get(username=self.user_manager.session_username())
+            user_profile = User.objects.get(username=session.username)
             lti_user_profile = User.objects(**{
                 "ltibindings__" + data["task"][0] + "__" + field: data["username"]
             }).first()
@@ -141,7 +141,7 @@ class LTILoginPage(INGIniousPage):
         if user_profile:
             self.user_manager.connect_user(user_profile)
 
-        if self.user_manager.session_logged_in():
+        if session.loggedin:
             return redirect(self.app.get_path("lti", "task"))
 
         return render_template("lti/login.html", lti_version=self._lti_version)
