@@ -93,7 +93,8 @@ def _put_configuration_defaults(config):
         config["MAIL_PASSWORD"] = smtp_conf.get("password", None)
         config["MAIL_DEFAULT_SENDER"] = smtp_conf.get("sendername", "no-reply@ingnious.org")
 
-    return config
+    # Flask will populate its config dict with upper-case keys only
+    return {key.upper(): value for key, value in config.items()}
 
 def get_homepath():
     """ Returns the URL root. """
@@ -125,7 +126,7 @@ def get_app(config):
     config = _put_configuration_defaults(config)
 
     # Init database
-    connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
+    connect(config.get('DATABASE', 'INGInious'), host=config.get('MONGO_OPT', {}).get('host', 'localhost'), tz_aware=True)
 
     # Fetch or init DB version
     db_version = DBVersion.objects(db_version__exists=True).first() or DBVersion().save()
@@ -147,19 +148,19 @@ def get_app(config):
         "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
     }
 
-    default_allowed_file_extensions = config['allowed_file_extensions']
-    default_max_file_size = config['max_file_size']
+    default_allowed_file_extensions = config['ALLOWED_FILE_EXTENSIONS']
+    default_max_file_size = config['MAX_FILE_SIZE']
 
-    zmq_context, __ = start_asyncio_and_zmq(config.get('debug_asyncio', False))
+    zmq_context, __ = start_asyncio_and_zmq(config.get('DEBUG_ASYNCIO', False))
 
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
     register_base_env_types()
 
     # Create the FS provider
-    if "fs" in config:
-        fs_provider = filesystem_from_config_dict(config["fs"])
+    if "FS" in config:
+        fs_provider = filesystem_from_config_dict(config["FS"])
     else:
-        task_directory = config["tasks_directory"]
+        task_directory = config["TASKS_DIRECTORY"]
         fs_provider = LocalFSProvider(task_directory)
 
     init_fs_provider(fs_provider)
@@ -169,7 +170,7 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    user_manager = UserManager(config.get('superadmins', []))
+    user_manager = UserManager(config.get('SUPERADMINS', []))
 
     client = create_arch(config, zmq_context)
 
@@ -178,7 +179,7 @@ def get_app(config):
 
     submission_manager = WebAppSubmissionManager(client, user_manager, lti_score_publishers)
 
-    is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
+    is_tos_defined = config.get("PRIVACY_PAGE", "") and config.get("TERMS_PAGE", "")
 
     # Init web mail
     mail.init_app(flask_app)
@@ -188,20 +189,20 @@ def get_app(config):
     flask_app.jinja_env.globals["_"] = gettext
     flask_app.jinja_env.globals["str"] = str
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
-    flask_app.jinja_env.globals["use_minified"] = config.get('use_minified_js', True)
+    flask_app.jinja_env.globals["use_minified"] = config.get('USE_MINIFIED_JS', True)
     flask_app.jinja_env.globals["available_languages"] = available_languages
     flask_app.jinja_env.globals["available_indentation_types"] = available_indentation_types
     flask_app.jinja_env.globals["get_homepath"] = get_homepath
     flask_app.jinja_env.globals["get_path"] = get_path
     flask_app.jinja_env.globals["pkg_version"] = __version__
-    flask_app.jinja_env.globals["allow_registration"] = config.get("allow_registration", True)
-    flask_app.jinja_env.globals["allow_deletion"] = config.get("allow_deletion", True)
-    flask_app.jinja_env.globals["sentry_io_url"] = config.get("sentry_io_url")
+    flask_app.jinja_env.globals["allow_registration"] = config.get("ALLOW_REGISTRATION", True)
+    flask_app.jinja_env.globals["allow_deletion"] = config.get("ALLOW_DELETION", True)
+    flask_app.jinja_env.globals["sentry_io_url"] = config.get("SENTRY_IO_URL")
     flask_app.jinja_env.globals["user_manager"] = user_manager
     flask_app.jinja_env.globals["default_allowed_file_extensions"] = default_allowed_file_extensions
     flask_app.jinja_env.globals["default_max_file_size"] = default_max_file_size
     flask_app.jinja_env.globals["is_tos_defined"] = is_tos_defined
-    flask_app.jinja_env.globals["privacy_page"] = config.get("privacy_page", None)
+    flask_app.jinja_env.globals["privacy_page"] = config.get("PRIVACY_PAGE", None)
 
     @flask_app.context_processor
     def context_processor():
@@ -218,7 +219,7 @@ def get_app(config):
     flask_app.register_error_handler(403, flask_forbidden)
 
     # Enable debug mode if needed
-    web_debug = config.get('web_debug', False)
+    web_debug = config.get('WEB_DEBUG', False)
     flask_app.debug = web_debug
     oauthlib.set_debug(web_debug)
 
@@ -233,26 +234,26 @@ def get_app(config):
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
-    flask_app.webterm_link = config.get("webterm", None)
-    flask_app.allow_registration = config.get("allow_registration", True)
-    flask_app.allow_deletion = config.get("allow_deletion", True)
+    flask_app.webterm_link = config.get("WEBTERM", None)
+    flask_app.allow_registration = config.get("ALLOW_REGISTRATION", True)
+    flask_app.allow_deletion = config.get("ALLOW_DELETION", True)
     flask_app.available_languages = available_languages
     flask_app.available_indentation_types = available_indentation_types
-    flask_app.welcome_page = config.get("welcome_page", None)
-    flask_app.terms_page = config.get("terms_page", None)
-    flask_app.privacy_page = config.get("privacy_page", None)
-    flask_app.static_directory = config.get("static_directory", "./static")
-    flask_app.webdav_host = config.get("webdav_host", None)
+    flask_app.welcome_page = config.get("WELCOME_PAGE", None)
+    flask_app.terms_page = config.get("TERMS_PAGE", None)
+    flask_app.privacy_page = config.get("PRIVACY_PAGE", None)
+    flask_app.static_directory = config.get("STATIC_DIRECTORY", "./static")
+    flask_app.webdav_host = config.get("WEBDAV_HOST", None)
 
     # Init the mapping of the app
-    if config.get("maintenance", False):
+    if config.get("MAINTENANCE", False):
         init_flask_maintenance_mapping(flask_app)
         return flask_app.wsgi_app, lambda: None
     else:
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, user_manager, submission_manager, config.get("PLUGINS", []))
 
     # Start the inginious.backend
     client.start()
