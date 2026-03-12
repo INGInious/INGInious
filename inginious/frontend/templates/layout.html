@@ -61,10 +61,10 @@
     <meta name="msapplication-TileImage" content="{{get_homepath()}}/static/icons/mstile-144x144.png">
     <meta name="msapplication-config" content="{{get_homepath()}}/static/icons/browserconfig.xml">
 
-    {% if sentry_io_url %}
+    {% if config.SENTRY_IO_URL %}
     <script src="{{get_homepath()}}/static/js/libs/sentry-io-bundle.min.js?version=5.4.3" type="text/javascript" charset="utf-8"></script>
     <script>
-        Sentry.init({ dsn: "{{sentry_io_url}}" });
+        Sentry.init({ dsn: "{{config.SENTRY_IO_URL}}" });
         {% if user_manager is defined and session.loggedin %}
             Sentry.configureScope(function(scope) {
                 scope.setUser({
