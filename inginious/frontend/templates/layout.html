@@ -76,7 +76,7 @@
     </script>
     {% endif %}
 
-    {% if use_minified %}
+    {% if config.USE_MINIFIED_JS %}
         {% if  _("__is_rtl") == "true"%}
             <script src="{{get_homepath()}}/static/js/all-minified-rtl.js?version={{static_ver}}"></script>
         {% else %}
