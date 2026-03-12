@@ -61,7 +61,7 @@
     </div>
 </div>
 
-{% if webdav_host %}
+{% if config.WEBDAV_HOST %}
     <div class="mb-3 mt-3" id="webdav_accord" role="tablist" aria-multiselectable="true">
         <div class="card border-info">
             <div class="card-header bg-info text-white" id="webdav_head">
@@ -74,7 +74,7 @@
                     {{_("Use this URL to access your course folder using WebDAV:")}}<br/>
                 <br/>
                 <table class="table">
-                    <tr><td>{{_("URL")}}</td><td><code>{{ webdav_host ~ "/" ~ course.get_id()}}</code></td></tr>
+                    <tr><td>{{_("URL")}}</td><td><code>{{ config.WEBDAV_HOST ~ "/" ~ course.get_id()}}</code></td></tr>
                     <tr><td>{{_("Username")}}</td><td><code>{{  session.username  }}</code></td></tr>
                     <tr><td>{{_("Password")}}</td><td><code>{{ user_manager.get_user_api_key(session.username) }}</code></td></tr>
                 </table>

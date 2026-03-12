@@ -107,11 +107,6 @@ class INGIniousPage(MethodView):
         return self.app.webterm_link
 
     @property
-    def webdav_host(self) -> str:
-        """ True if webdav is available """
-        return self.app.webdav_host
-
-    @property
     def logger(self) -> logging.Logger:
         """ Logger """
         return logging.getLogger('inginious.webapp.pages')
