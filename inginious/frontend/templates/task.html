@@ -306,9 +306,9 @@
 <hr/>
 <div id="task_alert"></div>
 <div id="ssh_template" style="display:none;">
-    {% if webterm_link %}
+    {% if config.WEBTERM %}
         <div id="webterm">
-            <input type="hidden" value="{{webterm_link}}" id="webterm_link"/>
+            <input type="hidden" value="{{ config.WEBTERM }}" id="webterm_link"/>
         </div>
         {{ _("Alternatively, you can also paste this command into your terminal:") }}<br/>
     {% else %}

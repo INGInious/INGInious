@@ -102,11 +102,6 @@ class INGIniousPage(MethodView):
         return get_all_env_types()
 
     @property
-    def webterm_link(self) -> str:
-        """ Returns the link to the web terminal """
-        return self.app.webterm_link
-
-    @property
     def logger(self) -> logging.Logger:
         """ Logger """
         return logging.getLogger('inginious.webapp.pages')

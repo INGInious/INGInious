@@ -234,7 +234,6 @@ def get_app(config):
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
-    flask_app.webterm_link = config.get("WEBTERM", None)
     flask_app.allow_registration = config.get("ALLOW_REGISTRATION", True)
     flask_app.allow_deletion = config.get("ALLOW_DELETION", True)
     flask_app.available_languages = available_languages

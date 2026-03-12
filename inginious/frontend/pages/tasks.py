@@ -35,7 +35,6 @@ class BaseTaskPage(object):
         self.user_manager = self.cp.user_manager
         self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
         self.default_max_file_size = self.cp.default_max_file_size
-        self.webterm_link = self.cp.webterm_link
 
     def preview_allowed(self, courseid, taskid):
         try:
@@ -146,11 +145,11 @@ class BaseTaskPage(object):
 
             # Display the task itself
             return render_template("task.html", user_info=user_info, course=course, task=task,
-                                               submissions=submissions, students=students,
-                                               eval_submission=eval_submission, user_task=user_task,
-                                               previous_taskid=previous_taskid, next_taskid=next_taskid,
-                                               webterm_link=self.webterm_link, input_random_list=random_input_list,
-                                               visible_tags=visible_tags, pdict=pdict, is_input_list=is_input_list)
+                                   submissions=submissions, students=students,
+                                   eval_submission=eval_submission, user_task=user_task,
+                                   previous_taskid=previous_taskid, next_taskid=next_taskid,
+                                   input_random_list=random_input_list, visible_tags=visible_tags,
+                                   pdict=pdict, is_input_list=is_input_list)
 
     def POST(self, courseid, taskid, isLTI):
         """ POST a new submission """
