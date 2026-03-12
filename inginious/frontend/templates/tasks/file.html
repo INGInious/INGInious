@@ -6,8 +6,8 @@
 
 <a href="" id="download-input-file-{{inputId}}" style="display:none; margin-bottom: 10px;" class="btn btn-info btn-block">{{ _("Click here to download the file you submitted previously") }}</a>
 
-{% set allowed_exts= allowed_exts or default_allowed_file_extensions %}
-{% set max_size= max_size or default_max_file_size %}
+{% set allowed_exts= allowed_exts or config.ALLOWED_FILE_EXTENSIONS %}
+{% set max_size= max_size or config.MAX_FILE_SIZE %}
 <input
         type="file"
         name="{{inputId}}"

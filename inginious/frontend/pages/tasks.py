@@ -14,7 +14,7 @@ import random
 import time
 import flask
 
-from flask import session, redirect, Response, render_template
+from flask import current_app, session, redirect, Response, render_template
 from werkzeug.exceptions import NotFound, HTTPException
 
 from inginious.frontend.models import Submission
@@ -33,8 +33,6 @@ class BaseTaskPage(object):
         self.cp = calling_page
         self.submission_manager = self.cp.submission_manager
         self.user_manager = self.cp.user_manager
-        self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
-        self.default_max_file_size = self.cp.default_max_file_size
 
     def preview_allowed(self, courseid, taskid):
         try:
@@ -199,7 +197,8 @@ class BaseTaskPage(object):
 
             task_input = task.adapt_input_for_backend(task_input)
 
-            if not task.input_is_consistent(task_input, self.default_allowed_file_extensions, self.default_max_file_size):
+            if not task.input_is_consistent(task_input, current_app.config.get('ALLOWED_FILE_EXTENSIONS'),
+                                            current_app.config.get('MAX_FILE_SIZE')):
                 return Response(content_type='application/json',
                                 response=json.dumps({
                                     "status": "error",  "title": _("Error"),

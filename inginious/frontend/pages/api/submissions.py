@@ -8,7 +8,7 @@
 import base64
 import flask
 
-from flask import session
+from flask import current_app, session
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
@@ -200,7 +200,8 @@ class APISubmissions(APIAuthenticatedPage):
 
         user_input = task.adapt_input_for_backend(user_input)
 
-        if not task.input_is_consistent(user_input, self.default_allowed_file_extensions, self.default_max_file_size):
+        if not task.input_is_consistent(user_input, current_app.config('ALLOWED_FILE_EXTENSIONS'),
+                                        current_app.config.get('MAX_FILE_SIZE')):
             raise APIInvalidArguments()
 
         # Get debug info if the current user is an admin
