@@ -8,7 +8,7 @@
     <a href="{{ get_path('preferences', 'bindings') }}" class="list-group-item list-group-item-action {% if current == 'bindings' %}active{% endif %}">
         <i class='fa fa-id-card-o fa-fw mr-2'></i>{{ _("Authentication bindings") }}
     </a>
-    {% if allow_deletion %}
+    {% if config.ALLOW_DELETION %}
     <a href="{{ get_path('preferences', 'delete') }}" class="list-group-item list-group-item-action list-group-item-danger {% if current == 'delete' %}active{% endif %}">
         <i class='fa fa-user-times fa-fw mr-2'></i>{{ _("Delete my account") }}
     </a>

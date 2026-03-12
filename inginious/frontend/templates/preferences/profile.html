@@ -86,7 +86,7 @@
                 {% endfor %}
             </select>
         </div>
-        {% if allow_registration %}
+        {% if config.ALLOW_REGISTRATION %}
             <div class="col-sm-12">
                 <label class="control-label">{{ _("Old password :") }} </label>
                 <input name="oldpasswd" type="password" class="form-control">

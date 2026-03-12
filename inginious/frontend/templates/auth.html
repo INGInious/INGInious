@@ -15,7 +15,7 @@
             </div>
             {% endif %}
 
-            {% if allow_registration %}
+            {% if config.ALLOW_REGISTRATION %}
             <form role="form" method="post">
                 <div class="form-group">
                     <label>{{ _("Username") }} </label> <input type="text" class="form-control" name="login" placeholder="{{_('Username')}}" tabindex="1">
@@ -35,7 +35,7 @@
             {% set loop_info.on_line = (loop_info.remaining, 4) | min %}
 
             {% if loop_info.remaining %}
-            {% if allow_registration %}<hr/> {% endif %}
+            {% if config.ALLOW_REGISTRATION %}<hr/> {% endif %}
             <h5 class="center-block text-center"> {{_("Sign in with")}}</h5>
             {% endif %}
 
