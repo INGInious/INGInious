@@ -152,9 +152,6 @@ def get_app(config):
         "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
     }
 
-    default_allowed_file_extensions = config['ALLOWED_FILE_EXTENSIONS']
-    default_max_file_size = config['MAX_FILE_SIZE']
-
     zmq_context, __ = start_asyncio_and_zmq(config.get('DEBUG_ASYNCIO', False))
 
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
@@ -193,7 +190,6 @@ def get_app(config):
     flask_app.jinja_env.globals["_"] = gettext
     flask_app.jinja_env.globals["str"] = str
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
-    flask_app.jinja_env.globals["use_minified"] = config.get('USE_MINIFIED_JS', True)
     flask_app.jinja_env.globals["available_languages"] = available_languages
     flask_app.jinja_env.globals["available_indentation_types"] = available_indentation_types
     flask_app.jinja_env.globals["get_homepath"] = get_homepath
@@ -201,8 +197,8 @@ def get_app(config):
     flask_app.jinja_env.globals["pkg_version"] = __version__
     flask_app.jinja_env.globals["sentry_io_url"] = config.get("SENTRY_IO_URL")
     flask_app.jinja_env.globals["user_manager"] = user_manager
-    flask_app.jinja_env.globals["default_allowed_file_extensions"] = default_allowed_file_extensions
-    flask_app.jinja_env.globals["default_max_file_size"] = default_max_file_size
+    flask_app.jinja_env.globals["default_allowed_file_extensions"] = config['ALLOWED_FILE_EXTENSIONS']
+    flask_app.jinja_env.globals["default_max_file_size"] = config['MAX_FILE_SIZE']
     flask_app.jinja_env.globals["is_tos_defined"] = flask_app.is_tos_defined
 
     @flask_app.context_processor
@@ -233,8 +229,8 @@ def get_app(config):
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.client = client
-    flask_app.default_allowed_file_extensions = default_allowed_file_extensions
-    flask_app.default_max_file_size = default_max_file_size
+    flask_app.default_allowed_file_extensions = config['ALLOWED_FILE_EXTENSIONS']
+    flask_app.default_max_file_size = config['MAX_FILE_SIZE']
     flask_app.available_languages = available_languages
     flask_app.available_indentation_types = available_indentation_types
     flask_app.welcome_page = config.get("WELCOME_PAGE", None)
