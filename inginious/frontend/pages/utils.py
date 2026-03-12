@@ -9,11 +9,10 @@ import os
 from typing import List, Dict
 
 import flask
-from flask import redirect, render_template, session
+from flask import current_app, redirect, render_template, session
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
-from inginious.common.filesystems import FileSystemProvider
 from inginious.client.client import Client
 from inginious.common import custom_yaml
 from inginious.frontend.environment_types import get_all_env_types
@@ -233,7 +232,7 @@ class INGIniousStaticPage(INGIniousPage):
         return self.show_page(pageid)
 
     def show_page(self, page):
-        static_directory = self.app.static_directory
+        static_directory = current_app.config["STATIC_DIRECTORY"]
         language = session.language
 
         # Check for the file

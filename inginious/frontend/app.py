@@ -41,10 +41,12 @@ def _put_configuration_defaults(config):
     :param config: the basic configuration as a dict
     :return: the same dict, but with defaults for some unfilled parameters
     """
-    if 'allowed_file_extensions' not in config:
-        config['allowed_file_extensions'] = [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]
-    if 'max_file_size' not in config:
-        config['max_file_size'] = 1024 * 1024
+    config["ALLOWED_FILE_EXTENSIONS"] = config.get(
+        'allowed_file_extensions',
+        [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]
+    )
+
+    config["MAX_FILE_SIZE"] = config.get('max_file_size', 1024 * 1024)
 
     if 'session_parameters' not in config or 'secret_key' not in config['session_parameters']:
         print("Please define a secret_key in the session_parameters part of the configuration.", file=sys.stderr)
@@ -61,6 +63,7 @@ def _put_configuration_defaults(config):
 
     if 'session_parameters' not in config:
         config['session_parameters'] = {}
+
     default_session_parameters = {
         "cookie_name": "inginious_session_id",
         "cookie_domain": None,
@@ -93,6 +96,7 @@ def _put_configuration_defaults(config):
         config["MAIL_PASSWORD"] = smtp_conf.get("password", None)
         config["MAIL_DEFAULT_SENDER"] = smtp_conf.get("sendername", "no-reply@ingnious.org")
 
+    config["STATIC_DIRECTORY"] = config.get("static_directory", "./static")
     config["SUPERADMINS"] = config.get("superadmins", [])
     config["ALLOW_DELETION"] = config.get("allow_deletion", True)
     config["ALLOW_REGISTRATION"] = config.get("allow_registration", True)
@@ -195,7 +199,6 @@ def get_app(config):
     flask_app.jinja_env.globals["get_homepath"] = get_homepath
     flask_app.jinja_env.globals["get_path"] = get_path
     flask_app.jinja_env.globals["pkg_version"] = __version__
-    flask_app.jinja_env.globals["sentry_io_url"] = config.get("SENTRY_IO_URL")
     flask_app.jinja_env.globals["user_manager"] = user_manager
     flask_app.jinja_env.globals["is_tos_defined"] = flask_app.is_tos_defined
 
@@ -229,8 +232,6 @@ def get_app(config):
     flask_app.client = client
     flask_app.available_languages = available_languages
     flask_app.available_indentation_types = available_indentation_types
-    flask_app.welcome_page = config.get("WELCOME_PAGE", None)
-    flask_app.static_directory = config.get("STATIC_DIRECTORY", "./static")
 
     # Init the mapping of the app
     if config.get("MAINTENANCE", False):
