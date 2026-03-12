@@ -118,7 +118,7 @@ class ProfilePage(INGIniousAuthPage):
         msg = _("Profile updated.")
 
         #updating tos
-        if self.app.terms_page is not None and self.app.privacy_page is not None:
+        if self.app.is_tos_defined:
             User.objects(username=session.username).update(set__tos_accepted="term_policy_check" in data)
             session.tos_signed = True
         return result, msg, error
@@ -131,9 +131,8 @@ class ProfilePage(INGIniousAuthPage):
         if not userdata:
             raise NotFound(description=_("User unavailable."))
 
-        return render_template("preferences/profile.html", terms_page=self.app.terms_page,
-                                           available_timezones=available_timezones,
-                                           privacy_page=self.app.privacy_page, msg="", error=False)
+        return render_template("preferences/profile.html", available_timezones=available_timezones,
+                               msg="", error=False)
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
@@ -149,6 +148,5 @@ class ProfilePage(INGIniousAuthPage):
         if "save" in data:
             userdata, msg, error = self.save_profile(userdata, data)
 
-        return render_template("preferences/profile.html", terms_page=self.app.terms_page,
-                                           available_timezones=available_timezones,
-                                           privacy_page=self.app.privacy_page, msg=msg, error=error)
+        return render_template("preferences/profile.html", available_timezones=available_timezones,
+                               msg=msg, error=error)

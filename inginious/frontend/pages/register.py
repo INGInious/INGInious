@@ -42,8 +42,7 @@ class RegistrationPage(INGIniousPage):
         elif "reset" in data:
             msg, error, reset = self.get_reset_data(data)
 
-        return render_template("register.html", terms_page=self.app.terms_page,
-                                           privacy_page=self.app.privacy_page, reset=reset, msg=msg, error=error)
+        return render_template("register.html", reset=reset, msg=msg, error=error)
 
     def get_reset_data(self, data):
         """ Returns the user info to reset """
@@ -79,7 +78,7 @@ class RegistrationPage(INGIniousPage):
         elif data["passwd"] != data["passwd2"]:
             error = True
             msg = _("Passwords don't match !")
-        elif self.app.terms_page is not None and self.app.privacy_page is not None and "term_policy_check" not in data:
+        elif self.app.config.is_tos_defined and "term_policy_check" not in data:
             error = True
             msg = _("Please accept the Terms of Service and Data Privacy")
 
@@ -205,5 +204,4 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
             if not error:
                 reset = None
 
-        return render_template("register.html", terms_page=self.app.terms_page,
-                                           privacy_page=self.app.privacy_page, reset=reset, msg=msg, error=error)
+        return render_template("register.html", reset=reset, msg=msg, error=error)
