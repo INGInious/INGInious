@@ -45,8 +45,11 @@ def _put_configuration_defaults(config):
         'allowed_file_extensions',
         [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]
     )
-
     config["MAX_FILE_SIZE"] = config.get('max_file_size', 1024 * 1024)
+    config["STATIC_DIRECTORY"] = config.get("static_directory", "./static")
+    config["SUPERADMINS"] = config.get("superadmins", [])
+    config["ALLOW_DELETION"] = config.get("allow_deletion", True)
+    config["ALLOW_REGISTRATION"] = config.get("allow_registration", True)
 
     if 'session_parameters' not in config or 'secret_key' not in config['session_parameters']:
         print("Please define a secret_key in the session_parameters part of the configuration.", file=sys.stderr)
@@ -55,37 +58,26 @@ def _put_configuration_defaults(config):
         print("-------------", file=sys.stderr)
         print("session_parameters:", file=sys.stderr)
         print('\ttimeout: 86400  # 24 * 60 * 60, # 24 hours in seconds', file=sys.stderr)
-        print('\tignore_change_ip: False # change this to True if you want user to keep their session if they change their IP', file=sys.stderr)
         print('\tsecure: False # change this to True if you only use https', file=sys.stderr)
         print('\tsecret_key: "{}"'.format(hexlify(os.urandom(32)).decode('utf-8')), file=sys.stderr)
         print("-------------", file=sys.stderr)
         exit(1)
 
-    if 'session_parameters' not in config:
-        config['session_parameters'] = {}
-
-    default_session_parameters = {
-        "cookie_name": "inginious_session_id",
-        "cookie_domain": None,
-        "cookie_path": None,
-        "samesite": "Lax",
-        "timeout": 86400,  # 24 * 60 * 60, # 24 hours in seconds
-        "ignore_change_ip": False,
-        "httponly": True,
-        "secret_key": "fLjUfxqXtfNoIldA0A0G",
-        "secure": False
-    }
-    for k, v in default_session_parameters.items():
-        if k not in config['session_parameters']:
-            config['session_parameters'][k] = v
-
-    # flask migration
     config["DEBUG"] = config.get("web_debug", False)
-    config["SESSION_COOKIE_NAME"] = "inginious_session_id"
-    config["SESSION_USE_SIGNER"] = True
-    config["PERMANENT_SESSION_LIFETIME"] = config['session_parameters']["timeout"]
-    config["SECRET_KEY"] = config['session_parameters']["secret_key"]
 
+    # Session config
+    session_parameters = config['session_parameters']
+    config["SESSION_USE_SIGNER"] = True
+    config["SESSION_COOKIE_NAME"] = session_parameters.get("cookie_name", "inginious_session_id")
+    config["SESSION_COOKIE_DOMAIN"] = session_parameters.get("cookie_domain", None)
+    config["SESSION_COOKIE_PATH"] = session_parameters.get("cookie_path", None)
+    config["SESSION_COOKIE_SAMESITE"]= session_parameters.get("samesite", "Lax")
+    config["SESSION_COOKIE_HTTPONLY"] = session_parameters.get("httponly", True)
+    config["SESSION_COOKIE_SECURE"] = session_parameters.get("secure", False)
+    config["PERMANENT_SESSION_LIFETIME"] = session_parameters.get("timeout", 86400)  # 24 hours
+    config["SECRET_KEY"] = session_parameters["secret_key"]
+
+    # SMTP config
     smtp_conf = config.get('smtp', None)
     if smtp_conf is not None:
         config["MAIL_SERVER"] = smtp_conf["host"]
@@ -95,11 +87,6 @@ def _put_configuration_defaults(config):
         config["MAIL_USERNAME"] = smtp_conf.get("username", None)
         config["MAIL_PASSWORD"] = smtp_conf.get("password", None)
         config["MAIL_DEFAULT_SENDER"] = smtp_conf.get("sendername", "no-reply@ingnious.org")
-
-    config["STATIC_DIRECTORY"] = config.get("static_directory", "./static")
-    config["SUPERADMINS"] = config.get("superadmins", [])
-    config["ALLOW_DELETION"] = config.get("allow_deletion", True)
-    config["ALLOW_REGISTRATION"] = config.get("allow_registration", True)
 
     # Flask will populate its config dict with upper-case keys only
     return {key.upper(): value for key, value in config.items()}
@@ -217,9 +204,8 @@ def get_app(config):
     flask_app.register_error_handler(403, flask_forbidden)
 
     # Enable debug mode if needed
-    web_debug = config.get('WEB_DEBUG', False)
-    flask_app.debug = web_debug
-    oauthlib.set_debug(web_debug)
+    flask_app.debug = config['DEBUG']
+    oauthlib.set_debug(config['DEBUG'])
 
     def flask_internalerror(e):
         return flask.render_template("internalerror.html", message=e.description), 500

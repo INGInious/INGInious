@@ -152,14 +152,11 @@ The different entries are :
             cookie_path: null
             samesite: "Lax"
             timeout: 86400  # 24 * 60 * 60, # 24 hours in seconds
-            ignore_change_ip: False
             httponly: True
             secret_key: "fLjUfxqXtfNoIldA0A0G"
             secure: False
 
     Most value are as defined in standard HTTP cookies. The ``secret_key`` should be a long sequence of random characters.
-    ``ignore_change_ip`` indicates whether users that change IP should be disconnected or not. This may prevent cookie
-    stealing partly.
 
 ``reverse-proxy-config``
     A dictionary for reverse proxy configuration.

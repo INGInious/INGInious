@@ -6,7 +6,6 @@ mongo_opt:
     host: db
 plugins: []
 session_parameters:
-    ignore_change_ip: false
     secret_key: 96f4628a2e4d0ce26b6352713f8ac8359b838f4800f1972790622899664bd0f4
     secure: false
     timeout: 86400
