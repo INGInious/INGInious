@@ -82,16 +82,6 @@ class INGIniousPage(MethodView):
         return self.app.client
 
     @property
-    def default_allowed_file_extensions(self) -> List[str]:  # pylint: disable=invalid-sequence-index
-        """ List of allowed file extensions """
-        return self.app.default_allowed_file_extensions
-
-    @property
-    def default_max_file_size(self) -> int:
-        """ Default maximum file size for upload """
-        return self.app.default_max_file_size
-
-    @property
     def environments(self) -> Dict[str, List[str]]:  # pylint: disable=invalid-sequence-index
         """ Available environments """
         return self.app.submission_manager.get_available_environments()

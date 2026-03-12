@@ -197,8 +197,6 @@ def get_app(config):
     flask_app.jinja_env.globals["pkg_version"] = __version__
     flask_app.jinja_env.globals["sentry_io_url"] = config.get("SENTRY_IO_URL")
     flask_app.jinja_env.globals["user_manager"] = user_manager
-    flask_app.jinja_env.globals["default_allowed_file_extensions"] = config['ALLOWED_FILE_EXTENSIONS']
-    flask_app.jinja_env.globals["default_max_file_size"] = config['MAX_FILE_SIZE']
     flask_app.jinja_env.globals["is_tos_defined"] = flask_app.is_tos_defined
 
     @flask_app.context_processor
@@ -229,8 +227,6 @@ def get_app(config):
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.client = client
-    flask_app.default_allowed_file_extensions = config['ALLOWED_FILE_EXTENSIONS']
-    flask_app.default_max_file_size = config['MAX_FILE_SIZE']
     flask_app.available_languages = available_languages
     flask_app.available_indentation_types = available_indentation_types
     flask_app.welcome_page = config.get("WELCOME_PAGE", None)
