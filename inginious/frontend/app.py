@@ -179,7 +179,7 @@ def get_app(config):
 
     submission_manager = WebAppSubmissionManager(client, user_manager, lti_score_publishers)
 
-    is_tos_defined = config.get("PRIVACY_PAGE", "") and config.get("TERMS_PAGE", "")
+    flask_app.is_tos_defined = "PRIVACY_PAGE" in flask_app.config and "TERMS_PAGE" in flask_app.config
 
     # Init web mail
     mail.init_app(flask_app)
@@ -201,8 +201,7 @@ def get_app(config):
     flask_app.jinja_env.globals["user_manager"] = user_manager
     flask_app.jinja_env.globals["default_allowed_file_extensions"] = default_allowed_file_extensions
     flask_app.jinja_env.globals["default_max_file_size"] = default_max_file_size
-    flask_app.jinja_env.globals["is_tos_defined"] = is_tos_defined
-    flask_app.jinja_env.globals["privacy_page"] = config.get("PRIVACY_PAGE", None)
+    flask_app.jinja_env.globals["is_tos_defined"] = flask_app.is_tos_defined
 
     @flask_app.context_processor
     def context_processor():
@@ -239,8 +238,6 @@ def get_app(config):
     flask_app.available_languages = available_languages
     flask_app.available_indentation_types = available_indentation_types
     flask_app.welcome_page = config.get("WELCOME_PAGE", None)
-    flask_app.terms_page = config.get("TERMS_PAGE", None)
-    flask_app.privacy_page = config.get("PRIVACY_PAGE", None)
     flask_app.static_directory = config.get("STATIC_DIRECTORY", "./static")
 
     # Init the mapping of the app
