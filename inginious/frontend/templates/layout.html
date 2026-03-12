@@ -182,7 +182,7 @@
                                 <i class="fa fa-th-list fa-fw"></i> {{ _("Course list") }}
                             </a>
 
-                            {% if allow_registration %}
+                            {% if config.ALLOW_REGISTRATION %}
                                 <a class="list-group-item list-group-item-action" href="{{ get_path('register') }}">
                                     <i class="fa fa-pencil fa-fw"></i> {{ _("Register") }}
                                 </a>

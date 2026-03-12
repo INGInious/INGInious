@@ -29,14 +29,14 @@ class DeletePage(INGIniousAuthPage):
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
-        if not self.app.allow_deletion:
+        if not self.app.config.get("ALLOW_DELETION"):
             raise Forbidden(description=_("User unavailable or deletion is forbidden."))
 
         return render_template("preferences/delete.html", msg="", error=False)
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
-        if not self.app.allow_deletion:
+        if not self.app.config.get("ALLOW_DELETION"):
             raise Forbidden(description=_("User unavailable or deletion forbidden."))
 
         msg = ""

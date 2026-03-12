@@ -45,15 +45,15 @@ class ProfilePage(INGIniousAuthPage):
         profile_data_to_be_updated = {}
 
         # Check if updating the password.
-        if self.app.allow_registration and len(data["passwd"]) in range(1, 6):
+        if self.app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) in range(1, 6):
             error = True
             msg = _("Password too short.")
             return result, msg, error
-        elif self.app.allow_registration and len(data["passwd"]) > 0 and data["passwd"] != data["passwd2"]:
+        elif self.app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) > 0 and data["passwd"] != data["passwd2"]:
             error = True
             msg = _("Passwords don't match !")
             return result, msg, error
-        elif self.app.allow_registration and len(data["passwd"]) >= 6:
+        elif self.app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) >= 6:
 
             if "password" in userdata:
                 user = self.user_manager.auth_user(session.username, data["oldpasswd"], False)

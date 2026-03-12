@@ -93,6 +93,10 @@ def _put_configuration_defaults(config):
         config["MAIL_PASSWORD"] = smtp_conf.get("password", None)
         config["MAIL_DEFAULT_SENDER"] = smtp_conf.get("sendername", "no-reply@ingnious.org")
 
+    config["SUPERADMINS"] = config.get("superadmins", [])
+    config["ALLOW_DELETION"] = config.get("allow_deletion", True)
+    config["ALLOW_REGISTRATION"] = config.get("allow_registration", True)
+
     # Flask will populate its config dict with upper-case keys only
     return {key.upper(): value for key, value in config.items()}
 
@@ -195,8 +199,6 @@ def get_app(config):
     flask_app.jinja_env.globals["get_homepath"] = get_homepath
     flask_app.jinja_env.globals["get_path"] = get_path
     flask_app.jinja_env.globals["pkg_version"] = __version__
-    flask_app.jinja_env.globals["allow_registration"] = config.get("ALLOW_REGISTRATION", True)
-    flask_app.jinja_env.globals["allow_deletion"] = config.get("ALLOW_DELETION", True)
     flask_app.jinja_env.globals["sentry_io_url"] = config.get("SENTRY_IO_URL")
     flask_app.jinja_env.globals["user_manager"] = user_manager
     flask_app.jinja_env.globals["default_allowed_file_extensions"] = default_allowed_file_extensions
@@ -233,8 +235,6 @@ def get_app(config):
     flask_app.client = client
     flask_app.default_allowed_file_extensions = default_allowed_file_extensions
     flask_app.default_max_file_size = default_max_file_size
-    flask_app.allow_registration = config.get("ALLOW_REGISTRATION", True)
-    flask_app.allow_deletion = config.get("ALLOW_DELETION", True)
     flask_app.available_languages = available_languages
     flask_app.available_indentation_types = available_indentation_types
     flask_app.welcome_page = config.get("WELCOME_PAGE", None)
