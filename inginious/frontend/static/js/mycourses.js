@@ -34,15 +34,10 @@ function course_pin(event){
 
                 var pinnedItem = $("#hidden_pin_card").clone()
                 $(pinnedItem).attr("id", `pinned-${courseid}`);
+                $(pinnedItem).find(".course_pin").attr("data-course-id", courseid);
 
-                $(pinnedItem).find(".hidden_pin_title").text(data["name"]);
-                $(pinnedItem).find(".hidden_pin_description").html(data["description"]);
-                if (data["is_lti"] && data["lti_url"]) {
-                    $(pinnedItem).find(".hidden_pin_link").attr("href", data["lti_url"]);
-                    $(pinnedItem).find(".hidden_pin_link").attr("target", "_blank");
-                } else {
-                    $(pinnedItem).find(".hidden_pin_link").attr("href", data["path"]);
-                }
+                $(pinnedItem).find(".pin_title").append(data["name"]);
+                $(pinnedItem).find(".pin_link").attr("href", data["path"]);
                 $(pinnedItem).removeClass("d-none");
 
                 $(document).find("#pinned_list").append(pinnedItem);
@@ -54,6 +49,10 @@ function course_pin(event){
 
             } else { // unpinning
                 click_button.find("i").removeClass("fa-star text-warning").addClass("fa-star-o");
+                if(click_button.hasClass("pinned_card")) {
+                    // if the button is the one on the pinned card, also change the button on the course list card
+                    $(document).find(`#course_list`).find(`.course_item[data-course-id=${courseid}]`).find("i").removeClass("fa-star text-warning").addClass("fa-star-o");
+                }
 
                 $(document).find(`#pinned-${courseid}`).remove();
                 $(document).find(`.course_item[data-course-id=${courseid}]`).removeClass("is_pinned");
@@ -95,7 +94,7 @@ function change_button_color(){
 function search_course(){
     // search
 
-    $(".course_list .course_item").each(function () {
+    $("#course_list .course_item").each(function () {
     var $item = $(this);
     var visible = true;
 

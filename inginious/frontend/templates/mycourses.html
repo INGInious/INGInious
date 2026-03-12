@@ -57,9 +57,12 @@
                 <div class="card m-2">
                     <div class="card-body course_card">
                         <h5 class="card-title">
-                            <a class="hidden_pin_title" href="#"></a>
+                            <a class="pin_title" href="#">
+                                <button type="button" class="btn course_pin pinned_card"  onclick="course_pin.call(this, event)">
+                                    <i class="fa fa-star text-warning"></i>
+                                </button>
+                            </a>
                         </h5>
-                        <div class="card-text card-trunc hidden_pin_description"></div>
                     </div>
                 </div>
             </div>
@@ -68,21 +71,15 @@
                     <div class="card m-2">
                         <div class="card-body course_card">
                             <h5 class="card-title">
-                                {% if course.is_lti() %}
-                                    {% if course.lti_url() %}
-                                    <a class="hidden_pin_link" target="_blank" href="{{ course.lti_url() }}">
-                                        {% endif %}
-                                        {{course.get_name(user_manager.session_language())}}
-                                        {% if course.lti_url() %}
-                                    </a>
+                                <a class="pin_title" href="{{ get_path('course', courseid) }}">
+                                    {% if courseid in pinned_courses %}
+                                        <button type="button" class="btn course_pin pinned_card" data-course-id="{{courseid}}" onclick="course_pin.call(this, event)">
+                                            <i class="fa fa-star text-warning"></i>
+                                        </button>
                                     {% endif %}
-                                {% else %}
-                                    <a href="{{ get_path('course', courseid) }}">{{course.get_name(user_manager.session_language())}}</a>
-                                {% endif %}
+                                    {{course.get_name(user_manager.session_language())}}
+                                </a>
                             </h5>
-                            <div class="card-text card-trunc">
-                                {{ course.get_description(user_manager.session_language()) | safe }}
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -110,7 +107,7 @@
                 </div>
             </div>
             <hr>
-            <div class="course_list list-group">
+            <div id="course_list" class="list-group">
                 {%if open_courses %}
                     {% set username = user_manager.session_username() %}
                     {% for courseid, course in open_courses.items() %}
