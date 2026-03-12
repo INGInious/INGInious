@@ -243,7 +243,6 @@ def get_app(config):
     flask_app.terms_page = config.get("TERMS_PAGE", None)
     flask_app.privacy_page = config.get("PRIVACY_PAGE", None)
     flask_app.static_directory = config.get("STATIC_DIRECTORY", "./static")
-    flask_app.webdav_host = config.get("WEBDAV_HOST", None)
 
     # Init the mapping of the app
     if config.get("MAINTENANCE", False):
