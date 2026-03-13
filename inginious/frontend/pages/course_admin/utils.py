@@ -11,7 +11,7 @@ import io
 from collections import OrderedDict
 from datetime import datetime
 
-from flask import session, redirect, Response
+from flask import current_app, session, redirect, Response
 from werkzeug.exceptions import Forbidden
 from bson.objectid import ObjectId
 
@@ -338,9 +338,9 @@ class CourseRedirectPage(INGIniousAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
         if session.username in course.get_tutors():
-            return redirect(self.app.get_path("admin", courseid, "tasks"))
+            return redirect(current_app.get_path("admin", courseid, "tasks"))
         else:
-            return redirect(self.app.get_path("admin", courseid, "settings"))
+            return redirect(current_app.get_path("admin", courseid, "settings"))
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ POST request """
