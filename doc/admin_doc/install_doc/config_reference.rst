@@ -36,9 +36,6 @@ The different entries are :
       the backend you started manually. This is for advanced users only. See commands ``inginious-backend`` and ``inginious-agent`` for more
       information.
 
-``backup_directory``
-    Path to the directory where are courses backup are stored in cases of data wiping.
-
 ``local-config``
     These configuration options are available only if you set ``backend:local``.
 

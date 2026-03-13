@@ -20,7 +20,7 @@ from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
-from inginious import get_root_path, __version__, DB_VERSION
+from inginious import __version__, DB_VERSION
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
@@ -41,17 +41,8 @@ def _put_configuration_defaults(config):
     :param config: the basic configuration as a dict
     :return: the same dict, but with defaults for some unfilled parameters
     """
-    config["ALLOWED_FILE_EXTENSIONS"] = config.get(
-        'allowed_file_extensions',
-        [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]
-    )
-    config["MAX_FILE_SIZE"] = config.get('max_file_size', 1024 * 1024)
-    config["STATIC_DIRECTORY"] = config.get("static_directory", "./static")
-    config["SUPERADMINS"] = config.get("superadmins", [])
-    config["ALLOW_DELETION"] = config.get("allow_deletion", True)
-    config["ALLOW_REGISTRATION"] = config.get("allow_registration", True)
-
-    if 'session_parameters' not in config or 'secret_key' not in config['session_parameters']:
+    session_parameters = config.get('session_parameters', None)
+    if not session_parameters or 'secret_key' not in config['session_parameters']:
         print("Please define a secret_key in the session_parameters part of the configuration.", file=sys.stderr)
         print("You can simply add the following (the text between the lines, without the lines) "
               "to your INGInious configuration file. We generated a random key for you.", file=sys.stderr)
@@ -63,33 +54,56 @@ def _put_configuration_defaults(config):
         print("-------------", file=sys.stderr)
         exit(1)
 
-    config["DEBUG"] = config.get("web_debug", False)
+    # Populate a sanitized new dict with upper chars for Flask
+    new_config = {
+        "ALLOWED_FILE_EXTENSIONS": config.get('allowed_file_extensions',
+                                              [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]),
+        "ALLOW_DELETION": config.get("allow_deletion", True),
+        "ALLOW_REGISTRATION": config.get("allow_registration", True),
+        "BACKEND": config.get("backend", "local"),
+        "DEBUG": config.get("web_debug", False),
+        "DEBUG_ASYNCIO": config.get('debug_asyncio', False),
+        "LOCAL-CONFIG": config.get("local-config", {}),
+        "MAINTENANCE": config.get("maintenance", False),
+        "MAX_FILE_SIZE": config.get('max_file_size', 1024 * 1024),
+        "MONGO_OPT": config.get("mongo_opt", {}),
+        "PLUGINS": config.get("plugins", []),
+        "STATIC_DIRECTORY": config.get("static_directory", "./static"),
+        "SUPERADMINS": config.get("superadmins", []),
+        "TASKS_DIRECTORY": config.get("tasks_directory", "./tasks"),
+        "USE_MINIFIED_JS": config.get("use_minified_js", False),
 
-    # Session config
-    session_parameters = config['session_parameters']
-    config["SESSION_USE_SIGNER"] = True
-    config["SESSION_COOKIE_NAME"] = session_parameters.get("cookie_name", "inginious_session_id")
-    config["SESSION_COOKIE_DOMAIN"] = session_parameters.get("cookie_domain", None)
-    config["SESSION_COOKIE_PATH"] = session_parameters.get("cookie_path", None)
-    config["SESSION_COOKIE_SAMESITE"]= session_parameters.get("samesite", "Lax")
-    config["SESSION_COOKIE_HTTPONLY"] = session_parameters.get("httponly", True)
-    config["SESSION_COOKIE_SECURE"] = session_parameters.get("secure", False)
-    config["PERMANENT_SESSION_LIFETIME"] = session_parameters.get("timeout", 86400)  # 24 hours
-    config["SECRET_KEY"] = session_parameters["secret_key"]
+        # Session config
+        "PERMANENT_SESSION_LIFETIME": session_parameters.get("timeout", 86400),  # 24 hours
+        "SECRET_KEY": session_parameters["secret_key"],
+        "SESSION_USE_SIGNER": True,
+        "SESSION_COOKIE_NAME": session_parameters.get("cookie_name", "inginious_session_id"),
+        "SESSION_COOKIE_DOMAIN": session_parameters.get("cookie_domain", None),
+        "SESSION_COOKIE_PATH": session_parameters.get("cookie_path", None),
+        "SESSION_COOKIE_SAMESITE": session_parameters.get("samesite", "Lax"),
+        "SESSION_COOKIE_HTTPONLY": session_parameters.get("httponly", True),
+        "SESSION_COOKIE_SECURE": session_parameters.get("secure", False)
+    }
 
     # SMTP config
     smtp_conf = config.get('smtp', None)
     if smtp_conf is not None:
-        config["MAIL_SERVER"] = smtp_conf["host"]
-        config["MAIL_PORT"] = int(smtp_conf["port"])
-        config["MAIL_USE_TLS"] = bool(smtp_conf.get("starttls", False))
-        config["MAIL_USE_SSL"] = bool(smtp_conf.get("usessl", False))
-        config["MAIL_USERNAME"] = smtp_conf.get("username", None)
-        config["MAIL_PASSWORD"] = smtp_conf.get("password", None)
-        config["MAIL_DEFAULT_SENDER"] = smtp_conf.get("sendername", "no-reply@ingnious.org")
+        new_config.update({
+            "MAIL_SERVER": smtp_conf["host"],
+            "MAIL_PORT": int(smtp_conf["port"]),
+            "MAIL_USE_TLS": bool(smtp_conf.get("starttls", False)),
+            "MAIL_USE_SSL": bool(smtp_conf.get("usessl", False)),
+            "MAIL_USERNAME": smtp_conf.get("username", None),
+            "MAIL_PASSWORD": smtp_conf.get("password", None),
+            "MAIL_DEFAULT_SENDER": smtp_conf.get("sendername", "no-reply@ingnious.org")
+        })
 
-    # Flask will populate its config dict with upper-case keys only
-    return {key.upper(): value for key, value in config.items()}
+    # Optional keys
+    for key in ["fs", "privacy_page", "sentry_io_url", "terms_page", "webdav_host", "webterm"]:
+        if key in config:
+            new_config[key.upper()] = config[key]
+
+    return new_config
 
 def get_homepath():
     """ Returns the URL root. """
@@ -121,7 +135,7 @@ def get_app(config):
     config = _put_configuration_defaults(config)
 
     # Init database
-    connect(config.get('DATABASE', 'INGInious'), host=config.get('MONGO_OPT', {}).get('host', 'localhost'), tz_aware=True)
+    connect(config['MONGO_OPT'].get('database', 'INGInious'), host=config['MONGO_OPT'].get('host', 'localhost'), tz_aware=True)
 
     # Fetch or init DB version
     db_version = DBVersion.objects(db_version__exists=True).first() or DBVersion().save()
@@ -133,7 +147,7 @@ def get_app(config):
     flask_app.config.from_mapping(**config)
 
     # config.get('SESSION_PERMANENT', True)
-    flask_app.session_interface = MongoDBSessionInterface(config.get('SESSION_USE_SIGNER', False), True)
+    flask_app.session_interface = MongoDBSessionInterface(config['SESSION_USE_SIGNER'], True)
 
     # available indentation types
     available_indentation_types = {
@@ -143,7 +157,7 @@ def get_app(config):
         "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
     }
 
-    zmq_context, __ = start_asyncio_and_zmq(config.get('DEBUG_ASYNCIO', False))
+    zmq_context, __ = start_asyncio_and_zmq(config['DEBUG_ASYNCIO'])
 
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
     register_base_env_types()
@@ -162,7 +176,7 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    user_manager = UserManager(config.get('SUPERADMINS', []))
+    user_manager = UserManager(config['SUPERADMINS'])
 
     client = create_arch(config, zmq_context)
 
@@ -220,14 +234,14 @@ def get_app(config):
     flask_app.available_indentation_types = available_indentation_types
 
     # Init the mapping of the app
-    if config.get("MAINTENANCE", False):
+    if config["MAINTENANCE"]:
         init_flask_maintenance_mapping(flask_app)
         return flask_app.wsgi_app, lambda: None
     else:
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, user_manager, submission_manager, config.get("PLUGINS", []))
+    plugin_manager.load(client, flask_app, user_manager, submission_manager, config["PLUGINS"])
 
     # Start the inginious.backend
     client.start()
