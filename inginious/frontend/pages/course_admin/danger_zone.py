@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import logging
 import random
 
-from flask import request, redirect, render_template, session
+from flask import current_app, request, redirect, render_template, session
 
 from inginious.frontend.models import Submission, Audience, UserTask, Group,  CourseClass
 from inginious.frontend.courses import Course
@@ -116,7 +116,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
             else:
                 try:
                     self.delete_course(course)
-                    return redirect(self.app.get_path("index"))
+                    return redirect(current_app.get_path("index"))
                 except Exception as ex:
                     msg = _("An error occurred while deleting the course data: {}").format(repr(ex))
                     error = True

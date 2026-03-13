@@ -7,7 +7,7 @@
 import re
 import zoneinfo
 
-from flask import request, render_template, session
+from flask import current_app, request, render_template, session
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.models import User
@@ -46,15 +46,15 @@ class ProfilePage(INGIniousAuthPage):
         profile_data_to_be_updated = {}
 
         # Check if updating the password.
-        if self.app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) in range(1, 6):
+        if current_app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) in range(1, 6):
             error = True
             msg = _("Password too short.")
             return result, msg, error
-        elif self.app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) > 0 and data["passwd"] != data["passwd2"]:
+        elif current_app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) > 0 and data["passwd"] != data["passwd2"]:
             error = True
             msg = _("Passwords don't match !")
             return result, msg, error
-        elif self.app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) >= 6:
+        elif current_app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) >= 6:
 
             if "password" in userdata:
                 user = self.user_manager.auth_user(session.username, data["oldpasswd"], False)
@@ -76,7 +76,7 @@ class ProfilePage(INGIniousAuthPage):
 
         # check if updating code indentation
         if data["code_indentation"] != userdata.code_indentation:
-            code_indentation = data["code_indentation"] if data["code_indentation"] in self.app.config["INDENTATION_TYPES"] else "4"
+            code_indentation = data["code_indentation"] if data["code_indentation"] in current_app.config["INDENTATION_TYPES"] else "4"
             profile_data_to_be_updated["code_indentation"] = code_indentation
 
         # Checks if updating name
@@ -119,7 +119,7 @@ class ProfilePage(INGIniousAuthPage):
         msg = _("Profile updated.")
 
         #updating tos
-        if self.app.config["IS_TOS_DEFINED"]:
+        if current_app.config["IS_TOS_DEFINED"]:
             User.objects(username=session.username).update(set__tos_accepted="term_policy_check" in data)
             session.tos_signed = True
         return result, msg, error

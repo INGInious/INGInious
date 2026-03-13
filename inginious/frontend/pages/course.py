@@ -5,7 +5,7 @@
 
 """ Course page """
 import flask
-from flask import session, redirect, render_template
+from flask import current_app, session, redirect, render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.courses import Course
@@ -47,7 +47,7 @@ class CoursePage(INGIniousAuthPage):
         user_input = flask.request.form
         if "unregister" in user_input and course.allow_unregister():
             self.user_manager.course_unregister_user(courseid, session.username)
-            return redirect(self.app.get_path('mycourses'))
+            return redirect(current_app.get_path('mycourses'))
 
         return self.show_page(course)
 
@@ -60,7 +60,7 @@ class CoursePage(INGIniousAuthPage):
         """ Prepares and shows the course page """
         username = session.username
         if not self.user_manager.course_is_open_to_user(course, lti=False):
-            return handle_course_unavailable(self.app.get_path, self.user_manager, course)
+            return handle_course_unavailable(current_app.get_path, self.user_manager, course)
         else:
             tasks = course.get_tasks()
 

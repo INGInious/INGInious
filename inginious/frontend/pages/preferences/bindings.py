@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Auth bindings page """
-from flask import session, request, redirect, render_template
+from flask import current_app, session, request, redirect, render_template
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User
@@ -36,7 +36,7 @@ class BindingsPage(INGIniousAuthPage):
                 error = True
                 msg = _("Incorrect authentication binding.")
             elif auth_binding not in user_data.bindings:
-                return redirect(self.app.get_path("auth/signin/" + auth_binding))
+                return redirect(current_app.get_path("auth/signin/" + auth_binding))
         elif "revoke_auth_binding" in user_input:
             auth_id = user_input["revoke_auth_binding"]
             error, msg = self.user_manager.revoke_binding(session.username, auth_id)
