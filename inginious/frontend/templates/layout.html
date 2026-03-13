@@ -173,7 +173,7 @@
                                 <i class="fa fa-globe fa-fw"></i> {{ _("English") }} <span class="caret"></span>
                             </a>
                             <div class="collapse list-group-collapse" id="collapseLang">
-                                {% for code, language in available_languages.items() %}
+                                {% for code, language in config.LANGUAGES.items() %}
                                     <a href="?lang={{code}}" class="list-group-item list-group-item-action"><i class="fa fa-chevron-right fa-fw"></i> {{ code }} ({{ language }})</a>
                                 {% endfor %}
                             </div>
@@ -211,7 +211,7 @@
                         {{ _("INGInious is distributed under AGPL license") }}
                     </a>
                 {% endif %}
-                {% if is_tos_defined %}
+                {% if config.IS_TOS_DEFINED %}
                     - <a href="/pages/{{ config.PRIVACY_PAGE }}">{{ _("Privacy Policy") }}</a>
                 {% endif %}
             </div>
@@ -224,7 +224,7 @@
         <script src="{{ entry }}" type='text/javascript' charset='utf-8'></script>
     {% endfor %}
     <script>
-        user_indentation_type = {{ available_indentation_types[session.code_indentation] | tojson }};
+        user_indentation_type = {{ config.INDENTATION_TYPES[session.code_indentation] | tojson }};
         dtf = new Intl.DateTimeFormat({{ session.language | tojson }}, {
         dateStyle: "short",
         timeStyle: "medium",

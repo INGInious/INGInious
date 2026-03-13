@@ -103,6 +103,16 @@ def _put_configuration_defaults(config):
         if key in config:
             new_config[key.upper()] = config[key]
 
+    # indentation types and languages
+    new_config["INDENTATION_TYPES"] = {
+        "2": {"text": "2 spaces", "indent": 2, "indentWithTabs": False},
+        "3": {"text": "3 spaces", "indent": 3, "indentWithTabs": False},
+        "4": {"text": "4 spaces", "indent": 4, "indentWithTabs": False},
+        "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
+    }
+    new_config["LANGUAGES"] = available_languages
+    new_config["IS_TOS_DEFINED"] = "PRIVACY_PAGE" in new_config and "TERMS_PAGE" in new_config
+
     return new_config
 
 def get_homepath():
@@ -149,14 +159,6 @@ def get_app(config):
     # config.get('SESSION_PERMANENT', True)
     flask_app.session_interface = MongoDBSessionInterface(config['SESSION_USE_SIGNER'], True)
 
-    # available indentation types
-    available_indentation_types = {
-        "2": {"text": "2 spaces", "indent": 2, "indentWithTabs": False},
-        "3": {"text": "3 spaces", "indent": 3, "indentWithTabs": False},
-        "4": {"text": "4 spaces", "indent": 4, "indentWithTabs": False},
-        "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
-    }
-
     zmq_context, __ = start_asyncio_and_zmq(config['DEBUG_ASYNCIO'])
 
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
@@ -185,8 +187,6 @@ def get_app(config):
 
     submission_manager = WebAppSubmissionManager(client, user_manager, lti_score_publishers)
 
-    flask_app.is_tos_defined = "PRIVACY_PAGE" in flask_app.config and "TERMS_PAGE" in flask_app.config
-
     # Init web mail
     mail.init_app(flask_app)
 
@@ -195,13 +195,10 @@ def get_app(config):
     flask_app.jinja_env.globals["_"] = gettext
     flask_app.jinja_env.globals["str"] = str
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
-    flask_app.jinja_env.globals["available_languages"] = available_languages
-    flask_app.jinja_env.globals["available_indentation_types"] = available_indentation_types
     flask_app.jinja_env.globals["get_homepath"] = get_homepath
     flask_app.jinja_env.globals["get_path"] = get_path
     flask_app.jinja_env.globals["pkg_version"] = __version__
     flask_app.jinja_env.globals["user_manager"] = user_manager
-    flask_app.jinja_env.globals["is_tos_defined"] = flask_app.is_tos_defined
 
     @flask_app.context_processor
     def context_processor():
@@ -230,8 +227,6 @@ def get_app(config):
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.client = client
-    flask_app.available_languages = available_languages
-    flask_app.available_indentation_types = available_indentation_types
 
     # Init the mapping of the app
     if config["MAINTENANCE"]:

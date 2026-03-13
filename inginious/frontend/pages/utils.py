@@ -113,7 +113,7 @@ class INGIniousAuthPage(INGIniousPage):
         Otherwise, returns the login template.
         """
         if session.loggedin:
-            if (not session.username or (self.app.is_tos_defined and not session.tos_signed)) \
+            if (not session.username or (self.app.config["IS_TOS_DEFINED"] and not session.tos_signed)) \
                     and not self.__class__.__name__ == "ProfilePage":
                 return redirect(self.app.get_path("preferences/profile"))
 

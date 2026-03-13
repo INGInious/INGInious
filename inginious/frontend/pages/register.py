@@ -78,7 +78,7 @@ class RegistrationPage(INGIniousPage):
         elif data["passwd"] != data["passwd2"]:
             error = True
             msg = _("Passwords don't match !")
-        elif self.app.config.is_tos_defined and "term_policy_check" not in data:
+        elif self.app.config["IS_TOS_DEFINED"] and "term_policy_check" not in data:
             error = True
             msg = _("Please accept the Terms of Service and Data Privacy")
 
