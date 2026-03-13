@@ -20,6 +20,7 @@ from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.pages.course_admin.task_edit_file import CourseTaskFiles
 from inginious.frontend.tasks import Task
 from inginious.frontend.plugins import plugin_manager
+from inginious.frontend.environment_types import get_all_env_types
 
 
 class CourseEditTask(INGIniousAdminPage):
@@ -39,8 +40,8 @@ class CourseEditTask(INGIniousAdminPage):
         except TaskNotFoundException:
             raise NotFound()
 
-        environment_types = self.environment_types
-        environments = self.environments
+        environment_types = get_all_env_types()
+        environments = self.submission_manager.get_available_environments()
 
         additional_tabs = plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
                                                         task_data=task_data)
