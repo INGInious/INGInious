@@ -41,7 +41,7 @@
     </div>
 {% endif %}
 
-{% if is_tos_defined and not session.tos_signed %}
+{% if config.IS_TOS_DEFINED and not session.tos_signed %}
     <div class="alert alert-warning alert-dismissable">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         {{_("Please accept the Terms of Service and Data Privacy")}}
@@ -65,7 +65,7 @@
         <div class="col-sm-12">
             <label class="control-label">{{ _("Language :") }} </label>
             <select name="language" class="form-control">
-                {% for code, language in available_languages.items() %}
+                {% for code, language in config.LANGUAGES.items() %}
                 <option value="{{code}}" {% if code == session.language %} selected {% endif %}>{{ language }}</option>
                 {% endfor %}
             </select>
@@ -81,7 +81,7 @@
         <div class="col-sm-12">
             <label class="control-label">{{ _("Code indentation :") }} </label>
             <select name="code_indentation" class="form-control">
-                {% for code, indentation_data in available_indentation_types.items() %}
+                {% for code, indentation_data in config.INDENTATION_TYPES.items() %}
                 <option value="{{code}}" {% if code == session.code_indentation %} selected {% endif %}>{{ _(indentation_data["text"]) }}</option>
                 {% endfor %}
             </select>
@@ -100,7 +100,7 @@
                 <input name="passwd2" type="password" class="form-control">
             </div>
         {% endif %}
-        {%if is_tos_defined %}
+        {%if config.IS_TOS_DEFINED %}
             <div class="col-sm-12 mt-sm-3">
                 <input name="term_policy_check" type="checkbox" {% if session.tos_signed %} checked {% endif %} >
                 {{ _("I have read the {a1start}Terms of service{a1end} and the {a2start}Privacy policy{a2end}.").format(a1start='<a href="/pages/' + config.TERMS_PAGE + '">', a1end='</a>', a2start='<a href="/pages/' + config.PRIVACY_PAGE + '">', a2end='</a>') | safe }}

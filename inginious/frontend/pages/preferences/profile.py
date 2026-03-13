@@ -13,6 +13,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.models import User
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import UserManager
+from inginious.frontend.i18n import available_languages
 
 
 class ProfilePage(INGIniousAuthPage):
@@ -70,12 +71,12 @@ class ProfilePage(INGIniousAuthPage):
 
         # Check if updating language
         if data["language"] != userdata.language:
-            language = data["language"] if data["language"] in self.app.available_languages else "en"
+            language = data["language"] if data["language"] in available_languages else "en"
             profile_data_to_be_updated["language"] = language
 
         # check if updating code indentation
         if data["code_indentation"] != userdata.code_indentation:
-            code_indentation = data["code_indentation"] if data["code_indentation"] in self.app.available_indentation_types.keys() else "4"
+            code_indentation = data["code_indentation"] if data["code_indentation"] in self.app.config["INDENTATION_TYPES"] else "4"
             profile_data_to_be_updated["code_indentation"] = code_indentation
 
         # Checks if updating name
@@ -118,7 +119,7 @@ class ProfilePage(INGIniousAuthPage):
         msg = _("Profile updated.")
 
         #updating tos
-        if self.app.is_tos_defined:
+        if self.app.config["IS_TOS_DEFINED"]:
             User.objects(username=session.username).update(set__tos_accepted="term_policy_check" in data)
             session.tos_signed = True
         return result, msg, error
