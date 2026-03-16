@@ -7,7 +7,7 @@
 
 import json
 
-from flask import current_app, request, redirect, render_template
+from flask import request, redirect, render_template, url_for
 from werkzeug.exceptions import NotFound
 from bson.objectid import ObjectId
 
@@ -82,7 +82,7 @@ class CourseEditAudience(INGIniousAdminPage):
                     msg = _("Audience updated.")
 
             if audienceid and audienceid in data["delete"]:
-                return redirect(current_app.get_path("admin", courseid, "students?audiences"))
+                return redirect(url_for("coursestudentlistpage", courseid=courseid, audiences=""))
         else:
             audiences_dict = json.loads(data["audiences"])
             student_list = self.user_manager.get_course_registered_users(course, False)

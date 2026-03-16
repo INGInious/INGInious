@@ -115,27 +115,10 @@ def _put_configuration_defaults(config):
 
     return new_config
 
-def get_homepath():
-    """ Returns the URL root. """
-    return flask.request.url_root[:-1]
-
-def get_path(*path_parts):
-    """
-    :param path_parts: List of elements in the path to be separated by slashes
-    """
-    lti_session_id = flask.session.id if flask.session.is_lti else None
-    path_parts = (get_homepath(), ) + path_parts
-    if lti_session_id:
-        query_delimiter = '&' if path_parts and '?' in path_parts[-1] else '?'
-        return "/".join(path_parts) + f"{query_delimiter}session_id={lti_session_id}"
-    return "/".join(path_parts)
-
-
 def _close_app(client):
     """ Ensures that the app is properly closed """
     client.close()
     disconnect()
-
 
 def get_app(config):
     """
@@ -195,14 +178,18 @@ def get_app(config):
     flask_app.jinja_env.globals["_"] = gettext
     flask_app.jinja_env.globals["str"] = str
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
-    flask_app.jinja_env.globals["get_homepath"] = get_homepath
-    flask_app.jinja_env.globals["get_path"] = get_path
     flask_app.jinja_env.globals["pkg_version"] = __version__
     flask_app.jinja_env.globals["user_manager"] = user_manager
 
     @flask_app.context_processor
     def context_processor():
         return dict(plugin_manager.call_hook("template_helper"))
+
+    @flask_app.url_defaults
+    def add_lti_session_id(endpoint, values):
+        if flask.session.is_lti:
+            key = "lti_session_id" if endpoint in ["ltibindpage", "lti1.3bindpage"] else "session_id"
+            values.setdefault(key, flask.session.id)
 
     # Not found page
     def flask_not_found(e):
@@ -223,7 +210,6 @@ def get_app(config):
     flask_app.register_error_handler(InternalServerError, flask_internalerror)
 
     # Insert the needed singletons into the application, to allow pages to call them
-    flask_app.get_path = get_path
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.client = client

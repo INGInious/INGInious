@@ -2,5 +2,5 @@
 {# more information about the licensing of this file. #}
 
 <div class="list-group mb-3">
-    <a class="list-group-item list-group-item-action list-group-item-info" href="{{get_path('scoreboard', course.get_id())}}"><i class="fa fa-trophy"></i> Scoreboards</a>
+    <a class="list-group-item list-group-item-action list-group-item-info" href="{{url_for('scoreboardcourse', courseid=course.get_id())}}"><i class="fa fa-trophy"></i> Scoreboards</a>
 </div>

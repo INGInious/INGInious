@@ -22,14 +22,6 @@ from inginious.frontend.models import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
-def add_admin_menu(course): # pylint: disable=unused-argument
-    """ Add a menu for the contest settings in the administration """
-    task_dispenser = course.get_task_dispenser()
-    if task_dispenser.get_id() == Contest.get_id():
-        return ('contest', '<i class="fa fa-trophy fa-fw"></i>&nbsp; Contest')
-    else:
-        return None
-
 
 class Contest(TableOfContents):
 

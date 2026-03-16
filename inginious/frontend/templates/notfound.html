@@ -5,7 +5,7 @@
 {% block title %}{{ _("Error 404") }}{% endblock %}
 
 {% block content %}
-<img src="{{get_homepath()}}/static/images/logo_maintenance.png" style="margin:auto; display:block;"/>
+<img src="{{ url_for('static', filename='images/logo_maintenance.png') }}" style="margin:auto; display:block;"/>
 <div class="alert alert-warning" role="alert" style="text-align: center;">
     <b>{{ _("Error 404") }}</b> {{ message }}
 </div>

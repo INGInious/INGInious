@@ -3,6 +3,6 @@
 
 <div class="list-group mb-3">
     {% for sid, name in links %}
-        <a class="list-group-item list-group-item-action list-group-item-info" href="{{get_path('scoreboard', course.get_id(), sid)}}"><i class="fa fa-trophy"></i> Scoreboard: {{name}}</a>
+        <a class="list-group-item list-group-item-action list-group-item-info" href="{{url_for('scoreboard', courseid=course.get_id(), scoreboardid=sid)}}"><i class="fa fa-trophy"></i> Scoreboard: {{name}}</a>
     {% endfor %}
 </div>

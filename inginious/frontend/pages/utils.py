@@ -7,7 +7,7 @@
 import logging
 import os
 
-from flask import current_app, redirect, render_template, session, request
+from flask import current_app, redirect, render_template, session, request, url_for
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
@@ -96,7 +96,7 @@ class INGIniousAuthPage(INGIniousPage):
         if session.loggedin:
             if (not session.username or (current_app.config["IS_TOS_DEFINED"] and not session.tos_signed)) \
                     and not self.__class__.__name__ == "ProfilePage":
-                return redirect(current_app.get_path("preferences/profile"))
+                return redirect(url_for("profilepage"))
 
             if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
@@ -123,7 +123,7 @@ class INGIniousAuthPage(INGIniousPage):
         """
         if session.loggedin:
             if not session.username and not self.__class__.__name__ == "ProfilePage":
-                return redirect(current_app.get_path("preferences/profile"))
+                return redirect(url_for("profilepage"))
 
             if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
@@ -184,10 +184,10 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
 
 class SignInPage(INGIniousAuthPage):
     def GET_AUTH(self, *args, **kwargs):
-        return redirect(current_app.get_path("mycourses"))
+        return redirect(url_for("mycoursespage"))
 
     def POST_AUTH(self, *args, **kwargs):
-        return redirect(current_app.get_path("mycourses"))
+        return redirect(url_for("mycoursespage"))
 
     def GET(self):
         return INGIniousAuthPage.GET(self)
@@ -196,11 +196,11 @@ class SignInPage(INGIniousAuthPage):
 class LogOutPage(INGIniousAuthPage):
     def GET_AUTH(self, *args, **kwargs):
         self.user_manager.disconnect_user()
-        return redirect(current_app.get_path("courselist"))
+        return redirect(url_for("courselistpage"))
 
     def POST_AUTH(self, *args, **kwargs):
         self.user_manager.disconnect_user()
-        return redirect(current_app.get_path("courselist"))
+        return redirect(url_for("courselistpage"))
 
 
 class INGIniousStaticPage(INGIniousPage):

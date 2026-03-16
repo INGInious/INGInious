@@ -6,15 +6,15 @@
             title="{{ _('Task settings') }}">
         <i class="fa fa-cogs" aria-hidden="true"></i>
     </a>
-    <a class="view_task btn btn-success m-auto" href="{{get_path('course', course.get_id(), taskid)}}"
+    <a class="view_task btn btn-success m-auto" href="{{url_for('taskpage', courseid=course.get_id(), taskid=taskid)}}"
             title="{{ _('View task') }}" data-toggle="tooltip" data-placement="bottom">
         <i class="fa fa-eye" ></i>
     </a>
-    <a class="edit_task btn btn-info m-auto" href="{{get_path('admin', course.get_id(), 'edit', 'task', taskid)}}"
+    <a class="edit_task btn btn-info m-auto" href="{{url_for('coursedittask', courseid=course.get_id(), taskid=taskid)}}"
             title="{{ _('Edit task') }}" data-toggle="tooltip" data-placement="bottom">
         <i class="fa fa-pencil"></i>
     </a>
-    <a class="rename_task btn btn-secondary m-auto" href="{{get_path('admin', course.get_id(), 'submissions?tasks=' + taskid)}}"
+    <a class="rename_task btn btn-secondary m-auto" href="{{url_for('coursesubmissionspage', courseid=course.get_id(), tasks=taskid)}}"
             title="{{ _('View submissions') }}"  data-toggle="tooltip" data-placement="bottom">
         <i class="fa fa-file-code-o fa-fw"></i>
     </a>
