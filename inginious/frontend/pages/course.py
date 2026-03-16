@@ -5,7 +5,7 @@
 
 """ Course page """
 import flask
-from flask import current_app, session, redirect, render_template
+from flask import current_app, session, redirect, render_template, url_for
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.courses import Course
@@ -13,14 +13,13 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import UserTask
 
 
-def handle_course_unavailable(get_path, user_manager, course):
+def handle_course_unavailable(user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
     reason = user_manager.course_is_open_to_user(course, lti=False, return_reason=True)
     if reason == "unregistered_not_previewable":
-        username = session.username
-        user_info = user_manager.get_user_info(username)
+        user_info = user_manager.get_user_info(session.username)
         if course.is_registration_possible(user_info):
-            return redirect(get_path("register", course.get_id()))
+            return redirect(url_for("courseregisterpage", courseid=course.get_id()))
     return render_template("course_unavailable.html", reason=reason)
 
 
@@ -47,7 +46,7 @@ class CoursePage(INGIniousAuthPage):
         user_input = flask.request.form
         if "unregister" in user_input and course.allow_unregister():
             self.user_manager.course_unregister_user(courseid, session.username)
-            return redirect(current_app.get_path('mycourses'))
+            return redirect(url_for('mycoursespage'))
 
         return self.show_page(course)
 
@@ -60,7 +59,7 @@ class CoursePage(INGIniousAuthPage):
         """ Prepares and shows the course page """
         username = session.username
         if not self.user_manager.course_is_open_to_user(course, lti=False):
-            return handle_course_unavailable(current_app.get_path, self.user_manager, course)
+            return handle_course_unavailable(self.user_manager, course)
         else:
             tasks = course.get_tasks()
 

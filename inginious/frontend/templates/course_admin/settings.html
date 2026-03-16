@@ -12,8 +12,8 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
-            <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
+            <li class="breadcrumb-item"><a href="{{url_for('coursepage', courseid=course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{url_for('courseredirect', courseid=course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-cogs"></i> {{_("Course settings")}} <span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
@@ -32,7 +32,7 @@
     <div class="alert alert-success" role="alert">{{ _("Settings saved.") }}</div>
 {% endif %}
 
-<form id="edit_course_form" class="edit-form" action="{{get_path('admin', course.get_id(), 'settings')}}" method="post">
+<form id="edit_course_form" class="edit-form" action="{{url_for('coursesettingspage', courseid=course.get_id())}}" method="post">
     <div class="card">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs">
@@ -371,7 +371,7 @@
                     <ul class="list-group">
                         {% for iss, config in course.lti_config().items() %}
                             {% for client_config in config %}
-                                {% set path = get_path('lti1.3', 'jwks', course.get_id(), course.lti_keyset_hash(iss, client_config['client_id'])) %}
+                                {% set path = url_for('lti1.3jwkspage', courseid=course.get_id(), keyset_hash=course.lti_keyset_hash(iss, client_config['client_id'])) %}
                         <div class="list-group-item">
                             <a href="{{ path }}" target="_blank">{{ path }}</a>
                             <span>Issuer {{ iss }}, client id {{ client_config['client_id']}}</span>

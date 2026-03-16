@@ -32,7 +32,7 @@
             </div>
         </div>
     </div>
-    <a href="{{get_path('contest', course.get_id())}}" class="list-group-item list-group-item-action list-group-item-info">
+    <a href="{{url_for('contestscoreboard', courseid=course.get_id())}}" class="list-group-item list-group-item-action list-group-item-info">
         <i class="fa fa-trophy fa-fw"></i>
         Scoreboard
     </a>

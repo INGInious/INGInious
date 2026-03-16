@@ -105,10 +105,6 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         valid_submissions = sorted(valid_submissions.items())
         return all_submissions, valid_submissions
 
-    def submission_url_generator(self, taskid):
-        """ Generates a submission url """
-        return "?tasks=" + taskid
-
     def _progress_stats(self, course):
         registered_users = self.user_manager.get_course_registered_users(course, False)
         user_tasks = UserTask.objects(courseid=course.get_id(), username__in=registered_users)
@@ -129,7 +125,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         result = OrderedDict()
         for taskid in tasks:
             result[taskid] = {"name": tasks[taskid].get_name(session.language), "viewed": 0,
-                              "attempted": 0, "attempts": 0, "succeeded": 0, "url": self.submission_url_generator(taskid)}
+                              "attempted": 0, "attempts": 0, "succeeded": 0}
         for entry in data:
             if entry["_id"] in result:
                 result[entry["_id"]]["viewed"] = entry["viewed"]

@@ -14,7 +14,7 @@
             {% if taskid in tasks_data %}
                 {% set succeeded = tasks_data[taskid]["succeeded"] %}
                 {% set completion = tasks_data[taskid]["grade"] %}
-                <a href="{{ get_path('course', course.get_id(), taskid) }}" class="list-group-item list-group-item-action
+                <a href="{{ url_for('taskpage', courseid=course.get_id(), taskid=taskid) }}" class="list-group-item list-group-item-action
                     {% if not task_dispenser.get_accessibility(task.get_id(),session.username).is_open() %} disabled {% endif %}">
                     <div class="row">
                         <div class="col-xs-12 col-md-7">

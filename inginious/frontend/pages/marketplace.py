@@ -5,7 +5,7 @@
 
 """ Course page """
 import sys
-from flask import current_app, session, request, redirect, render_template
+from flask import current_app, session, request, redirect, render_template, url_for
 from werkzeug.exceptions import Forbidden
 
 from inginious.common.base import id_checker
@@ -51,7 +51,7 @@ class MarketplacePage(INGIniousAuthPage):
             except:
                 errors.append(_("User returned an invalid form."))
             if not errors:
-                return redirect(current_app.get_path("admin", new_courseid))
+                return redirect(url_for("courseredirect", courseid=new_courseid))
         return self.show_page(errors)
 
     def show_page(self, errors=None):

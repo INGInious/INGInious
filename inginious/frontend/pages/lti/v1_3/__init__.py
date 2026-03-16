@@ -5,7 +5,7 @@
 
 """ LTI v1.3 """
 
-from flask import current_app, jsonify, redirect, session
+from flask import jsonify, redirect, session, url_for
 from werkzeug.exceptions import NotFound
 from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest
 
@@ -118,7 +118,7 @@ class LTI13LaunchPage(INGIniousPage):
             tool_url = tool_url,
         )
 
-        return redirect(current_app.get_path("lti1.3", "login"))
+        return redirect(url_for("lti1.3loginpage"))
 
     def GET(self, courseid, taskid):
         return self._handle_message_launch(courseid, taskid)

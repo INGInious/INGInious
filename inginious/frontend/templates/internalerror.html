@@ -4,7 +4,7 @@
 {% extends "layout.html" %}
 {% block title %}{{ _("Internal error") }}{% endblock %}
 {% block content %}
-<img src="{{ get_homepath() }}/static/images/logo_maintenance.png" style="margin:auto; display:block;"/>
+<img src="{{ url_for('static', filename='images/logo_maintenance.png') }}" style="margin:auto; display:block;"/>
 <div class="alert alert-danger" role="alert" style="text-align: center;">
     {{ _("<b>Internal error</b> Something bad happened. The error has been logged, please contact your administrator if the error persists.") | safe }}
     {% if message %}

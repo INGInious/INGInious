@@ -8,7 +8,7 @@
 import flask
 import datetime
 
-from flask import current_app, redirect, session
+from flask import redirect, session, url_for
 from oauthlib.oauth1 import RequestValidator
 from mongoengine.errors import NotUniqueError
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
@@ -161,7 +161,7 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_url=tool_url
             )
 
-            return redirect(current_app.get_path("lti", "login"))
+            return redirect(url_for("ltiloginpage"))
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))

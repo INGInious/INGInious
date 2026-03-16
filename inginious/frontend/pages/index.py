@@ -15,7 +15,7 @@ class IndexPage(INGIniousStaticPage):
         """ Display main course list page """
         if "WELCOME_PAGE" in current_app.config:
             return self.show_page(current_app.config["WELCOME_PAGE"])
-        return redirect(current_app.get_path("courselist"))
+        return redirect(url_for("courselistpage"))
 
 
     def POST(self):  # pylint: disable=arguments-differ
