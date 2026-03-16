@@ -95,30 +95,26 @@ function search_course(){
     // search
 
     $("#course_list .course_item").each(function () {
-    var $item = $(this);
-    var visible = true;
+        var $item = $(this);
+        var visible = true;
 
-    $(".course_filter").each(function () {
-        var filter_id = this.id;
-        var filter_value = $(this).data("value");
+        $(".course_filter").each(function () {
+            var filter_id = this.id;
+            var filter_value = $(this).data("value");
 
-        if (filter_value === "true" && !$item.hasClass(filter_id)) {
+            if (filter_value === "true" && !$item.hasClass(filter_id)) {
+                visible = false;
+            }
+            if (filter_value === "false" && $item.hasClass(filter_id)) {
+                visible = false;
+            }
+        });
+
+        var search_value = $("#course_search").val().toLowerCase();
+        if ($item.find(".course_name").text().toLowerCase().indexOf(search_value) === -1) {
             visible = false;
         }
-        if (filter_value === "false" && $item.hasClass(filter_id)) {
-            visible = false;
-        }
+
+        $item.toggle(visible);
     });
-
-    var search_value = $("#course_search").val().toLowerCase();
-    if ($item.find(".course_name").text().toLowerCase().indexOf(search_value) === -1) {
-        visible = false;
-    }
-
-    $item.toggle(visible);
-});
 }
-
-
-
-

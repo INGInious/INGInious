@@ -657,13 +657,8 @@ class UserManager:
 
     def pin_course(self, username, courseid):
         data = User.objects(username=username).first()
-        if data:
-            pinned_courses = data.pinned_courses if data else []
-            if courseid not in pinned_courses:
-                pinned_courses.append(courseid)
-                User.objects(username=username).update(pinned_courses=pinned_courses)
-                return True
-        return False
+        modified = User.objects(username=username).update(add_to_set__pinned_courses=courseid)
+        return modified is not None
 
 
     def unpin_course(self, username, courseid):

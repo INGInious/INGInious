@@ -55,7 +55,7 @@ module.exports = function(grunt)
                         '../../frontend/static/js/groups.js',
                         '../../frontend/static/js/checked-list-group.js',
                         '../../frontend/static/js/task_dispensers.js',
-                        '../../frontend/static/js/admin.js',
+                        '../../frontend/static/js/mycourses.js',
                         '../../frontend/static/js/admin.js'
                      ]
                 }
