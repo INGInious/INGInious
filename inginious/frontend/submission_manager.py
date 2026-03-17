@@ -76,7 +76,7 @@ class WebAppSubmissionManager:
         try:
             submission = Submission.objects(id=submissionid).modify(**update_query, new=True)
             for username in submission["username"]:
-                self._user_manager.update_user_stats(username, course, task, submission, result[0], grade, state, newsub, task_dispenser)
+                self._user_manager.update_user_stats(username, task, submission, result[0], grade, state, newsub, task_dispenser)
         # Check for size as it also takes the MongoDB command into consideration
         except DocumentTooLarge:
             update_query = {"status": "error", "text": _("Maximum submission size exceeded. Check feedback, stdout, stderr and state."), "grade": 0.0}
