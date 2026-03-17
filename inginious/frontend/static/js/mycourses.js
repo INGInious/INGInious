@@ -37,7 +37,7 @@ function course_pin(event){
                 $(pinnedItem).find(".course_pin").attr("data-course-id", courseid);
 
                 $(pinnedItem).find(".pin_title").append(data["name"]);
-                $(pinnedItem).find(".pin_link").attr("href", data["path"]);
+                $(pinnedItem).find(".pin_title").attr("href", data["path"]);
                 $(pinnedItem).removeClass("d-none");
 
                 $(document).find("#pinned_list").append(pinnedItem);
