@@ -8,7 +8,7 @@ import os
 import logging
 import ldap3
 
-from flask import session, redirect, render_template, request
+from flask import  session, redirect, render_template, request, url_for
 from ldap3.core.exceptions import LDAPException
 from ldap3.utils.conv import escape_filter_chars
 
@@ -119,7 +119,7 @@ class LDAPAuthenticationPage(AuthenticationPage):
                 conn.unbind()
 
             if not self.user_manager.bind_user(id, (username, realname, email, {})):
-                return redirect(self.app.get_path("signin?binderror"))
+                return redirect(url_for("signinpage",binderror=""))
 
             auth_storage = session.auth_storage.setdefault(id, {})
             return redirect(auth_storage.get("redir_url", "/"))

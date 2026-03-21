@@ -4,7 +4,7 @@
 <div id="unregister_modal" class="modal fade" role="dialog" aria-labelledby="unregister_modal_title" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" action="{{ get_path('course', course.get_id()) }}">
+            <form method="post" action="{{ url_for('coursepage', courseid=course.get_id()) }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="unregister_modal_title">{{ _("Unregister from {}").format(course.get_name(session.language)) }}</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">

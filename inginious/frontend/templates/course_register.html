@@ -6,8 +6,8 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ get_path('course_list') }}" title="{{ _('Course list') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
-            <li class="breadcrumb-item"><a href="{{ get_path('course', course.get_id()) }}">{{ course.get_name(session.language) }}<span class="sr-only">{{ _("(current)") }}</span></a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('courselistpage') }}" title="{{ _('Course list') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('courseage', courseid=course.get_id()) }}">{{ course.get_name(session.language) }}<span class="sr-only">{{ _("(current)") }}</span></a></li>
             <li class="breadcrumb-item active"><a href="#">{{ _("Register") }}</a></li>
         </ol>
     </nav>

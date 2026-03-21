@@ -71,14 +71,6 @@ class CourseStudentListPage(INGIniousAdminPage):
 
         return self.page(course, active_tab, msg, error)
 
-    def submission_url_generator_user(self, username):
-        """ Generates a submission url """
-        return "?format=taskid%2Fusername&users=" + username
-
-    def submission_url_generator_audience(self, audienceid):
-        """ Generates a submission url """
-        return "?audiences=" + str(audienceid)
-
     def page(self, course, active_tab="tab_students", msg=None, error=None):
         """ Get all data and display the page """
         if error is None:
@@ -115,7 +107,7 @@ class CourseStudentListPage(INGIniousAdminPage):
             "username": username, "realname": user.realname if user is not None else "",
             "email": user.email if user is not None else "", "total_tasks": 0,
             "task_grades": {"answer": 0, "match": 0}, "task_succeeded": 0, "task_tried": 0, "total_tries": 0,
-            "grade": 0, "url": self.submission_url_generator_user(username)}) for username, user in users.items()])
+            "grade": 0}) for username, user in users.items()])
 
         for username, data in self.user_manager.get_course_caches(list(users.keys()), course).items():
             user_data[username].update(data if data is not None else {})
@@ -127,11 +119,7 @@ class CourseStudentListPage(INGIniousAdminPage):
         taskids = list(course.get_tasks().keys())
 
         for audience in self.user_manager.get_course_audiences(course):
-            audiences[audience.id] = dict(list(audience.to_mongo().to_dict().items()) +
-                                              [("tried", 0),
-                                               ("done", 0),
-                                               ("url", self.submission_url_generator_audience(audience.id))
-                                               ])
+            audiences[audience.id] = dict(list(audience.to_mongo().to_dict().items()) + [("tried", 0), ("done", 0) ])
 
             submissions = Submission.objects(
                 courseid=course.get_id(), taskid__in= taskids, username__in=audience["students"]

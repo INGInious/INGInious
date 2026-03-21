@@ -4,7 +4,7 @@
 {% extends "layout.html" %}
 {% block title %}{{ _("Task unavailable") }}{% endblock %}
 {% block content %}
-<img src="{{ get_homepath() }}/static/images/logo_maintenance.png" style="margin:auto; display:block;"/>
+<img src="{{ url_for('static', filename='images/logo_maintenance.png') }}" style="margin:auto; display:block;"/>
 <div class="alert alert-warning" role="alert" style="text-align: center;">
     <b>{{ _("Error 403") }}</b> {{ _("Task unavailable") }}
 </div>
