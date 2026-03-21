@@ -10,7 +10,7 @@ import re
 import flask
 import logging
 
-from flask import render_template
+from flask import session, render_template
 from flask_mail import Message
 from werkzeug.exceptions import Forbidden
 from mongoengine import Q
@@ -28,7 +28,7 @@ class RegistrationPage(INGIniousPage):
 
     def GET(self):
         """ Handles GET request """
-        if self.user_manager.session_logged_in() or not self.app.allow_registration:
+        if session.loggedin or not self.app.allow_registration:
             raise Forbidden(description=_("You're not allow to register."))
 
         error = False
@@ -96,7 +96,7 @@ class RegistrationPage(INGIniousPage):
                 activate_hash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
                 User(username= data["username"], realname=data["realname"], email=email,
                      password=passwd_hash, activate=activate_hash,
-                     language=self.user_manager.session_language(), tos_accepted=True).save()
+                     language=session.language, tos_accepted=True).save()
                 try:
                     subject = _("Welcome on INGInious")
                     body = _("""Welcome on INGInious !
@@ -187,7 +187,7 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
 
     def POST(self):
         """ Handles POST request """
-        if self.user_manager.session_logged_in() or not self.app.allow_registration:
+        if session.loggedin or not self.app.allow_registration:
             raise Forbidden(description=_("You're not allow to register."))
 
         reset = None

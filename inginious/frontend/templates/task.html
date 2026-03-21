@@ -3,7 +3,7 @@
 
 {% extends "layout.html" %}
 
-{% block title %} {{task.get_name(user_manager.session_language()) }} - {{ course.get_name(user_manager.session_language()) }}{% endblock %}
+{% block title %} {{task.get_name(session.language) }} - {{ course.get_name(session.language) }}{% endblock %}
 
 {% set registered = user_manager.course_is_user_registered(course) %}
 {% set staff = user_manager.has_staff_rights_on_course(course) %}
@@ -12,26 +12,26 @@
 {% block column %}
     <h3>{{ _("Information") }}</h3>
     <table class="table table-sm">
-        {% if task.get_authors(user_manager.session_language()) %}
+        {% if task.get_authors(session.language) %}
             <tr>
                 <td>{{ _("Author(s)") }}</td>
-                <td>{{ task.get_authors(user_manager.session_language()) }}</td>
+                <td>{{ task.get_authors(session.language) }}</td>
             </tr>
         {% endif %}
-        {%if task.get_contact_url(user_manager.session_language()) %}
+        {%if task.get_contact_url(session.language) %}
             <tr>
                 <td>{{ _("Contact") }}</td>
-                <td><a href="{{ task.get_contact_url(user_manager.session_language()).format(course_id=course.get_id(), task_id=task.get_id(), username=user_manager.session_username()) }}" target="_blank">{{ _("Contact link") }}</a></td>
+                <td><a href="{{ task.get_contact_url(session.language).format(course_id=course.get_id(), task_id=task.get_id(), username=session.username) }}" target="_blank">{{ _("Contact link") }}</a></td>
             </tr>
         {% endif %}
-        {% if not user_manager.session_is_lti() %}
+        {% if not session.is_lti %}
             <tr class="
-            {% if task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()).is_open() and not task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()).is_open_with_soft_deadline() %}
+            {% if task_dispenser.get_accessibility(task.get_id(), session.username).is_open() and not task_dispenser.get_accessibility(task.get_id(), session.username).is_open_with_soft_deadline() %}
                 list-group-item-danger
             {% endif %}">
                 <td>{{ _("Deadline") }}</td>
                 <td>
-                    {% set accessibility = task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()) %}
+                    {% set accessibility = task_dispenser.get_accessibility(task.get_id(), session.username) %}
                     {% if accessibility.is_never_accessible() %}
                         {{ _("It's too late") }}
                     {% elif accessibility.get_std_soft_end_date() %}
@@ -115,23 +115,23 @@
         <div class="mb-3" id="main_tag_group">
         {% for tag in visible_tags %}
             {% if tag.get_type() == 0 %}
-                <span class="badge alert-info" id="{{ tag.get_id() }}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(user_manager.session_language()) }}" style="display:none;">{{ tag.get_name(user_manager.session_language()) }}</span>
+                <span class="badge alert-info" id="{{ tag.get_id() }}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(session.language) }}" style="display:none;">{{ tag.get_name(session.language) }}</span>
             {% elif tag.get_type() == 1 %}
-                <span class="badge alert-danger" id="{{ tag.get_id() }}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(user_manager.session_language()) }}" style="display:none;">{{ tag.get_name(user_manager.session_language()) }}</span>
+                <span class="badge alert-danger" id="{{ tag.get_id() }}" data-placement="right" data-toggle="tooltip" title="{{ tag.get_description(session.language) }}" style="display:none;">{{ tag.get_name(session.language) }}</span>
             {% endif %}
         {% endfor %}
         </div>
     {% endif %}
     <!-- End Tags -->
     
-    {%if not user_manager.session_is_lti() and staff %}
+    {%if not session.is_lti and staff %}
         <h3> {{ _("Administration") }}</h3>
         {% if not course.is_open_to_non_staff() %}
             <div class="alert alert-warning" role="alert">
                 {{ _("This course is currently invisible for students.  You can change this by modifying the \"accessible\" option in the configuration of the course.") }}
             </div>
         {% endif %}
-        {% if not task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()).after_start() %}
+        {% if not task_dispenser.get_accessibility(task.get_id(), session.username).after_start() %}
             <div class="alert alert-warning" role="alert">
                 {{ _("This task is currently invisible for students. You can change this by modifying the \"accessible\" option in the configuration of the task.") }}
             </div>
@@ -149,20 +149,20 @@
                 </a>
             {% endif %}
         </div>
-    {%elif not user_manager.session_is_lti() and registered %}
+    {%elif not session.is_lti and registered %}
         <h3>{{ _("Submitting as") }}</h3>
         <div class="list-group mb-3">
             <div class="list-group-item list-group-item-action list-group-item-info">
                 {% if task_dispenser.get_group_submission(task.get_id()) %}
                     <i class="fa fa-chevron-right fa-fw"></i>&nbsp; <b>{{ _('Group') }}</b>
                 {% else %}
-                    <i class="fa fa-chevron-right fa-fw"></i>&nbsp; <b>{{ user_manager.session_realname() }}</b>
+                    <i class="fa fa-chevron-right fa-fw"></i>&nbsp; <b>{{ session.realname }}</b>
                 {% endif %}
             </div>
             <a class="list-group-item list-group-item-action list-group-item-info" href="{{ get_path('group', course.get_id()) }}">
                 <i class="fa fa-group fa-fw"></i>&nbsp;
                 {% set mygroup = user_manager.get_course_user_group(course) %}
-                {% if mygroup and user_manager.session_username() in mygroup['students'] %}
+                {% if mygroup and session.username in mygroup['students'] %}
                     {{ _("Group : {}").format(mygroup['description']) }}
                 {% else %}
                     {{ _("Group management") }}
@@ -218,7 +218,7 @@
                                     {% set ns.class_tag = "badge alert-info" %}
                                     {% if "tests" in submission and tagid in submission["tests"] and submission["tests"][tagid] %}
                                         {% set ns.tags_ok_counter = ns.tags_ok_counter + 1 %}
-                                        {% set ns.list_tags_ok = ns.list_tags_ok + [tag.get_name(user_manager.session_language())] %}
+                                        {% set ns.list_tags_ok = ns.list_tags_ok + [tag.get_name(session.language)] %}
                                     {% endif %}
                                 {% endfor %}
                                 {% if ns.tags_ok_counter %}
@@ -235,7 +235,7 @@
                 {% endif %}
             </ul>
         </div>
-    {% elif not user_manager.session_logged_in() %}
+    {% elif not session.loggedin %}
         {% include "signin_button.html" %}
     {% elif course.is_registration_possible(user_info) %}
         <h3>{{ _("Enroll in the course") }}</h3>
@@ -260,8 +260,8 @@
             {% else %}
                 <li class="breadcrumb-item"><a href="{{ get_path('courselist') }}" title="{{ _('Course list') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
             {% endif %}
-            <li class="breadcrumb-item"><a href="{{ get_path('course', course.get_id()) }}">{{ course.get_name(user_manager.session_language()) }}</a></li>
-            <li class="breadcrumb-item active"><a href="#">{{ task.get_name(user_manager.session_language()) }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
+            <li class="breadcrumb-item"><a href="{{ get_path('course', course.get_id()) }}">{{ course.get_name(session.language) }}</a></li>
+            <li class="breadcrumb-item active"><a href="#">{{ task.get_name(session.language) }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
     </nav>
 {% endblock %}
@@ -269,9 +269,9 @@
 {% block content %}
 <h2>
     <div class="row">
-    <div class="col-md-10">{{ task.get_name(user_manager.session_language()) }}</div>
+    <div class="col-md-10">{{ task.get_name(session.language) }}</div>
     <div class="col-md-2">
-        {% if not user_manager.session_is_lti() %}
+        {% if not session.is_lti %}
             <div class="pull-right">
                 <div class="btn-group">
                     <button type="button" id="load_loc" class="btn btn-info mr-1" onclick="load_from_storage('{{course.get_id()}}','{{task.get_id()}}')" title="{{ _('Load my work from memory') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-arrow-circle-o-down"></i></button>
@@ -294,14 +294,14 @@
 {# variable "input" has to be accessible to the eventual javascript present in the context of the task. #}
 <script>    
     var input = {
-        "@lang": "{{ user_manager.session_language() }}",
-        "@username": "{{ user_manager.session_username() }}",
+        "@lang": "{{ session.language }}",
+        "@username": "{{ session.username }}",
         "@random": {{ input_random_list }},
         "@state": "{{ user_task.state if registered else '' }}"
     }
 </script>
 <div id="task_context" class="collapse show">
-    {{ task.get_context(user_manager.session_language()) | safe }}
+    {{ task.get_context(session.language) | safe }}
 </div>
 <hr/>
 <div id="task_alert"></div>
@@ -346,7 +346,7 @@
     </div>
 {% endif %}
 
-{% if user_manager.session_is_lti() %}
+{% if session.is_lti %}
     {% set path = get_path("lti", "task") %}
 {% else %}
     {% set path = get_path("course", course.get_id(), task.get_id()) %}
@@ -364,25 +364,25 @@
     <input type="hidden" name="@action" value="submit"/>
     {% for problem in task.get_problems() %}
         <div class="problem card card-default mb-4">
-            {% if task.get_problems()|length != 1 or problem.get_name(user_manager.session_language()) != "" %}
+            {% if task.get_problems()|length != 1 or problem.get_name(session.language) != "" %}
                 <div class="card-heading">
                     <h5 class="card-header">
                         {% if task.get_problems()|length != 1 %}
                             {{ _("Question {}").format(loop.index) }}:
                         {% endif %}
-                        {{ problem.get_name(user_manager.session_language()) }}
+                        {{ problem.get_name(session.language) }}
                     </h5>
 
                 </div>
             {% endif %}
             <div class="card-body">
-                {{ problem.show_input(user_manager.session_language(), user_manager.session_username()) | safe }}
+                {{ problem.show_input(session.language, session.username) | safe }}
             </div>
         </div>
     {% endfor %}
     {# no need to check with lti=True/False here as it was already checked by the calling python script. #}
-    {% set groups_ok = user_manager.task_can_user_submit(course, task, user_manager.session_username(), 'groups') %}
-    {% set tokens_ok = user_manager.task_can_user_submit(course, task, user_manager.session_username(), 'tokens') %}
+    {% set groups_ok = user_manager.task_can_user_submit(course, task, session.username, 'groups') %}
+    {% set tokens_ok = user_manager.task_can_user_submit(course, task, session.username, 'tokens') %}
 
     {% if not registered %}
         <button type="submit" class="btn btn-secondary btn-lg btn-block center-block" disabled="disabled">{{ _("Please enroll in the course to submit.") }}</button>
@@ -403,7 +403,7 @@
         {% else %}
             <button type="submit" class="btn btn-secondary btn-lg btn-block center-block" id="task-submit">{{ _("Submit") }}</button>
         {% endif %}
-    {% elif not task_dispenser.get_accessibility(task.get_id(), user_manager.session_username()).is_open() %}
+    {% elif not task_dispenser.get_accessibility(task.get_id(), session.username).is_open() %}
         <button type="submit" class="btn btn-secondary btn-lg btn-block center-block" disabled="disabled">{{ _("The deadline is over, you cannot submit anymore") }}</button>
     {% elif task_dispenser.get_group_submission(task.get_id()) and not groups_ok %}
         <button class="btn btn-secondary btn-lg btn-block center-block" disabled="disabled">{{ _('Please register in a group') }}</button>
@@ -434,8 +434,8 @@
     });
 
     var input = {
-        "@lang": "{{ user_manager.session_language() }}",
-        "@username": "{{ user_manager.session_username() }}",
+        "@lang": "{{ session.language }}",
+        "@username": "{{ session.username }}",
         "@random": {{ input_random_list }}
     }
 </script>

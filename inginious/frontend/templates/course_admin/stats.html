@@ -3,7 +3,7 @@
 
 {% extends "layout.html" %}
 
-{% block title %}{{ course.get_name(user_manager.session_language()) }}{% endblock %}
+{% block title %}{{ course.get_name(session.language) }}{% endblock %}
 
 {% block head %}
     {{ super() }}
@@ -19,7 +19,7 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(user_manager.session_language()) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
             <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active">
@@ -138,7 +138,7 @@
                                         {% for (tag, v_total, v_best) in stats_global[1] %}
                                             {% set color = "badge alert-danger" if tag.is_misconception() else "badge alert-info" %}
                                             <tr>
-                                                <td><span class="{{color}}" id="{{tag.get_id()}}" data-toggle="tooltip" data-placement="left" title="{{ tag.get_description(user_manager.session_language()) }}"> {{ _(tag.get_name(user_manager.session_language())) }}</span></td>
+                                                <td><span class="{{color}}" id="{{tag.get_id()}}" data-toggle="tooltip" data-placement="left" title="{{ tag.get_description(session.language) }}"> {{ _(tag.get_name(session.language)) }}</span></td>
                                                 {# The number of decimal digits. (10 for 1 decimal, 100 for two decimals, ...) #}
                                                 {% set accuracy = 10 %}
                                                 {% set val_displayed_total = ((v_total*accuracy)|int)/accuracy %}

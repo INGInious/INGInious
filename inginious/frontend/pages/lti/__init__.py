@@ -5,7 +5,7 @@
 
 """ LTI """
 
-from flask import redirect, request, render_template
+from flask import redirect, request, render_template, session
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.courses import Course
@@ -19,7 +19,7 @@ class LTITaskPage(INGIniousAuthPage):
         return True
 
     def GET_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, taskid) = data['task']
@@ -27,7 +27,7 @@ class LTITaskPage(INGIniousAuthPage):
         return BaseTaskPage(self).GET(courseid, taskid, True)
 
     def POST_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, taskid) = data['task']
@@ -40,7 +40,7 @@ class LTIAssetPage(INGIniousAuthPage):
         return True
 
     def GET_AUTH(self, asset_url):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
         (courseid, _) = data['task']
@@ -84,7 +84,7 @@ class LTIBindPage(INGIniousAuthPage):
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
 
         if data:
-            user_profile = User.objects.get(username=self.user_manager.session_username())
+            user_profile = User.objects.get(username=session.username)
             lti_user_profile = User.objects(**{
                 "ltibindings__" + data["task"][0] + "__" + field: data["username"]
             }).first()
@@ -119,7 +119,7 @@ class LTILoginPage(INGIniousPage):
             Checks if user is authenticated and calls POST_AUTH or performs login and calls GET_AUTH.
             Otherwise, returns the login template.
         """
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
 
@@ -141,7 +141,7 @@ class LTILoginPage(INGIniousPage):
         if user_profile:
             self.user_manager.connect_user(user_profile)
 
-        if self.user_manager.session_logged_in():
+        if session.loggedin:
             return redirect(self.app.get_path("lti", "task"))
 
         return render_template("lti/login.html", lti_version=self._lti_version)

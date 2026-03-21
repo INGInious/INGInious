@@ -9,7 +9,7 @@ import yaml
 
 from collections import OrderedDict
 from bson import ObjectId
-from flask import Response, request, render_template
+from flask import session, Response, request, render_template
 from io import StringIO
 
 from inginious.frontend.models import Audience, Submission, User, Group,  CourseClass
@@ -151,7 +151,7 @@ class CourseStudentListPage(INGIniousAdminPage):
 
         my_audiences, other_audiences = [], []
         for audience in audiences.values():
-            if self.user_manager.session_username() in audience["tutors"]:
+            if session.username in audience["tutors"]:
                 my_audiences.append(audience)
             else:
                 other_audiences.append(audience)

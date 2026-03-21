@@ -1,7 +1,7 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-<p>This is an example tab for course "{{course.get_name(user_manager.session_language())}}" (id: "{{course.get_id()}}"), and task "{{taskid}}". We can show data
+<p>This is an example tab for course "{{course.get_name(session.language)}}" (id: "{{course.get_id()}}"), and task "{{taskid}}". We can show data
 from the task descriptor, such as the name "{{task_data.get('name', '')}}"</p>
 
 <p>We can also include some data for a form:</p>

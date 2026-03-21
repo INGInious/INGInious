@@ -7,6 +7,8 @@
 
 import base64
 import flask
+
+from flask import session
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
@@ -44,7 +46,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, user_manager.session_username())
+            show_everything=user_manager.has_staff_rights_on_course(course, session.username)
         )
         data = {
             "id": str(submission["_id"]),
@@ -170,7 +172,7 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        username = self.user_manager.session_username()
+        username = session.username
 
         if not self.user_manager.course_is_open_to_user(course, username, False):
             raise APIForbidden("You are not registered to this course")

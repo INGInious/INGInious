@@ -6,7 +6,7 @@
 import re
 import json
 import flask
-from flask import render_template
+from flask import session, render_template
 
 from pylti1p3.tool_config import ToolConfDict
 from jwcrypto.jwk import JWK
@@ -39,7 +39,7 @@ class CourseSettingsPage(INGIniousAdminPage):
             errors.append(_('Invalid name'))
         course_content['description'] = data['description']
         course_content['admins'] = list(map(str.strip, data['admins'].split(','))) if data['admins'].strip() else []
-        if not self.user_manager.user_is_superadmin() and self.user_manager.session_username() not in course_content['admins']:
+        if not self.user_manager.user_is_superadmin() and session.username not in course_content['admins']:
             errors.append(_('You cannot remove yourself from the administrators of this course'))
         course_content['tutors'] = list(map(str.strip, data['tutors'].split(','))) if data['tutors'].strip() else []
         if len(course_content['tutors']) == 1 and course_content['tutors'][0].strip() == "":

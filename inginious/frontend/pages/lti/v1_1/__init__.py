@@ -6,12 +6,12 @@
 """ LTI v1.1 """
 
 import flask
-from flask import redirect
 import datetime
+
+from flask import redirect, session
 from oauthlib.oauth1 import RequestValidator
 from mongoengine.errors import NotUniqueError
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
-from bson import ObjectId
 from lti import ToolProvider
 
 from inginious.common import exceptions
@@ -19,7 +19,7 @@ from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models import Nonce
+from inginious.frontend.models import Nonce, LTIData
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -97,13 +97,6 @@ class LTI11LaunchPage(INGIniousPage):
         raise MethodNotAllowed()
 
     def POST(self, courseid, taskid):
-        (session_id, loggedin) = self._parse_lti_data(courseid, taskid)
-        if loggedin:
-            return redirect(self.app.get_path("lti", "task"))
-        else:
-            return redirect(self.app.get_path("lti", "login"))
-
-    def _parse_lti_data(self, courseid, taskid):
         """ Verify and parse the data for the LTI basic launch """
         post_input = flask.request.form
         self.logger.debug('_parse_lti_data:' + str(post_input))
@@ -147,28 +140,28 @@ class LTI11LaunchPage(INGIniousPage):
             context_title = post_input.get('context_title', 'N/A')
             context_label = post_input.get('context_label', 'N/A')
 
-            session_id = str(ObjectId())
-            session_dict = {
-                "version": "1.1",
-                "email": email,
-                "username": user_id,
-                "realname": realname,
-                "roles": roles,
-                "task": (courseid, taskid),
-                "outcome_service_url": lis_outcome_service_url,
-                "outcome_result_id": outcome_result_id,
-                "consumer_key": consumer_key,
-                "context_title": context_title,
-                "context_label": context_label,
-                "tool_description": tool_desc,
-                "tool_name": tool_name,
-                "tool_url": tool_url
-            }
+            if not session.is_lti:
+                raise Exception("Not an LTI session")
 
-            self.user_manager.create_lti_session(session_id, session_dict)
-            loggedin = self.user_manager.attempt_lti_login()
+            session.loggedin = False
+            session.lti = LTIData(
+                version="1.1",
+                email=email,
+                username=user_id,
+                realname=realname,
+                roles=roles,
+                task=(courseid, taskid),
+                outcome_service_url=lis_outcome_service_url,
+                outcome_result_id=outcome_result_id,
+                consumer_key=consumer_key,
+                context_title=context_title,
+                context_label=context_label,
+                tool_description=tool_desc,
+                tool_name=tool_name,
+                tool_url=tool_url
+            )
 
-            return session_id, loggedin
+            return redirect(self.app.get_path("lti", "login"))
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))

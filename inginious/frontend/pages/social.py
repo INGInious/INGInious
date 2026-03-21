@@ -5,10 +5,9 @@
 
 """ Auth page """
 import flask
-from flask import redirect
-from werkzeug.exceptions import NotFound
+from flask import redirect, session
 
-from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
+from inginious.frontend.pages.utils import INGIniousPage
 
 
 class AuthenticationPage(INGIniousPage):
@@ -17,13 +16,13 @@ class AuthenticationPage(INGIniousPage):
         if not auth_method:
             raise self.app.notfound(message=_("Auth method doesn't exist"))
 
-        auth_storage = self.user_manager.session_auth_storage().setdefault(auth_id, {})
+        auth_storage = session.auth_storage.setdefault(auth_id, {})
         auth_storage["redir_url"] = flask.request.referrer or '/'
         auth_link = auth_method.get_auth_link(auth_storage)
         return redirect(auth_link)
 
     def GET(self, auth_id):
-        if self.user_manager.session_is_lti():
+        if session.is_lti:
             return redirect(self.app.get_path("auth/signin/" + auth_id))
         return self.process_signin(auth_id)
 
@@ -37,7 +36,7 @@ class CallbackPage(INGIniousPage):
         if not auth_method:
             raise self.app.notfound(message=_("Auth method doesn't exist."))
 
-        auth_storage = self.user_manager.session_auth_storage().setdefault(auth_id, {})
+        auth_storage = session.auth_storage.setdefault(auth_id, {})
         user = auth_method.callback(auth_storage)
         if not user:
             return redirect(self.app.get_path("signin?callbackerror"))
@@ -47,7 +46,7 @@ class CallbackPage(INGIniousPage):
         return redirect(auth_storage.get("redir_url", "/"))
 
     def GET(self, auth_id):
-        if self.user_manager.session_is_lti():
+        if session.is_lti:
             return redirect(self.app.get_path("auth/signin/" + auth_id))
         return self.process_callback(auth_id)
 

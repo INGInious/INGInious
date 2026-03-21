@@ -1,5 +1,5 @@
 from bson import ObjectId, json_util
-
+from flask import session
 from werkzeug.exceptions import NotFound
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
@@ -14,7 +14,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         return True
 
     def GET_AUTH(self):
-        data = self.user_manager.session_lti_info()
+        data = session.lti
         if data is None:
             raise NotFound()
 
@@ -52,7 +52,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
             if isinstance(problem, DisplayableMultipleChoiceProblem):
                 answer_dict = problem.get_choice_with_index(int(answer))
                 has_succeeded = answer_dict['valid']
-                answer = problem.gettext(self.user_manager.session_language(), answer_dict['text'])
+                answer = problem.gettext(session.language, answer_dict['text'])
                 p_type = "mcq"
             else:
                 has_succeeded = best_sub.get('result', '') == "success"
@@ -62,12 +62,12 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
                     p_type = "code"
                 else:
                     continue
-            question_answer_list.append({"question": problem.gettext(self.user_manager.session_language(),
+            question_answer_list.append({"question": problem.gettext(session.language,
                                                                      problem._header),
                                          "answer": answer, "success": has_succeeded,
                                          "type": p_type})
 
-        context = task.get_context(self.user_manager.session_language()).original_content()
+        context = task.get_context(session.language).original_content()
         return json_util.dumps({"status": "success", "submission": best_sub, "question_answer": question_answer_list,
                                 "task_context": context})
 

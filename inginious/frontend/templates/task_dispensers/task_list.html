@@ -25,12 +25,12 @@
                 {% set succeeded = tasks_data[taskid]["succeeded"] %}
                 {% set completion = tasks_data[taskid]["grade"] %}
                 <a href="{{ get_path('course', course.get_id(), taskid) }}" class="list-group-item list-group-item-action
-                    {% if not accessibilities[user_manager.session_username()][taskid].is_open() %} disabled {% endif %}" style="pointer-events: auto;">
+                    {% if not accessibilities[session.username][taskid].is_open() %} disabled {% endif %}" style="pointer-events: auto;">
                     <div class="row">
                         <div class="col-xs-12 col-md-6 pl-1">
                             <i style="color: {% if succeeded %}#468847{% else %}transparent{% endif %};" class="fa fa-check"></i>
-                            {{ task.get_name(user_manager.session_language()) }}
-                            {% if not accessibilities[user_manager.session_username()][taskid].is_open() %}
+                            {{ task.get_name(session.language) }}
+                            {% if not accessibilities[session.username][taskid].is_open() %}
                                 - <b> {{ _("deadline reached") }} </b>
                             {% endif %}
                         </div>

@@ -7,7 +7,7 @@
 import re
 import zoneinfo
 
-from flask import request, render_template
+from flask import request, render_template, session
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.models import User
@@ -40,7 +40,7 @@ class ProfilePage(INGIniousAuthPage):
                     msg = _("Incorrect email.")
                     return result, msg, error
                 else:
-                    self.user_manager.set_session_username(data["username"])
+                    session.username = data["username"]
 
         profile_data_to_be_updated = {}
 
@@ -56,7 +56,7 @@ class ProfilePage(INGIniousAuthPage):
         elif self.app.allow_registration and len(data["passwd"]) >= 6:
 
             if "password" in userdata:
-                user = self.user_manager.auth_user(self.user_manager.session_username(), data["oldpasswd"], False)
+                user = self.user_manager.auth_user(session.username, data["oldpasswd"], False)
             else:
                 user = User.objects.get(username=userdata["username"])
 
@@ -99,7 +99,7 @@ class ProfilePage(INGIniousAuthPage):
 
         # updating profile in DB
         if profile_data_to_be_updated:
-            User.objects(username=self.user_manager.session_username()).update(**profile_data_to_be_updated)
+            User.objects(username=session.username).update(**profile_data_to_be_updated)
             if not result:
                 error = True
                 msg = _("Incorrect username.")
@@ -107,25 +107,25 @@ class ProfilePage(INGIniousAuthPage):
             else:
                 # updating session
                 if "language" in profile_data_to_be_updated:
-                    self.user_manager.set_session_language(profile_data_to_be_updated["language"])
+                    session.language = profile_data_to_be_updated["language"]
                 if "code_indentation" in profile_data_to_be_updated:
-                    self.user_manager.set_session_code_indentation(profile_data_to_be_updated["code_indentation"])
+                    session.code_indentation = profile_data_to_be_updated["code_indentation"]
                 if "realname" in profile_data_to_be_updated:
-                    self.user_manager.set_session_realname(profile_data_to_be_updated["realname"])
+                    session.realname = profile_data_to_be_updated["realname"]
                 if "timezone" in profile_data_to_be_updated:
-                    self.user_manager.set_session_timezone(profile_data_to_be_updated["timezone"])
+                    session.timezone = profile_data_to_be_updated["timezone"]
 
         msg = _("Profile updated.")
 
         #updating tos
         if self.app.terms_page is not None and self.app.privacy_page is not None:
-            User.objects(username=self.user_manager.session_username()).update(set__tos_accepted="term_policy_check" in data)
-            self.user_manager.set_session_tos_signed()
+            User.objects(username=session.username).update(set__tos_accepted="term_policy_check" in data)
+            session.tos_signed = True
         return result, msg, error
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
-        userdata = User.objects.get(email=self.user_manager.session_email())
+        userdata = User.objects.get(email=session.email)
         available_timezones = sorted(zoneinfo.available_timezones())
 
         if not userdata:
@@ -137,7 +137,7 @@ class ProfilePage(INGIniousAuthPage):
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
         """ POST request """
-        userdata = User.objects.get(email=self.user_manager.session_email())
+        userdata = User.objects.get(email=session.email)
         available_timezones = sorted(zoneinfo.available_timezones())
 
         if not userdata:

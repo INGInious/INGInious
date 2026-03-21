@@ -4,6 +4,8 @@
 # more information about the licensing of this file.
 
 """ Tasks """
+from flask import session
+
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
 from inginious.frontend.parsable_text import ParsableText
@@ -78,16 +80,16 @@ class APITasks(APIAuthenticatedPage):
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(self.user_manager.session_username(), course.get_id(), task.get_id())
+            task_cache = self.user_manager.get_task_cache(session.username, course.get_id(), task.get_id())
 
             data = {
                 "id": taskid,
-                "name": task.get_name(self.user_manager.session_language()),
-                "authors": task.get_authors(self.user_manager.session_language()),
-                "contact_url": task.get_contact_url(self.user_manager.session_language()),
+                "name": task.get_name(session.language),
+                "authors": task.get_authors(session.language),
+                "contact_url": task.get_contact_url(session.language),
                 "status": "notviewed" if task_cache is None else "notattempted" if task_cache["tried"] == 0 else "succeeded" if task_cache["succeeded"] else "failed",
                 "grade": task_cache.get("grade", 0.0) if task_cache is not None else 0.0,
-                "context": task.get_context(self.user_manager.session_language()).original_content(),
+                "context": task.get_context(session.language).original_content(),
                 "problems": []
             }
 

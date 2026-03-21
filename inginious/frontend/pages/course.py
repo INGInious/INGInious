@@ -5,7 +5,7 @@
 
 """ Course page """
 import flask
-from flask import redirect, render_template
+from flask import session, redirect, render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.courses import Course
@@ -17,7 +17,7 @@ def handle_course_unavailable(get_path, user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
     reason = user_manager.course_is_open_to_user(course, lti=False, return_reason=True)
     if reason == "unregistered_not_previewable":
-        username = user_manager.session_username()
+        username = session.username
         user_info = user_manager.get_user_info(username)
         if course.is_registration_possible(user_info):
             return redirect(get_path("register", course.get_id()))
@@ -46,7 +46,7 @@ class CoursePage(INGIniousAuthPage):
 
         user_input = flask.request.form
         if "unregister" in user_input and course.allow_unregister():
-            self.user_manager.course_unregister_user(courseid, self.user_manager.session_username())
+            self.user_manager.course_unregister_user(courseid, session.username)
             return redirect(self.app.get_path('mycourses'))
 
         return self.show_page(course)
@@ -58,7 +58,7 @@ class CoursePage(INGIniousAuthPage):
 
     def show_page(self, course):
         """ Prepares and shows the course page """
-        username = self.user_manager.session_username()
+        username = session.username
         if not self.user_manager.course_is_open_to_user(course, lti=False):
             return handle_course_unavailable(self.app.get_path, self.user_manager, course)
         else:
@@ -69,7 +69,7 @@ class CoursePage(INGIniousAuthPage):
             # Get 5 last submissions
             last_submissions = []
             for submission in self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid__in": user_task_list}):
-                submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
+                submission["taskname"] = tasks[submission['taskid']].get_name(session.language)
                 last_submissions.append(submission)
 
             # Compute course/tasks scores

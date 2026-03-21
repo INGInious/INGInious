@@ -3,7 +3,7 @@
 
 {% extends "layout.html" %}
 
-{% block title %} {{ course.get_name(user_manager.session_language()) }} - {{ _("Settings") }} {% endblock %}
+{% block title %} {{ course.get_name(session.language) }} - {{ _("Settings") }} {% endblock %}
 
 {% block column %}
     {% with current='settings' %}{% include 'course_admin/menu.html' %}{% endwith %}
@@ -12,7 +12,7 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(user_manager.session_language()) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
             <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-cogs"></i> {{_("Course settings")}} <span class="sr-only">{{ _("(current)") }}</span></a></li>
@@ -58,7 +58,7 @@
             <div class="form-group row">
                 <label for="name" class="col-sm-2 control-label">{{ _("Name") }}</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="name" name="name" placeholder="title" value="{{ course.get_name(user_manager.session_language()) }}">
+                    <input type="text" class="form-control" id="name" name="name" placeholder="title" value="{{ course.get_name(session.language) }}">
                 </div>
             </div>
             <div class="form-group row">
@@ -192,8 +192,8 @@
                     </div>
                     <script type="text/javascript">
                         $(function() {
-                            $('#accessible_start_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
-                            $('#accessible_end_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
+                            $('#accessible_start_picker').datetimepicker({locale: '{{session.language}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{session.timezone}}'});
+                            $('#accessible_end_picker').datetimepicker({locale: '{{session.language}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{session.timezone}}'});
                         });
                     </script>
                 </div>
@@ -251,8 +251,8 @@
                     </div>
                     <script type="text/javascript">
                         $(function() {
-                            $('#registration_start_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
-                            $('#registration_end_picker').datetimepicker({locale: '{{user_manager.session_language()}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{user_manager.session_timezone()}}'});
+                            $('#registration_start_picker').datetimepicker({locale: '{{session.language}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{session.timezone}}'});
+                            $('#registration_end_picker').datetimepicker({locale: '{{session.language}}', sideBySide: true, format:'YYYY-MM-DD HH:mm:ssZ', timeZone: '{{session.timezone}}'});
                         });
                     </script>
                 </div>

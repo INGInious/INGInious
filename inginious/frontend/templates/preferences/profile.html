@@ -34,14 +34,14 @@
     </div>
 {% endif %}
 
-{% if not user_manager.session_username() %}
+{% if not session.username %}
     <div class="alert alert-warning alert-dismissable">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         {{_("Please set a new username")}}
     </div>
 {% endif %}
 
-{% if is_tos_defined and not user_manager.session_tos_signed() %}
+{% if is_tos_defined and not session.tos_signed %}
     <div class="alert alert-warning alert-dismissable">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         {{_("Please accept the Terms of Service and Data Privacy")}}
@@ -52,21 +52,21 @@
     <div class="row">
         <div class="col-sm-12">
             <label class="control-label">{{ _("Username :") }} </label>
-            <input name="username" type="text" class="form-control" value="{{ user_manager.session_username() }}" {% if user_manager.session_username() %} disabled {% endif %}>
+            <input name="username" type="text" class="form-control" value="{{ session.username }}" {% if session.username %} disabled {% endif %}>
         </div>
         <div class="col-sm-12">
             <label class="control-label">{{ _("Complete name :") }} </label>
-            <input name="realname" type="text" class="form-control" value="{{ user_manager.session_realname() }}">
+            <input name="realname" type="text" class="form-control" value="{{ session.realname }}">
         </div>
         <div class="col-sm-12">
             <label class="control-label">{{_("Email address :")}} </label>
-            <input name="email" type="text" class="form-control" value="{{ user_manager.session_email() }}" disabled>
+            <input name="email" type="text" class="form-control" value="{{ session.email }}" disabled>
         </div>
         <div class="col-sm-12">
             <label class="control-label">{{ _("Language :") }} </label>
             <select name="language" class="form-control">
                 {% for code, language in available_languages.items() %}
-                <option value="{{code}}" {% if code == user_manager.session_language() %} selected {% endif %}>{{ language }}</option>
+                <option value="{{code}}" {% if code == session.language %} selected {% endif %}>{{ language }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -74,7 +74,7 @@
             <label class="control-label">{{ _("Timezone :") }} </label>
             <select name="timezone" class="form-control">
                 {% for timezone in available_timezones %}
-                    <option value="{{ timezone }}" {% if timezone == user_manager.session_timezone() %} selected {% endif %}>{{ timezone }}</option>
+                    <option value="{{ timezone }}" {% if timezone == session.timezone %} selected {% endif %}>{{ timezone }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -82,7 +82,7 @@
             <label class="control-label">{{ _("Code indentation :") }} </label>
             <select name="code_indentation" class="form-control">
                 {% for code, indentation_data in available_indentation_types.items() %}
-                <option value="{{code}}" {% if code == user_manager.session_code_indentation() %} selected {% endif %}>{{ _(indentation_data["text"]) }}</option>
+                <option value="{{code}}" {% if code == session.code_indentation %} selected {% endif %}>{{ _(indentation_data["text"]) }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -102,7 +102,7 @@
         {% endif %}
         {%if is_tos_defined %}
             <div class="col-sm-12 mt-sm-3">
-                <input name="term_policy_check" type="checkbox" {% if user_manager.session_tos_signed() %} checked {% endif %} >
+                <input name="term_policy_check" type="checkbox" {% if session.tos_signed %} checked {% endif %} >
                 {{ _("I have read the {a1start}Terms of service{a1end} and the {a2start}Privacy policy{a2end}.").format(a1start='<a href="/pages/' + terms_page + '">', a1end='</a>', a2start='<a href="/pages/' + privacy_page + '">', a2end='</a>') | safe }}
             </div>
         {% endif %}

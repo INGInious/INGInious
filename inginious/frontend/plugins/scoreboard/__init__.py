@@ -9,7 +9,7 @@
 import os
 
 from collections import OrderedDict
-from flask import render_template
+from flask import session, render_template
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
@@ -74,7 +74,7 @@ class ScoreBoard(INGIniousAuthPage):
         task_names = {}
         for taskid in scoreboard_content:
             try:
-                task_names[taskid] = course.get_task(taskid).get_name(self.user_manager.session_language())
+                task_names[taskid] = course.get_task(taskid).get_name(session.language)
             except:
                 raise NotFound(description="Unknown task id "+taskid)
 

@@ -9,7 +9,7 @@ import os
 from typing import List, Dict
 
 import flask
-from flask import redirect, render_template
+from flask import redirect, render_template, session
 from flask.views import MethodView
 from werkzeug.exceptions import NotFound, NotAcceptable, MethodNotAllowed
 
@@ -43,10 +43,10 @@ class INGIniousPage(MethodView):
     def _pre_check(self):
         """ Checks for language. """
         if "lang" in flask.request.args and flask.request.args["lang"] in available_languages:
-            self.user_manager.set_session_language(flask.request.args["lang"])
-        elif not self.user_manager.session_language(default=None):
+            session.language = flask.request.args["lang"]
+        elif not session.language:
             best_lang = flask.request.accept_languages.best_match(available_languages,default="en")
-            self.user_manager.set_session_language(best_lang)
+            session.language = best_lang
 
     def GET(self, *args, **kwargs):
         """ Handles GET requests. It should be redefined by subclasses. """
@@ -133,14 +133,14 @@ class INGIniousAuthPage(INGIniousPage):
         Checks if user is authenticated and calls GET_AUTH or performs logout.
         Otherwise, returns the login template.
         """
-        if self.user_manager.session_logged_in():
-            if (not self.user_manager.session_username() or (self.app.terms_page is not None and
+        if session.loggedin:
+            if (not session.username or (self.app.terms_page is not None and
                                                              self.app.privacy_page is not None and
-                                                             not self.user_manager.session_tos_signed())) \
+                                                             not session.tos_signed)) \
                     and not self.__class__.__name__ == "ProfilePage":
                 return redirect(self.app.get_path("preferences/profile"))
 
-            if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
+            if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
                 return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
@@ -163,11 +163,11 @@ class INGIniousAuthPage(INGIniousPage):
         Checks if user is authenticated and calls POST_AUTH or performs login and calls GET_AUTH.
         Otherwise, returns the login template.
         """
-        if self.user_manager.session_logged_in():
-            if not self.user_manager.session_username() and not self.__class__.__name__ == "ProfilePage":
+        if session.loggedin:
+            if not session.username and not self.__class__.__name__ == "ProfilePage":
                 return redirect(self.app.get_path("preferences/profile"))
 
-            if not self.is_lti_page and self.user_manager.session_lti_info() is not None:  # lti session
+            if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
                 return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
@@ -203,8 +203,8 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         Checks if user is superadmin and calls GET_AUTH or performs logout.
         Otherwise, returns the login template.
         """
-        username = self.user_manager.session_username()
-        if self.user_manager.session_logged_in():
+        username = session.username
+        if session.loggedin:
             if not self.user_manager.user_is_superadmin(username):
                 return render_template("forbidden.html",
                                                    message=_("Forbidden"))
@@ -217,8 +217,8 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         Otherwise, returns the forbidden template.
         """
 
-        username = self.user_manager.session_username()
-        if self.user_manager.session_logged_in() and self.user_manager.user_is_superadmin(username):
+        username = session.username
+        if session.loggedin and self.user_manager.user_is_superadmin(username):
             return self.POST_AUTH()
         return render_template("forbidden.html",
                                            message=_("You have not sufficient right to see this part."))
@@ -256,7 +256,7 @@ class INGIniousStaticPage(INGIniousPage):
 
     def show_page(self, page):
         static_directory = self.app.static_directory
-        language = self.user_manager.session_language()
+        language = session.language
 
         # Check for the file
         filename = None

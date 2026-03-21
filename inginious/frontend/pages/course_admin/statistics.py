@@ -7,7 +7,7 @@
 from collections import OrderedDict
 import zoneinfo
 
-from flask import request, render_template
+from flask import session, request, render_template
 
 from inginious.frontend.models import Submission, UserTask
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
@@ -26,7 +26,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
              {"$sort": {"submissions": -1}}])
 
         return [
-            {"name": tasks[x["_id"]].get_name(self.user_manager.session_language()) if x["_id"] in tasks else x["_id"],
+            {"name": tasks[x["_id"]].get_name(session.language) if x["_id"] in tasks else x["_id"],
              "submissions": x["submissions"],
              "validSubmissions": x["validSubmissions"]}
             for x in stats_tasks
@@ -52,20 +52,20 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
     def _graph_stats(self, daterange, filter, limit):
         project = {
-            "year": {"$year": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
-            "month": {"$month": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
-            "day": {"$dayOfMonth": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
+            "year": {"$year": {"date": "$submitted_on", "timezone": session.timezone}},
+            "month": {"$month": {"date": "$submitted_on", "timezone": session.timezone}},
+            "day": {"$dayOfMonth": {"date": "$submitted_on", "timezone": session.timezone}},
             "result": "$result"
         }
         groupby = {"year": "$year", "month": "$month", "day": "$day"}
 
         method = "day"
         if (daterange[1] - daterange[0]).days < 7:
-            project["hour"] = {"$hour": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}}
+            project["hour"] = {"$hour": {"date": "$submitted_on", "timezone": session.timezone}}
             groupby["hour"] = "$hour"
             method = "hour"
 
-        tz = zoneinfo.ZoneInfo(self.user_manager.session_timezone())
+        tz = zoneinfo.ZoneInfo(session.timezone)
 
         min_date = daterange[0].replace(minute=0, second=0, microsecond=0)
         max_date = daterange[1].replace(minute=0, second=0, microsecond=0)
@@ -128,7 +128,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         # Now load additional information
         result = OrderedDict()
         for taskid in tasks:
-            result[taskid] = {"name": tasks[taskid].get_name(self.user_manager.session_language()), "viewed": 0,
+            result[taskid] = {"name": tasks[taskid].get_name(session.language), "viewed": 0,
                               "attempted": 0, "attempts": 0, "succeeded": 0, "url": self.submission_url_generator(taskid)}
         for entry in data:
             if entry["_id"] in result:
@@ -181,7 +181,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         if params.get('date_before', ''):
             daterange[1] = datetime.fromisoformat(params["date_before"])
         else:
-            daterange[1] = datetime.now(zoneinfo.ZoneInfo(self.user_manager.session_timezone()))
+            daterange[1] = datetime.now(zoneinfo.ZoneInfo(session.timezone))
 
         if params.get('date_after', ''):
             daterange[0] = datetime.fromisoformat(params["date_after"])

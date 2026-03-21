@@ -14,7 +14,7 @@
     <div class="col-sm-3">
         <select class="form-control" id="new_subproblem_type">
             {% for key, problem_type in problem_types.items() %}
-                <option value="subproblem_{{ key }}">{{ problem_type.get_type_name(user_manager.session_language()) | safe}}</option>
+                <option value="subproblem_{{ key }}">{{ problem_type.get_type_name(session.language) | safe}}</option>
             {% endfor %}
         </select>
     </div>

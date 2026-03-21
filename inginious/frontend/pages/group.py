@@ -7,7 +7,7 @@
 
 import logging
 
-from flask import request, render_template
+from flask import session, request, render_template
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.courses import Course
@@ -23,7 +23,7 @@ class GroupPage(INGIniousAuthPage):
         """ GET request """
 
         course = Course.get(courseid)
-        username = self.user_manager.session_username()
+        username = session.username
 
         error = False
         msg = ""
@@ -70,7 +70,7 @@ class GroupPage(INGIniousAuthPage):
         tasks = course.get_tasks()
         last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": courseid, "taskid__in": list(tasks.keys())})
         for submission in last_submissions:
-            submission["taskname"] = tasks[submission['taskid']].get_name(self.user_manager.session_language())
+            submission["taskname"] = tasks[submission['taskid']].get_name(session.language)
 
         user_group = self.user_manager.get_course_user_group(course)
         user_audiences = [audience.id for audience in Audience.objects(courseid=courseid, students=username)]

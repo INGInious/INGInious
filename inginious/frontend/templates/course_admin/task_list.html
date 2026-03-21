@@ -4,7 +4,7 @@
 {% extends "layout.html" %}
 {% set task_dispenser = course.get_task_dispenser() %}
 
-{% block title %} {{course.get_name(user_manager.session_language())}} {% endblock %}
+{% block title %} {{course.get_name(session.language)}} {% endblock %}
 
 {% block column %}
     {% with current='tasks' %}{% include 'course_admin/menu.html' %}{% endwith %}
@@ -13,7 +13,7 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ get_path('course', course.get_id()) }}">{{ course.get_name(user_manager.session_language()) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ get_path('course', course.get_id()) }}">{{ course.get_name(session.language) }}</a></li>
             <li class="breadcrumb-item"><a href="{{ get_path('admin', course.get_id()) }}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-tasks"></i> {{ _("Tasks") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
@@ -48,7 +48,7 @@
                     <label>{{ _("New task dispenser:") }}</label>
                     <select class="form-control" id="new_task_dispenser" name="task_dispenser">
                         {% for id, task_dispenser_class in task_dispensers.items() %}
-                            <option value="{{id}}" {{ 'selected' if task_dispenser_class.get_id() == task_dispenser.get_id() else '' }}>{{ task_dispenser_class.get_name(user_manager.session_language()) }}</option>
+                            <option value="{{id}}" {{ 'selected' if task_dispenser_class.get_id() == task_dispenser.get_id() else '' }}>{{ task_dispenser_class.get_name(session.language) }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -75,8 +75,8 @@
                 <br/>
                 <table class="table">
                     <tr><td>{{_("URL")}}</td><td><code>{{ webdav_host ~ "/" ~ course.get_id()}}</code></td></tr>
-                    <tr><td>{{_("Username")}}</td><td><code>{{user_manager.session_username()}}</code></td></tr>
-                    <tr><td>{{_("Password")}}</td><td><code>{{user_manager.session_api_key()}}</code></td></tr>
+                    <tr><td>{{_("Username")}}</td><td><code>{{  session.username  }}</code></td></tr>
+                    <tr><td>{{_("Password")}}</td><td><code>{{ user_manager.get_user_api_key(session.username) }}</code></td></tr>
                 </table>
                 </div>
             </div>

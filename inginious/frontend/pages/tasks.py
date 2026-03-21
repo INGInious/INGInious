@@ -14,7 +14,7 @@ import random
 import time
 import flask
 
-from flask import redirect, Response, render_template
+from flask import session, redirect, Response, render_template
 from werkzeug.exceptions import NotFound, HTTPException
 
 from inginious.frontend.models import Submission
@@ -46,7 +46,7 @@ class BaseTaskPage(object):
 
     def GET(self, courseid, taskid, is_LTI):
         """ GET request """
-        username = self.user_manager.session_username()
+        username = session.username
 
         # Fetch the course
         try:
@@ -125,14 +125,14 @@ class BaseTaskPage(object):
             submissionid = user_task.submissionid
             eval_submission = Submission.objects.get(id=submissionid) if submissionid else None
 
-            students = [self.user_manager.session_username()]
+            students = [session.username]
             if course.get_task_dispenser().get_group_submission(taskid) and not self.user_manager.has_admin_rights_on_course(course, username):
-                group = Group.objects(courseid=course.get_id(),students=self.user_manager.session_username()).first()
+                group = Group.objects(courseid=course.get_id(),students=session.username).first()
                 if group is not None:
                     students = group["students"]
                 # we don't care for the other case, as the student won't be able to submit.
 
-            submissions = self.submission_manager.get_user_submissions(course, task) if self.user_manager.session_logged_in() else []
+            submissions = self.submission_manager.get_user_submissions(course, task) if session.loggedin else []
             user_info = self.user_manager.get_user_info(username)
 
             # Visible tags
@@ -154,7 +154,7 @@ class BaseTaskPage(object):
 
     def POST(self, courseid, taskid, isLTI):
         """ POST a new submission """
-        username = self.user_manager.session_username()
+        username = session.username
 
         course = Course.get(courseid)
         if not self.user_manager.course_is_open_to_user(course, username, isLTI):

@@ -3,9 +3,9 @@
 
 {% extends "layout.html" %}
 
-{% set username = user_manager.session_username() %}
+{% set username = session.username %}
 
-{% block title %} {{ course.get_name(user_manager.session_language()) }} {% endblock %}
+{% block title %} {{ course.get_name(session.language) }} {% endblock %}
 {% block column %}
     {% for entry in plugin_manager.call_hook('course_menu', course=course) %}
         {{ entry | safe }}
@@ -53,7 +53,7 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a  href="{{ get_path('course', course.get_id()) }}">{{ course.get_name(user_manager.session_language()) }}</a></li>
+            <li class="breadcrumb-item"><a  href="{{ get_path('course', course.get_id()) }}">{{ course.get_name(session.language) }}</a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-group"></i>
                 {% if mygroup is none %}
                     {{ _("Register for a group") }}
@@ -67,7 +67,7 @@
 {% endblock %}
 
 {%block content %}
-<h2>{{ course.get_name(user_manager.session_language()) }} - {{ _("Groups") }}</h2>
+<h2>{{ course.get_name(session.language) }} - {{ _("Groups") }}</h2>
 {% if error %}
     <div class="alert alert-danger alert-dismissable" role="alert">
         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>

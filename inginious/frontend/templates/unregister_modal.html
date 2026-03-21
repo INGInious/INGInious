@@ -6,7 +6,7 @@
         <div class="modal-content">
             <form method="post" action="{{ get_path('course', course.get_id()) }}">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="unregister_modal_title">{{ _("Unregister from {}").format(course.get_name(user_manager.session_language())) }}</h5>
+                    <h5 class="modal-title" id="unregister_modal_title">{{ _("Unregister from {}").format(course.get_name(session.language)) }}</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>

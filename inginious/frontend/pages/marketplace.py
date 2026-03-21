@@ -5,7 +5,7 @@
 
 """ Course page """
 import sys
-from flask import request, redirect, render_template
+from flask import session, request, redirect, render_template
 from werkzeug.exceptions import Forbidden
 
 from inginious.common.base import id_checker
@@ -45,7 +45,7 @@ class MarketplacePage(INGIniousAuthPage):
             new_courseid = user_input["new_courseid"]
             try:
                 course = get_marketplace_course(user_input["courseid"])
-                import_course(course, new_courseid, self.user_manager.session_username())
+                import_course(course, new_courseid, session.username)
             except ImportCourseException as e:
                 errors.append(str(e))
             except:

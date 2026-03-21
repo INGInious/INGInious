@@ -7,7 +7,7 @@
 
 import json
 import flask
-from flask import Response
+from flask import session, Response
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
@@ -107,7 +107,7 @@ class APIAuthenticatedPage(APIPage):
 
     def _verify_authentication(self, handler, args, kwargs):
         """ Verify that the user is authenticated """
-        if not self.user_manager.session_logged_in():
+        if not session.loggedin:
             raise APIForbidden()
         return handler(*args, **kwargs)
 
