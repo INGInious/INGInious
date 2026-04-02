@@ -6,18 +6,19 @@
 
 <link rel="stylesheet" href="../../lib/codemirror.css">
 <script src="../../lib/codemirror.js"></script>
+<script src="../../addon/edit/matchbrackets.js"></script>
 <script src="asterisk.js"></script>
 <style>
       .CodeMirror {border: 1px solid #999;}
       .cm-s-default span.cm-arrow { color: red; }
     </style>
 <div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+  <a href="https://codemirror.net/5"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png" alt=""></a>
 
   <ul>
     <li><a href="../../index.html">Home</a>
     <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="https://github.com/codemirror/codemirror5">Code</a>
   </ul>
   <ul>
     <li><a href="../index.html">Language modes</a>
@@ -145,7 +146,7 @@ exten => 8500,n,Goto(s,6)
       var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
         mode: "text/x-asterisk",
         matchBrackets: true,
-        lineNumber: true
+        lineNumbers: true
       });
     </script>
 

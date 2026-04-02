@@ -6,6 +6,7 @@
 
 <link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
+<script src="../../addon/edit/matchbrackets.js"></script>
 <script src="sql.js"></script>
 <link rel="stylesheet" href="../../addon/hint/show-hint.css" />
 <script src="../../addon/hint/show-hint.js"></script>
@@ -17,12 +18,12 @@
 }
         </style>
 <div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+  <a href="https://codemirror.net/5"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png" alt=""></a>
 
   <ul>
     <li><a href="../../index.html">Home</a>
     <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="https://github.com/codemirror/codemirror5">Code</a>
   </ul>
   <ul>
     <li><a href="../index.html">Language modes</a>
@@ -49,7 +50,7 @@ SELECT SQL_NO_CACHE DISTINCT
 	LIMIT 1 OFFSET 0;
 </textarea>
             </form>
-            <p><strong>MIME types defined:</strong> 
+            <p><strong>MIME types defined:</strong>
             <code><a href="?mime=text/x-sql">text/x-sql</a></code>,
             <code><a href="?mime=text/x-mysql">text/x-mysql</a></code>,
             <code><a href="?mime=text/x-mariadb">text/x-mariadb</a></code>,
@@ -58,7 +59,12 @@ SELECT SQL_NO_CACHE DISTINCT
             <code><a href="?mime=text/x-mssql">text/x-mssql</a></code>,
             <code><a href="?mime=text/x-hive">text/x-hive</a></code>,
             <code><a href="?mime=text/x-pgsql">text/x-pgsql</a></code>,
-            <code><a href="?mime=text/x-gql">text/x-gql</a></code>.
+            <code><a href="?mime=text/x-gql">text/x-gql</a></code>,
+            <code><a href="?mime=text/x-gpsql">text/x-gpsql</a></code>.
+            <code><a href="?mime=text/x-esper">text/x-esper</a></code>.
+            <code><a href="?mime=text/x-sqlite">text/x-sqlite</a></code>.
+            <code><a href="?mime=text/x-sparksql">text/x-sparksql</a></code>.
+            <code><a href="?mime=text/x-trino">text/x-trino</a></code>.
         </p>
 <script>
 window.onload = function() {
@@ -76,8 +82,8 @@ window.onload = function() {
     autofocus: true,
     extraKeys: {"Ctrl-Space": "autocomplete"},
     hintOptions: {tables: {
-      users: {name: null, score: null, birthDate: null},
-      countries: {name: null, population: null, size: null}
+      users: ["name", "score", "birthDate"],
+      countries: ["name", "population", "size"]
     }}
   });
 };
