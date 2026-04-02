@@ -12,7 +12,7 @@
             {{ _("This page list all the course that are publicly avalaible. When you click import, it will create a new course on your INGInious instance. You will be admin of this new course and it will contain all the tasks and the structure of the imported course") }}
         </div>
         <div class="list-group">
-            <a class="list-group-item list-group-item-action list-group-item-info" href="{{get_path('mycourses')}}">
+            <a class="list-group-item list-group-item-action list-group-item-info" href="{{url_for('mycoursespage')}}">
                 <i class="fa fa-fw fa-th-list"></i>
                 {{ _("My courses") }}
             </a>
@@ -43,7 +43,7 @@
                 <div class="card m-2">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <a href="{{ get_path("marketplace", courseid) }}">{{ course.get_name(session.language) }}</a>
+                            <a href="{{ url_for('marketplacecoursepage', courseid=courseid) }}">{{ course.get_name(session.language) }}</a>
                         </h5>
                         <span class="card-text m-0 wrap-h6">
                             {{ course.get_short_desc(session.language) | safe }}

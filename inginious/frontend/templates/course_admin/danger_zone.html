@@ -14,8 +14,8 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
-            <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
+            <li class="breadcrumb-item"><a href="{{url_for('coursepage', courseid=course.get_id())}}">{{ course.get_name(session.language) }}</a></li>
+            <li class="breadcrumb-item"><a href="{{url_for('courseredirect', courseid=course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-bomb"></i> {{ _("Danger zone") }} <span class="sr-only"> {{_("(current)") }}</span></a></li>
         </ol>

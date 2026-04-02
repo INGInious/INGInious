@@ -20,7 +20,7 @@
         {{ _("This page lists the coming tasks ordered on deadlines for courses you are registered in.") }}
     </div>
     <div class="list-group mb-3">
-        <a class="list-group-item list-group-item-action list-group-item-info" href="{{ get_path('courselist') }}">
+        <a class="list-group-item list-group-item-action list-group-item-info" href="{{ url_for('courselistpage') }}">
             <i class="fa fa-fw fa-th-list"></i>
             {{ _("Course list") }}
         </a>
@@ -42,7 +42,7 @@
                         {% else %}
                             list-group-item-danger
                         {% endif %}"
-                        href="{{ get_path('course', submission['courseid'], submission['taskid']) }}">
+                        href="{{ url_for('taskpage', courseid=submission['courseid'], taskid=submission['taskid']) }}">
                         <b>{{ course.get_name(session.language) }}</b>: {{ submission["task"].get_name(session.language) }}
                     </a>
                 {% endif %}

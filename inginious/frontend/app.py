@@ -20,7 +20,7 @@ from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.i18n import available_languages, gettext
-from inginious import get_root_path, __version__, DB_VERSION
+from inginious import __version__, DB_VERSION
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
@@ -41,81 +41,84 @@ def _put_configuration_defaults(config):
     :param config: the basic configuration as a dict
     :return: the same dict, but with defaults for some unfilled parameters
     """
-    if 'allowed_file_extensions' not in config:
-        config['allowed_file_extensions'] = [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]
-    if 'max_file_size' not in config:
-        config['max_file_size'] = 1024 * 1024
-
-    if 'session_parameters' not in config or 'secret_key' not in config['session_parameters']:
+    session_parameters = config.get('session_parameters', None)
+    if not session_parameters or 'secret_key' not in config['session_parameters']:
         print("Please define a secret_key in the session_parameters part of the configuration.", file=sys.stderr)
         print("You can simply add the following (the text between the lines, without the lines) "
               "to your INGInious configuration file. We generated a random key for you.", file=sys.stderr)
         print("-------------", file=sys.stderr)
         print("session_parameters:", file=sys.stderr)
         print('\ttimeout: 86400  # 24 * 60 * 60, # 24 hours in seconds', file=sys.stderr)
-        print('\tignore_change_ip: False # change this to True if you want user to keep their session if they change their IP', file=sys.stderr)
         print('\tsecure: False # change this to True if you only use https', file=sys.stderr)
         print('\tsecret_key: "{}"'.format(hexlify(os.urandom(32)).decode('utf-8')), file=sys.stderr)
         print("-------------", file=sys.stderr)
         exit(1)
 
-    if 'session_parameters' not in config:
-        config['session_parameters'] = {}
-    default_session_parameters = {
-        "cookie_name": "inginious_session_id",
-        "cookie_domain": None,
-        "cookie_path": None,
-        "samesite": "Lax",
-        "timeout": 86400,  # 24 * 60 * 60, # 24 hours in seconds
-        "ignore_change_ip": False,
-        "httponly": True,
-        "secret_key": "fLjUfxqXtfNoIldA0A0G",
-        "secure": False
+    # Populate a sanitized new dict with upper chars for Flask
+    new_config = {
+        "ALLOWED_FILE_EXTENSIONS": config.get('allowed_file_extensions',
+                                              [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]),
+        "ALLOW_DELETION": config.get("allow_deletion", True),
+        "ALLOW_REGISTRATION": config.get("allow_registration", True),
+        "BACKEND": config.get("backend", "local"),
+        "DEBUG": config.get("web_debug", False),
+        "DEBUG_ASYNCIO": config.get('debug_asyncio', False),
+        "LOCAL-CONFIG": config.get("local-config", {}),
+        "MAINTENANCE": config.get("maintenance", False),
+        "MAX_FILE_SIZE": config.get('max_file_size', 1024 * 1024),
+        "MONGO_OPT": config.get("mongo_opt", {}),
+        "PLUGINS": config.get("plugins", []),
+        "STATIC_DIRECTORY": config.get("static_directory", "./static"),
+        "SUPERADMINS": config.get("superadmins", []),
+        "TASKS_DIRECTORY": config.get("tasks_directory", "./tasks"),
+        "USE_MINIFIED_JS": config.get("use_minified_js", False),
+
+        # Session config
+        "PERMANENT_SESSION_LIFETIME": session_parameters.get("timeout", 86400),  # 24 hours
+        "SECRET_KEY": session_parameters["secret_key"],
+        "SESSION_USE_SIGNER": True,
+        "SESSION_COOKIE_NAME": session_parameters.get("cookie_name", "inginious_session_id"),
+        "SESSION_COOKIE_DOMAIN": session_parameters.get("cookie_domain", None),
+        "SESSION_COOKIE_PATH": session_parameters.get("cookie_path", None),
+        "SESSION_COOKIE_SAMESITE": session_parameters.get("samesite", "Lax"),
+        "SESSION_COOKIE_HTTPONLY": session_parameters.get("httponly", True),
+        "SESSION_COOKIE_SECURE": session_parameters.get("secure", False)
     }
-    for k, v in default_session_parameters.items():
-        if k not in config['session_parameters']:
-            config['session_parameters'][k] = v
 
-    # flask migration
-    config["DEBUG"] = config.get("web_debug", False)
-    config["SESSION_COOKIE_NAME"] = "inginious_session_id"
-    config["SESSION_USE_SIGNER"] = True
-    config["PERMANENT_SESSION_LIFETIME"] = config['session_parameters']["timeout"]
-    config["SECRET_KEY"] = config['session_parameters']["secret_key"]
-
+    # SMTP config
     smtp_conf = config.get('smtp', None)
     if smtp_conf is not None:
-        config["MAIL_SERVER"] = smtp_conf["host"]
-        config["MAIL_PORT"] = int(smtp_conf["port"])
-        config["MAIL_USE_TLS"] = bool(smtp_conf.get("starttls", False))
-        config["MAIL_USE_SSL"] = bool(smtp_conf.get("usessl", False))
-        config["MAIL_USERNAME"] = smtp_conf.get("username", None)
-        config["MAIL_PASSWORD"] = smtp_conf.get("password", None)
-        config["MAIL_DEFAULT_SENDER"] = smtp_conf.get("sendername", "no-reply@ingnious.org")
+        new_config.update({
+            "MAIL_SERVER": smtp_conf["host"],
+            "MAIL_PORT": int(smtp_conf["port"]),
+            "MAIL_USE_TLS": bool(smtp_conf.get("starttls", False)),
+            "MAIL_USE_SSL": bool(smtp_conf.get("usessl", False)),
+            "MAIL_USERNAME": smtp_conf.get("username", None),
+            "MAIL_PASSWORD": smtp_conf.get("password", None),
+            "MAIL_DEFAULT_SENDER": smtp_conf.get("sendername", "no-reply@ingnious.org")
+        })
 
-    return config
+    # Optional keys
+    for key in ["fs", "privacy_page", "sentry_io_url", "terms_page", "webdav_host", "webterm"]:
+        if key in config:
+            new_config[key.upper()] = config[key]
 
-def get_homepath():
-    """ Returns the URL root. """
-    return flask.request.url_root[:-1]
+    # indentation types and languages
+    new_config["INDENTATION_TYPES"] = {
+        "2": {"text": "2 spaces", "indent": 2, "indentWithTabs": False},
+        "3": {"text": "3 spaces", "indent": 3, "indentWithTabs": False},
+        "4": {"text": "4 spaces", "indent": 4, "indentWithTabs": False},
+        "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
+    }
+    new_config["LANGUAGES"] = available_languages
+    new_config["IS_TOS_DEFINED"] = "PRIVACY_PAGE" in new_config and "TERMS_PAGE" in new_config
 
-def get_path(*path_parts):
-    """
-    :param path_parts: List of elements in the path to be separated by slashes
-    """
-    lti_session_id = flask.session.id if flask.session.is_lti else None
-    path_parts = (get_homepath(), ) + path_parts
-    if lti_session_id:
-        query_delimiter = '&' if path_parts and '?' in path_parts[-1] else '?'
-        return "/".join(path_parts) + f"{query_delimiter}session_id={lti_session_id}"
-    return "/".join(path_parts)
-
+    return new_config
 
 def _close_app(client):
     """ Ensures that the app is properly closed """
     client.close()
     disconnect()
-
 
 def get_app(config):
     """
@@ -125,7 +128,7 @@ def get_app(config):
     config = _put_configuration_defaults(config)
 
     # Init database
-    connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
+    connect(config['MONGO_OPT'].get('database', 'INGInious'), host=config['MONGO_OPT'].get('host', 'localhost'), tz_aware=True)
 
     # Fetch or init DB version
     db_version = DBVersion.objects(db_version__exists=True).first() or DBVersion().save()
@@ -137,29 +140,18 @@ def get_app(config):
     flask_app.config.from_mapping(**config)
 
     # config.get('SESSION_PERMANENT', True)
-    flask_app.session_interface = MongoDBSessionInterface(config.get('SESSION_USE_SIGNER', False), True)
+    flask_app.session_interface = MongoDBSessionInterface(config['SESSION_USE_SIGNER'], True)
 
-    # available indentation types
-    available_indentation_types = {
-        "2": {"text": "2 spaces", "indent": 2, "indentWithTabs": False},
-        "3": {"text": "3 spaces", "indent": 3, "indentWithTabs": False},
-        "4": {"text": "4 spaces", "indent": 4, "indentWithTabs": False},
-        "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
-    }
-
-    default_allowed_file_extensions = config['allowed_file_extensions']
-    default_max_file_size = config['max_file_size']
-
-    zmq_context, __ = start_asyncio_and_zmq(config.get('debug_asyncio', False))
+    zmq_context, __ = start_asyncio_and_zmq(config['DEBUG_ASYNCIO'])
 
     # Add the "agent types" inside the frontend, to allow loading tasks and managing envs
     register_base_env_types()
 
     # Create the FS provider
-    if "fs" in config:
-        fs_provider = filesystem_from_config_dict(config["fs"])
+    if "FS" in config:
+        fs_provider = filesystem_from_config_dict(config["FS"])
     else:
-        task_directory = config["tasks_directory"]
+        task_directory = config["TASKS_DIRECTORY"]
         fs_provider = LocalFSProvider(task_directory)
 
     init_fs_provider(fs_provider)
@@ -169,7 +161,7 @@ def get_app(config):
 
     register_problem_types(get_default_displayable_problem_types())
 
-    user_manager = UserManager(config.get('superadmins', []))
+    user_manager = UserManager(config['SUPERADMINS'])
 
     client = create_arch(config, zmq_context)
 
@@ -177,8 +169,6 @@ def get_app(config):
                             "1.3": LTIGradeManager(user_manager)}
 
     submission_manager = WebAppSubmissionManager(client, user_manager, lti_score_publishers)
-
-    is_tos_defined = config.get("privacy_page", "") and config.get("terms_page", "")
 
     # Init web mail
     mail.init_app(flask_app)
@@ -188,24 +178,18 @@ def get_app(config):
     flask_app.jinja_env.globals["_"] = gettext
     flask_app.jinja_env.globals["str"] = str
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
-    flask_app.jinja_env.globals["use_minified"] = config.get('use_minified_js', True)
-    flask_app.jinja_env.globals["available_languages"] = available_languages
-    flask_app.jinja_env.globals["available_indentation_types"] = available_indentation_types
-    flask_app.jinja_env.globals["get_homepath"] = get_homepath
-    flask_app.jinja_env.globals["get_path"] = get_path
     flask_app.jinja_env.globals["pkg_version"] = __version__
-    flask_app.jinja_env.globals["allow_registration"] = config.get("allow_registration", True)
-    flask_app.jinja_env.globals["allow_deletion"] = config.get("allow_deletion", True)
-    flask_app.jinja_env.globals["sentry_io_url"] = config.get("sentry_io_url")
     flask_app.jinja_env.globals["user_manager"] = user_manager
-    flask_app.jinja_env.globals["default_allowed_file_extensions"] = default_allowed_file_extensions
-    flask_app.jinja_env.globals["default_max_file_size"] = default_max_file_size
-    flask_app.jinja_env.globals["is_tos_defined"] = is_tos_defined
-    flask_app.jinja_env.globals["privacy_page"] = config.get("privacy_page", None)
 
     @flask_app.context_processor
     def context_processor():
         return dict(plugin_manager.call_hook("template_helper"))
+
+    @flask_app.url_defaults
+    def add_lti_session_id(endpoint, values):
+        if flask.session.is_lti:
+            key = "lti_session_id" if endpoint in ["ltibindpage", "lti1.3bindpage"] else "session_id"
+            values.setdefault(key, flask.session.id)
 
     # Not found page
     def flask_not_found(e):
@@ -218,41 +202,27 @@ def get_app(config):
     flask_app.register_error_handler(403, flask_forbidden)
 
     # Enable debug mode if needed
-    web_debug = config.get('web_debug', False)
-    flask_app.debug = web_debug
-    oauthlib.set_debug(web_debug)
+    flask_app.debug = config['DEBUG']
+    oauthlib.set_debug(config['DEBUG'])
 
     def flask_internalerror(e):
         return flask.render_template("internalerror.html", message=e.description), 500
     flask_app.register_error_handler(InternalServerError, flask_internalerror)
 
     # Insert the needed singletons into the application, to allow pages to call them
-    flask_app.get_path = get_path
     flask_app.submission_manager = submission_manager
     flask_app.user_manager = user_manager
     flask_app.client = client
-    flask_app.default_allowed_file_extensions = default_allowed_file_extensions
-    flask_app.default_max_file_size = default_max_file_size
-    flask_app.webterm_link = config.get("webterm", None)
-    flask_app.allow_registration = config.get("allow_registration", True)
-    flask_app.allow_deletion = config.get("allow_deletion", True)
-    flask_app.available_languages = available_languages
-    flask_app.available_indentation_types = available_indentation_types
-    flask_app.welcome_page = config.get("welcome_page", None)
-    flask_app.terms_page = config.get("terms_page", None)
-    flask_app.privacy_page = config.get("privacy_page", None)
-    flask_app.static_directory = config.get("static_directory", "./static")
-    flask_app.webdav_host = config.get("webdav_host", None)
 
     # Init the mapping of the app
-    if config.get("maintenance", False):
+    if config["MAINTENANCE"]:
         init_flask_maintenance_mapping(flask_app)
         return flask_app.wsgi_app, lambda: None
     else:
         init_flask_mapping(flask_app)
 
     # Loads plugins
-    plugin_manager.load(client, flask_app, user_manager, submission_manager, config.get("plugins", []))
+    plugin_manager.load(client, flask_app, user_manager, submission_manager, config["PLUGINS"])
 
     # Start the inginious.backend
     client.start()

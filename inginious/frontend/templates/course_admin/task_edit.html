@@ -13,10 +13,10 @@
 {% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{get_path('course', course.get_id())}}">{{course.get_name(session.language)}}</a></li>
-            <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
+            <li class="breadcrumb-item"><a href="{{url_for('coursepage', courseid=course.get_id())}}">{{course.get_name(session.language)}}</a></li>
+            <li class="breadcrumb-item"><a href="{{url_for('courseredirect', courseid=course.get_id())}}" title="{{ _('Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
-	    <li class="breadcrumb-item"><a href="{{get_path('admin', course.get_id(), 'tasks') }}" title="{{ _('Tasks') }}" data-toggle="tooltip" data-placement="bottom">
+	    <li class="breadcrumb-item"><a href="{{url_for('coursetasklistpage', courseid=course.get_id()) }}" title="{{ _('Tasks') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-tasks"></i></a></li>
             <li class="breadcrumb-item active"><a href="#">{{ _("Edit task \"{}\"").format(taskid) }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
@@ -29,7 +29,7 @@
     <div class="pull-right">
         <div class="btn-group">
             <button class="btn btn-primary btn-success btn-sm task_edit_submit_button" type="button" onclick="studio_submit()"><i class="fa fa-save"></i> <div class="d-none d-sm-inline">{{ _("Save changes") }}</div></button>
-	    <a id="switch" class="btn-sm btn btn-info" href="{{get_path('course', course.get_id(), taskid)}}"><i class="fa fa-eye"></i> <div class="d-none d-sm-inline">{{ _("View task") }}</div></a>
+	    <a id="switch" class="btn-sm btn btn-info" href="{{url_for('taskpage', courseid=course.get_id(), taskid=taskid)}}"><i class="fa fa-eye"></i> <div class="d-none d-sm-inline">{{ _("View task") }}</div></a>
         </div>
     </div>
 </h2>

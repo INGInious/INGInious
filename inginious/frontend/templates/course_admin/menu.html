@@ -3,32 +3,32 @@
 
 <div class="list-group mb-3">
     {% if user_manager.has_admin_rights_on_course(course) %}
-    <a href="{{ get_path('admin', course.get_id(), 'settings') }}" class="list-group-item list-group-item-action {% if current == 'settings' %}active{% endif %}">
+    <a href="{{ url_for('coursesettingspage', courseid=course.get_id()) }}" class="list-group-item list-group-item-action {% if current == 'settings' %}active{% endif %}">
         <i class='fa fa-cogs fa-fw mr-2'></i>{{ _("Course settings") }}
     </a>
     {% endif %}
-    <a href="{{ get_path('admin', course.get_id(), 'stats') }}" class="list-group-item list-group-item-action {% if current == 'stats' %}active{% endif %}">
+    <a href="{{ url_for('coursestatisticspage', courseid=course.get_id()) }}" class="list-group-item list-group-item-action {% if current == 'stats' %}active{% endif %}">
         <i class='fa fa-area-chart fa-fw mr-2'></i>{{ _("Statistics") }}
     </a>
-    <a href="{{ get_path('admin', course.get_id(), 'students') }}" class="list-group-item list-group-item-action {% if current == 'students' %}active{% endif %}">
+    <a href="{{ url_for('coursestudentlistpage', courseid=course.get_id()) }}" class="list-group-item list-group-item-action {% if current == 'students' %}active{% endif %}">
         <i class='fa fa-user fa-fw mr-2'></i>{{ _("User management") }}
     </a>
     {% if user_manager.has_admin_rights_on_course(course) %}
-    <a href="{{ get_path('admin', course.get_id(), 'tasks') }}" class="list-group-item list-group-item-action {% if current == 'tasks' %}active{% endif %}">
+    <a href="{{ url_for('coursetasklistpage', courseid=course.get_id()) }}" class="list-group-item list-group-item-action {% if current == 'tasks' %}active{% endif %}">
         <i class='fa fa-tasks fa-fw mr-2'></i>{{ _("Tasks") }}
     </a>
     {% endif %}
-    <a href="{{ get_path('admin', course.get_id(), 'submissions') }}" class="list-group-item list-group-item-action {% if current == 'submissions' %}active{% endif %}">
+    <a href="{{ url_for('coursesubmissionspage', courseid=course.get_id()) }}" class="list-group-item list-group-item-action {% if current == 'submissions' %}active{% endif %}">
         <i class='fa fa-file-code-o fa-fw mr-2'></i>{{ _("Submissions") }}
     </a>
     {% if user_manager.has_admin_rights_on_course(course) %}
-    <a href="{{ get_path('admin', course.get_id(), 'danger') }}" class="list-group-item list-group-item-action list-group-item-danger {% if current == 'danger' %}active{% endif %}">
+    <a href="{{ url_for('coursedangerzonepage', courseid=course.get_id()) }}" class="list-group-item list-group-item-action list-group-item-danger {% if current == 'danger' %}active{% endif %}">
         <i class='fa fa-bomb fa-fw mr-2'></i>{{ _("Danger zone") }}
     </a>
     {% endif %}
 
     {% for link, name in plugin_manager.call_hook('course_admin_menu', course=course) %}
-        <a href="{{ get_path('admin', course.get_id(), link) }}" class="list-group-item list-group-item-action
+        <a href="{{ url_for(link, courseid=course.get_id()) }}" class="list-group-item list-group-item-action
         {% if current == link %}active{% endif %}">
             {{ name | safe }}
         </a>

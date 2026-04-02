@@ -63,11 +63,11 @@ def create_arch(configuration, context):
 
     logger = logging.getLogger("inginious.frontend")
 
-    backend_link = configuration.get("backend", "local")
+    backend_link = configuration["BACKEND"]
     if backend_link == "local":
         logger.info("Starting a simple arch (backend, docker-agent and mcq-agent) locally")
 
-        local_config = configuration.get("local-config", {})
+        local_config = configuration["LOCAL-CONFIG"]
         concurrency = local_config.get("concurrency", multiprocessing.cpu_count())
         debug_host = local_config.get("debug_host", None)
         debug_ports = local_config.get("debug_ports", None)
@@ -98,11 +98,6 @@ def create_arch(configuration, context):
         asyncio.ensure_future(_restart_on_cancel(logger, agent_docker))
         asyncio.ensure_future(_restart_on_cancel(logger, agent_mcq))
         asyncio.ensure_future(_restart_on_cancel(logger, backend))
-    elif backend_link in ["remote", "remote_manuel", "docker_machine"]: #old-style config
-        logger.error("Value '%s' for the 'backend' option is configuration.yaml is not supported anymore. \n"
-                     "Have a look at the 'update' section of the INGInious documentation in order to upgrade your configuration.yaml", backend_link)
-        exit(1)
-        return None #... pycharm returns a warning else :-(
     else:
         logger.info("Creating a client to backend at %s", backend_link)
         client = Client(context, backend_link)

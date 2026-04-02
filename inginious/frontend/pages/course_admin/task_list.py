@@ -139,4 +139,4 @@ class CourseTaskListPage(INGIniousAdminPage):
 
         return render_template("course_admin/task_list.html", course=course,
                                            task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,
-                                           tasks_errors=tasks_errors, validated=validated, webdav_host=self.webdav_host)
+                                           tasks_errors=tasks_errors, validated=validated)

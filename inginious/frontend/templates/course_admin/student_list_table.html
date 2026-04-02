@@ -22,9 +22,9 @@
                     </th>
                     <th>
                         <div class="btn-group btn-group-sm" role="group">
-                            <a href="{{get_path('admin', course.get_id(), 'students?csv_student')}}" class="btn btn-info"
+                            <a href="{{url_for('coursestudentlistpage', courseid=course.get_id(), csv_student='')}}" class="btn btn-info"
                                title="{{ _('Download CSV') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-table"></i></a>
-                            <a href="{{get_path('admin', course.get_id(), 'submissions')}}" class="btn btn-secondary"
+                            <a href="{{url_for('coursesubmissionspage', courseid=course.get_id())}}" class="btn btn-secondary"
                                title="{{ _('View  all submissions') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-files-o"></i></a>
                             {% if not is_staff and is_admin %}
                                 <button type="button" data-toggle="modal" data-username="all students" data-type="all" data-target="#remove_modal" class="btn btn-warning remove_user" title="{{ _('Unregister all') }}"><i class="fa fa-user-times"></i></button>
@@ -56,7 +56,7 @@
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
-                            <a href="{{get_path('admin', course.get_id(), 'student', user['username'])}}" class="btn btn-secondary" title="{{ _('View submissions') }}"
+                            <a href="{{url_for('coursestudentinfopage', courseid=course.get_id(), username=user['username'])}}" class="btn btn-secondary" title="{{ _('View submissions') }}"
                                data-toggle="tooltip" data-placement="bottom"><i class="fa fa-file-code-o fa-fw"></i></a>
                             {% if is_admin and not is_staff %}
                                 <button type="button" data-username="{{user['username']}}" data-type="single" data-toggle="modal" data-target="#remove_modal" class="btn btn-warning remove_user" title="Unregister"><i class="fa fa-user-times"></i></button>
