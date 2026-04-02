@@ -34,7 +34,7 @@
                         {% else %}
                             list-group-item-danger
                         {% endif %}"
-                        href="{{ get_path('course', submission['courseid'], submission['taskid']) }}">
+                        href="{{ url_for('taskpage', courseid=submission['courseid'], taskid=submission['taskid']) }}">
                         {{ submission['taskname'] }}
                     </a>
                 {% endfor %}
@@ -50,13 +50,13 @@
             </div>
         {% endif %}
         <div class="list-group">
-            <a class="list-group-item list-group-item-action list-group-item-info" href="{{ get_path('admin', course.get_id()) }}">
+            <a class="list-group-item list-group-item-action list-group-item-info" href="{{ url_for('courseredirect', courseid=course.get_id()) }}">
                 <i class="fa fa-user-secret fa-fw"></i>&nbsp; {{ _("Course administration") }}
             </a>
         </div>
     {% elif registered %}
         <div class="list-group">
-            <a class="list-group-item list-group-item-action list-group-item-info" href="{{ get_path('group', course.get_id()) }}">
+            <a class="list-group-item list-group-item-action list-group-item-info" href="{{ url_for('grouppage', courseid=course.get_id()) }}">
                 <i class="fa fa-group fa-fw"></i>&nbsp;
                 {% set mygroup = user_manager.get_course_user_group(course) %}
                 {% if mygroup and session.username in mygroup['students'] %}
@@ -80,7 +80,7 @@
             {{ _("Please enroll in the course to be able to submit answers to problems.") }}
         </div>
         <div class="list-group">
-            <a href="{{ get_path('register', course.get_id()) }}" class="list-group-item list-group-item-action list-group-item-info">
+            <a href="{{ url_for('courseregisterpage', courseid=course.get_id()) }}" class="list-group-item list-group-item-action list-group-item-info">
                 <i class="fa fa-sign-in fa-fw"></i>&nbsp; {{ _("Enroll in the course") }}
             </a>
         </div>
@@ -91,9 +91,9 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             {% if registered %}
-                <li class="breadcrumb-item"><a href="{{ get_path('mycourses') }}" title="{{ _('My courses') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('mycoursespage') }}" title="{{ _('My courses') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
             {% else %}
-                <li class="breadcrumb-item"><a href="{{ get_path('courselist') }}" title="{{ _('Course list') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('courselistpage') }}" title="{{ _('Course list') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-th-list"></i></a></li>
             {% endif %}
             <li class="breadcrumb-item active"><a href="#">{{ course.get_name(session.language) }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>

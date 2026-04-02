@@ -14,7 +14,7 @@ import random
 import time
 import flask
 
-from flask import session, redirect, Response, render_template
+from flask import current_app, session, redirect, Response, render_template
 from werkzeug.exceptions import NotFound, HTTPException
 
 from inginious.frontend.models import Submission
@@ -33,9 +33,6 @@ class BaseTaskPage(object):
         self.cp = calling_page
         self.submission_manager = self.cp.submission_manager
         self.user_manager = self.cp.user_manager
-        self.default_allowed_file_extensions = self.cp.default_allowed_file_extensions
-        self.default_max_file_size = self.cp.default_max_file_size
-        self.webterm_link = self.cp.webterm_link
 
     def preview_allowed(self, courseid, taskid):
         try:
@@ -58,7 +55,7 @@ class BaseTaskPage(object):
             self.user_manager.course_register_user(course, force=True)
 
         if not self.user_manager.course_is_open_to_user(course, username, is_LTI):
-            return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
+            return handle_course_unavailable(self.user_manager, course)
 
         try:
             task = course.get_task(taskid)
@@ -146,11 +143,11 @@ class BaseTaskPage(object):
 
             # Display the task itself
             return render_template("task.html", user_info=user_info, course=course, task=task,
-                                               submissions=submissions, students=students,
-                                               eval_submission=eval_submission, user_task=user_task,
-                                               previous_taskid=previous_taskid, next_taskid=next_taskid,
-                                               webterm_link=self.webterm_link, input_random_list=random_input_list,
-                                               visible_tags=visible_tags, pdict=pdict, is_input_list=is_input_list)
+                                   submissions=submissions, students=students,
+                                   eval_submission=eval_submission, user_task=user_task,
+                                   previous_taskid=previous_taskid, next_taskid=next_taskid,
+                                   input_random_list=random_input_list, visible_tags=visible_tags,
+                                   pdict=pdict, is_input_list=is_input_list)
 
     def POST(self, courseid, taskid, isLTI):
         """ POST a new submission """
@@ -158,7 +155,7 @@ class BaseTaskPage(object):
 
         course = Course.get(courseid)
         if not self.user_manager.course_is_open_to_user(course, username, isLTI):
-            return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
+            return handle_course_unavailable(self.user_manager, course)
 
         is_staff = self.user_manager.has_staff_rights_on_course(course, username)
         is_admin = self.user_manager.has_admin_rights_on_course(course, username)
@@ -200,7 +197,8 @@ class BaseTaskPage(object):
 
             task_input = task.adapt_input_for_backend(task_input)
 
-            if not task.input_is_consistent(task_input, self.default_allowed_file_extensions, self.default_max_file_size):
+            if not task.input_is_consistent(task_input, current_app.config.get('ALLOWED_FILE_EXTENSIONS'),
+                                            current_app.config.get('MAX_FILE_SIZE')):
                 return Response(content_type='application/json',
                                 response=json.dumps({
                                     "status": "error",  "title": _("Error"),
@@ -398,7 +396,7 @@ class TaskPageStaticDownload(INGIniousPage):
         try:
             course = Course.get(courseid)
             if not self.user_manager.course_is_open_to_user(course):
-                return handle_course_unavailable(self.cp.app.get_path, self.user_manager, course)
+                return handle_course_unavailable(self.user_manager, course)
 
             path_norm = posixpath.normpath(urllib.parse.unquote(path))
 

@@ -67,7 +67,7 @@ def init_flask_mapping(flask_app):
                            view_func=CourseRegisterPage.as_view('courseregisterpage'))
     flask_app.add_url_rule('/marketplace', view_func=MarketplacePage.as_view('marketplacepage'))
     flask_app.add_url_rule('/marketplace/<courseid>',
-                           view_func=MarketplaceCoursePage.as_view('marketplacetasksetpage'))
+                           view_func=MarketplaceCoursePage.as_view('marketplacecoursepage'))
     flask_app.add_url_rule('/course/<courseid>', view_func=CoursePage.as_view('coursepage'))
     flask_app.add_url_rule('/course/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage'))
     flask_app.add_url_rule('/course/<courseid>/<taskid>/<path:path>',
@@ -94,12 +94,12 @@ def init_flask_mapping(flask_app):
                            view_func=LTIAssetPage.as_view('ltiassetpage'))
 
     flask_app.add_url_rule('/lti1.3/oidc_login/<courseid>',
-                           view_func=LTI13OIDCLoginPage.as_view('lti13oidcloginpage'))
+                           view_func=LTI13OIDCLoginPage.as_view('lti1.3oidcloginpage'))
     flask_app.add_url_rule('/lti1.3/launch/<courseid>/<taskid>',
-                           view_func=LTI13LaunchPage.as_view('lti13launchpage'))
-    flask_app.add_url_rule('/lti1.3/jwks/<courseid>/<keyset_hash>', view_func=LTI13JWKSPage.as_view('lti13jwkspage'))
-    flask_app.add_url_rule('/lti1.3/bind', view_func=LTI13BindPage.as_view('lti13bindpage'))
-    flask_app.add_url_rule('/lti1.3/login', view_func=LTI13LoginPage.as_view('lti13loginpage'))
+                           view_func=LTI13LaunchPage.as_view('lti1.3launchpage'))
+    flask_app.add_url_rule('/lti1.3/jwks/<courseid>/<keyset_hash>', view_func=LTI13JWKSPage.as_view('lti1.3jwkspage'))
+    flask_app.add_url_rule('/lti1.3/bind', view_func=LTI13BindPage.as_view('lti1.3bindpage'))
+    flask_app.add_url_rule('/lti1.3/login', view_func=LTI13LoginPage.as_view('lti1.3loginpage'))
 
     flask_app.add_url_rule('/admin/<courseid>',
                            view_func=CourseRedirectPage.as_view('courseredirect'))

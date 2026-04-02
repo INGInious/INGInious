@@ -43,9 +43,9 @@
                         <label class="control-label">{{ _("Confirm password :") }} </label>
                         <input name="passwd2" type="password" class="form-control">
                     </div>
-                    {% if is_tos_defined %}
+                    {% if config.IS_TOS_DEFINED %}
                         <div class="col-sm-12 mt-sm-3">
-                            <input name="term_policy_check" type="checkbox"> {{ _("I have read the {a1start}Terms of service{a1end} and the {a2start}Privacy policy{a2end}.").format(a1start='<a href="/pages/'+ terms_page + '">', a1end='</a>', a2start='<a href="/pages/' + privacy_page + '">', a2end='</a>') | safe }}
+                            <input name="term_policy_check" type="checkbox"> {{ _("I have read the {a1start}Terms of service{a1end} and the {a2start}Privacy policy{a2end}.").format(a1start='<a href="/pages/'+ config.TERMS_PAGE + '">', a1end='</a>', a2start='<a href="/pages/' + config.PRIVACY_PAGE + '">', a2end='</a>') | safe }}
                         </div>
                     {% endif %}
                     <div class="col-sm-12"><br />

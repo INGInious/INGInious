@@ -13,58 +13,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="INGInious">
     <meta name="author" content="">
-    <link rel="icon" href="{{ get_homepath() }}/static/icons/favicon.ico">
-    <link rel="mask-icon" href="{{ get_homepath() }}/static/icons/wb.svg" color="#5E932E">
+    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+    <link rel="mask-icon" href="{{ url_for('static', filename='icons/wb.svg') }}" color="#5E932E">
 
     <title>{% block title %}{% endblock %} | INGInious</title>
 
     <!-- Bootstrap -->
     <!-- CSS -->
     {% if  _("__is_rtl") == "true"%}
-        <link href="{{get_homepath()}}/static/css/bootstrap-rtl.min.css?version=4.5.3" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/bootstrap-rtl.min.css', version='4.5.3') }}" rel="stylesheet">
         <!-- INGInious Style -->
-        <link href="{{get_homepath()}}/static/css/INGInious-rtl.css?version={{static_ver}}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/INGInious-rtl.css', version=static_ver) }}" rel="stylesheet">
     {% else %}
-        <link href="{{get_homepath()}}/static/css/bootstrap.min.css?version=4.5.3" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/bootstrap.min.css', version='4.5.3') }}" rel="stylesheet">
         <!-- INGInious Style -->
-        <link href="{{get_homepath()}}/static/css/INGInious.css?version={{static_ver}}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/INGInious.css', version=static_ver) }}" rel="stylesheet">
     {% endif %}
-    <link href="{{get_homepath()}}/static/css/bootstrap-datetimepicker.min.css?version=5.0.1" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css', version='5.0.1') }}" rel="stylesheet">
 
     <!-- Font Awesome -->
-    <link href="{{get_homepath()}}/static/css/font-awesome.min.css?version=4.7.0" rel="stylesheet">
-
-
+    <link href="{{ url_for('static', filename='css/font-awesome.min.css', version='4.7.0') }}" rel="stylesheet">
 
     <!-- Codemirror Style -->
-    <link href="{{get_homepath()}}/static/css/codemirror.css?version=5.26" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/codemirror.css', version='5.26') }}" rel="stylesheet">
 
     <!-- selectize -->
-    <link href="{{get_homepath()}}/static/css/selectize.css?version=0.13.0" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/selectize.css', version='0.13.0') }}" rel="stylesheet">
 
     <!-- Icons -->
-    <link rel="shortcut icon" href="{{get_homepath()}}/static/icons/favicon.ico">
-    <link rel="apple-touch-icon" sizes="57x57" href="{{get_homepath()}}/static/icons/apple-touch-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="{{get_homepath()}}/static/icons/apple-touch-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="{{get_homepath()}}/static/icons/apple-touch-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="{{get_homepath()}}/static/icons/apple-touch-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="{{get_homepath()}}/static/icons/apple-touch-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="{{get_homepath()}}/static/icons/apple-touch-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="{{get_homepath()}}/static/icons/apple-touch-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="{{get_homepath()}}/static/icons/apple-touch-icon-152x152.png">
-    <link rel="icon" type="image/png" href="{{get_homepath()}}/static/icons/favicon-196x196.png" sizes="196x196">
-    <link rel="icon" type="image/png" href="{{get_homepath()}}/static/icons/favicon-160x160.png" sizes="160x160">
-    <link rel="icon" type="image/png" href="{{get_homepath()}}/static/icons/favicon-96x96.png" sizes="96x96">
-    <link rel="icon" type="image/png" href="{{get_homepath()}}/static/icons/favicon-16x16.png" sizes="16x16">
-    <link rel="icon" type="image/png" href="{{get_homepath()}}/static/icons/favicon-32x32.png" sizes="32x32">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="57x57" href="{{ url_for('static', filename='icons/apple-touch-icon-57x57.png') }}">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='icons/apple-touch-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" sizes="72x72" href="{{ url_for('static', filename='icons/apple-touch-icon-72x72.png') }}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='icons/apple-touch-icon-144x144.png') }}">
+    <link rel="apple-touch-icon" sizes="60x60" href="{{ url_for('static', filename='icons/apple-touch-icon-60x60.png') }}">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='icons/apple-touch-icon-120x120.png') }}">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('static', filename='icons/apple-touch-icon-76x76.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='icons/apple-touch-icon-152x152.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon-196x196.png') }}" sizes="196x196">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon-160x160.png') }}" sizes="160x160">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon-96x96.png') }}" sizes="96x96">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon-16x16.png') }}" sizes="16x16">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon-32x32.png') }}" sizes="32x32">
     <meta name="msapplication-TileColor" content="#00a300">
-    <meta name="msapplication-TileImage" content="{{get_homepath()}}/static/icons/mstile-144x144.png">
-    <meta name="msapplication-config" content="{{get_homepath()}}/static/icons/browserconfig.xml">
+    <meta name="msapplication-TileImage" content="{{ url_for('static', filename='icons/mstile-144x144.png') }}">
+    <meta name="msapplication-config" content="{{ url_for('static', filename='icons/browserconfig.xml') }}">
 
-    {% if sentry_io_url %}
-    <script src="{{get_homepath()}}/static/js/libs/sentry-io-bundle.min.js?version=5.4.3" type="text/javascript" charset="utf-8"></script>
+    {% if config.SENTRY_IO_URL %}
+    <script src="{{ url_for('static', filename='js/libs/sentry-io-bundle.min.js', version='5.4.3') }}" type="text/javascript" charset="utf-8"></script>
     <script>
-        Sentry.init({ dsn: "{{sentry_io_url}}" });
+        Sentry.init({ dsn: "{{config.SENTRY_IO_URL}}" });
         {% if user_manager is defined and session.loggedin %}
             Sentry.configureScope(function(scope) {
                 scope.setUser({
@@ -76,43 +74,43 @@
     </script>
     {% endif %}
 
-    {% if use_minified %}
+    {% if config.USE_MINIFIED_JS %}
         {% if  _("__is_rtl") == "true"%}
-            <script src="{{get_homepath()}}/static/js/all-minified-rtl.js?version={{static_ver}}"></script>
+            <script src="{{ url_for('static', filename='js/all-minified-rtl.js', version=static_ver) }}"></script>
         {% else %}
-            <script src="{{get_homepath()}}/static/js/all-minified.js?version={{static_ver}}"></script>
+            <script src="{{ url_for('static', filename='js/all-minified.js', version=static_ver) }}"></script>
         {% endif %}
     {% else %}
-    <script src="{{get_homepath()}}/static/js/libs/jquery.min.js?version=3.3.1" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/jquery.form.min.js?version=3.51.0" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/codemirror/codemirror.min.js?version=5.65.21" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/codemirror/mode/meta.js?version=5.26" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/popper.min.js?version=1.14.4" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/moment.min.js?version=2.30.1" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/moment-timezone-with-data.min.js?version=0.6.0" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/jquery.min.js', version='3.3.1') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/jquery.form.min.js', version='3.51.0') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/codemirror/codemirror.min.js',version='5.65.21') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/codemirror/mode/meta.js', version='5.26') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/popper.min.js', version='1.14.4') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/moment.min.js', version='2.30.1') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/moment-timezone-with-data.min.js', version='0.6.0') }}" type="text/javascript" charset="utf-8"></script>
     {% if  _("__is_rtl") == "true"%}
-        <script src="{{ get_homepath() }}/static/js/libs/bootstrap-rtl.min.js?version=4.5.3" type="text/javascript" charset="utf-8"></script>
+        <script src="{{ url_for('static', filename='js/libs/bootstrap-rtl.min.js', version='4.5.3') }}" type="text/javascript" charset="utf-8"></script>
     {% else %}
-        <script src="{{get_homepath()}}/static/js/libs/bootstrap.min.js?version=4.5.3" type="text/javascript" charset="utf-8"></script>
+        <script src="{{ url_for('static', filename='js/libs/bootstrap.min.js', version='4.5.3') }}" type="text/javascript" charset="utf-8"></script>
     {% endif %}
-    <script src="{{get_homepath()}}/static/js/libs/bootstrap-datetimepicker.min.js?version=5.0.1" type="text/javascript" charset="utf-8"></script>
-    <script src='{{get_homepath()}}/static/js/libs/Sortable.min.js?version=1.10.2' type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/jquery.twbsPagination.min.js?version=1.4.2" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/libs/selectize.min.js?version=0.13.0" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/checked-list-group.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/common.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/task.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/webapp.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/studio.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/audiences.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/groups.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/task_dispensers.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/admin.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{get_homepath()}}/static/js/mycourses.js?version={{static_ver}}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/bootstrap-datetimepicker.min.js', version='5.0.1') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/Sortable.min.js', version='1.10.2') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/jquery.twbsPagination.min.js', version='1.4.2') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/libs/selectize.min.js', version='0.13.0') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/checked-list-group.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/common.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/task.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/webapp.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/studio.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/audiences.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/groups.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/task_dispensers.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/admin.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/mycourses.js', version=static_ver) }}" type="text/javascript" charset="utf-8"></script>
     {% endif %}
 
     <script type="text/javascript">
-        CodeMirror.modeURL = "{{get_homepath()}}/static/js/codemirror/mode/%N/%N.js";
+        CodeMirror.modeURL = "{{ url_for('static', filename='js/codemirror/mode') }}/%N/%N.js";
     </script>
 
     {% for entry in plugin_manager.call_hook("css") %}
@@ -130,8 +128,8 @@
 <body class="sidebar-state-0">
     <div class="row" id="inginious-top">
         <div id="inginious-sidebar-top" class="col">
-            <a id="inginious-logo" class="col" href="{{ get_path('index' if not session.is_lti else '#') }}">
-                <div id="inginious-logo-text"><img src="{{get_homepath()}}/static/images/header.png" alt="logo"/> INGInious</div>
+            <a id="inginious-logo" class="col" href="{{ url_for('indexpage') if not session.is_lti else '#' }}">
+                <div id="inginious-logo-text"><img src="{{ url_for('static', filename='images/header.png') }}" alt="logo"/> INGInious</div>
             </a>
             <button class="col" onclick="$('body').toggleClass('sidebar-state-0'); $('body').toggleClass('sidebar-state-1');" id="inginious-sidebar-toggle" title="{{ _('Open menu') }}"><i class="fa fa-bars fa-fw"></i></button>
         </div>
@@ -154,40 +152,40 @@
                                     <i class="fa fa-shield fa-fw"></i> {{ _("Administration") }} <span class="caret"></span>
                                 </a>
                                 <div class="collapse list-group-collapse" id="collapseAdministratorMenu">
-                                    <a class="list-group-item list-group-item-action" href="{{ get_path('administrator', 'users') }}"><i class="fa fa-users fa-fw"></i> {{ _("Users") }}</a>
-                                    <a class="list-group-item list-group-item-action" href="{{ get_path('marketplace') }}"><i class="fa fa-shopping-bag fa-fw"></i> {{ _("Marketplace") }}</a>
+                                    <a class="list-group-item list-group-item-action" href="{{ url_for('administrationuserspage') }}"><i class="fa fa-users fa-fw"></i> {{ _("Users") }}</a>
+                                    <a class="list-group-item list-group-item-action" href="{{ url_for('marketplacepage') }}"><i class="fa fa-shopping-bag fa-fw"></i> {{ _("Marketplace") }}</a>
                                 </div>
                             {% endif %}
-                            <a class="list-group-item list-group-item-action" href="{{ get_path('courselist') }}"><i class="fa fa-th-list fa-fw"></i> {{ _("Course list") }}</a>
+                            <a class="list-group-item list-group-item-action" href="{{ url_for('courselistpage')  }}"><i class="fa fa-th-list fa-fw"></i> {{ _("Course list") }}</a>
                             <a class="list-group-item list-group-item-action dropdown-toggle" data-toggle="collapse" href="#collapseUserMenu" role="button" aria-expanded="false" aria-controls="collapseUserMenu">
                                 <i class="fa fa-user fa-fw"></i> {{ session.realname }} <span class="caret"></span>
                             </a>
                             <div class="collapse list-group-collapse" id="collapseUserMenu">
-                                <a class="list-group-item list-group-item-action" href="{{ get_path('mycourses') }}"><i class="fa fa-th-list fa-fw"></i> {{ _("My courses") }}</a>
-                                <a class="list-group-item list-group-item-action" href="{{ get_path('preferences') }}"><i class="fa fa-gears fa-fw"></i> {{ _("Preferences") }}</a>
-                                <a class="list-group-item list-group-item-action" href="{{ get_path('queue') }}"><i class="fa fa-dashboard fa-fw"></i> {{ _("Service status") }}</a>
-                                <a class="list-group-item list-group-item-action" href="{{ get_path('logout') }}" id="logoff_button"><i class="fa fa-sign-out"></i> {{ _("Log out") }}</a>
+                                <a class="list-group-item list-group-item-action" href="{{ url_for('mycoursespage') }}"><i class="fa fa-th-list fa-fw"></i> {{ _("My courses") }}</a>
+                                <a class="list-group-item list-group-item-action" href="{{ url_for('prefredirectpage') }}"><i class="fa fa-gears fa-fw"></i> {{ _("Preferences") }}</a>
+                                <a class="list-group-item list-group-item-action" href="{{ url_for('queuepage') }}"><i class="fa fa-dashboard fa-fw"></i> {{ _("Service status") }}</a>
+                                <a class="list-group-item list-group-item-action" href="{{ url_for('logoutpage') }}" id="logoff_button"><i class="fa fa-sign-out"></i> {{ _("Log out") }}</a>
                             </div>
                         {% else %}
                             <a class="list-group-item list-group-item-action dropdown-toggle" data-toggle="collapse" href="#collapseLang" role="button" aria-expanded="false" aria-controls="collapseLang">
                                 <i class="fa fa-globe fa-fw"></i> {{ _("English") }} <span class="caret"></span>
                             </a>
                             <div class="collapse list-group-collapse" id="collapseLang">
-                                {% for code, language in available_languages.items() %}
+                                {% for code, language in config.LANGUAGES.items() %}
                                     <a href="?lang={{code}}" class="list-group-item list-group-item-action"><i class="fa fa-chevron-right fa-fw"></i> {{ code }} ({{ language }})</a>
                                 {% endfor %}
                             </div>
 
-                            <a class="list-group-item list-group-item-action" href="{{ get_path('courselist') }}">
+                            <a class="list-group-item list-group-item-action" href="{{ url_for('courselistpage') }}">
                                 <i class="fa fa-th-list fa-fw"></i> {{ _("Course list") }}
                             </a>
 
-                            {% if allow_registration %}
-                                <a class="list-group-item list-group-item-action" href="{{ get_path('register') }}">
+                            {% if config.ALLOW_REGISTRATION %}
+                                <a class="list-group-item list-group-item-action" href="{{ url_for('registrationpage') }}">
                                     <i class="fa fa-pencil fa-fw"></i> {{ _("Register") }}
                                 </a>
                             {% endif %}
-                            <a class="list-group-item list-group-item-action" href="{{ get_path('signin') }}">
+                            <a class="list-group-item list-group-item-action" href="{{ url_for('signinpage') }}">
                                 <i class="fa fa-sign-in fa-fw"></i> {{ _("Sign in") }}
                             </a>
                         {% endif %}
@@ -211,8 +209,8 @@
                         {{ _("INGInious is distributed under AGPL license") }}
                     </a>
                 {% endif %}
-                {% if is_tos_defined %}
-                    - <a href="/pages/{{ privacy_page }}">{{ _("Privacy Policy") }}</a>
+                {% if config.IS_TOS_DEFINED %}
+                    - <a href="/pages/{{ config.PRIVACY_PAGE }}">{{ _("Privacy Policy") }}</a>
                 {% endif %}
             </div>
         </div>
@@ -224,7 +222,7 @@
         <script src="{{ entry }}" type='text/javascript' charset='utf-8'></script>
     {% endfor %}
     <script>
-        user_indentation_type = {{ available_indentation_types[session.code_indentation] | tojson }};
+        user_indentation_type = {{ config.INDENTATION_TYPES[session.code_indentation] | tojson }};
         dtf = new Intl.DateTimeFormat({{ session.language | tojson }}, {
         dateStyle: "short",
         timeStyle: "medium",

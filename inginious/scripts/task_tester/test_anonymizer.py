@@ -125,7 +125,6 @@ mongo_opt:
   database: INGInious
   host: localhost
 session_parameters:
-  ignore_change_ip: false
   secret_key: e2248350925fdedd7259fb52847232effbf1a10610fsgsdfgsdfgsdfgsdfgsdfg
   secure: false
   timeout: 86400

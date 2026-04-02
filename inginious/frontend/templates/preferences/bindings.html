@@ -12,7 +12,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a href="{{ get_path('preferences') }}" title="{{ _('Preferences') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-gears"></i></a>
+                <a href="{{ url_for('prefredirectpage') }}" title="{{ _('Preferences') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-gears"></i></a>
             </li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-id-card-o"></i> {{ _("Authentication bindings") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
         </ol>
@@ -43,7 +43,7 @@
             <div class="card-header">
                 {{ auth_method.get_name() }}
                 <div class="pull-right">
-                    <a href="{{ get_path('auth', 'signin', auth_method.get_id()) }}" data-toggle="tooltip" data-placement="bottom" title="{{ _('Refresh fields') }}"><i class="fa fa-refresh fa-fw"></i></a>
+                    <a href="{{ url_for('authenticationpage', auth_id=auth_method.get_id()) }}" data-toggle="tooltip" data-placement="bottom" title="{{ _('Refresh fields') }}"><i class="fa fa-refresh fa-fw"></i></a>
                     <a href="#" onclick="$('#revoke_auth_binding').val('{{auth_method.get_id()}}'); $('#revoke').submit()" data-toggle="tooltip" data-placement="bottom" title="{{ _('Revoke access') }}">
                         <i style="color:red;" class="fa fa-trash-o fa-fw"></i>
                     </a>

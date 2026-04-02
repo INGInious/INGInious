@@ -15,13 +15,13 @@
             </div>
             {% endif %}
 
-            {% if allow_registration %}
+            {% if config.ALLOW_REGISTRATION %}
             <form role="form" method="post">
                 <div class="form-group">
                     <label>{{ _("Username") }} </label> <input type="text" class="form-control" name="login" placeholder="{{_('Username')}}" tabindex="1">
                 </div>
                 <div class="form-group">
-                    <label>{{ _("Password") }} <a href="{{get_path('register#lostpasswd')}}" tabindex="4">{{_("Lost password?")}}</a></label> <input type="password" class="form-control" name="password" placeholder="{{_('Password')}}" tabindex="2">
+                    <label>{{ _("Password") }} <a href="{{url_for('registrationpage', _anchor='lostpasswd')}}" tabindex="4">{{_("Lost password?")}}</a></label> <input type="password" class="form-control" name="password" placeholder="{{_('Password')}}" tabindex="2">
                 </div>
                 <button type="submit" class="btn btn-primary btn-block" tabindex="3">{{_("Sign in")}}</button>
             </form>
@@ -35,7 +35,7 @@
             {% set loop_info.on_line = (loop_info.remaining, 4) | min %}
 
             {% if loop_info.remaining %}
-            {% if allow_registration %}<hr/> {% endif %}
+            {% if config.ALLOW_REGISTRATION %}<hr/> {% endif %}
             <h5 class="center-block text-center"> {{_("Sign in with")}}</h5>
             {% endif %}
 
@@ -47,7 +47,7 @@
                 {% endif %}
 
                 <div class="col-md-{{(12/loop_info.on_line) | int}} text-center">
-                    <a href="{{get_path('auth', 'signin', auth_method.get_id())}}">
+                    <a href="{{url_for('authenticationpage', auth_id=auth_method.get_id())}}">
                         {{ auth_method.get_imlink() | safe}}
                     </a>
                 </div>

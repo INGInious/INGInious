@@ -36,7 +36,7 @@
                         {% else %}
                             list-group-item-danger
                         {% endif %}"
-                        href="{{ get_path('course', submission['courseid'], submission['taskid']) }}">
+                        href="{{ url_for('taskpage', courseid=submission['courseid'], taskid=submission['taskid']) }}">
                         <b>{{ course.get_name(session.language) }}</b>: {{ submission["task"].get_name(session.language) }}
                     </a>
                 {% endif %}
@@ -71,7 +71,7 @@
                     <div class="card m-2">
                         <div class="card-body course_card">
                             <h5 class="card-title">
-                                <a class="pin_title" href="{{ get_path('course', courseid) }}">
+                                <a class="pin_title" href="{{ url_for('coursepage', courseid=courseid) }}">
                                     {% if courseid in pinned_courses %}
                                         <button type="button" class="btn course_pin pinned_card" data-course-id="{{courseid}}" onclick="course_pin.call(this, event)">
                                             <i class="fa fa-star text-warning"></i>
@@ -111,7 +111,7 @@
                 {%if open_courses %}
                     {% set username = session.username %}
                     {% for courseid, course in open_courses.items() %}
-                        <a href="{{ get_path('course', courseid) }}" data-course-id="{{courseid}}" class="course_item list-group-item list-group-item-action
+                        <a href="{{ url_for('coursepage', courseid=courseid) }}" data-course-id="{{courseid}}" class="course_item list-group-item list-group-item-action
                             {% if course.is_lti() %}
                                 list-group-item-info
                             {% elif course.is_archive() %}

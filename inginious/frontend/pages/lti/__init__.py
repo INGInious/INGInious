@@ -5,7 +5,7 @@
 
 """ LTI """
 
-from flask import redirect, request, render_template, session
+from flask import  redirect, request, render_template, session, url_for
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.courses import Course
@@ -43,8 +43,8 @@ class LTIAssetPage(INGIniousAuthPage):
         data = session.lti
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
-        (courseid, _) = data['task']
-        return redirect(self.app.get_path("course", courseid, asset_url))
+        (courseid, taskid) = data['task']
+        return redirect(url_for("taskpagestaticdownload", courseid=courseid, taskid=taskid, path=asset_url))
 
 
 class LTIBindPage(INGIniousAuthPage):
@@ -142,7 +142,7 @@ class LTILoginPage(INGIniousPage):
             self.user_manager.connect_user(user_profile)
 
         if session.loggedin:
-            return redirect(self.app.get_path("lti", "task"))
+            return redirect(url_for("ltitaskpage"))
 
         return render_template("lti/login.html", lti_version=self._lti_version)
 

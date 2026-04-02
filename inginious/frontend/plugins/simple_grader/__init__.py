@@ -7,7 +7,7 @@
 import json
 import re
 import flask
-from flask import Response
+from flask import current_app, Response
 
 from inginious.frontend.courses import Course
 from inginious.client.client_buffer import ClientBuffer
@@ -86,7 +86,8 @@ def init(plugin_manager, client, config):
                     response.response = [json.dumps({"status": "error", "status_message": "Cannot open task"})]
                     return response
 
-                if not task.input_is_consistent(task_input, self.default_allowed_file_extensions, self.default_max_file_size):
+                if not task.input_is_consistent(task_input, current_app.config.get('ALLOWED_FILE_EXTENSIONS'),
+                                                current_app.config.get('MAX_FILE_SIZE')):
                     response.response = [json.dumps({"status": "error", "status_message": "Input is not consistent with the task"})]
                     return response
 

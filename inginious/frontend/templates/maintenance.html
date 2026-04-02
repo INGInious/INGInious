@@ -4,7 +4,7 @@
 {% extends "layout.html" %}
 {% block title %}Maintenance{% endblock %}
 {% block content %}
-    <img src="{{ get_homepath() }}/static/images/logo_maintenance.png" style="margin:auto; display:block;"/>
+    <img src="{{ url_for('static', filename='images/logo_maintenance.png') }}" style="margin:auto; display:block;"/>
     <div class="alert alert-danger" role="alert" style="text-align: center;">
         {{ _("<b>This INGInious instance is currently under maintenance.</b> Please come back in a few minutes!") | safe }}
     </div>

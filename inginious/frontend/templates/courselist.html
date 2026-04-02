@@ -12,7 +12,7 @@
             {{ _("This page lists all the courses that are available now. If you are a course administrator, go to your 'My courses' page to see all of them.") }}
         </div>
         <div class="list-group">
-            <a class="list-group-item list-group-item-action list-group-item-info" href="{{get_path('mycourses')}}">
+            <a class="list-group-item list-group-item-action list-group-item-info" href="{{url_for('mycoursespage')}}">
                 <i class="fa fa-fw fa-th-list"></i>
                 {{ _("My courses") }}
             </a>
@@ -49,7 +49,7 @@
                             </a>
                         {% endif %}
                     {% else %}
-                        <a href="{{ get_path('course', courseid) }}">{{course.get_name(session.language)}}</a>
+                        <a href="{{ url_for('coursepage', courseid=courseid) }}">{{course.get_name(session.language)}}</a>
                     {% endif %}
                 </h5>
                 <div class="card-text card-trunc">
