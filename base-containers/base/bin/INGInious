@@ -20,6 +20,16 @@ import asyncio
 import struct
 import zmq
 import zmq.asyncio
+import pydevd_pycharm
+
+
+pydevd_pycharm.settrace(
+    'host.docker.internal',
+    port=5678,
+    stdout_to_server=True,
+    stderr_to_server=True,
+    suspend=False
+)
 
 
 ELF_MAGIC = b"\x7F\x45\x4C\x46"

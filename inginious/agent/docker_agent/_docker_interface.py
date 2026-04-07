@@ -132,6 +132,9 @@ class DockerInterface(object):  # pragma: no cover
         if ports is None:
             ports = {}
 
+        # Let the container listen on port 5678 for remote debugging
+        ports["5678/tcp"] = None
+
         nofile_limit = Ulimit(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
 
         response = self._docker.containers.create(
@@ -143,6 +146,7 @@ class DockerInterface(object):  # pragma: no cover
             oom_kill_disable=True,
             network_mode=("bridge" if (network_grading or len(ports) > 0) else 'none'),
             ports=ports,
+            extra_hosts={"host.docker.internal": "host-gateway"},
             volumes={
                 task_path: {'bind': '/task'},
                 sockets_path: {'bind': '/sockets'},
