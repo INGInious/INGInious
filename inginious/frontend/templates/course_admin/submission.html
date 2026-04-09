@@ -146,7 +146,7 @@
 var problems_types = {{ pdict | safe }};
 
 $(document).ready(function() {
-    loadOldSubmissionInput("{{submission.id}}", false);
+    loadOldSubmissionInput("{{submission.id}}");
     waitForSubmission("{{submission.id}}");
 });
 </script>
