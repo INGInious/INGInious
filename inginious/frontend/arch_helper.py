@@ -71,6 +71,7 @@ def create_arch(configuration, context):
         concurrency = local_config.get("concurrency", multiprocessing.cpu_count())
         debug_host = local_config.get("debug_host", None)
         debug_ports = local_config.get("debug_ports", None)
+        debugger = local_config.get("debugger", False)
         tmp_dir = local_config.get("tmp_dir", "./agent_tmp")
 
         if debug_ports is not None:
@@ -92,7 +93,7 @@ def create_arch(configuration, context):
 
         client = Client(context, "inproc://backend_client")
         backend = Backend(context, "inproc://backend_agent", "inproc://backend_client")
-        agent_docker = DockerAgent(context, "inproc://backend_agent", "Docker - Local agent", concurrency, debug_host, debug_ports, tmp_dir, ssh_allowed=True)
+        agent_docker = DockerAgent(context, "inproc://backend_agent", "Docker - Local agent", concurrency, debug_host, debug_ports, debugger, tmp_dir, ssh_allowed=True)
         agent_mcq = MCQAgent(context, "inproc://backend_agent", "MCQ - Local agent", 1)
 
         asyncio.ensure_future(_restart_on_cancel(logger, agent_docker))

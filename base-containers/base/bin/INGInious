@@ -23,13 +23,15 @@ import zmq.asyncio
 import pydevd_pycharm
 
 
-pydevd_pycharm.settrace(
-    'host.docker.internal',
-    port=5678,
-    stdout_to_server=True,
-    stderr_to_server=True,
-    suspend=False
-)
+if os.environ["DEBUGGER"] == "True":
+    print("Starting in debug mode, waiting for pycharm to connect...")
+    pydevd_pycharm.settrace(
+        'host.docker.internal',
+        port=5678,
+        stdout_to_server=True,
+        stderr_to_server=True,
+        suspend=False
+    )
 
 
 ELF_MAGIC = b"\x7F\x45\x4C\x46"
