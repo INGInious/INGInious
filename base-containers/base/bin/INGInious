@@ -25,13 +25,16 @@ import pydevd_pycharm
 
 if os.environ["DEBUGGER"] == "True":
     print("Starting in debug mode, waiting for pycharm to connect...")
-    pydevd_pycharm.settrace(
-        'host.docker.internal',
-        port=5678,
-        stdout_to_server=True,
-        stderr_to_server=True,
-        suspend=False
-    )
+    try:
+        pydevd_pycharm.settrace(
+            'host.docker.internal',
+            port=5678,
+            stdout_to_server=True,
+            stderr_to_server=True,
+            suspend=False
+        )
+    except Exception as e:
+        print("Failed to connect to pycharm debugger: {}".format(e))
 
 
 ELF_MAGIC = b"\x7F\x45\x4C\x46"
