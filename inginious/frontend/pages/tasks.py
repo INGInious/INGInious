@@ -349,6 +349,10 @@ class BaseTaskPage(object):
             tojson["status"] = 'ok'
             # And also include input
             tojson["input"] = data.get_input()
+            # filter-out values for files to avoid useless traffic
+            for key, input_data in tojson["input"].items():
+                if isinstance(input_data, dict):
+                    input_data["value"] = ""
 
         if "tests" in data:
             tojson["tests"] = {}
