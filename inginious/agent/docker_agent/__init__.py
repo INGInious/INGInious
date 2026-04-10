@@ -64,7 +64,7 @@ class DockerRunningStudentContainer:
 
 class DockerAgent(Agent):
     def __init__(self, context, backend_addr, friendly_name, concurrency,
-                 address_host=None, external_ports=None, tmp_dir="./agent_tmp", runtimes=None, ssh_allowed=False):
+                 address_host=None, external_ports=None, debugger=False, tmp_dir="./agent_tmp", runtimes=None, ssh_allowed=False):
         """
         :param context: ZeroMQ context for this process
         :param backend_addr: address of the backend (for example, "tcp://127.0.0.1:2222")
@@ -93,6 +93,9 @@ class DockerAgent(Agent):
         # SSH remote debug
         self._address_host = address_host
         self._external_ports = set(external_ports) if external_ports is not None else set()
+
+        # IDE debugging for grading containers
+        self._debugger = debugger
 
         # Async proxy to os
         self._aos = AsyncProxy(os)
@@ -289,7 +292,7 @@ class DockerAgent(Agent):
         environment_name = message.environment
 
         try:
-            enable_network = message.environment_parameters.get("network_grading", False)
+            enable_network = message.environment_parameters.get("network_grading", False) or self._debugger
             limits = message.environment_parameters.get("limits", {})
             time_limit = int(limits.get("time", 30))
             hard_time_limit = int(limits.get("hard_time", None) or time_limit * 3)
@@ -387,7 +390,7 @@ class DockerAgent(Agent):
 
         # Run the container
         try:
-            container_id = self._docker.sync.create_container(environment, enable_network, mem_limit, task_path,
+            container_id = self._docker.sync.create_container(environment, enable_network, self._debugger, mem_limit, task_path,
                                                               sockets_path, course_common_path,
                                                               course_common_student_path,
                                                               self.__get_fd_limit(), runtime,
@@ -887,6 +890,9 @@ class DockerAgent(Agent):
                 # Get logs back
                 try:
                     return_value = await info.future_results
+
+                    if return_value is None:
+                        raise Exception("Grading container did not return any result.")
 
                     # Accepted types for return dict
                     accepted_types = {"stdout": str, "stderr": str, "result": str, "text": str, "grade": float,
