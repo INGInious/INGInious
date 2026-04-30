@@ -293,7 +293,7 @@ class Installer:
             "Docker for macOS?", True)
         if (response):
             self._display_info("If you use docker-machine on macOS, please see "
-                               "http://inginious.readthedocs.io/en/latest/install_doc/troubleshooting.html")
+                               "https://docs.inginious.org/en/latest/admin_doc/install_doc/troubleshooting.html#solving-problems-hangs-on-os-x-with-docker-machine-or-virtualbox-to-run-docker")
             return "local"
         else:
             self._display_info(
