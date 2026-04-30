@@ -9,7 +9,7 @@
     value="{{ current_users | join(',') }}"
 />
 <script type="text/javascript">
-    {% set path = url_for('searchuserpage', courseid=courseid, request='') %}
+    {% set path = url_for('searchuserpage', courseid=course.get_id(), request='') %}
 
     let current_users_{{ name }} = [
         {% for x, y in user_manager.get_users_info(current_users).items() %}
