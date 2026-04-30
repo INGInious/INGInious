@@ -3289,7 +3289,7 @@ msgstr "Temps d'expiration (en secondes, temps CPU)"
 #: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:11
 msgid "Hard timeout limit (in seconds) <small>Default to 3*timeout</small>"
 msgstr ""
-"Temps d'éxpiration (en seconde, temps total) <small>3 fois le temps CPU par "
+"Temps d'expiration (en seconde, temps total) <small>3 fois le temps CPU par "
 "défaut</small>"
 
 #: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:18
