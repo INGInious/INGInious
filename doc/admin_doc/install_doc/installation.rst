@@ -76,7 +76,7 @@ You can now start and enable the ``mongod`` and ``docker`` services:
     # systemctl enable mongod
     # systemctl start docker
     # systemctl enable docker
-    
+
 Ubuntu 22.04+
 `````````````
 
@@ -144,7 +144,9 @@ We use brew_ to install some packages. Packages are certainly available too via 
 
 ::
 
-    $ brew install mongodb
+    $ brew tap mongodb/brew
+    $ brew update
+    $ brew install mongodb-community
     $ brew install python3
 
 Follow the instruction of brew to enable mongodb.
@@ -230,12 +232,12 @@ To configure the web app automatically, use the ``inginious-install`` CLI.
 
     $ inginious-install
 
-This will help you create the configuration file in the current directory. 
+This will help you create the configuration file in the current directory.
 When asked about the tasks folder, enter an absolute folder: /var/www/inginious/tasks .
 Similarly, when asked about the backup folder, enter an absolute folder: /var/www/inginious/backup .
 
 For manual configuration and details, see
-:ref:`ConfigReference`. 
+:ref:`ConfigReference`.
 In particular, make sure to add smtp configuration into your `configuration.yaml` file, since INGInious must send email during new user registration.
 
 The detailed ``inginious-install`` reference can be found at :ref:`inginious-install`.
@@ -421,12 +423,12 @@ to an empty string in addition to the rewrite rule.
 
 .. note::
 
-   The Default configuration doesn't optimize Inginious for performance, please refer to 
+   The Default configuration doesn't optimize Inginious for performance, please refer to
    https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_Performance for more about performance optimising
    you may also change 'max-procs' and append "PHP_FCGI_CHILDREN" => "someValue" inside "bin-environment"
    for more about these values check https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_PerformanceFastCGI
- 
-   
+
+
 Finally, start the server:
 
 ::
@@ -625,11 +627,11 @@ All of them should be in status "active (running)".
 4  Check that wsgi is installed:
 
     # source /etc/apache2/envvars
-    # apache2 -M 
+    # apache2 -M
 
 The last line should be "wsgi_module (shared)".
 
-    # apache2 -S 
+    # apache2 -S
 
 There should be two lines under `VirtualHost configuration:` referring to `inginious.conf`.
 
