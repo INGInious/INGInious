@@ -20,90 +20,95 @@ from inginious.frontend.task_problems import get_default_displayable_problem_typ
 from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 
-task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.get_id(): CombinatoryTest}
+task_dispensers = {
+    TableOfContents.get_id(): TableOfContents,
+    CombinatoryTest.get_id(): CombinatoryTest,
+}
 
 
 @pytest.fixture()
 def ressource(request):
     register_base_env_types()
     dir_path = tempfile.mkdtemp()
-    init_fs_provider(LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks')))
+    init_fs_provider(LocalFSProvider(os.path.join(os.path.dirname(__file__), "tasks")))
     register_problem_types(get_default_displayable_problem_types())
     register_task_dispenser(TableOfContents)
     register_task_dispenser(CombinatoryTest)
     yield dir_path
-    c = Course("test",
-               {
-                   "name": "Unit test 1", "admins": ["testadmin1","testadmin2"],
-                   "accessible": True
-               })
+    c = Course(
+        "test",
+        {
+            "name": "Unit test 1",
+            "admins": ["testadmin1", "testadmin2"],
+            "accessible": True,
+        },
+    )
     c.save()
     shutil.rmtree(dir_path)
 
 
 class TestCourse(object):
-
     def test_course_loading(self, ressource):
         """Tests if a course file loads correctly"""
         print("\033[1m-> common-courses: course loading\033[0m")
-        c = Course.get('test')
-        assert c.get_id() == 'test'
-        assert c._content['accessible'] == True
-        assert c._content['admins'] == ['testadmin1', 'testadmin2']
-        assert c._content['name'] == 'Unit test 1'
+        c = Course.get("test")
+        assert c.get_id() == "test"
+        assert c._content["accessible"] == True
+        assert c._content["admins"] == ["testadmin1", "testadmin2"]
+        assert c._content["name"] == "Unit test 1"
 
-        c = Course.get('test2')
-        assert c.get_id() == 'test2'
-        assert c._content['accessible'] == '1970-01-01/2033-01-01'
-        assert c._content['admins'] == ['testadmin1']
-        assert c._content['name'] == 'Unit test 2'
+        c = Course.get("test2")
+        assert c.get_id() == "test2"
+        assert c._content["accessible"] == "1970-01-01/2033-01-01"
+        assert c._content["admins"] == ["testadmin1"]
+        assert c._content["name"] == "Unit test 2"
 
-        c = Course.get('test3')
-        assert c.get_id() == 'test3'
-        assert c._content['accessible'] == '1970-01-01/1970-12-31'
-        assert c._content['admins'] == ['testadmin1', 'testadmin2']
-        assert c._content['name'] == 'Unit test 3'
+        c = Course.get("test3")
+        assert c.get_id() == "test3"
+        assert c._content["accessible"] == "1970-01-01/1970-12-31"
+        assert c._content["admins"] == ["testadmin1", "testadmin2"]
+        assert c._content["name"] == "Unit test 3"
 
     def test_invalid_coursename(self, ressource):
         try:
-            Course.get('invalid/name')
+            Course.get("invalid/name")
         except:
             return
         assert False
 
     def test_unreadable_course(self, ressource):
         try:
-            Course.get('invalid_course')
+            Course.get("invalid_course")
         except:
             return
         assert False
 
     def test_all_courses_loading(self, ressource):
-        '''Tests if all courses are loaded by Course.get_all_courses()'''
+        """Tests if all courses are loaded by Course.get_all_courses()"""
         print("\033[1m-> common-courses: all courses loading\033[0m")
         c = Course.get_all()
-        assert 'test' in c
-        assert 'test2' in c
-        assert 'test3' in c
+        assert "test" in c
+        assert "test2" in c
+        assert "test3" in c
 
     def test_tasks_loading(self, ressource):
-        '''Tests loading tasks from the get_tasks method'''
+        """Tests loading tasks from the get_tasks method"""
         print("\033[1m-> common-courses: course tasks loading\033[0m")
-        c = Course.get('test')
+        c = Course.get("test")
         t = c.get_tasks()
-        assert 'task1' in t
-        assert 'task2' in t
-        assert 'task3' in t
-        assert 'task4' in t
+        assert "task1" in t
+        assert "task2" in t
+        assert "task3" in t
+        assert "task4" in t
 
     def test_tasks_loading_invalid(self, ressource):
-        c = Course.get('test3')
+        c = Course.get("test3")
         t = c.get_tasks()
         assert t == {}
 
 
 class TestCourseWrite(object):
-    """ Test the course update function """
+    """Test the course update function"""
 
     def test_course_update(self, ressource):
         temp_dir = ressource
@@ -114,10 +119,19 @@ class TestCourseWrite(object):
                 admins: ["a"]
                 accessible: "1970-01-01/2033-01-01"
                         """)
-        assert dict(Course.get("test").get_descriptor()) != {"name": "a", "admins": ["a"],
-                                                                                    "accessible": "1970-01-01/2033-01-01"}
+        assert dict(Course.get("test").get_descriptor()) != {
+            "name": "a",
+            "admins": ["a"],
+            "accessible": "1970-01-01/2033-01-01",
+        }
 
-        Course("test", {"name": "b", "admins": ["b"],"accessible": "1970-01-01/2030-01-01"}).save()
+        Course(
+            "test",
+            {"name": "b", "admins": ["b"], "accessible": "1970-01-01/2030-01-01"},
+        ).save()
 
-        assert dict(Course.get("test").get_descriptor()) == {"name": "b", "admins": ["b"],
-                                                                              "accessible": "1970-01-01/2030-01-01"}
+        assert dict(Course.get("test").get_descriptor()) == {
+            "name": "b",
+            "admins": ["b"],
+            "accessible": "1970-01-01/2030-01-01",
+        }

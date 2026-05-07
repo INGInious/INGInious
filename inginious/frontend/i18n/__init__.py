@@ -10,9 +10,15 @@ import builtins
 from flask import session
 from inginious import get_root_path
 
+
 def gettext(text):
     language = session.language if flask.has_app_context() else ""
-    return _translations.get(language, _gettext.NullTranslations()).gettext(text) if text else ""
+    return (
+        _translations.get(language, _gettext.NullTranslations()).gettext(text)
+        if text
+        else ""
+    )
+
 
 _available_translations = {
     "de": "Deutsch",
@@ -23,16 +29,20 @@ _available_translations = {
     "nl": "Nederlands",
     "nb_NO": "Norsk (bokmål)",
     "pt": "Português",
-    "vi": "Tiếng Việt"
+    "vi": "Tiếng Việt",
 }
 
 available_languages = {"en": "English"}
 available_languages.update(_available_translations)
 
-_translations = {"en": _gettext.NullTranslations()} # English does not need translation ;-)
+_translations = {
+    "en": _gettext.NullTranslations()
+}  # English does not need translation ;-)
 for lang in _available_translations.keys():
-    _translations[lang] = _gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
+    _translations[lang] = _gettext.translation(
+        "messages", get_root_path() + "/frontend/i18n", [lang]
+    )
 
 # Define _ builtin but better to explicitly import using:
 # from inginious.frontend.i18n import gettext as _
-builtins.__dict__['_'] = gettext
+builtins.__dict__["_"] = gettext

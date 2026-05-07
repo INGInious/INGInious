@@ -4,12 +4,12 @@ from heapq import heappush, heappop
 
 class TopicPriorityQueue:
     """
-        A simple queue which supports getting elements by topics.
+    A simple queue which supports getting elements by topics.
 
-        Uses python heaps behind the scenes, and thus maintains a natural ordering:
-        the lowest element is returned first.
+    Uses python heaps behind the scenes, and thus maintains a natural ordering:
+    the lowest element is returned first.
 
-        See the heapq library for more details.
+    See the heapq library for more details.
     """
 
     def __init__(self):
@@ -50,7 +50,11 @@ class TopicPriorityQueue:
         best_topic = None
         best_elem = None
         for topic in topics:
-            if topic in self.queues and len(self.queues[topic]) != 0 and (best_elem is None or best_elem > self.queues[topic][0]):
+            if (
+                topic in self.queues
+                and len(self.queues[topic]) != 0
+                and (best_elem is None or best_elem > self.queues[topic][0])
+            ):
                 best_topic = topic
                 best_elem = self.queues[topic][0]
         if best_topic is None:

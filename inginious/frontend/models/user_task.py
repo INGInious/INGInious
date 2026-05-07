@@ -5,13 +5,26 @@
 
 from datetime import datetime, timedelta
 
-from mongoengine import Document, EmbeddedDocument, StringField, FloatField, ObjectIdField
-from mongoengine import IntField, ListField, DateTimeField, BooleanField, EmbeddedDocumentField
+from mongoengine import (
+    Document,
+    EmbeddedDocument,
+    StringField,
+    FloatField,
+    ObjectIdField,
+)
+from mongoengine import (
+    IntField,
+    ListField,
+    DateTimeField,
+    BooleanField,
+    EmbeddedDocumentField,
+)
 
 
 class Tokens(EmbeddedDocument):
     amount = IntField(required=True, default=0)
     date = DateTimeField(default=datetime.fromtimestamp(0).astimezone())
+
 
 class UserTask(Document):
     courseid = StringField(required=True)
@@ -22,7 +35,7 @@ class UserTask(Document):
     succeeded = BooleanField(required=True, default=False)
     tried = IntField(required=True, default=0)
     random = ListField(FloatField(), default=[])
-    tokens = EmbeddedDocumentField(Tokens, default=lambda : Tokens())
+    tokens = EmbeddedDocumentField(Tokens, default=lambda: Tokens())
     state = StringField(required=True, default="")
 
     def reset_state(self):
@@ -34,9 +47,11 @@ class UserTask(Document):
         self.tokens.date = datetime.now().astimezone()
         self.save()
 
-    def check_tokens(self, submission_limit : dict):
+    def check_tokens(self, submission_limit: dict):
         tokens_ok = self.tokens.amount < submission_limit["amount"]
-        need_reset = self.tokens.date < datetime.now().astimezone() - timedelta(hours=submission_limit["period"])
+        need_reset = self.tokens.date < datetime.now().astimezone() - timedelta(
+            hours=submission_limit["period"]
+        )
 
         if submission_limit["period"] > 0 and need_reset:
             self.reset_tokens()
@@ -47,13 +62,10 @@ class UserTask(Document):
     meta = {
         "collection": "user_tasks",
         "indexes": [
-            {
-                "fields": ["username", "courseid", "taskid"],
-                "unique": True
-             },
+            {"fields": ["username", "courseid", "taskid"], "unique": True},
             ("username", "courseid"),
             ("courseid", "taskid"),
             "courseid",
-            "username"
-        ]
+            "username",
+        ],
     }

@@ -3,9 +3,10 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" A scoreboard, based on the usage of the "custom" dict in submissions.
-    It uses the key "score" to retrieve score from submissions
+"""A scoreboard, based on the usage of the "custom" dict in submissions.
+It uses the key "score" to retrieve score from submissions
 """
+
 import os
 
 from collections import OrderedDict
@@ -18,13 +19,14 @@ from inginious.frontend.models import Submission
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
+
 class ScoreBoardCourse(INGIniousAuthPage):
-    """ Page displaying the different available scoreboards for the course """
+    """Page displaying the different available scoreboards for the course"""
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         course = Course.get(courseid)
-        scoreboards = course.get_descriptor().get('scoreboard', [])
+        scoreboards = course.get_descriptor().get("scoreboard", [])
 
         try:
             names = {i: val["name"] for i, val in enumerate(scoreboards)}
@@ -43,22 +45,23 @@ def sort_func(overall_result_per_user, reverse):
         solved = overall_result_per_user[user]["solved"]
 
         return (-solved, (-score if not reverse else score))
+
     return sf
 
 
 class ScoreBoard(INGIniousAuthPage):
-    """ Page displaying a specific scoreboard """
+    """Page displaying a specific scoreboard"""
 
     def GET_AUTH(self, courseid, scoreboardid):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         course = Course.get(courseid)
-        scoreboards = course.get_descriptor().get('scoreboard', [])
+        scoreboards = course.get_descriptor().get("scoreboard", [])
 
         try:
             scoreboardid = int(scoreboardid)
             scoreboard_name = scoreboards[scoreboardid]["name"]
             scoreboard_content = scoreboards[scoreboardid]["content"]
-            scoreboard_reverse = bool(scoreboards[scoreboardid].get('reverse', False))
+            scoreboard_reverse = bool(scoreboards[scoreboardid].get("reverse", False))
         except:
             raise NotFound()
 
@@ -66,7 +69,9 @@ class ScoreBoard(INGIniousAuthPage):
         if isinstance(scoreboard_content, str):
             scoreboard_content = OrderedDict([(scoreboard_content, 1)])
         if isinstance(scoreboard_content, list):
-            scoreboard_content = OrderedDict([(entry, 1) for entry in scoreboard_content])
+            scoreboard_content = OrderedDict(
+                [(entry, 1) for entry in scoreboard_content]
+            )
         if not isinstance(scoreboard_content, OrderedDict):
             scoreboard_content = OrderedDict(iter(scoreboard_content.items()))
 
@@ -76,11 +81,14 @@ class ScoreBoard(INGIniousAuthPage):
             try:
                 task_names[taskid] = course.get_task(taskid).get_name(session.language)
             except:
-                raise NotFound(description="Unknown task id "+taskid)
+                raise NotFound(description="Unknown task id " + taskid)
 
         # Get all submissions
         results = Submission.objects(
-            courseid=courseid, taskid__in=list(scoreboard_content.keys()), custom__score__exists=True, result="success"
+            courseid=courseid,
+            taskid__in=list(scoreboard_content.keys()),
+            custom__score__exists=True,
+            result="success",
         ).only("taskid", "username", "custom__score")
 
         # Get best results per users(/group)
@@ -106,15 +114,25 @@ class ScoreBoard(INGIniousAuthPage):
 
             # keep the best score
             if submission["taskid"] not in result_per_user[submission["username"]]:
-                result_per_user[submission["username"]][submission["taskid"]] = new_score
+                result_per_user[submission["username"]][submission["taskid"]] = (
+                    new_score
+                )
             else:
-                current_score = result_per_user[submission["username"]][submission["taskid"]]
+                current_score = result_per_user[submission["username"]][
+                    submission["taskid"]
+                ]
 
-                task_reversed = scoreboard_reverse != (scoreboard_content[submission["taskid"]] < 0)
+                task_reversed = scoreboard_reverse != (
+                    scoreboard_content[submission["taskid"]] < 0
+                )
                 if task_reversed and current_score > new_score:
-                    result_per_user[submission["username"]][submission["taskid"]] = new_score
+                    result_per_user[submission["username"]][submission["taskid"]] = (
+                        new_score
+                    )
                 elif not task_reversed and current_score < new_score:
-                    result_per_user[submission["username"]][submission["taskid"]] = new_score
+                    result_per_user[submission["username"]][submission["taskid"]] = (
+                        new_score
+                    )
 
             for user in submission["username"]:
                 users.add(user)
@@ -131,11 +149,13 @@ class ScoreBoard(INGIniousAuthPage):
             solved = 0
             for taskid, coef in scoreboard_content.items():
                 if taskid in val:
-                    total += val[taskid]*coef
+                    total += val[taskid] * coef
                     solved += 1
             overall_result_per_user[key] = {"total": total, "solved": solved}
         sorted_users = list(overall_result_per_user.keys())
-        sorted_users = sorted(sorted_users, key=sort_func(overall_result_per_user, scoreboard_reverse))
+        sorted_users = sorted(
+            sorted_users, key=sort_func(overall_result_per_user, scoreboard_reverse)
+        )
 
         # Compute table
         table = []
@@ -145,7 +165,9 @@ class ScoreBoard(INGIniousAuthPage):
             header = ["", "Student(s)", "Score"]
             emphasized_columns = [2]
         else:
-            header = ["", "Student(s)", "Solved", "Total score"] + [task_names[taskid] for taskid in list(scoreboard_content.keys())]
+            header = ["", "Student(s)", "Solved", "Total score"] + [
+                task_names[taskid] for taskid in list(scoreboard_content.keys())
+            ]
             emphasized_columns = [2, 3]
 
         # Lines
@@ -154,15 +176,30 @@ class ScoreBoard(INGIniousAuthPage):
         for user in sorted_users:
             # Increment rank if needed, and display it
             line = []
-            if old_score != (overall_result_per_user[user]["solved"], overall_result_per_user[user]["total"]):
+            if old_score != (
+                overall_result_per_user[user]["solved"],
+                overall_result_per_user[user]["total"],
+            ):
                 rank += 1
-                old_score = (overall_result_per_user[user]["solved"], overall_result_per_user[user]["total"])
+                old_score = (
+                    overall_result_per_user[user]["solved"],
+                    overall_result_per_user[user]["total"],
+                )
                 line.append(rank)
             else:
                 line.append("")
 
             # Users
-            line.append(",".join(sorted([users_realname[u] if users_realname.get(u, '') else u for u in user])))
+            line.append(
+                ",".join(
+                    sorted(
+                        [
+                            users_realname[u] if users_realname.get(u, "") else u
+                            for u in user
+                        ]
+                    )
+                )
+            )
             if len(scoreboard_content) == 1:
                 line.append(overall_result_per_user[user]["total"])
             else:
@@ -173,14 +210,20 @@ class ScoreBoard(INGIniousAuthPage):
 
             table.append(line)
 
-        return render_template("scoreboard/scoreboard.html",
-                                           course=course, scoreboardid=scoreboardid, scoreboard_name=scoreboard_name,
-                                           header=header, table=table, emphasized_columns=emphasized_columns)
+        return render_template(
+            "scoreboard/scoreboard.html",
+            course=course,
+            scoreboardid=scoreboardid,
+            scoreboard_name=scoreboard_name,
+            header=header,
+            table=table,
+            emphasized_columns=emphasized_columns,
+        )
 
 
 def course_menu(course):
-    """ Displays the link to the scoreboards on the course page, if the plugin is activated for this course """
-    scoreboards = course.get_descriptor().get('scoreboard', [])
+    """Displays the link to the scoreboards on the course page, if the plugin is activated for this course"""
+    scoreboards = course.get_descriptor().get("scoreboard", [])
 
     if scoreboards != []:
         return render_template("scoreboard/course_menu.html", course=course)
@@ -189,8 +232,8 @@ def course_menu(course):
 
 
 def task_menu(course, task):
-    """ Displays the link to the scoreboards on the task page, if the plugin is activated for this course and the task is used in scoreboards """
-    scoreboards = course.get_descriptor().get('scoreboard', [])
+    """Displays the link to the scoreboards on the task page, if the plugin is activated for this course and the task is used in scoreboards"""
+    scoreboards = course.get_descriptor().get("scoreboard", [])
     try:
         tolink = []
         for sid, scoreboard in enumerate(scoreboards):
@@ -198,7 +241,9 @@ def task_menu(course, task):
                 tolink.append((sid, scoreboard["name"]))
 
         if tolink:
-            return render_template("scoreboard/task_menu.html", course=course, links=tolink)
+            return render_template(
+                "scoreboard/task_menu.html", course=course, links=tolink
+            )
         return None
     except:
         return None
@@ -206,26 +251,30 @@ def task_menu(course, task):
 
 def init(plugin_manager, client, config):
     """
-        Init the plugin.
-        Available configuration in configuration.yaml:
-        ::
+    Init the plugin.
+    Available configuration in configuration.yaml:
+    ::
 
-            - plugin_module: "inginious.frontend.plugins.scoreboard"
+        - plugin_module: "inginious.frontend.plugins.scoreboard"
 
-        Available configuration in course.yaml:
-        ::
+    Available configuration in course.yaml:
+    ::
 
-            scoreboard: #you can define multiple scoreboards
-                - content: "taskid1" #creates a scoreboard for taskid1
-                  name: "Scoreboard task 1"
-                - content: ["taskid2", "taskid3"] #creates a scoreboard for taskid2 and taskid3 (sum of both score is taken as overall score)
-                  name: "Scoreboard for task 2 and 3"
-                - content: {"taskid4": 2, "taskid5": 3} #creates a scoreboard where overall score is 2*score of taskid4 + 3*score of taskid5
-                  name: "Another scoreboard"
-                  reverse: True #reverse the score (less is better)
+        scoreboard: #you can define multiple scoreboards
+            - content: "taskid1" #creates a scoreboard for taskid1
+              name: "Scoreboard task 1"
+            - content: ["taskid2", "taskid3"] #creates a scoreboard for taskid2 and taskid3 (sum of both score is taken as overall score)
+              name: "Scoreboard for task 2 and 3"
+            - content: {"taskid4": 2, "taskid5": 3} #creates a scoreboard where overall score is 2*score of taskid4 + 3*score of taskid5
+              name: "Another scoreboard"
+              reverse: True #reverse the score (less is better)
     """
-    plugin_manager.add_page('/scoreboard/<courseid>', ScoreBoardCourse.as_view('scoreboardcourse'))
-    plugin_manager.add_page('/scoreboard/<courseid>/<scoreboardid>', ScoreBoard.as_view('scoreboard'))
-    plugin_manager.add_hook('course_menu', course_menu)
-    plugin_manager.add_hook('task_menu', task_menu)
+    plugin_manager.add_page(
+        "/scoreboard/<courseid>", ScoreBoardCourse.as_view("scoreboardcourse")
+    )
+    plugin_manager.add_page(
+        "/scoreboard/<courseid>/<scoreboardid>", ScoreBoard.as_view("scoreboard")
+    )
+    plugin_manager.add_hook("course_menu", course_menu)
+    plugin_manager.add_hook("task_menu", task_menu)
     plugin_manager.add_template_prefix("scoreboard", PATH_TO_PLUGIN)

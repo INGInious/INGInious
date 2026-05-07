@@ -4,7 +4,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Updates the database """
+"""Updates the database"""
+
 import json
 import os
 import bson
@@ -35,19 +36,23 @@ def get_config(configfile):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", help="Configuration file", default="")
-    parser.add_argument("-v", "--verbose", help="Display more output", action='store_true')
+    parser.add_argument(
+        "-v", "--verbose", help="Display more output", action="store_true"
+    )
     args = parser.parse_args()
 
     config = get_config(args.config)
 
-    mongo_client = MongoClient(host=config.get('mongo_opt', {}).get('host', 'localhost'))
-    database = mongo_client[config.get('mongo_opt', {}).get('database', 'INGInious')]
+    mongo_client = MongoClient(
+        host=config.get("mongo_opt", {}).get("host", "localhost")
+    )
+    database = mongo_client[config.get("mongo_opt", {}).get("database", "INGInious")]
     gridfs = GridFS(database)
 
     logger = logging.getLogger("inginious.db_update")
 
     db_version = database.db_version.find_one({})
-    db_version = db_version['db_version'] if db_version else 0
+    db_version = db_version["db_version"] if db_version else 0
 
     if db_version < 12:
         logger.info("Version prior to v0.4")
@@ -57,14 +62,14 @@ def main():
         print("Updating database to db_version 13")
         database.nonce.create_index(
             [("timestamp", pymongo.ASCENDING), ("nonce", pymongo.ASCENDING)],
-            unique=True
+            unique=True,
         )
         database.nonce.create_index("expiration", expireAfterSeconds=0)
         db_version = 13
 
     if db_version < 14:
         print("Updating database to db_version 14")
-        ss = database.submissions.find({},{"_id": 1, "input": 1})
+        ss = database.submissions.find({}, {"_id": 1, "input": 1})
         length = ss.count()
         index = 0
         for item in ss:
@@ -74,40 +79,62 @@ def main():
             try:
                 inp = item.get("input", {})
                 gridfs_id = None
-                if not isinstance(inp, dict): # retrieve from gridfs
+                if not isinstance(inp, dict):  # retrieve from gridfs
                     gridfs_id = inp
-                    inp = json.loads(gridfs.get(inp).read().decode('utf8'))
+                    inp = json.loads(gridfs.get(inp).read().decode("utf8"))
 
                 for key in inp.keys():
-                    if isinstance(inp[key], dict) and "value" in inp[key] and isinstance(inp[key]["value"], str):
+                    if (
+                        isinstance(inp[key], dict)
+                        and "value" in inp[key]
+                        and isinstance(inp[key]["value"], str)
+                    ):
                         inp[key]["value"] = base64.b64decode(inp[key]["value"])
 
                 new_id = gridfs.put(bson.BSON.encode(inp))
-                database.submissions.update_one({"_id": item["_id"]}, {"$set": {"input": new_id}})
+                database.submissions.update_one(
+                    {"_id": item["_id"]}, {"$set": {"input": new_id}}
+                )
                 if gridfs_id is not None:
                     gridfs.delete(gridfs_id)
             except Exception as ex:
-                print("!!! Exception for submission id {} : {}".format(item["_id"], str(ex)))
+                print(
+                    "!!! Exception for submission id {} : {}".format(
+                        item["_id"], str(ex)
+                    )
+                )
         db_version = 14
 
     if db_version < 15:
         print("Updating database to db_version 15")
         aggregations = database.aggregations.find({})
         for aggregation in aggregations:
-            audience = database.audiences.insert_one({"courseid": aggregation["courseid"],
-                                                         "description": aggregation["description"],
-                                                         "students": aggregation["students"],
-                                                         "tutors": aggregation["tutors"]})
+            audience = database.audiences.insert_one(
+                {
+                    "courseid": aggregation["courseid"],
+                    "description": aggregation["description"],
+                    "students": aggregation["students"],
+                    "tutors": aggregation["tutors"],
+                }
+            )
             audience_id = bson.ObjectId(audience.inserted_id)
 
-            database.courses.update_one({"_id": aggregation["courseid"]},
-                                                 {"$push": {"students": {"$each": aggregation["students"]}}},
-                                                 upsert=True)
+            database.courses.update_one(
+                {"_id": aggregation["courseid"]},
+                {"$push": {"students": {"$each": aggregation["students"]}}},
+                upsert=True,
+            )
             i = 1
             for group in aggregation["groups"]:
-                database.groups.insert_one({"courseid": aggregation["courseid"], "description": "Group # " + str(i),
-                                            "students": group["students"], "size": group["size"],
-                                            "audiences": [audience_id]})
+                database.groups.insert_one(
+                    {
+                        "courseid": aggregation["courseid"],
+                        "description": "Group # " + str(i),
+                        "students": group["students"],
+                        "size": group["size"],
+                        "audiences": [audience_id],
+                    }
+                )
                 i += 1
 
         db_version = 15
@@ -125,26 +152,42 @@ def main():
     if db_version < 18:
         print("Updating database to db_version 18")
         database.submissions.rename("old_submissions")
-        database.old_submissions.aggregate([
-            {"$set": {"submitted_on2": {"$dateToParts": {"date": "$submitted_on", "timezone": "UTC"}}}},
-            {"$set": {"submitted_on": {"$dateFromParts": {
-                "year": "$submitted_on2.year",
-                "month": "$submitted_on2.month",
-                "day": "$submitted_on2.day",
-                "hour": "$submitted_on2.hour",
-                "minute": "$submitted_on2.minute",
-                "second": "$submitted_on2.second",
-                "millisecond": "$submitted_on2.millisecond",
-                "timezone": tzlocal.get_localzone_name()
-            }}}},
-            {"$unset": "submitted_on2"},
-            {"$out": "submissions"}
-        ])
+        database.old_submissions.aggregate(
+            [
+                {
+                    "$set": {
+                        "submitted_on2": {
+                            "$dateToParts": {"date": "$submitted_on", "timezone": "UTC"}
+                        }
+                    }
+                },
+                {
+                    "$set": {
+                        "submitted_on": {
+                            "$dateFromParts": {
+                                "year": "$submitted_on2.year",
+                                "month": "$submitted_on2.month",
+                                "day": "$submitted_on2.day",
+                                "hour": "$submitted_on2.hour",
+                                "minute": "$submitted_on2.minute",
+                                "second": "$submitted_on2.second",
+                                "millisecond": "$submitted_on2.millisecond",
+                                "timezone": tzlocal.get_localzone_name(),
+                            }
+                        }
+                    }
+                },
+                {"$unset": "submitted_on2"},
+                {"$out": "submissions"},
+            ]
+        )
         database.old_submissions.drop()
         db_version = 18
 
-    database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
-        
+    database.db_version.update_one(
+        {}, {"$set": {"db_version": db_version}}, upsert=True
+    )
+
     print("Database up to date")
 
 

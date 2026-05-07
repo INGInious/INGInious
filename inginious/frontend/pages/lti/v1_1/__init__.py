@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" LTI v1.1 """
+"""LTI v1.1"""
 
 import flask
 import datetime
@@ -21,20 +21,24 @@ from inginious.frontend.courses import Course
 
 from inginious.frontend.models import Nonce, LTIData
 
+
 class LTIFlaskToolProvider(ToolProvider):
-    '''
+    """
     ToolProvider that works with Web.py requests
-    '''
+    """
 
     @classmethod
     def from_flask_request(cls, secret=None):
         params = flask.request.form.copy()
         headers = flask.request.headers.environ.copy()
 
-        headers = dict([(k, headers[k])
-                        for k in headers if
-                        k.upper().startswith('HTTP_') or
-                        k.upper().startswith('CONTENT_')])
+        headers = dict(
+            [
+                (k, headers[k])
+                for k in headers
+                if k.upper().startswith("HTTP_") or k.upper().startswith("CONTENT_")
+            ]
+        )
 
         url = flask.request.url
         return cls.from_unpacked_request(secret, params, url, headers)
@@ -58,7 +62,9 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
     def dummy_access_token(self):
         return ""  # Not used: validation works for all
 
-    def __init__(self, keys, nonce_validity=datetime.timedelta(minutes=10), debug=False):
+    def __init__(
+        self, keys, nonce_validity=datetime.timedelta(minutes=10), debug=False
+    ):
         """
         :param keys: dictionnary of allowed client keys, and their associated secret
         :param nonce_validity: timedelta representing the time during which a nonce is considered as valid
@@ -73,12 +79,22 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
     def validate_client_key(self, client_key, request):
         return client_key in self._keys
 
-    def validate_timestamp_and_nonce(self, client_key, timestamp, nonce, request, request_token=None, access_token=None):
+    def validate_timestamp_and_nonce(
+        self,
+        client_key,
+        timestamp,
+        nonce,
+        request,
+        request_token=None,
+        access_token=None,
+    ):
         try:
             date = datetime.datetime.fromtimestamp(int(timestamp)).astimezone()
-            Nonce(timestamp=date, nonce=nonce, expiration=date + self._nonce_validity).save()
+            Nonce(
+                timestamp=date, nonce=nonce, expiration=date + self._nonce_validity
+            ).save()
             return True
-        except ValueError: # invalid timestamp
+        except ValueError:  # invalid timestamp
             return False
         except NotUniqueError:
             return False
@@ -91,15 +107,16 @@ class LTI11LaunchPage(INGIniousPage):
     """
     Page called by the TC to start an LTI session on a given task
     """
-    endpoint = 'ltilaunchpage'
+
+    endpoint = "ltilaunchpage"
 
     def GET(self, courseid, taskid):
         raise MethodNotAllowed()
 
     def POST(self, courseid, taskid):
-        """ Verify and parse the data for the LTI basic launch """
+        """Verify and parse the data for the LTI basic launch"""
         post_input = flask.request.form
-        self.logger.debug('_parse_lti_data:' + str(post_input))
+        self.logger.debug("_parse_lti_data:" + str(post_input))
 
         try:
             course = Course.get(courseid)
@@ -111,12 +128,14 @@ class LTI11LaunchPage(INGIniousPage):
             validator = LTIValidator(course.lti_keys())
             verified = test.is_valid_request(validator)
         except Exception as ex:
-            self.logger.error("Error while parsing the LTI request : {}".format(str(post_input)))
+            self.logger.error(
+                "Error while parsing the LTI request : {}".format(str(post_input))
+            )
             self.logger.error("The exception caught was :  {}".format(str(ex)))
             raise Forbidden(description=_("Error while parsing the LTI request"))
 
         if verified:
-            self.logger.debug('parse_lit_data for %s', str(post_input))
+            self.logger.debug("parse_lit_data for %s", str(post_input))
             user_id = post_input["user_id"]
             roles = post_input.get("roles", "Student").split(",")
             realname = self._find_realname(post_input)
@@ -127,18 +146,24 @@ class LTI11LaunchPage(INGIniousPage):
 
             if course.lti_send_back_grade():
                 if lis_outcome_service_url is None or outcome_result_id is None:
-                    self.logger.info('Error: lis_outcome_service_url is None but lti_send_back_grade is True')
-                    raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
-                                        "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
+                    self.logger.info(
+                        "Error: lis_outcome_service_url is None but lti_send_back_grade is True"
+                    )
+                    raise Forbidden(
+                        description=_(
+                            "In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
+                            "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."
+                        )
+                    )
             else:
                 lis_outcome_service_url = None
                 outcome_result_id = None
 
-            tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
-            tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
-            tool_url = post_input.get('tool_consumer_instance_url', 'N/A')
-            context_title = post_input.get('context_title', 'N/A')
-            context_label = post_input.get('context_label', 'N/A')
+            tool_name = post_input.get("tool_consumer_instance_name", "N/A")
+            tool_desc = post_input.get("tool_consumer_instance_description", "N/A")
+            tool_url = post_input.get("tool_consumer_instance_url", "N/A")
+            context_title = post_input.get("context_title", "N/A")
+            context_label = post_input.get("context_label", "N/A")
 
             if not session.is_lti:
                 raise Exception("Not an LTI session")
@@ -158,7 +183,7 @@ class LTI11LaunchPage(INGIniousPage):
                 context_label=context_label,
                 tool_description=tool_desc,
                 tool_name=tool_name,
-                tool_url=tool_url
+                tool_url=tool_url,
             )
 
             return redirect(url_for("ltiloginpage"))
@@ -167,13 +192,19 @@ class LTI11LaunchPage(INGIniousPage):
             raise Forbidden(description=_("Couldn't validate LTI request"))
 
     def _find_realname(self, post_input):
-        """ Returns the most appropriate name to identify the user """
+        """Returns the most appropriate name to identify the user"""
 
         # First, try the full name
         if "lis_person_name_full" in post_input:
             return post_input["lis_person_name_full"]
-        if "lis_person_name_given" in post_input and "lis_person_name_family" in post_input:
-            return post_input["lis_person_name_given"] + post_input["lis_person_name_family"]
+        if (
+            "lis_person_name_given" in post_input
+            and "lis_person_name_family" in post_input
+        ):
+            return (
+                post_input["lis_person_name_given"]
+                + post_input["lis_person_name_family"]
+            )
 
         # Then the email
         if "lis_person_contact_email_primary" in post_input:

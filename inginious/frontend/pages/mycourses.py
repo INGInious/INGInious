@@ -3,7 +3,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Index page """
+"""Index page"""
+
 from collections import OrderedDict
 from flask import session, request, render_template
 from inginious.frontend.courses import Course
@@ -11,14 +12,14 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
 class MyCoursesPage(INGIniousAuthPage):
-    """ Index page """
+    """Index page"""
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
-        """ Display main course list page """
+        """Display main course list page"""
         return self.show_page(None)
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
-        """ Parse course registration or course creation and display the course list page """
+        """Parse course registration or course creation and display the course list page"""
 
         user_input = request.form
         success = None
@@ -32,7 +33,9 @@ class MyCoursesPage(INGIniousAuthPage):
                 success = False
         elif "pinning_courseid" in user_input:
             pinned_courses = self.user_manager.get_user_pinned_courses(session.username)
-            pinned_courses = [course for course in pinned_courses if course in Course.get_all()]
+            pinned_courses = [
+                course for course in pinned_courses if course in Course.get_all()
+            ]
 
             courseid = user_input["pinning_courseid"]
             if courseid not in pinned_courses:
@@ -44,11 +47,11 @@ class MyCoursesPage(INGIniousAuthPage):
                 course = Course.get(courseid)
                 pin_html_data = {
                     "courseid": courseid,
-                    "is_lti" : course.is_lti(),
-                    "lti_url" : course.lti_url(),
+                    "is_lti": course.is_lti(),
+                    "lti_url": course.lti_url(),
                     "name": course.get_name(session.language),
                     "path": self.app.get_path("course", courseid),
-                    "description": str(course.get_description(session.language))
+                    "description": str(course.get_description(session.language)),
                 }
                 return pin_html_data
             else:
@@ -58,39 +61,69 @@ class MyCoursesPage(INGIniousAuthPage):
         return self.show_page(success)
 
     def show_page(self, success):
-        """  Display main course list page """
+        """Display main course list page"""
         username = session.username
         user_info = self.user_manager.get_user_info(username)
 
         all_courses = Course.get_all()
 
         # Display
-        open_courses = {courseid: course for courseid, course in all_courses.items()
-                        if self.user_manager.course_is_open_to_user(course, username, False) and
-                        self.user_manager.course_is_user_registered(course, username)}
+        open_courses = {
+            courseid: course
+            for courseid, course in all_courses.items()
+            if self.user_manager.course_is_open_to_user(course, username, False)
+            and self.user_manager.course_is_user_registered(course, username)
+        }
 
-        open_courses = OrderedDict(sorted(iter(open_courses.items()), key=lambda x: x[1].get_name(session.language)))
-        pinned_courses_ids = [course for course in self.user_manager.get_user_pinned_courses(username) if course in open_courses]
-        pinned_courses = {courseid: Course.get(courseid) for courseid in pinned_courses_ids if courseid in open_courses}
+        open_courses = OrderedDict(
+            sorted(
+                iter(open_courses.items()),
+                key=lambda x: x[1].get_name(session.language),
+            )
+        )
+        pinned_courses_ids = [
+            course
+            for course in self.user_manager.get_user_pinned_courses(username)
+            if course in open_courses
+        ]
+        pinned_courses = {
+            courseid: Course.get(courseid)
+            for courseid in pinned_courses_ids
+            if courseid in open_courses
+        }
 
-        last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid__in": list(open_courses.keys())})
+        last_submissions = self.submission_manager.get_user_last_submissions(
+            5, {"courseid__in": list(open_courses.keys())}
+        )
         except_free_last_submissions = []
         for submission in last_submissions:
             try:
-                submission["task"] = open_courses[submission['courseid']].get_task(submission['taskid'])
+                submission["task"] = open_courses[submission["courseid"]].get_task(
+                    submission["taskid"]
+                )
                 except_free_last_submissions.append(submission)
             except:
                 pass
 
-        registerable_courses = {courseid: course for courseid, course in all_courses.items() if
-                                not self.user_manager.course_is_user_registered(course, username) and
-                                course.is_registration_possible(user_info)}
+        registerable_courses = {
+            courseid: course
+            for courseid, course in all_courses.items()
+            if not self.user_manager.course_is_user_registered(course, username)
+            and course.is_registration_possible(user_info)
+        }
 
-        registerable_courses = OrderedDict(sorted(iter(registerable_courses.items()), key=lambda x: x[1].get_name(session.language)))
+        registerable_courses = OrderedDict(
+            sorted(
+                iter(registerable_courses.items()),
+                key=lambda x: x[1].get_name(session.language),
+            )
+        )
 
-        return render_template("mycourses.html",
-                                           open_courses=open_courses,
-                                           pinned_courses=pinned_courses,
-                                           registrable_courses=registerable_courses,
-                                           submissions=except_free_last_submissions,
-                                           success=success)
+        return render_template(
+            "mycourses.html",
+            open_courses=open_courses,
+            pinned_courses=pinned_courses,
+            registrable_courses=registerable_courses,
+            submissions=except_free_last_submissions,
+            success=success,
+        )

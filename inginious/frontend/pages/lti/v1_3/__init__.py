@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" LTI v1.3 """
+"""LTI v1.3"""
 
 from flask import jsonify, redirect, session, url_for
 from werkzeug.exceptions import NotFound
@@ -19,7 +19,7 @@ from inginious.frontend.models import LTIData
 
 
 class LTI13JWKSPage(INGIniousPage):
-    endpoint = 'ltijwkspage'
+    endpoint = "ltijwkspage"
 
     def GET(self, courseid, keyset_hash):
         try:
@@ -30,31 +30,39 @@ class LTI13JWKSPage(INGIniousPage):
         lti_config = course.lti_config()
         for issuer in lti_config:
             for client_config in lti_config[issuer]:
-                if keyset_hash == course.lti_keyset_hash(issuer, client_config['client_id']):
+                if keyset_hash == course.lti_keyset_hash(
+                    issuer, client_config["client_id"]
+                ):
                     tool_conf = course.lti_tool()
-                    return jsonify(tool_conf.get_jwks(iss=issuer, client_id=client_config['client_id']))
+                    return jsonify(
+                        tool_conf.get_jwks(
+                            iss=issuer, client_id=client_config["client_id"]
+                        )
+                    )
 
         raise NotFound(description=_("Keyset not found"))
 
 
 class LTI13OIDCLoginPage(INGIniousPage):
-    endpoint = 'lti13oidcloginpage'
+    endpoint = "lti13oidcloginpage"
 
     def _handle_oidc_login_request(self, courseid):
-        """ Initiates the LTI 1.3 OIDC login. """
+        """Initiates the LTI 1.3 OIDC login."""
         try:
             course = Course.get(courseid)
         except exceptions.CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
         flask_request = FlaskRequest()
-        target_link_uri = flask_request.get_param('target_link_uri')
+        target_link_uri = flask_request.get_param("target_link_uri")
         if not target_link_uri:
             raise Exception('Missing "target_link_uri" param')
-        taskid = target_link_uri.split('/')[-1]
+        taskid = target_link_uri.split("/")[-1]
 
         launch_data_storage = MongoLTILaunchDataStorage(courseid, taskid)
-        oidc_login = FlaskOIDCLogin(flask_request, course.lti_tool(), launch_data_storage=launch_data_storage)
+        oidc_login = FlaskOIDCLogin(
+            flask_request, course.lti_tool(), launch_data_storage=launch_data_storage
+        )
         return oidc_login.enable_check_cookies().redirect(target_link_uri)
 
     def GET(self, courseid):
@@ -65,10 +73,10 @@ class LTI13OIDCLoginPage(INGIniousPage):
 
 
 class LTI13LaunchPage(INGIniousPage):
-    endpoint = 'lti13launchpage'
+    endpoint = "lti13launchpage"
 
     def _handle_message_launch(self, courseid, taskid):
-        """ Decrypt and process the LTI Launch message. """
+        """Decrypt and process the LTI Launch message."""
         try:
             course = Course.get(courseid)
         except exceptions.CourseNotFoundException as ex:
@@ -77,25 +85,37 @@ class LTI13LaunchPage(INGIniousPage):
         tool_conf = course.lti_tool()
         launch_data_storage = MongoLTILaunchDataStorage(courseid, taskid)
         flask_request = FlaskRequest()
-        message_launch = FlaskMessageLaunch(flask_request, tool_conf, launch_data_storage=launch_data_storage)
+        message_launch = FlaskMessageLaunch(
+            flask_request, tool_conf, launch_data_storage=launch_data_storage
+        )
 
         launch_id = message_launch.get_launch_id()
         launch_data = message_launch.get_launch_data()
 
-        user_id = launch_data['sub']
-        roles = launch_data['https://purl.imsglobal.org/spec/lti/claim/roles']
+        user_id = launch_data["sub"]
+        roles = launch_data["https://purl.imsglobal.org/spec/lti/claim/roles"]
         realname = self._find_realname(launch_data)
-        email = launch_data.get('email', '')
-        platform_instance_id = '/'.join([launch_data['iss'], message_launch.get_client_id(), launch_data['https://purl.imsglobal.org/spec/lti/claim/deployment_id']])
-        tool = launch_data.get('https://purl.imsglobal.org/spec/lti/claim/tool_platform', {})
-        tool_name = tool.get('name', 'N/A')
-        tool_desc = tool.get('description', 'N/A')
-        tool_url = tool.get('url', 'N/A')
-        context = launch_data['https://purl.imsglobal.org/spec/lti/claim/context']
-        context_title = context.get('context_title', 'N/A')
-        context_label = context.get('context_label', 'N/A')
+        email = launch_data.get("email", "")
+        platform_instance_id = "/".join(
+            [
+                launch_data["iss"],
+                message_launch.get_client_id(),
+                launch_data["https://purl.imsglobal.org/spec/lti/claim/deployment_id"],
+            ]
+        )
+        tool = launch_data.get(
+            "https://purl.imsglobal.org/spec/lti/claim/tool_platform", {}
+        )
+        tool_name = tool.get("name", "N/A")
+        tool_desc = tool.get("description", "N/A")
+        tool_url = tool.get("url", "N/A")
+        context = launch_data["https://purl.imsglobal.org/spec/lti/claim/context"]
+        context_title = context.get("context_title", "N/A")
+        context_label = context.get("context_label", "N/A")
 
-        auth_token_url = tool_conf.get_iss_config(iss=message_launch.get_iss(), client_id=message_launch.get_client_id()).get('auth_token_url')
+        auth_token_url = tool_conf.get_iss_config(
+            iss=message_launch.get_iss(), client_id=message_launch.get_client_id()
+        ).get("auth_token_url")
         can_report_grades = message_launch.has_ags() and auth_token_url
 
         if not session.is_lti:
@@ -103,19 +123,19 @@ class LTI13LaunchPage(INGIniousPage):
 
         session.loggedin = False
         session.lti = LTIData(
-            version = "1.3",
-            email =email,
-            username = user_id,
-            realname = realname,
-            roles = roles,
-            task = (courseid, taskid),
-            platform_instance_id = platform_instance_id,
-            message_launch_id = launch_id if can_report_grades else None,
-            context_title = context_title,
-            context_label = context_label,
-            tool_description = tool_desc,
-            tool_name = tool_name,
-            tool_url = tool_url,
+            version="1.3",
+            email=email,
+            username=user_id,
+            realname=realname,
+            roles=roles,
+            task=(courseid, taskid),
+            platform_instance_id=platform_instance_id,
+            message_launch_id=launch_id if can_report_grades else None,
+            context_title=context_title,
+            context_label=context_label,
+            tool_description=tool_desc,
+            tool_name=tool_name,
+            tool_url=tool_url,
         )
 
         return redirect(url_for("lti1.3loginpage"))
@@ -127,7 +147,7 @@ class LTI13LaunchPage(INGIniousPage):
         return self._handle_message_launch(courseid, taskid)
 
     def _find_realname(self, launch_data):
-        """ Returns the most appropriate name to identify the user """
+        """Returns the most appropriate name to identify the user"""
 
         # First, try the full name
         if "name" in launch_data:

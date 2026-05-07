@@ -24,7 +24,9 @@ class BetterParanoidPirateClient(object, metaclass=abc.ABCMeta):
     """
 
     def __init__(self, context, router_addr):
-        self._logger = logging.getLogger("inginious.zeromq")  # may be overridden by subclasses
+        self._logger = logging.getLogger(
+            "inginious.zeromq"
+        )  # may be overridden by subclasses
         self._context = context
         self._router_addr = router_addr
         self._socket = self._context.socket(zmq.DEALER)
@@ -33,7 +35,10 @@ class BetterParanoidPirateClient(object, metaclass=abc.ABCMeta):
 
         self._msgs_registered = {}
         self._msgs_registered_inv = {}
-        self._handlers_registered = {Pong: self._handle_pong, Unknown: self._handle_unknown}  # pylint: disable=no-member
+        self._handlers_registered = {
+            Pong: self._handle_pong,
+            Unknown: self._handle_unknown,
+        }  # pylint: disable=no-member
         self._transactions = {}
 
         self._restartable_tasks = []  # a list of asyncio task that should be closed each time the client restarts
@@ -48,7 +53,15 @@ class BetterParanoidPirateClient(object, metaclass=abc.ABCMeta):
         """
         self._handlers_registered[recv_msg] = coroutine_recv
 
-    def _register_transaction(self, send_msg, recv_msg, coroutine_recv, coroutine_abrt, get_key=None, inter_msg=None):
+    def _register_transaction(
+        self,
+        send_msg,
+        recv_msg,
+        coroutine_recv,
+        coroutine_abrt,
+        get_key=None,
+        inter_msg=None,
+    ):
         """
         Register a type of message to be sent.
         After this message has been sent, if the answer is received, callback_recv is called.
@@ -71,8 +84,20 @@ class BetterParanoidPirateClient(object, metaclass=abc.ABCMeta):
 
         # format is (other_msg, get_key, recv_handler, abrt_handler,responsible_for)
         # where responsible_for is the list of classes whose transaction will be killed when this message is received.
-        self._msgs_registered[send_msg] = ([recv_msg] + [x for x, _ in inter_msg], get_key, None, None, [])
-        self._msgs_registered[recv_msg] = ([], get_key, coroutine_recv, coroutine_abrt, [recv_msg] + [x for x, _ in inter_msg])
+        self._msgs_registered[send_msg] = (
+            [recv_msg] + [x for x, _ in inter_msg],
+            get_key,
+            None,
+            None,
+            [],
+        )
+        self._msgs_registered[recv_msg] = (
+            [],
+            get_key,
+            coroutine_recv,
+            coroutine_abrt,
+            [recv_msg] + [x for x, _ in inter_msg],
+        )
 
         self._transactions[recv_msg] = {}
         for msg_class, handler in inter_msg:
@@ -163,7 +188,11 @@ class BetterParanoidPirateClient(object, metaclass=abc.ABCMeta):
             if coroutine_abrt is not None:
                 for key in self._transactions[msg_class]:
                     for args, kwargs in self._transactions[msg_class][key]:
-                        create_safe_task(self._loop, self._logger, coroutine_abrt(key, *args, **kwargs))
+                        create_safe_task(
+                            self._loop,
+                            self._logger,
+                            coroutine_abrt(key, *args, **kwargs),
+                        )
             self._transactions[msg_class] = {}
 
         # 2. Call on_disconnect
@@ -213,21 +242,35 @@ class BetterParanoidPirateClient(object, metaclass=abc.ABCMeta):
                 msg_class = message.__class__
                 if msg_class in self._handlers_registered:
                     # If a handler is registered, give the message to it
-                    create_safe_task(self._loop, self._logger, self._handlers_registered[msg_class](message))
+                    create_safe_task(
+                        self._loop,
+                        self._logger,
+                        self._handlers_registered[msg_class](message),
+                    )
                 elif msg_class in self._transactions:
                     # If there are transaction associated, check if the key is ok
-                    _1, get_key, coroutine_recv, _2, responsible = self._msgs_registered[msg_class]
+                    _1, get_key, coroutine_recv, _2, responsible = (
+                        self._msgs_registered[msg_class]
+                    )
                     key = get_key(message)
                     if key in self._transactions[msg_class]:
                         # key exists; call all the coroutines
                         for args, kwargs in self._transactions[msg_class][key]:
-                            create_safe_task(self._loop, self._logger, coroutine_recv(message, *args, **kwargs))
+                            create_safe_task(
+                                self._loop,
+                                self._logger,
+                                coroutine_recv(message, *args, **kwargs),
+                            )
                         # remove all transaction parts
                         for key2 in responsible:
                             del self._transactions[key2][key]
                     else:
                         # key does not exist
-                        raise Exception("Received message %s for an unknown transaction %s", msg_class, key)
+                        raise Exception(
+                            "Received message %s for an unknown transaction %s",
+                            msg_class,
+                            key,
+                        )
                 else:
                     raise Exception("Received unknown message %s", msg_class)
             except (asyncio.CancelledError, KeyboardInterrupt):

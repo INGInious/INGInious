@@ -3,7 +3,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Manages users data and session """
+"""Manages users data and session"""
+
 import os
 import re
 import logging
@@ -22,7 +23,15 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
 
-from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission
+from inginious.frontend.models import (
+    User,
+    Group,
+    Audience,
+    CourseClass,
+    UserTask,
+    Submission,
+)
+
 
 class AuthInvalidInputException(Exception):
     pass
@@ -33,7 +42,6 @@ class AuthInvalidMethodException(Exception):
 
 
 class AuthMethod(object, metaclass=ABCMeta):
-
     @abstractmethod
     def get_id(self):
         """
@@ -72,7 +80,18 @@ class AuthMethod(object, metaclass=ABCMeta):
         return ""
 
 
-UserInfo = namedtuple("UserInfo", ["realname", "email", "username", "bindings", "language", "code_indentation", "activated"])
+UserInfo = namedtuple(
+    "UserInfo",
+    [
+        "realname",
+        "email",
+        "username",
+        "bindings",
+        "language",
+        "code_indentation",
+        "activated",
+    ],
+)
 
 
 class UserManager:
@@ -93,12 +112,14 @@ class UserManager:
         email_re = re.compile(
             r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*"  # dot-atom
             r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-011\013\014\016-\177])*"'  # quoted-string
-            r')@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$', re.IGNORECASE)  # domain
+            r")@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$",
+            re.IGNORECASE,
+        )  # domain
 
         if email_re.match(email) is None:
             return None
 
-        email = email.split('@')
+        email = email.split("@")
         return "%s@%s" % (email[0], email[1].lower())
 
     ##############################################
@@ -138,7 +159,11 @@ class UserManager:
         if user is None:
             return None
 
-        method, db_hash = user["password"].split("-", 1) if "-" in user["password"] else ("sha512", user["password"])
+        method, db_hash = (
+            user["password"].split("-", 1)
+            if "-" in user["password"]
+            else ("sha512", user["password"])
+        )
 
         if self.verify_hash(db_hash, password, method):
             if do_connect:
@@ -153,17 +178,18 @@ class UserManager:
         :param method: The hash method
         :return: A boolean if the hash is correct
         """
-        available_methods = {"sha512": cls.verify_hash_sha512, "argon2id": cls.verify_hash_argon2id}
+        available_methods = {
+            "sha512": cls.verify_hash_sha512,
+            "argon2id": cls.verify_hash_argon2id,
+        }
 
         if method in available_methods:
             return available_methods[method](db_hash, password)
         else:
             raise AuthInvalidMethodException()
 
-
     def verify_hash_sha512(cls, db_hash, password):
         return cls.hash_password_sha512(password) == db_hash
-
 
     def verify_hash_argon2id(cls, db_hash, password):
         try:
@@ -173,7 +199,7 @@ class UserManager:
             return False
 
     def connect_user(self, user):
-        """ Opens a session for the user
+        """Opens a session for the user
 
         :param user : a dict representing the user, it contains the data of the user.
             It must at least contain the following fields:
@@ -185,8 +211,9 @@ class UserManager:
         if not all(key in user for key in ["realname", "email", "username"]):
             raise AuthInvalidInputException()
 
-        User.objects(email=user["email"]).update(realname=user["realname"], username=user["username"],
-                                                 language=user.language)
+        User.objects(email=user["email"]).update(
+            realname=user["realname"], username=user["username"], language=user.language
+        )
 
         ip = flask.request.remote_addr
 
@@ -200,7 +227,13 @@ class UserManager:
         session.tos_signed = user.tos_accepted
         session.token = None
 
-        self._logger.info("User %s connected - %s - %s - %s", user["username"], user["realname"], user["email"], ip)
+        self._logger.info(
+            "User %s connected - %s - %s - %s",
+            user["username"],
+            user["realname"],
+            user["email"],
+            ip,
+        )
 
         return True
 
@@ -210,12 +243,19 @@ class UserManager:
         """
         if session.loggedin:
             ip = flask.request.remote_addr
-            self._logger.info("User %s disconnected - %s - %s - %s", session.username, session.realname,
-                              session.email, ip)
+            self._logger.info(
+                "User %s disconnected - %s - %s - %s",
+                session.username,
+                session.realname,
+                session.email,
+                ip,
+            )
 
         session.loggedin = False
 
-    def get_users_info(self, usernames, limit=0, skip=0) -> Dict[str, Optional[UserInfo]]:
+    def get_users_info(
+        self, usernames, limit=0, skip=0
+    ) -> Dict[str, Optional[UserInfo]]:
         """
         :param usernames: a list of usernames
         :param limit A limit of users requested
@@ -226,9 +266,18 @@ class UserManager:
         query = {"username__in": usernames} if usernames is not None else {}
         infos = User.objects(**query).skip(skip).limit(limit)
 
-        retval = {info["username"]: UserInfo(info["realname"], info["email"], info["username"], info["bindings"],
-                                             info["language"], info["code_indentation"], "activate" not in info)
-                  for info in infos}
+        retval = {
+            info["username"]: UserInfo(
+                info["realname"],
+                info["email"],
+                info["username"],
+                info["bindings"],
+                info["language"],
+                info["code_indentation"],
+                "activate" not in info,
+            )
+            for info in infos
+        }
         return retval
 
     def get_user_info(self, username) -> Optional[UserInfo]:
@@ -308,7 +357,9 @@ class UserManager:
             self.connect_user(user_profile)
         elif user_profile and session.username == user_profile["username"]:
             # Logged in, refresh fields if found profile username matches session username
-            User.objects(username=session.username).update(**{"bindings__" + auth_id: [username, additional]})
+            User.objects(username=session.username).update(
+                **{"bindings__" + auth_id: [username, additional]}
+            )
         elif user_profile:
             # Logged in, but already linked to another account
             self._logger.exception("Tried to bind an already bound account !")
@@ -316,17 +367,26 @@ class UserManager:
             # No binding, but logged: add new binding
             # !!! Use email as it may happen that a user is logged with empty username
             # !!! if the binding link is used as is
-            User.objects(email=session.email).update(**{"bindings__" + auth_id: [username, additional]})
+            User.objects(email=session.email).update(
+                **{"bindings__" + auth_id: [username, additional]}
+            )
         else:
             # No binding, check for email
             if User.objects(email=email).first():
                 # Found an email, existing user account, abort without binding
-                self._logger.exception("The binding email is already used by another account!")
+                self._logger.exception(
+                    "The binding email is already used by another account!"
+                )
                 return False
             else:
                 # New user, create an account using email address
-                user_profile = User(username="", realname=realname, email=email,
-                                bindings={auth_id: [username, additional]}, language=session.language)
+                user_profile = User(
+                    username="",
+                    realname=realname,
+                    email=email,
+                    bindings={auth_id: [username, additional]},
+                    language=session.language,
+                )
 
                 user_profile.save()
                 self.connect_user(user_profile)
@@ -344,8 +404,12 @@ class UserManager:
         if binding_id not in self.get_auth_methods().keys():
             error = True
             msg = _("Incorrect authentication binding.")
-        elif user_data is not None and (len(user_data.bindings.keys()) > 1 or "password" in user_data):
-            User.objects(username=username).update(**{"unset__bindings__" + binding_id: 1})
+        elif user_data is not None and (
+            len(user_data.bindings.keys()) > 1 or "password" in user_data
+        ):
+            User.objects(username=username).update(
+                **{"unset__bindings__" + binding_id: 1}
+            )
             msg = ""
             error = False
         else:
@@ -360,8 +424,11 @@ class UserManager:
         :param confirmation_email: An email to confirm suppression. May be None
         :return a boolean if a user was deleted
         """
-        query = {"username": username, "email": confirmation_email} \
-            if confirmation_email is not None else {"username": username}
+        query = (
+            {"username": username, "email": confirmation_email}
+            if confirmation_email is not None
+            else {"username": username}
+        )
         result = User.objects(**query).modify(remove=True)
         if not result:
             return False
@@ -369,7 +436,8 @@ class UserManager:
             Submission.objects(username=username).delete()
             UserTask.objects(username=username).delete()
             user_courses = CourseClass.objects(students=username)
-            for elem in user_courses: self.course_unregister_user(elem.id, username)
+            for elem in user_courses:
+                self.course_unregister_user(elem.id, username)
         return True
 
     def create_user(self, values):
@@ -382,8 +450,12 @@ class UserManager:
         if User.objects(query).first() is not None:
             return _("User could not be created.")
 
-        User(username=values["username"], realname=values["realname"], email=values["email"],
-             password=self.hash_password(values["password"])).save()
+        User(
+            username=values["username"],
+            realname=values["realname"],
+            email=values["email"],
+            password=self.hash_password(values["password"]),
+        ).save()
 
         return None
 
@@ -405,7 +477,7 @@ class UserManager:
         """
         return self.get_course_caches([username], course)[username]
 
-    def get_course_caches(self, usernames : list[str], course):
+    def get_course_caches(self, usernames: list[str], course):
         """
         :param usernames: List of username for which we want info. If usernames is None, data from all users will be returned.
         :param course: A Course object
@@ -429,31 +501,52 @@ class UserManager:
         match["taskid"] = {"$in": list(taskids)}
 
         user_tasks = UserTask.objects(**match)
-        data = user_tasks.aggregate([{
-            "$group":
+        data = user_tasks.aggregate(
+            [
                 {
-                    "_id": "$username",
-                    "task_tried": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
-                    "total_tries": {"$sum": "$tried"},
-                    "task_succeeded": {"$addToSet": {"$cond": ["$succeeded", "$taskid", False]}},
-                    "task_grades": {"$addToSet": {"taskid": "$taskid", "grade": "$grade"}}
+                    "$group": {
+                        "_id": "$username",
+                        "task_tried": {
+                            "$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}
+                        },
+                        "total_tries": {"$sum": "$tried"},
+                        "task_succeeded": {
+                            "$addToSet": {"$cond": ["$succeeded", "$taskid", False]}
+                        },
+                        "task_grades": {
+                            "$addToSet": {"taskid": "$taskid", "grade": "$grade"}
+                        },
+                    }
                 }
-        }])
+            ]
+        )
 
         if usernames is None:
-            usernames = self.get_course_registered_users(course=course, with_admins=False)
+            usernames = self.get_course_registered_users(
+                course=course, with_admins=False
+            )
 
-        retval = {username: {"task_succeeded": 0, "task_grades": [], "grade": 0} for username in usernames}
+        retval = {
+            username: {"task_succeeded": 0, "task_grades": [], "grade": 0}
+            for username in usernames
+        }
 
         users_tasks_list = course.get_task_dispenser().get_user_task_list(usernames)
-        users_grade = course.get_task_dispenser().get_course_grades(user_tasks, usernames)
+        users_grade = course.get_task_dispenser().get_course_grades(
+            user_tasks, usernames
+        )
 
         for result in data:
             username = result["_id"]
             visible_tasks = users_tasks_list.get(username, [])
-            result["task_succeeded"] = len(set(result["task_succeeded"]).intersection(visible_tasks))
-            result["task_grades"] = {dg["taskid"]: dg["grade"] for dg in result["task_grades"] if
-                                     dg["taskid"] in visible_tasks}
+            result["task_succeeded"] = len(
+                set(result["task_succeeded"]).intersection(visible_tasks)
+            )
+            result["task_grades"] = {
+                dg["taskid"]: dg["grade"]
+                for dg in result["task_grades"]
+                if dg["taskid"] in visible_tasks
+            }
 
             result["grade"] = users_grade[username]
             retval[username] = result
@@ -498,8 +591,10 @@ class UserManager:
         return retval
 
     def user_saw_task(self, username, courseid, taskid):
-        """ Set in the database that the user has viewed this task """
-        UserTask.objects(username=username, courseid=courseid, taskid=taskid).update_one(
+        """Set in the database that the user has viewed this task"""
+        UserTask.objects(
+            username=username, courseid=courseid, taskid=taskid
+        ).update_one(
             set_on_insert__username=username,
             set_on_insert__courseid=courseid,
             set_on_insert__taskid=taskid,
@@ -508,7 +603,7 @@ class UserManager:
             set_on_insert__grade=0.0,
             set_on_insert__submissionid=None,
             set_on_insert__state="",
-            upsert=True
+            upsert=True,
         )
 
     def get_user_pinned_courses(self, username):
@@ -517,26 +612,46 @@ class UserManager:
 
     def pin_course(self, username, courseid):
         data = User.objects(username=username).first()
-        modified = User.objects(username=username).update(add_to_set__pinned_courses=courseid)
+        modified = User.objects(username=username).update(
+            add_to_set__pinned_courses=courseid
+        )
         return modified is not None
-
 
     def unpin_course(self, username, courseid):
-        modified = User.objects(username=username, pinned_courses=courseid).update(pull__pinned_courses=courseid)
+        modified = User.objects(username=username, pinned_courses=courseid).update(
+            pull__pinned_courses=courseid
+        )
         return modified is not None
 
-
-    def update_user_stats(self, username, task, submission, result_str, grade, state, newsub, task_dispenser):
-        """ Update stats with a new submission """
+    def update_user_stats(
+        self,
+        username,
+        task,
+        submission,
+        result_str,
+        grade,
+        state,
+        newsub,
+        task_dispenser,
+    ):
+        """Update stats with a new submission"""
         self.user_saw_task(username, submission["courseid"], submission["taskid"])
 
         eval_mode = task_dispenser.get_evaluation_mode(task.get_id())
-        match_filter = {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]}
+        match_filter = {
+            "username": username,
+            "courseid": submission["courseid"],
+            "taskid": submission["taskid"],
+        }
         if newsub:
-            old_submission = UserTask.objects(**match_filter).modify(inc__tried=1, inc__tokens__amount=1, new=True)
+            old_submission = UserTask.objects(**match_filter).modify(
+                inc__tried=1, inc__tokens__amount=1, new=True
+            )
 
             # Update if the submission should be the default one
-            if eval_mode == 'last' or (eval_mode == 'best' and old_submission.grade <= grade):
+            if eval_mode == "last" or (
+                eval_mode == "best" and old_submission.grade <= grade
+            ):
                 old_submission.succeeded = result_str == "success"
                 old_submission.grade = grade
                 old_submission.state = state
@@ -544,7 +659,7 @@ class UserManager:
                 old_submission.save()
         else:
             old_submission = UserTask.objects.get(**match_filter)
-            sort_filter = ["-grade"] if eval_mode == 'best' else []
+            sort_filter = ["-grade"] if eval_mode == "best" else []
             sort_filter.append("-submitted_on")
             def_sub = Submission.objects(**match_filter).order_by(*sort_filter).first()
 
@@ -554,14 +669,16 @@ class UserManager:
                 old_submission.state = def_sub["state"]
                 old_submission.submissionid = def_sub.id
                 old_submission.save()
-            elif old_submission.submissionid == submission["_id"]: # otherwise, update cache if needed
+            elif (
+                old_submission.submissionid == submission["_id"]
+            ):  # otherwise, update cache if needed
                 old_submission.succeeded = submission["result"] == "success"
                 old_submission.grade = submission["grade"]
                 old_submission.state = submission["state"]
                 old_submission.save()
 
     def task_is_visible_by_user(self, course, task, username=None, lti=None):
-        """ Returns true if the task is visible and can be accessed by the user
+        """Returns true if the task is visible and can be accessed by the user
 
         :param lti: indicates if the user is currently in a LTI session or not.
 
@@ -573,18 +690,25 @@ class UserManager:
         if username is None:
             username = session.username
 
-        dispenser_filter = course.get_task_dispenser().get_accessibility(task.get_id(), username).after_start()
-        return (self.course_is_open_to_user(course, username, lti) and dispenser_filter) \
-               or self.has_staff_rights_on_course(course, username)
+        dispenser_filter = (
+            course.get_task_dispenser()
+            .get_accessibility(task.get_id(), username)
+            .after_start()
+        )
+        return (
+            self.course_is_open_to_user(course, username, lti) and dispenser_filter
+        ) or self.has_staff_rights_on_course(course, username)
 
-    def task_can_user_submit(self, course, task, username=None, only_check=None, lti=None):
-        """ returns true if the user can submit his work for this task
-            :param only_check : only checks for 'groups', 'tokens', or None if all checks
-            :param lti: indicates if the user is currently in a LTI session or not.
-            - None to ignore the check
-            - True to indicate the user is in a LTI session
-            - False to indicate the user is not in a LTI session
-            - "auto" to enable the check and take the information from the current session
+    def task_can_user_submit(
+        self, course, task, username=None, only_check=None, lti=None
+    ):
+        """returns true if the user can submit his work for this task
+        :param only_check : only checks for 'groups', 'tokens', or None if all checks
+        :param lti: indicates if the user is currently in a LTI session or not.
+        - None to ignore the check
+        - True to indicate the user is in a LTI session
+        - False to indicate the user is not in a LTI session
+        - "auto" to enable the check and take the information from the current session
         """
         checks = [only_check] if only_check is not None else ["groups", "tokens"]
 
@@ -598,30 +722,50 @@ class UserManager:
         course_filter = self.course_is_open_to_user(course, username, lti)
 
         # Check if task accessible to user
-        task_filter = course.get_task_dispenser().get_accessibility(task.get_id(), username).is_open()
+        task_filter = (
+            course.get_task_dispenser()
+            .get_accessibility(task.get_id(), username)
+            .is_open()
+        )
 
         # Check for group
         is_group_task = course.get_task_dispenser().get_group_submission(task.get_id())
-        group = Group.objects(courseid=course.get_id(), students=session.username).first()
-        group_filter = 'groups' in checks and group if is_group_task else True
+        group = Group.objects(
+            courseid=course.get_id(), students=session.username
+        ).first()
+        group_filter = "groups" in checks and group if is_group_task else True
 
         # Check for tokens
-        students = group["students"] if (group is not None and is_group_task) else [session.username]
+        students = (
+            group["students"]
+            if (group is not None and is_group_task)
+            else [session.username]
+        )
         token_filter = True
-        submission_limit = course.get_task_dispenser().get_submission_limit(task.get_id())
-        if 'tokens' in checks and submission_limit != {"amount": -1, "period": -1}:
-            user_tasks = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username__in=students)
-            token_filter = reduce(lambda last, cur: last and cur.check_tokens(submission_limit), user_tasks, True)
+        submission_limit = course.get_task_dispenser().get_submission_limit(
+            task.get_id()
+        )
+        if "tokens" in checks and submission_limit != {"amount": -1, "period": -1}:
+            user_tasks = UserTask.objects(
+                courseid=course.get_id(), taskid=task.get_id(), username__in=students
+            )
+            token_filter = reduce(
+                lambda last, cur: last and cur.check_tokens(submission_limit),
+                user_tasks,
+                True,
+            )
 
         return course_filter and task_filter and group_filter and token_filter
 
-
     def get_course_audiences(self, course):
-        """ Returns a list of the course audiences"""
-        return natsorted(list(Audience.objects(courseid=course.get_id())), key=lambda x: x["description"])
+        """Returns a list of the course audiences"""
+        return natsorted(
+            list(Audience.objects(courseid=course.get_id())),
+            key=lambda x: x["description"],
+        )
 
     def get_course_audiences_per_student(self, course):
-        """ Returns a dictionnary mapping student -> list of audiences it belongs to, for a given course """
+        """Returns a dictionnary mapping student -> list of audiences it belongs to, for a given course"""
         course_audiences = self.get_course_audiences(course)
         student_audiences = {}
         for audience in course_audiences:
@@ -632,11 +776,13 @@ class UserManager:
         return student_audiences
 
     def get_course_groups(self, course):
-        """ Returns a list of the course groups"""
-        return natsorted(list(Group.objects(courseid=course.get_id())), key=lambda x: x.description)
+        """Returns a list of the course groups"""
+        return natsorted(
+            list(Group.objects(courseid=course.get_id())), key=lambda x: x.description
+        )
 
     def get_course_user_group(self, course, username=None):
-        """ Returns the audience whose username belongs to
+        """Returns the audience whose username belongs to
         :param course: a Course object
         :param username: The username of the user that we want to register. If None, uses session.username
         :return: the audience description
@@ -647,7 +793,7 @@ class UserManager:
         return Group.objects(courseid=course.get_id(), students=username).first()
 
     def course_register_user(self, course, username=None, password=None, force=False):
-        """ Register a user to the course
+        """Register a user to the course
 
         :param course: a Course object
         :param username: The username of the user that we want to register. If None, uses session.username
@@ -669,12 +815,17 @@ class UserManager:
         if not force:
             if not course.is_registration_possible(user_info):
                 return False
-            if course.is_password_needed_for_registration() and course.get_registration_password() != password:
+            if (
+                course.is_password_needed_for_registration()
+                and course.get_registration_password() != password
+            ):
                 return False
         if self.course_is_user_registered(course, username):
             return False  # already registered?
 
-        CourseClass.objects(id=course.get_id()).update(push__students=username, upsert=True)
+        CourseClass.objects(id=course.get_id()).update(
+            push__students=username, upsert=True
+        )
 
         self._logger.info("User %s registered to course %s", username, course.get_id())
         return True
@@ -689,17 +840,23 @@ class UserManager:
             username = session.username
 
         # If user doesn't belong to a group, will ensure correct deletion
-        Audience.objects(courseid=course_id, students=username).update(pull__students=username)
+        Audience.objects(courseid=course_id, students=username).update(
+            pull__students=username
+        )
 
         # If user doesn't belong to a group, will ensure correct deletion
-        Group.objects(courseid=course_id, students=username).update(pull_students=username)
+        Group.objects(courseid=course_id, students=username).update(
+            pull_students=username
+        )
 
         CourseClass.objects(id=course_id).update(pull__students=username)
 
         self._logger.info("User %s unregistered from course %s", username, course_id)
 
-    def course_is_open_to_user(self, course, username=None, lti=None, return_reason=False):
-        """ Checks if a user is can access a course
+    def course_is_open_to_user(
+        self, course, username=None, lti=None, return_reason=False
+    ):
+        """Checks if a user is can access a course
 
         :param course: a Course object
         :param username: The username of the user that we want to check. If None, uses session.username
@@ -732,7 +889,10 @@ class UserManager:
         if not course.get_accessibility().is_open():
             return False if not return_reason else "closed"
 
-        if not self.course_is_user_registered(course, username) and not course.allow_preview():
+        if (
+            not self.course_is_user_registered(course, username)
+            and not course.allow_preview()
+        ):
             return False if not return_reason else "unregistered_not_previewable"
 
         # LTI courses can only be accessed from a LTI session
@@ -750,7 +910,7 @@ class UserManager:
         return True
 
     def course_is_user_registered(self, course, username=None):
-        """ Checks if a user is registered
+        """Checks if a user is registered
 
         :param course: a Course object
         :param username: The username of the user that we want to check. If None, uses session.username
@@ -762,7 +922,10 @@ class UserManager:
         if self.has_staff_rights_on_course(course, username):
             return True
 
-        return CourseClass.objects(id=course.get_id(), students=username).first() is not None
+        return (
+            CourseClass.objects(id=course.get_id(), students=username).first()
+            is not None
+        )
 
     def get_course_registered_users(self, course, with_admins=True):
         """
@@ -793,7 +956,9 @@ class UserManager:
 
         return username in self._superadmins
 
-    def has_admin_rights_on_course(self, course, username=None, include_superadmins=True):
+    def has_admin_rights_on_course(
+        self, course, username=None, include_superadmins=True
+    ):
         """
         Check if a user can be considered as having admin rights for a course
         :type course: inginious.frontend.courses.Course
@@ -804,9 +969,13 @@ class UserManager:
         if username is None:
             username = session.username
 
-        return (username in course.get_admins()) or (include_superadmins and self.user_is_superadmin(username))
+        return (username in course.get_admins()) or (
+            include_superadmins and self.user_is_superadmin(username)
+        )
 
-    def has_staff_rights_on_course(self, course, username=None, include_superadmins=True):
+    def has_staff_rights_on_course(
+        self, course, username=None, include_superadmins=True
+    ):
         """
         Check if a user can be considered as having staff rights for a course
         :type course: inginious.frontend.courses.Course
@@ -817,11 +986,13 @@ class UserManager:
         if username is None:
             username = session.username
 
-        return (username in course.get_staff()) or (include_superadmins and self.user_is_superadmin(username))
+        return (username in course.get_staff()) or (
+            include_superadmins and self.user_is_superadmin(username)
+        )
 
     @classmethod
     def generate_api_key(cls):
-        return hexlify(os.urandom(40)).decode('utf-8')
+        return hexlify(os.urandom(40)).decode("utf-8")
 
     @classmethod
     def hash_password_sha512(cls, content):
@@ -848,7 +1019,10 @@ class UserManager:
         :return a hash of str input
         """
 
-        methods = {"argon2id": cls.hash_password_argon2id, "sha512": cls.hash_password_sha512}
+        methods = {
+            "argon2id": cls.hash_password_argon2id,
+            "sha512": cls.hash_password_sha512,
+        }
         latest_method = "argon2id"
 
         return latest_method + "-" + methods[latest_method](content)

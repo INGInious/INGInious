@@ -20,11 +20,17 @@ class TestParsableText(object):
         assert "<code" in rendered and "</code>" in rendered and "😁" in rendered
 
     def test_html_tidy(self):
-        rendered = ParsableText.html('<non existing tag></...>')
-        assert '<non existing tag>' not in rendered
+        rendered = ParsableText.html("<non existing tag></...>")
+        assert "<non existing tag>" not in rendered
 
     def test_parsable_text_once(self):
-        def fake_parser(string, show_everything=False, translation=None, initial_header_level=3, debug=False):
+        def fake_parser(
+            string,
+            show_everything=False,
+            translation=None,
+            initial_header_level=3,
+            debug=False,
+        ):
             fake_parser.count += 1
             return ""
 
@@ -44,12 +50,14 @@ class TestParsableText(object):
         assert fake_parser.count == 1
 
     def test_wrong_rst_injection(self):
-        rendered = str(ParsableText.rst(
-            """
+        rendered = str(
+            ParsableText.rst(
+                """
             makefail_
             <script type="text/javascript">alert('Eh, XSS injection!');</script>
             """
-        ))
+            )
+        )
         assert "&lt;script type=&quot;text/javascript&quot;&gt;" in rendered
 
     def test_failing_parser_injection(self):
@@ -60,7 +68,9 @@ class TestParsableText(object):
         orig_rst = ParsableText.rst
         ParsableText.rst = fake_parser
 
-        pt = ParsableText("""<script type="text/javascript">alert('Eh, XSS injection!');</script>""")
+        pt = ParsableText(
+            """<script type="text/javascript">alert('Eh, XSS injection!');</script>"""
+        )
         rendered = pt.parse()
 
         ParsableText.rst = orig_rst
@@ -82,8 +92,11 @@ class TestParsableText(object):
         """)
 
     def test_hidden_until_before_admin(self):
-        assert "Something" in ParsableText.rst("""
+        assert "Something" in ParsableText.rst(
+            """
             .. hidden-until:: 22/05/2102
 
                 Something
-            """, show_everything=True)
+            """,
+            show_everything=True,
+        )

@@ -5,7 +5,14 @@
 
 import tzlocal
 from bson.objectid import ObjectId
-from mongoengine import Document, StringField, ListField, EmbeddedDocument, EmbeddedDocumentField, BooleanField
+from mongoengine import (
+    Document,
+    StringField,
+    ListField,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
+    BooleanField,
+)
 from mongoengine import DateTimeField, DynamicField, MapField, ObjectIdField
 
 
@@ -15,7 +22,7 @@ class LTIData(EmbeddedDocument):
     username = StringField(required=True, default="")
     realname = StringField(required=True, default="")
     roles = ListField(StringField())
-    task = ListField(StringField(), required=True, default=['', ''])
+    task = ListField(StringField(), required=True, default=["", ""])
 
     context_title = StringField()
     context_label = StringField()
@@ -34,7 +41,9 @@ class LTIData(EmbeddedDocument):
 
 
 class Session(Document):
-    id = ObjectIdField(primary_key=True, default=lambda: ObjectId()) # id should be available at creation time
+    id = ObjectIdField(
+        primary_key=True, default=lambda: ObjectId()
+    )  # id should be available at creation time
     permanent = BooleanField(required=True)
     is_lti = BooleanField(required=True, default=False)
     loggedin = BooleanField(required=True, default=False)
@@ -43,7 +52,7 @@ class Session(Document):
     lti = EmbeddedDocumentField(LTIData, default=lambda: None)
     code_indentation = StringField(choices=["2", "3", "4", "tabs"], default="4")
     email = StringField()
-    language = StringField(default="") # will be autodetected
+    language = StringField(default="")  # will be autodetected
     realname = StringField()
     token = StringField(default=None)
     tos_signed = BooleanField()

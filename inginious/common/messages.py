@@ -9,7 +9,9 @@ from dataclasses import dataclass, is_dataclass, asdict
 
 BackendJobId = str
 ClientJobId = str
-SPResult = Tuple[str, str]  # JobId of the backend, composed with the address of the client and the client job id
+SPResult = Tuple[
+    str, str
+]  # JobId of the backend, composed with the address of the client and the client job id
 _registered_messages: Dict[str, Type[Any]] = {}
 
 
@@ -22,13 +24,15 @@ _registered_messages: Dict[str, Type[Any]] = {}
 
 @dataclass(frozen=True)
 class ClientHello:
-    """ Let the client say hello to the backend (and thus register to some events) """
+    """Let the client say hello to the backend (and thus register to some events)"""
+
     name: str  # name of the client (do not need to be unique)
 
 
 @dataclass(frozen=True)
 class ClientNewJob:
-    """ Creates a new job """
+    """Creates a new job"""
+
     job_id: ClientJobId  # the client-side job id that is associated to this job
     priority: int  # the job priority
     course_id: str  # course id of the task to run
@@ -37,20 +41,25 @@ class ClientNewJob:
     inputdata: Dict[str, Any]  # student input data
     environment_type: str  # environment type
     environment: str  # environment to use (must exist in the environment type)
-    environment_parameters: Dict[str, Any]  # parameters for the environment (timeouts, limits, ...)
-    debug: Union[str, bool]  # True to enable debug, False to disable it, "ssh" to enable ssh debug
+    environment_parameters: Dict[
+        str, Any
+    ]  # parameters for the environment (timeouts, limits, ...)
+    debug: Union[
+        str, bool
+    ]  # True to enable debug, False to disable it, "ssh" to enable ssh debug
     launcher: str  # the name of the entity that launched this job, for logging purposes
 
 
 @dataclass(frozen=True)
 class ClientKillJob:
-    """ Kills a running job. """
+    """Kills a running job."""
+
     job_id: ClientJobId  # the client-side job id that is associated to the job to kill
 
 
 @dataclass(frozen=True)
 class ClientGetQueue:
-    """ Ask the backend to send the status of its job queue """
+    """Ask the backend to send the status of its job queue"""
 
 
 #################################################################
@@ -62,19 +71,24 @@ class ClientGetQueue:
 
 @dataclass(frozen=True)
 class BackendUpdateEnvironments:
-    """ Update the information about the environments on the client, from the informations retrieved from the agents """
-    available_environments: Dict[str, List[str]]  # dict of available environment aliases (as keys) and type of the related agent (as value)
+    """Update the information about the environments on the client, from the informations retrieved from the agents"""
+
+    available_environments: Dict[
+        str, List[str]
+    ]  # dict of available environment aliases (as keys) and type of the related agent (as value)
 
 
 @dataclass(frozen=True)
 class BackendJobStarted:
-    """ Indicates to the backend that a job started """
+    """Indicates to the backend that a job started"""
+
     job_id: ClientJobId  # the client-side job_id associated to the job
 
 
 @dataclass(frozen=True)
 class BackendJobDone:
-    """ Gives the result of a job. """
+    """Gives the result of a job."""
+
     job_id: ClientJobId  # the client-side job id associated with this job
     result: SPResult  # A tuple containing the result type and the text to be shown to the student
     # Result type can be:
@@ -86,18 +100,23 @@ class BackendJobDone:
     #     - "failed": the student failed to succeed this task
     #     - "error": an error happenned in the grading script (task writer error)
     grade: float
-    problems: Dict[str, SPResult]  # particular feedbacks for each subproblem. Keys are subproblem ids.
+    problems: Dict[
+        str, SPResult
+    ]  # particular feedbacks for each subproblem. Keys are subproblem ids.
     tests: Dict[str, Any]  # tests made in the environment
     custom: Dict[str, Any]  # custom values
     state: str
-    archive: Optional[bytes]  # bytes string containing an archive of the content of the environment as a tgz
+    archive: Optional[
+        bytes
+    ]  # bytes string containing an archive of the content of the environment as a tgz
     stdout: Optional[str]  # environment stdout
     stderr: Optional[str]  # environment stderr
 
 
 @dataclass(frozen=True)
 class BackendJobSSHDebug:
-    """ Gives the necessary info to SSH into a job running in ssh debug mode """
+    """Gives the necessary info to SSH into a job running in ssh debug mode"""
+
     job_id: ClientJobId  # the client-side job id associated with this job
     host: str  # host to which the client should connect
     port: int  # port on which sshd is bound
@@ -133,6 +152,7 @@ class BackendGetQueue:
         - max_time the maximum time that can be used, or -1 if no timeout is set
 
     """
+
     jobs_running: List[Tuple[ClientJobId, bool, str, str, str, int, int]]
     jobs_waiting: List[Tuple[ClientJobId, bool, str, str, int]]
 
@@ -146,7 +166,8 @@ class BackendGetQueue:
 
 @dataclass(frozen=True)
 class BackendNewJob:
-    """ Creates a new job """
+    """Creates a new job"""
+
     job_id: BackendJobId  # the backend-side job id that is associated to this job
     course_id: str  # course id of the task to run
     task_id: str  # task id of the task to run
@@ -154,14 +175,21 @@ class BackendNewJob:
     inputdata: Dict[str, Any]  # student input data
     environment_type: str  # environment type
     environment: str  # environment to use (must exist within the environment type)
-    environment_parameters: Dict[str, Any]  # parameters for the environment (timeouts, limits, ...)
-    debug: Union[str, bool]  # debug: True to enable debug, False to disable it, "ssh" to enable ssh debug
+    environment_parameters: Dict[
+        str, Any
+    ]  # parameters for the environment (timeouts, limits, ...)
+    debug: Union[
+        str, bool
+    ]  # debug: True to enable debug, False to disable it, "ssh" to enable ssh debug
 
 
 @dataclass(frozen=True)
 class BackendKillJob:
-    """ Kills a running job. """
-    job_id: BackendJobId  # the backend-side job id that is associated to the job to kill
+    """Kills a running job."""
+
+    job_id: (
+        BackendJobId  # the backend-side job id that is associated to the job to kill
+    )
     state: str  # submission state in case the job is lost at the agent
 
 
@@ -174,10 +202,13 @@ class BackendKillJob:
 
 @dataclass(frozen=True)
 class AgentHello:
-    """ Let the agent say hello and announce which environments it has available """
+    """Let the agent say hello and announce which environments it has available"""
+
     friendly_name: str  # a string containing a friendly name to identify agent
     available_job_slots: int  # an integer giving the number of concurrent
-    available_environments: Dict[str, Dict[str, Dict[str, Any]]]  # dict of available environments:
+    available_environments: Dict[
+        str, Dict[str, Dict[str, Any]]
+    ]  # dict of available environments:
     # {
     #     "type": {
     #         "name": {                 #  for example, "default"
@@ -191,13 +222,15 @@ class AgentHello:
 
 @dataclass(frozen=True)
 class AgentJobStarted:
-    """ Indicates to the backend that a job started """
+    """Indicates to the backend that a job started"""
+
     job_id: BackendJobId  # the backend-side job_id associated to the job
 
 
 @dataclass(frozen=True)
 class AgentJobDone:
-    """ Gives the result of a job. """
+    """Gives the result of a job."""
+
     job_id: BackendJobId  # the backend-side job id associated with this job
     result: SPResult  # a tuple that contains the result itself, either:
     # - "killed": the environment was killed externally (not really an error)
@@ -209,18 +242,23 @@ class AgentJobDone:
     # - "error": an error happenned in the grading script (task writer error)
     # and the feedback text.
     grade: float  # grade
-    problems: Dict[str, SPResult]  # particular feedbacks for each subproblem. Keys are subproblem ids
+    problems: Dict[
+        str, SPResult
+    ]  # particular feedbacks for each subproblem. Keys are subproblem ids
     tests: Dict[str, Any]  # tests made in the environment
     custom: Dict[str, Any]  # custom values
     state: str
-    archive: Optional[bytes]  # bytes string containing an archive of the content of the environment as a tgz
+    archive: Optional[
+        bytes
+    ]  # bytes string containing an archive of the content of the environment as a tgz
     stdout: Optional[str]  # environment stdout
     stderr: Optional[str]  # environment stderr
 
 
 @dataclass(frozen=True)
 class AgentJobSSHDebug:
-    """ Gives the necessary info to SSH into a job running in ssh debug mode """
+    """Gives the necessary info to SSH into a job running in ssh debug mode"""
+
     job_id: BackendJobId  # the backend-side job id associated with this job
     host: str  # host to which the client should connect
     port: int  # port on which sshd is bound
@@ -234,19 +272,20 @@ class AgentJobSSHDebug:
 #                                                               #
 #################################################################
 
+
 @dataclass(frozen=True)
 class Ping:
-    """ Ping message """
+    """Ping message"""
 
 
 @dataclass(frozen=True)
 class Pong:
-    """ Pong message """
+    """Pong message"""
 
 
 @dataclass(frozen=True)
 class Unknown:
-    """ Unknown message. Sent by a server that do not know a specific client; probably because the server restarted """
+    """Unknown message. Sent by a server that do not know a specific client; probably because the server restarted"""
 
 
 #################################################################
@@ -255,8 +294,9 @@ class Unknown:
 #                                                               #
 #################################################################
 
+
 def register_message(tcls: Type[Any]):
-    """ Register a new type of message """
+    """Register a new type of message"""
     _registered_messages[tcls.__name__] = tcls
 
 
@@ -268,9 +308,9 @@ for cls in list(globals().values()):
 
 def load(bmessage: bytes) -> Any:
     """
-        From a bytestring given by a (distant) call to dump(), retrieve the original message
-        :param bmessage: bytestring given by a dump() call on a message
-        :return: the original message
+    From a bytestring given by a (distant) call to dump(), retrieve the original message
+    :param bmessage: bytestring given by a dump() call on a message
+    :return: the original message
     """
     message_dict = msgpack.loads(bmessage, use_list=False, strict_map_key=False)
 
@@ -301,7 +341,7 @@ def dump(msg: Any) -> bytes:
 
 class ZMQUtils(object):
     """
-        Utilities that do serializing/unserializing of messages (whose metaclass is MessageMeta)
+    Utilities that do serializing/unserializing of messages (whose metaclass is MessageMeta)
     """
 
     @classmethod
@@ -324,7 +364,9 @@ class ZMQUtils(object):
     @classmethod
     async def send(cls, socket, obj, send_white=False):
         message_obj = dump(obj)
-        await socket.send_multipart([message_obj] if not send_white else ["", message_obj])
+        await socket.send_multipart(
+            [message_obj] if not send_white else ["", message_obj]
+        )
 
 
 def run_tests():

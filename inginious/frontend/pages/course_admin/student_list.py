@@ -12,50 +12,78 @@ from bson import ObjectId
 from flask import session, Response, request, render_template
 from io import StringIO
 
-from inginious.frontend.models import Audience, Submission, User, Group,  CourseClass
+from inginious.frontend.models import Audience, Submission, User, Group, CourseClass
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 
 
 class CourseStudentListPage(INGIniousAdminPage):
-    """ Course administration page: list of registered students """
+    """Course administration page: list of registered students"""
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         course, __ = self.get_course_and_check_rights(courseid)
-        if "preferred_field" in request.args and request.args["preferred_field"] in \
-                ['username', 'email']:
+        if "preferred_field" in request.args and request.args["preferred_field"] in [
+            "username",
+            "email",
+        ]:
             preferred_field = request.args["preferred_field"]
             audiences = []
             si = StringIO()
             cw = csv.writer(si)
             for audience in self.user_manager.get_course_audiences(course):
                 for student in audience["students"]:
-                    field_value = self.get_requested_field_user_info(student, preferred_field)
-                    audiences.append([field_value, preferred_field, "student", audience["description"]])
+                    field_value = self.get_requested_field_user_info(
+                        student, preferred_field
+                    )
+                    audiences.append(
+                        [
+                            field_value,
+                            preferred_field,
+                            "student",
+                            audience["description"],
+                        ]
+                    )
                 for tutor in audience["tutors"]:
-                    field_value = self.get_requested_field_user_info(tutor, preferred_field)
-                    audiences.append([field_value, preferred_field, "tutor", audience["description"]])
+                    field_value = self.get_requested_field_user_info(
+                        tutor, preferred_field
+                    )
+                    audiences.append(
+                        [field_value, preferred_field, "tutor", audience["description"]]
+                    )
             cw.writerows(audiences)
 
-            response = Response(response=si.getvalue(), content_type='text/csv')
-            response.headers['Content-Disposition'] = 'attachment; filename="audiences.csv"'
+            response = Response(response=si.getvalue(), content_type="text/csv")
+            response.headers["Content-Disposition"] = (
+                'attachment; filename="audiences.csv"'
+            )
             return response
 
         if "download_groups" in request.args:
-            groups = [{"description": group["description"],
-                       "students": list(group["students"]),
-                       "size": group["size"],
-                       "audiences": [str(c) for c in group["audiences"]]} for group in
-                      self.user_manager.get_course_groups(course)]
-            response = Response(response=yaml.dump(groups), content_type='text/x-yaml')
-            response.headers['Content-Disposition'] = 'attachment; filename="groups.yaml"'
+            groups = [
+                {
+                    "description": group["description"],
+                    "students": list(group["students"]),
+                    "size": group["size"],
+                    "audiences": [str(c) for c in group["audiences"]],
+                }
+                for group in self.user_manager.get_course_groups(course)
+            ]
+            response = Response(response=yaml.dump(groups), content_type="text/x-yaml")
+            response.headers["Content-Disposition"] = (
+                'attachment; filename="groups.yaml"'
+            )
             return response
 
-        return self.page(course, active_tab="tab_audiences" if "audiences" in request.args else "tab_students")
+        return self.page(
+            course,
+            active_tab="tab_audiences"
+            if "audiences" in request.args
+            else "tab_students",
+        )
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ POST request """
+        """POST request"""
         course, __ = self.get_course_and_check_rights(courseid, None, True)
         data = request.form.copy()
         data["delete"] = request.form.getlist("delete")
@@ -72,7 +100,7 @@ class CourseStudentListPage(INGIniousAdminPage):
         return self.page(course, active_tab, msg, error)
 
     def page(self, course, active_tab="tab_students", msg=None, error=None):
-        """ Get all data and display the page """
+        """Get all data and display the page"""
         if error is None:
             error = {}
         if msg is None:
@@ -81,35 +109,71 @@ class CourseStudentListPage(INGIniousAdminPage):
         split_audiences, audiences = self.get_audiences_params(course)
         user_data = self.get_student_list_params(course)
         groups = self.user_manager.get_course_groups(course)
-        student_list, audience_list, other_students, users_info = self.get_user_lists(course)
+        student_list, audience_list, other_students, users_info = self.get_user_lists(
+            course
+        )
 
         if "csv_audiences" in request.args:
             return make_csv(audiences)
         if "csv_student" in request.args:
             return make_csv(user_data)
 
-        return render_template("course_admin/student_list.html", course=course,
-                                           user_data=list(user_data.values()), audiences=split_audiences,
-                                           active_tab=active_tab, student_list=student_list,
-                                           audience_list=audience_list,
-                                           other_students=other_students, users_info=users_info, groups=groups,
-                                           error=error, msg=msg)
+        return render_template(
+            "course_admin/student_list.html",
+            course=course,
+            user_data=list(user_data.values()),
+            audiences=split_audiences,
+            active_tab=active_tab,
+            student_list=student_list,
+            audience_list=audience_list,
+            other_students=other_students,
+            users_info=users_info,
+            groups=groups,
+            error=error,
+            msg=msg,
+        )
 
     def get_student_list_params(self, course):
-        users = sorted(list(
-            self.user_manager.get_users_info(self.user_manager.get_course_registered_users(course, False)).items()),
-            key=lambda k: k[1].realname if k[1] is not None else "")
+        users = sorted(
+            list(
+                self.user_manager.get_users_info(
+                    self.user_manager.get_course_registered_users(course, False)
+                ).items()
+            ),
+            key=lambda k: k[1].realname if k[1] is not None else "",
+        )
 
-        users = OrderedDict(sorted(list(self.user_manager.get_users_info(course.get_staff()).items()),
-                                   key=lambda k: k[1].realname if k[1] is not None else "") + users)
+        users = OrderedDict(
+            sorted(
+                list(self.user_manager.get_users_info(course.get_staff()).items()),
+                key=lambda k: k[1].realname if k[1] is not None else "",
+            )
+            + users
+        )
 
-        user_data = OrderedDict([(username, {
-            "username": username, "realname": user.realname if user is not None else "",
-            "email": user.email if user is not None else "", "total_tasks": 0,
-            "task_grades": {"answer": 0, "match": 0}, "task_succeeded": 0, "task_tried": 0, "total_tries": 0,
-            "grade": 0}) for username, user in users.items()])
+        user_data = OrderedDict(
+            [
+                (
+                    username,
+                    {
+                        "username": username,
+                        "realname": user.realname if user is not None else "",
+                        "email": user.email if user is not None else "",
+                        "total_tasks": 0,
+                        "task_grades": {"answer": 0, "match": 0},
+                        "task_succeeded": 0,
+                        "task_tried": 0,
+                        "total_tries": 0,
+                        "grade": 0,
+                    },
+                )
+                for username, user in users.items()
+            ]
+        )
 
-        for username, data in self.user_manager.get_course_caches(list(users.keys()), course).items():
+        for username, data in self.user_manager.get_course_caches(
+            list(users.keys()), course
+        ).items():
             user_data[username].update(data if data is not None else {})
 
         return user_data
@@ -119,19 +183,32 @@ class CourseStudentListPage(INGIniousAdminPage):
         taskids = list(course.get_tasks().keys())
 
         for audience in self.user_manager.get_course_audiences(course):
-            audiences[audience.id] = dict(list(audience.to_mongo().to_dict().items()) + [("tried", 0), ("done", 0) ])
-
-            submissions = Submission.objects(
-                courseid=course.get_id(), taskid__in= taskids, username__in=audience["students"]
+            audiences[audience.id] = dict(
+                list(audience.to_mongo().to_dict().items())
+                + [("tried", 0), ("done", 0)]
             )
 
-            data = submissions.aggregate([{
-                "$group": {
-                    "_id": "$taskid",
-                    "tried": {"$sum": 1},
-                    "done": {"$sum": {"$cond": [{"$eq": ["$result", "success"]}, 1, 0]}}
-                }
-            }])
+            submissions = Submission.objects(
+                courseid=course.get_id(),
+                taskid__in=taskids,
+                username__in=audience["students"],
+            )
+
+            data = submissions.aggregate(
+                [
+                    {
+                        "$group": {
+                            "_id": "$taskid",
+                            "tried": {"$sum": 1},
+                            "done": {
+                                "$sum": {
+                                    "$cond": [{"$eq": ["$result", "success"]}, 1, 0]
+                                }
+                            },
+                        }
+                    }
+                ]
+            )
 
             for c in data:
                 audiences[audience.id]["tried"] += 1 if c["tried"] else 0
@@ -154,34 +231,45 @@ class CourseStudentListPage(INGIniousAdminPage):
                     Group.objects(courseid=course.get_id()).update(students=[])
                     CourseClass.objects(id=course.get_id()).update(students=[])
                 else:
-                    self.user_manager.course_unregister_user(course.get_id(), data["username"])
+                    self.user_manager.course_unregister_user(
+                        course.get_id(), data["username"]
+                    )
             except:
                 pass
         elif "register_student" in data:
             try:
-                self.user_manager.course_register_user(course, data["username"].strip(), '', True)
+                self.user_manager.course_register_user(
+                    course, data["username"].strip(), "", True
+                )
             except:
                 pass
 
     def post_audiences(self, course, data, active_tab, msg, error):
         try:
-            if 'audience' in data:
-                Audience(courseid=course.get_id(), students=[], tutors=[], description=data['audience']).save()
+            if "audience" in data:
+                Audience(
+                    courseid=course.get_id(),
+                    students=[],
+                    tutors=[],
+                    description=data["audience"],
+                ).save()
                 msg["audiences"] = _("New audience created.")
                 active_tab = "tab_audiences"
 
         except:
-            msg["audiences"] = _('User returned an invalid form.')
+            msg["audiences"] = _("User returned an invalid form.")
             error["audiences"] = True
             active_tab = "tab_audiences"
 
         try:
-            if "audiencefile" in data and 'upload_audiences_creation' in data:
+            if "audiencefile" in data and "upload_audiences_creation" in data:
                 # get the Werkzeug datastructures.FileStorage object.
                 # The stream of this object is the stream body of the uploaded file.
                 # Furthermore, FileStorage.stream seems to inherit ʻio.BufferedIOBase`, so this stream should be boiled.
                 # As reader return an iterator and that we iterate twice, it is faster to cast into a list.
-                csv_data = list(csv.reader(io.TextIOWrapper(data["audiencefile"], encoding='utf-8')))
+                csv_data = list(
+                    csv.reader(io.TextIOWrapper(data["audiencefile"], encoding="utf-8"))
+                )
                 # Define used variables.
                 students_per_audience = {}
                 tutors_per_audience = {}
@@ -222,22 +310,38 @@ class CourseStudentListPage(INGIniousAdminPage):
                             continue
                         # prepare datas to avoid multiple request to database.
                         if role == "student":
-                            students_per_audience.setdefault(description, []).append(user_id)
+                            students_per_audience.setdefault(description, []).append(
+                                user_id
+                            )
                             course_students.append(user_id)
                         else:
-                            tutors_per_audience.setdefault(description, []).append(user_id)
+                            tutors_per_audience.setdefault(description, []).append(
+                                user_id
+                            )
                             course_tutors.append(user_id)
                     # Creation of audiences.
                     if len(students_per_audience) > 0:
                         for key, value in students_per_audience.items():
-                            audiences.append({"description": key, "courseid": courseid,
-                                              "students": value,
-                                              "tutors": tutors_per_audience[key] if key in tutors_per_audience else []})
+                            audiences.append(
+                                {
+                                    "description": key,
+                                    "courseid": courseid,
+                                    "students": value,
+                                    "tutors": tutors_per_audience[key]
+                                    if key in tutors_per_audience
+                                    else [],
+                                }
+                            )
                     else:
                         for key, value in tutors_per_audience.items():
-                            audiences.append({"description": key, "courseid": courseid,
-                                              "students": [],
-                                              "tutors": value})
+                            audiences.append(
+                                {
+                                    "description": key,
+                                    "courseid": courseid,
+                                    "students": [],
+                                    "tutors": value,
+                                }
+                            )
 
                     # update list of students and tutors of the course.
                     new_students = list(set(stud_list).union(set(course_students)))
@@ -257,7 +361,7 @@ class CourseStudentListPage(INGIniousAdminPage):
 
             active_tab = "tab_audiences"
         except Exception as e:
-            msg["audiences"] = _('An error occurred while parsing the data.')
+            msg["audiences"] = _("An error occurred while parsing the data.")
             error["audiences"] = True
             active_tab = "tab_audiences"
         return active_tab
@@ -281,7 +385,6 @@ class CourseStudentListPage(INGIniousAdminPage):
 
         errored_students = []
         if len(data["delete"]):
-
             for classid in data["delete"]:
                 # Get the group
                 group = Group.objects(id=classid, courseid=course.get_id()).first()
@@ -304,14 +407,21 @@ class CourseStudentListPage(INGIniousAdminPage):
 
                 for index, new_group in enumerate(groups):
                     # In case of file upload, no id specified
-                    new_group['_id'] = new_group['_id'] if '_id' in new_group else 'None'
+                    new_group["_id"] = (
+                        new_group["_id"] if "_id" in new_group else "None"
+                    )
 
                     # Update the group
-                    group, errors = self.update_group(course, new_group['_id'], new_group, audience_students)
+                    group, errors = self.update_group(
+                        course, new_group["_id"], new_group, audience_students
+                    )
                     errored_students += errors
 
                 if len(errored_students) > 0:
-                    msg["groups"] = _("Changes couldn't be applied for following students :") + "<ul>"
+                    msg["groups"] = (
+                        _("Changes couldn't be applied for following students :")
+                        + "<ul>"
+                    )
                     for student in errored_students:
                         msg["groups"] += "<li>" + student + "</li>"
 
@@ -320,40 +430,48 @@ class CourseStudentListPage(INGIniousAdminPage):
                 elif not error:
                     msg["groups"] = _("Groups updated.")
             except:
-                msg["groups"] = _('An error occurred while parsing the data.')
+                msg["groups"] = _("An error occurred while parsing the data.")
                 error["groups"] = True
             active_tab = "tab_groups"
         return active_tab
 
     def get_user_lists(self, course):
-        """ Get the available student list for group edition"""
+        """Get the available student list for group edition"""
         audience_list = self.user_manager.get_course_audiences(course)
         audience_list = {audience.id: audience for audience in audience_list}
 
         student_list = self.user_manager.get_course_registered_users(course, False)
         users_info = self.user_manager.get_users_info(student_list)
 
-        groups_list = list(Group.objects(courseid=course.get_id()).aggregate([
-            {"$unwind": "$students"},
-            {"$project": {"group": "$_id", "students": 1}}
-        ]))
+        groups_list = list(
+            Group.objects(courseid=course.get_id()).aggregate(
+                [
+                    {"$unwind": "$students"},
+                    {"$project": {"group": "$_id", "students": 1}},
+                ]
+            )
+        )
         groups_list = {d["students"]: d["group"] for d in groups_list}
 
         other_students = [entry for entry in student_list if entry not in groups_list]
-        other_students = sorted(other_students,
-                                key=lambda val: (("0" + users_info[val].realname) if users_info[val] else ("1" + val)))
+        other_students = sorted(
+            other_students,
+            key=lambda val: (
+                ("0" + users_info[val].realname) if users_info[val] else ("1" + val)
+            ),
+        )
 
         return student_list, audience_list, other_students, users_info
 
     def update_group(self, course, groupid, new_data, audience_students):
-        """ Update group and returns a list of errored students"""
+        """Update group and returns a list of errored students"""
 
         student_list = self.user_manager.get_course_registered_users(course, False)
 
         # If group is new
-        if groupid == 'None':
+        if groupid == "None":
             # Remove _id for correct insertion
-            del new_data['_id']
+            del new_data["_id"]
             new_data["courseid"] = course.get_id()
 
             # Insert the new group and retrieve its id
@@ -368,10 +486,17 @@ class CourseStudentListPage(INGIniousAdminPage):
             # Check the students
             for student in new_data["students"]:
                 student_allowed_in_group = any(
-                    set(audience_students.get(student, [])).intersection(new_data["audiences"]))
-                if student in student_list and (student_allowed_in_group or not new_data["audiences"]):
+                    set(audience_students.get(student, [])).intersection(
+                        new_data["audiences"]
+                    )
+                )
+                if student in student_list and (
+                    student_allowed_in_group or not new_data["audiences"]
+                ):
                     # Remove user from the other group
-                    Group.objects(courseid=course.get_id(), students=student).update(pull__students=student)
+                    Group.objects(courseid=course.get_id(), students=student).update(
+                        pull__students=student
+                    )
                     students.append(student)
                 else:
                     errored_students.append(student)
@@ -379,7 +504,10 @@ class CourseStudentListPage(INGIniousAdminPage):
         new_data["students"] = students
 
         group = Group.objects.get(id=groupid).modify(
-            description=new_data["description"], audiences=new_data["audiences"], size=new_data["size"],
-            students=students)
+            description=new_data["description"],
+            audiences=new_data["audiences"],
+            size=new_data["size"],
+            students=students,
+        )
 
         return group, errored_students

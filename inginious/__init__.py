@@ -18,9 +18,9 @@ except PackageNotFoundError:
 MARKETPLACE_URL = "https://marketplace.inginious.org/marketplace.json"
 DB_VERSION = 18
 
-builtins.__dict__['_'] = gettext.gettext
+builtins.__dict__["_"] = gettext.gettext
 
 
 def get_root_path():
-    """ Returns the INGInious root path """
+    """Returns the INGInious root path"""
     return os.path.abspath(os.path.dirname(__file__))

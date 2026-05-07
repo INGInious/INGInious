@@ -5,7 +5,7 @@
 # more information about the licensing of this file.
 #
 
-""" Starts an agent """
+"""Starts an agent"""
 
 import argparse
 import logging
@@ -16,11 +16,15 @@ import asyncio
 from inginious.common.entrypoints import get_args_and_filesystem
 from inginious.common.filesystems import init_fs_provider
 from inginious.agent.mcq_agent import MCQAgent
-from inginious.common.tasks_problems import MultipleChoiceProblem, MatchProblem, register_problem_types
+from inginious.common.tasks_problems import (
+    MultipleChoiceProblem,
+    MatchProblem,
+    register_problem_types,
+)
 
 
 def import_class(name):
-    m = name.split('.')
+    m = name.split(".")
     mod = __import__(m[0])
 
     for comp in m[1:]:
@@ -30,15 +34,36 @@ def import_class(name):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("backend", help="Address to the backend, in the form protocol://host:port. For example, tcp://127.0.0.1:2000", type=str)
-    parser.add_argument("--friendly-name", help="Friendly name to help identify agent.", default="", type=str)
+    parser.add_argument(
+        "backend",
+        help="Address to the backend, in the form protocol://host:port. For example, tcp://127.0.0.1:2000",
+        type=str,
+    )
+    parser.add_argument(
+        "--friendly-name",
+        help="Friendly name to help identify agent.",
+        default="",
+        type=str,
+    )
 
-    parser.add_argument("-v", "--verbose", help="increase output verbosity",
-                        action="store_true")
-    parser.add_argument("--debugmode", help="Enables debug mode. For developers only.", action="store_true")
-    parser.add_argument("--disable-autorestart", help="Disables the auto restart on agent failure.",
-                        action="store_true")
-    parser.add_argument("--ptype", nargs="+", help="Python class import path for additionnal subproblem types")
+    parser.add_argument(
+        "-v", "--verbose", help="increase output verbosity", action="store_true"
+    )
+    parser.add_argument(
+        "--debugmode",
+        help="Enables debug mode. For developers only.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--disable-autorestart",
+        help="Disables the auto restart on agent failure.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--ptype",
+        nargs="+",
+        help="Python class import path for additionnal subproblem types",
+    )
 
     (args, fsprovider) = get_args_and_filesystem(parser)
     init_fs_provider(fsprovider)
@@ -48,7 +73,9 @@ def main():
     logger.setLevel(logging.INFO if not args.verbose else logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO if not args.verbose else logging.DEBUG)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
@@ -62,7 +89,9 @@ def main():
                 logger.exception("Cannot load %s, exiting", ptype_loc)
                 exit(1)
 
-    register_problem_types({problem_type.get_type(): problem_type for problem_type in ptypes})
+    register_problem_types(
+        {problem_type.get_type(): problem_type for problem_type in ptypes}
+    )
 
     closing = False
     while not closing:
@@ -87,11 +116,15 @@ def main():
             if closing:
                 logger.exception("Agent has received an exception forcing it to end")
             else:
-                logger.exception("Agent has received an exception forcing it to restart")
+                logger.exception(
+                    "Agent has received an exception forcing it to restart"
+                )
         finally:
             logger.info("Closing loop")
             loop.close()
-            logger.info("Waiting for ZMQ to send remaining messages to backend (can take 1 sec)")
+            logger.info(
+                "Waiting for ZMQ to send remaining messages to backend (can take 1 sec)"
+            )
             context.destroy(1000)  # give zeromq 1 sec to send remaining messages
             logger.info("Done")
 

@@ -9,7 +9,7 @@ from inginious.common.base import load_json_or_yaml
 
 
 def get_config():
-    #Parse the parameters from environment variables
+    # Parse the parameters from environment variables
     configfile = os.environ.get("INGINIOUS_WEBAPP_CONFIG", "")
 
     if not configfile:

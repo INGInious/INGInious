@@ -11,7 +11,7 @@ import inginious.frontend.webdav
 config = get_config()
 
 # Init logging
-init_logging(config.get('log_level', 'INFO'))
+init_logging(config.get("log_level", "INFO"))
 
 # Load application (!!! For mod_wsgi, application identifier must be present)
 application = inginious.frontend.webdav.get_app(config)

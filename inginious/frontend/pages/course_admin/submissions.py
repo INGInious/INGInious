@@ -7,15 +7,20 @@ import logging
 from flask import request, Response, render_template
 from werkzeug.exceptions import NotFound, Forbidden
 
-from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
+from inginious.frontend.pages.course_admin.utils import (
+    make_csv,
+    INGIniousSubmissionsAdminPage,
+)
 from inginious.frontend.models import Submission
 
+
 class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
-    """ Page that allow search, view, replay an download of submisssions done by students """
+    """Page that allow search, view, replay an download of submisssions done by students"""
+
     _logger = logging.getLogger("inginious.webapp.submissions")
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ POST request """
+        """POST request"""
         course, __ = self.get_course_and_check_rights(courseid)
         msgs = []
 
@@ -31,46 +36,86 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
             if submission is None:
                 raise NotFound(description=_("This submission doesn't exist."))
 
-            self.submission_manager.replay_job(course, course.get_task(submission["taskid"]), submission, course.get_task_dispenser())
-            return Response(response=json.dumps({"status": "waiting"}), content_type='application/json')
+            self.submission_manager.replay_job(
+                course,
+                course.get_task(submission["taskid"]),
+                submission,
+                course.get_task_dispenser(),
+            )
+            return Response(
+                response=json.dumps({"status": "waiting"}),
+                content_type="application/json",
+            )
 
         elif "csv" in user_input or "download" in user_input or "replay" in user_input:
             best_only = "eval_dl" in user_input and "download" in user_input
-            params = self.get_input_params(json.loads(user_input.get("displayed_selection", "")), course)
-            data = self.submissions_from_user_input(course, params, msgs, best_only=best_only)
+            params = self.get_input_params(
+                json.loads(user_input.get("displayed_selection", "")), course
+            )
+            data = self.submissions_from_user_input(
+                course, params, msgs, best_only=best_only
+            )
 
             if "csv" in user_input:
                 return make_csv(data)
 
             elif "download" in user_input:
                 download_type = user_input.get("download_type", "")
-                if download_type not in ["taskid/username", "taskid/audience", "username/taskid", "audience/taskid"]:
+                if download_type not in [
+                    "taskid/username",
+                    "taskid/audience",
+                    "username/taskid",
+                    "audience/taskid",
+                ]:
                     download_type = "taskid/username"
                 if (best_only or "eval" in params) and "simplify" in user_input:
-                    sub_folders = list(download_type.split('/'))
+                    sub_folders = list(download_type.split("/"))
                 else:
-                    sub_folders = list(download_type.split('/')) + ["submissiondateid"]
-                archive, error = self.submission_manager.get_submission_archive(course, data, sub_folders, simplify="simplify" in user_input)
+                    sub_folders = list(download_type.split("/")) + ["submissiondateid"]
+                archive, error = self.submission_manager.get_submission_archive(
+                    course, data, sub_folders, simplify="simplify" in user_input
+                )
                 if not error:
-                    response = Response(response=archive, content_type='application/x-gzip')
-                    response.headers['Content-Disposition'] = 'attachment; filename="submissions.tgz"'
+                    response = Response(
+                        response=archive, content_type="application/x-gzip"
+                    )
+                    response.headers["Content-Disposition"] = (
+                        'attachment; filename="submissions.tgz"'
+                    )
                     return response
                 else:
-                    msgs.append(_("The following submission could not be prepared for download: {}").format(error))
+                    msgs.append(
+                        _(
+                            "The following submission could not be prepared for download: {}"
+                        ).format(error)
+                    )
                     return self.page(course, params, msgs=msgs)
 
             elif "replay" in user_input:
                 if not self.user_manager.has_admin_rights_on_course(course):
-                    raise Forbidden(description=_("You don't have admin rights on this course."))
+                    raise Forbidden(
+                        description=_("You don't have admin rights on this course.")
+                    )
 
                 tasks = course.get_tasks()
                 for submission in data:
-                    self.submission_manager.replay_job(course, tasks[submission["taskid"]], submission, course.get_task_dispenser())
-                msgs.append(_("{0} selected submissions were set for replay.").format(str(len(data))))
+                    self.submission_manager.replay_job(
+                        course,
+                        tasks[submission["taskid"]],
+                        submission,
+                        course.get_task_dispenser(),
+                    )
+                msgs.append(
+                    _("{0} selected submissions were set for replay.").format(
+                        str(len(data))
+                    )
+                )
                 return self.page(course, params, msgs=msgs)
 
         elif "page" in user_input:
-            params = self.get_input_params(json.loads(user_input["displayed_selection"]), course)
+            params = self.get_input_params(
+                json.loads(user_input["displayed_selection"]), course
+            )
             try:
                 page = int(user_input["page"])
             except TypeError:
@@ -81,7 +126,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
             return self.page(course, params, msgs=msgs)
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         course, __ = self.get_course_and_check_rights(courseid)
 
         user_input = request.args.copy()
@@ -92,45 +137,73 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
         if "download_submission" in user_input:
             submission = Submission.objects(
-                id=user_input["download_submission"],courseid=course.get_id(), status__in=["done", "error"]
+                id=user_input["download_submission"],
+                courseid=course.get_id(),
+                status__in=["done", "error"],
             ).first()
 
             if submission is None:
                 raise NotFound(description=_("The submission doesn't exist."))
 
-            self._logger.info("Downloading submission %s - %s - %s - %s", submission.id, submission['courseid'],
-                              submission['taskid'], submission['username'])
-            archive, error = self.submission_manager.get_submission_archive(course, [submission], [])
+            self._logger.info(
+                "Downloading submission %s - %s - %s - %s",
+                submission.id,
+                submission["courseid"],
+                submission["taskid"],
+                submission["username"],
+            )
+            archive, error = self.submission_manager.get_submission_archive(
+                course, [submission], []
+            )
             if not error:
-                response = Response(response=archive, content_type='application/x-gzip')
-                response.headers['Content-Disposition'] = 'attachment; filename="submissions.tgz"'
+                response = Response(response=archive, content_type="application/x-gzip")
+                response.headers["Content-Disposition"] = (
+                    'attachment; filename="submissions.tgz"'
+                )
                 return response
 
         params = self.get_input_params(user_input, course)
         return self.page(course, params)
 
     def page(self, course, params, page=1, msgs=None):
-        """ Get all data and display the page """
+        """Get all data and display the page"""
         msgs = msgs if msgs else []
 
-        users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, params)
+        users, tutored_users, audiences, tutored_audiences, tasks, limit = (
+            self.get_course_params(course, params)
+        )
 
-        data, sub_count, pages = self.submissions_from_user_input(course, params, msgs, page, limit)
+        data, sub_count, pages = self.submissions_from_user_input(
+            course, params, msgs, page, limit
+        )
 
-        return render_template("course_admin/submissions.html", course=course, users=users,
-                                           tutored_users=tutored_users, audiences=audiences,
-                                           tutored_audiences=tutored_audiences, tasks=tasks, old_params=params,
-                                           data=data, displayed_selection=json.dumps(params),
-                                           number_of_pages=pages, page_number=page, msgs=msgs, sub_count = sub_count)
+        return render_template(
+            "course_admin/submissions.html",
+            course=course,
+            users=users,
+            tutored_users=tutored_users,
+            audiences=audiences,
+            tutored_audiences=tutored_audiences,
+            tasks=tasks,
+            old_params=params,
+            data=data,
+            displayed_selection=json.dumps(params),
+            number_of_pages=pages,
+            page_number=page,
+            msgs=msgs,
+            sub_count=sub_count,
+        )
 
-    def submissions_from_user_input(self, course, user_input, msgs, page=None, limit=None, best_only=False):
-        """ Returns the list of submissions and corresponding aggragations based on inputs """
+    def submissions_from_user_input(
+        self, course, user_input, msgs, page=None, limit=None, best_only=False
+    ):
+        """Returns the list of submissions and corresponding aggragations based on inputs"""
 
         submit_time_between = [None, None]
         try:
-            if user_input.get('date_before', ''):
+            if user_input.get("date_before", ""):
                 submit_time_between[1] = user_input["date_before"]
-            if user_input.get('date_after', ''):
+            if user_input.get("date_after", ""):
                 submit_time_between[0] = user_input["date_after"]
         except ValueError:  # If match of datetime.strptime() fails
             msgs.append(_("Invalid dates"))
@@ -139,32 +212,49 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
         skip = None
         if page and limit:
-            skip = (page-1) * limit
+            skip = (page - 1) * limit
 
-        return self.get_selected_submissions(course, only_tasks=user_input["tasks"],
-                                             only_tasks_with_categories=user_input["org_categories"],
-                                             only_users=user_input["users"],
-                                             only_audiences=user_input["audiences"],
-                                             grade_between=[
-                                                 float(user_input["grade_min"]) if user_input.get('grade_min', '') else None,
-                                                 float(user_input["grade_max"]) if user_input.get('grade_max', '') else None
-                                             ],
-                                             submit_time_between=submit_time_between,
-                                             keep_only_evaluation_submissions=must_keep_best_submissions_only,
-                                             keep_only_crashes="crashes_only" in user_input,
-                                             sort_by=(user_input.get('sort_by', 'submitted_on'), user_input.get('order', 0) == 1),
-                                             limit=limit,
-                                             skip=skip)
+        return self.get_selected_submissions(
+            course,
+            only_tasks=user_input["tasks"],
+            only_tasks_with_categories=user_input["org_categories"],
+            only_users=user_input["users"],
+            only_audiences=user_input["audiences"],
+            grade_between=[
+                float(user_input["grade_min"])
+                if user_input.get("grade_min", "")
+                else None,
+                float(user_input["grade_max"])
+                if user_input.get("grade_max", "")
+                else None,
+            ],
+            submit_time_between=submit_time_between,
+            keep_only_evaluation_submissions=must_keep_best_submissions_only,
+            keep_only_crashes="crashes_only" in user_input,
+            sort_by=(
+                user_input.get("sort_by", "submitted_on"),
+                user_input.get("order", 0) == 1,
+            ),
+            limit=limit,
+            skip=skip,
+        )
 
-    def get_selected_submissions(self, course,
-                                 only_tasks=None, only_tasks_with_categories=None,
-                                 only_users=None, only_audiences=None,
-                                 with_tags=None,
-                                 grade_between=None, submit_time_between=None,
-                                 keep_only_evaluation_submissions=False,
-                                 keep_only_crashes=False,
-                                 sort_by=("submitted_on", True),
-                                 limit=None, skip=None):
+    def get_selected_submissions(
+        self,
+        course,
+        only_tasks=None,
+        only_tasks_with_categories=None,
+        only_users=None,
+        only_audiences=None,
+        with_tags=None,
+        grade_between=None,
+        submit_time_between=None,
+        keep_only_evaluation_submissions=False,
+        keep_only_crashes=False,
+        sort_by=("submitted_on", True),
+        limit=None,
+        skip=None,
+    ):
         """
         All the parameters (excluding course, sort_by and keep_only_evaluation_submissions) can be None.
         If that is the case, they are ignored.
@@ -189,14 +279,18 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         :return: a list of submission filling the criterias above.
         """
 
-        filter, best_submissions_list = self.get_submissions_filter(course, only_tasks=only_tasks,
-                                                                    only_tasks_with_categories=only_tasks_with_categories,
-                                                                    only_users=only_users,
-                                                                    only_audiences=only_audiences, with_tags=with_tags,
-                                                                    grade_between=grade_between,
-                                                                    submit_time_between=submit_time_between,
-                                                                    keep_only_evaluation_submissions=keep_only_evaluation_submissions,
-                                                                    keep_only_crashes=keep_only_crashes)
+        filter, best_submissions_list = self.get_submissions_filter(
+            course,
+            only_tasks=only_tasks,
+            only_tasks_with_categories=only_tasks_with_categories,
+            only_users=only_users,
+            only_audiences=only_audiences,
+            with_tags=with_tags,
+            grade_between=grade_between,
+            submit_time_between=submit_time_between,
+            keep_only_evaluation_submissions=keep_only_evaluation_submissions,
+            keep_only_crashes=keep_only_crashes,
+        )
 
         submissions = Submission.objects(**filter)
         submissions_count = Submission.objects(**filter).count()
@@ -217,7 +311,9 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
             d.best = d.id in best_submissions_list  # mark best submissions
 
         if limit is not None:
-            number_of_pages = max(submissions_count // limit + (submissions_count % limit > 0), 1)
+            number_of_pages = max(
+                submissions_count // limit + (submissions_count % limit > 0), 1
+            )
             return out, submissions_count, number_of_pages
         else:
             return out

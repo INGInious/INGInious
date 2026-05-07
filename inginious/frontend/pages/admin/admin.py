@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Admin index page"""
+"""Admin index page"""
 
 from flask import request, jsonify, render_template
 
@@ -15,24 +15,36 @@ class AdministrationUsersPage(INGIniousAdministratorPage):
     """User Admin page."""
 
     def GET_AUTH(self, *args, **kwargs):
-        """ Display admin users page """
+        """Display admin users page"""
         return self.show_page()
 
     def POST_AUTH(self, *args, **kwargs):
-        """ Display admin users page"""
+        """Display admin users page"""
         return self.show_page()
 
     def show_page(self):
         """Display page"""
 
-        page = int(request.form.get("page")) if request.form.get("page") is not None else 1
+        page = (
+            int(request.form.get("page")) if request.form.get("page") is not None else 1
+        )
         user_per_page = 10  # TODO probably better to let user define user_per_page
-        all_users = self.user_manager.get_users_info(usernames=None, limit=user_per_page, skip=(page-1)*user_per_page)
+        all_users = self.user_manager.get_users_info(
+            usernames=None, limit=user_per_page, skip=(page - 1) * user_per_page
+        )
         size_users = User.objects.count()
-        pages = size_users // user_per_page + (size_users % user_per_page > 0) if user_per_page > 0 else 1
+        pages = (
+            size_users // user_per_page + (size_users % user_per_page > 0)
+            if user_per_page > 0
+            else 1
+        )
 
-        return render_template("admin/admin_users.html", all_users=all_users,
-                                           number_of_pages=pages, page_number=page)
+        return render_template(
+            "admin/admin_users.html",
+            all_users=all_users,
+            number_of_pages=pages,
+            page_number=page,
+        )
 
 
 class AdministrationUserActionPage(INGIniousAdministratorPage):
@@ -59,11 +71,14 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
             realname = request.form.get("realname")
             email = request.form.get("email")
             password = request.form.get("password")
-            feedback = self.user_manager.create_user({
-                "username": username,
-                "realname": realname,
-                "email": email,
-                "password": password})
+            feedback = self.user_manager.create_user(
+                {
+                    "username": username,
+                    "realname": realname,
+                    "email": email,
+                    "password": password,
+                }
+            )
         else:
             feedback = _("Unknown action.")
         if feedback:

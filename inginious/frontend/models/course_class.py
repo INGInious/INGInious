@@ -5,6 +5,7 @@
 
 from mongoengine import Document, StringField, ListField
 
+
 class CourseClass(Document):
     id = StringField(primary_key=True)
     students = ListField(StringField())

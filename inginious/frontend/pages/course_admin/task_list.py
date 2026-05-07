@@ -18,25 +18,29 @@ from inginious.frontend.models import UserTask, Submission
 
 
 class CourseTaskListPage(INGIniousAdminPage):
-    """ List informations about all tasks """
+    """List informations about all tasks"""
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=True)
         return self.page(course)
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ POST request """
+        """POST request"""
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
 
         errors = []
         user_input = request.form
         if "task_dispenser" in user_input:
             selected_task_dispenser = user_input.get("task_dispenser", "toc")
-            task_dispenser_class = get_task_dispensers().get(selected_task_dispenser, None)
+            task_dispenser_class = get_task_dispensers().get(
+                selected_task_dispenser, None
+            )
             if task_dispenser_class:
-                course.set_descriptor_element('task_dispenser', task_dispenser_class.get_id())
-                course.set_descriptor_element('dispenser_data', {})
+                course.set_descriptor_element(
+                    "task_dispenser", task_dispenser_class.get_id()
+                )
+                course.set_descriptor_element("dispenser_data", {})
                 course.save()
             else:
                 errors.append(_("Invalid task dispenser"))
@@ -50,7 +54,9 @@ class CourseTaskListPage(INGIniousAdminPage):
                 errors.append(_("Something wrong happened: ") + str(e))
         else:
             try:
-                self.update_dispenser(course, json.loads(user_input["course_structure"]))
+                self.update_dispenser(
+                    course, json.loads(user_input["course_structure"])
+                )
             except Exception as e:
                 errors.append(_("Something wrong happened: ") + str(e))
 
@@ -58,35 +64,47 @@ class CourseTaskListPage(INGIniousAdminPage):
                 try:
                     task_fs = course.get_fs().from_subfolder(taskid)
                     if task_fs.exists("task.yaml"):
-                        raise TaskAlreadyExistsException("Task with id " + taskid + " already exists.")
+                        raise TaskAlreadyExistsException(
+                            "Task with id " + taskid + " already exists."
+                        )
 
-                    t = Task(courseid, taskid, {"name": taskid, "problems": {}, "environment_type": "mcq"})
+                    t = Task(
+                        courseid,
+                        taskid,
+                        {"name": taskid, "problems": {}, "environment_type": "mcq"},
+                    )
                     t.save()
                 except Exception as ex:
-                    errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
+                    errors.append(
+                        _("Couldn't create task {} : ").format(taskid) + str(ex)
+                    )
             for taskid in json.loads(user_input.get("deleted_tasks", "[]")):
                 try:
                     t = Task.get(taskid, course.get_fs())
                     t.delete()
                 except Exception as ex:
-                    errors.append(_("Couldn't delete task {} : ").format(taskid) + str(ex))
+                    errors.append(
+                        _("Couldn't delete task {} : ").format(taskid) + str(ex)
+                    )
             for taskid in json.loads(user_input.get("wiped_tasks", "[]")):
                 try:
                     self.wipe_task(courseid, taskid)
                 except Exception as ex:
-                    errors.append(_("Couldn't wipe task {} : ").format(taskid) + str(ex))
+                    errors.append(
+                        _("Couldn't wipe task {} : ").format(taskid) + str(ex)
+                    )
 
         # don't forget to reload the modified course
         course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
         return self.page(course, errors, not errors)
 
     def update_dispenser(self, course, dispenser_data):
-        """ Update the task dispenser based on dispenser_data """
+        """Update the task dispenser based on dispenser_data"""
         task_dispenser = course.get_task_dispenser()
         data, msg = task_dispenser.check_dispenser_data(dispenser_data)
         if data:
-            course.set_descriptor_element('task_dispenser',task_dispenser.get_id())
-            course.set_descriptor_element('dispenser_data', data)
+            course.set_descriptor_element("task_dispenser", task_dispenser.get_id())
+            course.set_descriptor_element("dispenser_data", data)
             course.save()
         else:
             raise Exception(_("Invalid course structure: ") + msg)
@@ -99,11 +117,11 @@ class CourseTaskListPage(INGIniousAdminPage):
             task.save()
 
     def submission_url_generator(self, taskid):
-        """ Generates a submission url """
+        """Generates a submission url"""
         return "?format=taskid%2Fusername&tasks=" + taskid
 
     def wipe_task(self, courseid, taskid):
-        """ Wipe the data associated to the taskid from DB"""
+        """Wipe the data associated to the taskid from DB"""
         for submission in Submission.objects(courseid=courseid, taskid=taskid):
             submission.archive.delete()
             submission.input.delete()
@@ -111,10 +129,12 @@ class CourseTaskListPage(INGIniousAdminPage):
         UserTask.objects(courseid=courseid, taskid=taskid).delete()
         Submission.objects(courseid=courseid, taskid=taskid).delete()
 
-        logging.getLogger("inginious.webapp.task_edit").info("Task %s/%s wiped.", courseid, taskid)
+        logging.getLogger("inginious.webapp.task_edit").info(
+            "Task %s/%s wiped.", courseid, taskid
+        )
 
     def page(self, course, errors=None, validated=False):
-        """ Get all data and display the page """
+        """Get all data and display the page"""
 
         # Load tasks and verify exceptions
         files = course.get_readable_tasks()
@@ -130,13 +150,29 @@ class CourseTaskListPage(INGIniousAdminPage):
             except Exception as ex:
                 tasks_errors[taskid] = str(ex)
 
-        tasks_data = natsorted([(taskid, {"name": tasks[taskid].get_name(session.language),
-                                       "url": self.submission_url_generator(taskid)}) for taskid in tasks],
-                            key=lambda x: x[1]["name"])
+        tasks_data = natsorted(
+            [
+                (
+                    taskid,
+                    {
+                        "name": tasks[taskid].get_name(session.language),
+                        "url": self.submission_url_generator(taskid),
+                    },
+                )
+                for taskid in tasks
+            ],
+            key=lambda x: x[1]["name"],
+        )
         tasks_data = OrderedDict(tasks_data)
 
         task_dispensers = get_task_dispensers()
 
-        return render_template("course_admin/task_list.html", course=course,
-                                           task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,
-                                           tasks_errors=tasks_errors, validated=validated)
+        return render_template(
+            "course_admin/task_list.html",
+            course=course,
+            task_dispensers=task_dispensers,
+            tasks=tasks_data,
+            errors=errors,
+            tasks_errors=tasks_errors,
+            validated=validated,
+        )

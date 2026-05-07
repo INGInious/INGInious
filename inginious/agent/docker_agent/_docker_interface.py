@@ -4,8 +4,9 @@
 # more information about the licensing of this file.
 
 """
-    (not asyncio) Interface to Docker
+(not asyncio) Interface to Docker
 """
+
 import os
 from datetime import datetime
 from typing import List, Tuple, Dict
@@ -22,16 +23,19 @@ DOCKER_AGENT_VERSION = 3
 
 class DockerInterface(object):  # pragma: no cover
     """
-        (not asyncio) Interface to Docker
+    (not asyncio) Interface to Docker
 
-        We do not test coverage here, as it is a bit complicated to interact with docker in tests.
-        Docker-py itself is already well tested.
+    We do not test coverage here, as it is a bit complicated to interact with docker in tests.
+    Docker-py itself is already well tested.
     """
+
     @property
     def _docker(self):
         return docker.from_env()
-    
-    def get_containers(self, runtimes: List[DockerRuntime]) -> Dict[str, Dict[str, Dict[str, str]]]:
+
+    def get_containers(
+        self, runtimes: List[DockerRuntime]
+    ) -> Dict[str, Dict[str, Dict[str, str]]]:
         """
         :param runtimes: a list of DockerRuntime. Each DockerRuntime.envtype must appear only once.
         :return: a dict of available containers in the form
@@ -46,71 +50,118 @@ class DockerInterface(object):  # pragma: no cover
             }
         }
         """
-        assert len(set(x.envtype for x in runtimes)) == len(runtimes)  # no duplicates in the envtypes
+        assert len(set(x.envtype for x in runtimes)) == len(
+            runtimes
+        )  # no duplicates in the envtypes
 
         logger = logging.getLogger("inginious.agent.docker")
 
         # First, create a dict with {"env": {"id": {"title": "alias", "created": 000, "ports": [0, 1]}}}
         images = {x.envtype: {} for x in runtimes}
 
-        for x in self._docker.images.list(filters={"label": "org.inginious.grading.name"}):
+        for x in self._docker.images.list(
+            filters={"label": "org.inginious.grading.name"}
+        ):
             title = None
             try:
                 title = x.labels["org.inginious.grading.name"]
-                created = x.history()[0]['Created']
-                ports = [int(y) for y in x.labels["org.inginious.grading.ports"].split(
-                    ",")] if "org.inginious.grading.ports" in x.labels else []
+                created = x.history()[0]["Created"]
+                ports = (
+                    [int(y) for y in x.labels["org.inginious.grading.ports"].split(",")]
+                    if "org.inginious.grading.ports" in x.labels
+                    else []
+                )
 
                 for docker_runtime in runtimes:
-                    if "org.inginious.grading.need_root" in x.labels and not docker_runtime.run_as_root:
+                    if (
+                        "org.inginious.grading.need_root" in x.labels
+                        and not docker_runtime.run_as_root
+                    ):
                         continue
-                    if "org.inginious.grading.need_gpu" in x.labels and not docker_runtime.enables_gpu:
+                    if (
+                        "org.inginious.grading.need_gpu" in x.labels
+                        and not docker_runtime.enables_gpu
+                    ):
                         continue
 
-                    logger.info("Envtype %s (%s) can use container %s", docker_runtime.envtype, docker_runtime.runtime, title)
-                    if x.labels.get("org.inginious.grading.agent_version") != str(DOCKER_AGENT_VERSION):
+                    logger.info(
+                        "Envtype %s (%s) can use container %s",
+                        docker_runtime.envtype,
+                        docker_runtime.runtime,
+                        title,
+                    )
+                    if x.labels.get("org.inginious.grading.agent_version") != str(
+                        DOCKER_AGENT_VERSION
+                    ):
                         logger.warning(
                             "Container %s is made for an old/newer version of the agent (container version is "
-                            "%s, but it should be %i). INGInious will ignore the container.", title,
-                            str(x.labels.get("org.inginious.grading.agent_version")), DOCKER_AGENT_VERSION)
+                            "%s, but it should be %i). INGInious will ignore the container.",
+                            title,
+                            str(x.labels.get("org.inginious.grading.agent_version")),
+                            DOCKER_AGENT_VERSION,
+                        )
                         continue
 
-                    images[docker_runtime.envtype][x.attrs['Id']] = {
+                    images[docker_runtime.envtype][x.attrs["Id"]] = {
                         "title": title,
                         "created": created,
                         "ports": ports,
-                        "runtime": docker_runtime.runtime
+                        "runtime": docker_runtime.runtime,
                     }
             except:
-                logging.getLogger("inginious.agent").exception("Container %s is badly formatted", title or "[cannot load title]")
+                logging.getLogger("inginious.agent").exception(
+                    "Container %s is badly formatted", title or "[cannot load title]"
+                )
 
         # Then, we keep only the last version of each name
         latest = {}
         for envtype, content in images.items():
             latest[envtype] = {}
             for img_id, img_c in content.items():
-                if img_c["title"] not in latest[envtype] or latest[envtype][img_c["title"]]["created"] < img_c["created"]:
+                if (
+                    img_c["title"] not in latest[envtype]
+                    or latest[envtype][img_c["title"]]["created"] < img_c["created"]
+                ):
                     latest[envtype][img_c["title"]] = {"id": img_id, **img_c}
         return latest
 
-    def get_host_ip(self, env_with_dig='ingi/inginious-c-default'):
+    def get_host_ip(self, env_with_dig="ingi/inginious-c-default"):
         """
         Get the external IP of the host of the docker daemon. Uses OpenDNS internally.
         :param env_with_dig: any container image that has dig
         """
         try:
-            container = self._docker.containers.create(env_with_dig, command="dig +short myip.opendns.com @resolver1.opendns.com")
+            container = self._docker.containers.create(
+                env_with_dig,
+                command="dig +short myip.opendns.com @resolver1.opendns.com",
+            )
             container.start()
             response = container.wait()
-            assert response["StatusCode"] == 0 if isinstance(response, dict) else response == 0
-            answer = container.logs(stdout=True, stderr=False).decode('utf8').strip()
+            assert (
+                response["StatusCode"] == 0
+                if isinstance(response, dict)
+                else response == 0
+            )
+            answer = container.logs(stdout=True, stderr=False).decode("utf8").strip()
             container.remove(v=True, link=False, force=True)
             return answer
         except:
             return None
 
-    def create_container(self, image, network_grading, debugger, mem_limit, task_path, sockets_path,
-                         course_common_path, course_common_student_path, fd_limit, runtime: str, ports=None):
+    def create_container(
+        self,
+        image,
+        network_grading,
+        debugger,
+        mem_limit,
+        task_path,
+        sockets_path,
+        course_common_path,
+        course_common_student_path,
+        fd_limit,
+        runtime: str,
+        ports=None,
+    ):
         """
         Creates a container.
         :param image: env to start (name/id of a docker image)
@@ -132,7 +183,7 @@ class DockerInterface(object):  # pragma: no cover
         if ports is None:
             ports = {}
 
-        nofile_limit = Ulimit(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
+        nofile_limit = Ulimit(name="nofile", soft=fd_limit[0], hard=fd_limit[1])
 
         response = self._docker.containers.create(
             image,
@@ -141,24 +192,38 @@ class DockerInterface(object):  # pragma: no cover
             memswap_limit=str(mem_limit) + "M",
             mem_swappiness=0,
             oom_kill_disable=True,
-            network_mode=("bridge" if (network_grading or len(ports) > 0) else 'none'),
+            network_mode=("bridge" if (network_grading or len(ports) > 0) else "none"),
             ports=ports,
             extra_hosts={"host.docker.internal": "host-gateway"},
-            environment={"DEBUGGER" : debugger},
+            environment={"DEBUGGER": debugger},
             volumes={
-                task_path: {'bind': '/task'},
-                sockets_path: {'bind': '/sockets'},
-                course_common_path: {'bind': '/course/common', 'mode': 'ro'},
-                course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro'}
+                task_path: {"bind": "/task"},
+                sockets_path: {"bind": "/sockets"},
+                course_common_path: {"bind": "/course/common", "mode": "ro"},
+                course_common_student_path: {
+                    "bind": "/course/common/student",
+                    "mode": "ro",
+                },
             },
             runtime=runtime,
-            ulimits=[nofile_limit]
+            ulimits=[nofile_limit],
         )
         return response.id
 
-    def create_container_student(self, runtime: str, image: str, mem_limit, student_path,
-                                 socket_path, systemfiles_path, course_common_student_path,
-                                 parent_runtime: str,fd_limit, share_network_of_container: str=None, ports=None):
+    def create_container_student(
+        self,
+        runtime: str,
+        image: str,
+        mem_limit,
+        student_path,
+        socket_path,
+        systemfiles_path,
+        course_common_student_path,
+        parent_runtime: str,
+        fd_limit,
+        share_network_of_container: str = None,
+        ports=None,
+    ):
         """
         Creates a student container
         :param fd_limit:Tuple with soft and hard limits per slot for FS
@@ -178,7 +243,7 @@ class DockerInterface(object):  # pragma: no cover
         socket_path = os.path.abspath(socket_path)
         systemfiles_path = os.path.abspath(systemfiles_path)
         course_common_student_path = os.path.abspath(course_common_student_path)
-        secured_scripts_path = student_path+"/scripts"
+        secured_scripts_path = student_path + "/scripts"
 
         if ports is None:
             ports = {}
@@ -188,14 +253,17 @@ class DockerInterface(object):  # pragma: no cover
         elif not share_network_of_container:
             net_mode = "none"
         else:
-            net_mode = 'container:' + share_network_of_container
+            net_mode = "container:" + share_network_of_container
 
-        nofile_limit = Ulimit(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
+        nofile_limit = Ulimit(name="nofile", soft=fd_limit[0], hard=fd_limit[1])
 
         response = self._docker.containers.create(
             image,
             stdin_open=True,
-            command="_run_student_intern "+runtime + " " + parent_runtime,  # the script takes the runtimes as arguments
+            command="_run_student_intern "
+            + runtime
+            + " "
+            + parent_runtime,  # the script takes the runtimes as arguments
             mem_limit=str(mem_limit) + "M",
             memswap_limit=str(mem_limit) + "M",
             mem_swappiness=0,
@@ -203,36 +271,49 @@ class DockerInterface(object):  # pragma: no cover
             network_mode=net_mode,
             ports=ports,
             volumes={
-                student_path: {'bind': '/task/student'},
-                secured_scripts_path: {'bind': '/task/student/scripts'},
-                socket_path: {'bind': '/__parent.sock'},
-                systemfiles_path: {'bind': '/task/systemfiles', 'mode': 'ro'},
-                course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro'}
+                student_path: {"bind": "/task/student"},
+                secured_scripts_path: {"bind": "/task/student/scripts"},
+                socket_path: {"bind": "/__parent.sock"},
+                systemfiles_path: {"bind": "/task/systemfiles", "mode": "ro"},
+                course_common_student_path: {
+                    "bind": "/course/common/student",
+                    "mode": "ro",
+                },
             },
             runtime=runtime,
-            ulimits=[nofile_limit]
+            ulimits=[nofile_limit],
         )
 
         return response.id
 
     def start_container(self, container_id):
-        """ Starts a container (obviously) """
+        """Starts a container (obviously)"""
         self._docker.containers.get(container_id).start()
 
     def attach_to_container(self, container_id):
-        """ A socket attached to the stdin/stdout of a container. The object returned contains a get_socket() function to get a socket.socket
-        object and  close_socket() to close the connection """
-        return self._docker.containers.get(container_id).attach_socket(params={
-            'stdin': 1,
-            'stdout': 1,
-            'stderr': 0,
-            'stream': 1,
-        })
+        """A socket attached to the stdin/stdout of a container. The object returned contains a get_socket() function to get a socket.socket
+        object and  close_socket() to close the connection"""
+        return self._docker.containers.get(container_id).attach_socket(
+            params={
+                "stdin": 1,
+                "stdout": 1,
+                "stderr": 0,
+                "stream": 1,
+            }
+        )
 
     def get_logs(self, container_id):
-        """ Return the full stdout/stderr of a container"""
-        stdout = self._docker.containers.get(container_id).logs(stdout=True, stderr=False).decode('utf8')
-        stderr = self._docker.containers.get(container_id).logs(stdout=False, stderr=True).decode('utf8')
+        """Return the full stdout/stderr of a container"""
+        stdout = (
+            self._docker.containers.get(container_id)
+            .logs(stdout=True, stderr=False)
+            .decode("utf8")
+        )
+        stderr = (
+            self._docker.containers.get(container_id)
+            .logs(stdout=False, stderr=True)
+            .decode("utf8")
+        )
         return stdout, stderr
 
     def get_stats(self, container_id):
@@ -243,8 +324,11 @@ class DockerInterface(object):  # pragma: no cover
         return self._docker.containers.get(container_id).stats(decode=True)
 
     def list_running_containers(self):
-        """ Returns a set of running container ids """
-        return {x.attrs.get('Id') for x in self._docker.containers.list(all=False, sparse=True)}
+        """Returns a set of running container ids"""
+        return {
+            x.attrs.get("Id")
+            for x in self._docker.containers.list(all=False, sparse=True)
+        }
 
     def remove_container(self, container_id):
         """

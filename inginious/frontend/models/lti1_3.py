@@ -14,11 +14,12 @@ class LTIGrade(Document):
 
     message_launch_id = StringField()
 
-    meta = { 'collection': 'lti_grade_queue' }
+    meta = {"collection": "lti_grade_queue"}
+
 
 class LaunchData(Document):
     key = StringField(required=True)
     context = ListField(required=True)
     value = DynamicField(required=True)
 
-    meta = {'collection': 'lti_launch'}
+    meta = {"collection": "lti_launch"}

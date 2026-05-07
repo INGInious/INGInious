@@ -12,15 +12,16 @@ class Nonce(Document):
     expiration = DateTimeField()
 
     meta = {
-        'collection': 'nonce',
-        'indexes': [
-            ('timestamp', 'nonce'),
+        "collection": "nonce",
+        "indexes": [
+            ("timestamp", "nonce"),
             {
-                'fields': ['expiration'],
-                'expireAfterSeconds': 0 # use field value
-            }
-        ]
+                "fields": ["expiration"],
+                "expireAfterSeconds": 0,  # use field value
+            },
+        ],
     }
+
 
 class LISOutcome(Document):
     courseid = StringField()
@@ -32,4 +33,4 @@ class LISOutcome(Document):
     outcome_result_id = StringField()
     outcome_service_url = StringField()
 
-    meta = {'collection': 'lis_outcome_queue'}
+    meta = {"collection": "lis_outcome_queue"}

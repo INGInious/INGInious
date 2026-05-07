@@ -32,7 +32,7 @@ from inginious.frontend.courses import Course
 
 
 def import_class(name):
-    m = name.split('.')
+    m = name.split(".")
     mod = __import__(m[0])
 
     for comp in m[1:]:
@@ -61,9 +61,12 @@ def compare_all_outputs(output1, output2, keys):
         the values from both the outputs
     """
     return {
-            keys[i]: (output1[i], output2[i]) for i in range(len(keys))
-            if compare_output(output1[i], output2[i], keys[i]) and output1[i] is not None and output2[i] is not None
-        }
+        keys[i]: (output1[i], output2[i])
+        for i in range(len(keys))
+        if compare_output(output1[i], output2[i], keys[i])
+        and output1[i] is not None
+        and output2[i] is not None
+    }
 
 
 def compare_output(output1, output2, key):
@@ -119,7 +122,7 @@ def compare_output(output1, output2, key):
     func = {
         "result": result_compare,
         "problems": problems_compare,
-        "archive": archive_compare
+        "archive": archive_compare,
     }
     return func.get(key, generic_compare)(output1, output2)
 
@@ -133,12 +136,28 @@ def test_task(yaml_data, course, task, client, client_sync):
     :param client_sync: ClientSync object
     :return: dict whose the format is specified in compare_all_outputs function doc
     """
-    if task.get_environment_id() not in client.get_available_environments().get(task.get_environment_type(), ()):
+    if task.get_environment_id() not in client.get_available_environments().get(
+        task.get_environment_type(), ()
+    ):
         time.sleep(1)
-    if task.get_environment_id() not in client.get_available_environments().get(task.get_environment_type(), ()):
-        raise Exception('Environment not available')
-    new_output = client_sync.new_job(0, course, task, yaml_data['input'])  # request the client with input from yaml and given task
-    keys = ["result", "grade", "problems", "tests", "custom", "state", "archive", "stdout", "stderr"]
+    if task.get_environment_id() not in client.get_available_environments().get(
+        task.get_environment_type(), ()
+    ):
+        raise Exception("Environment not available")
+    new_output = client_sync.new_job(
+        0, course, task, yaml_data["input"]
+    )  # request the client with input from yaml and given task
+    keys = [
+        "result",
+        "grade",
+        "problems",
+        "tests",
+        "custom",
+        "state",
+        "archive",
+        "stdout",
+        "stderr",
+    ]
     old_output = [yaml_data.get(x, None) for x in keys]
     return compare_all_outputs(old_output, new_output, keys)
 
@@ -153,16 +172,25 @@ def test_web_task(yaml_data, course, task, yaml_path):
     :return: yaml_data if any error, {} otherwise
     """
     try:
-        web_task = Task(course.get_id(), task.get_id(), yaml_data)  # Test of init a web task with the yaml_data. if the values are incorrect, exception will be raised
-        web_task.get_context('English').parse(debug=True)  # Test of compiling the context
-        if course.get_task_dispenser().get_evaluation_mode(task.get_id()) not in ["best", "last"]:
+        web_task = Task(
+            course.get_id(), task.get_id(), yaml_data
+        )  # Test of init a web task with the yaml_data. if the values are incorrect, exception will be raised
+        web_task.get_context("English").parse(
+            debug=True
+        )  # Test of compiling the context
+        if course.get_task_dispenser().get_evaluation_mode(task.get_id()) not in [
+            "best",
+            "last",
+        ]:
             raise BaseException("Not correct evaluation type")
         for sub_prob in yaml_data["problems"]:
-            p = ParsableText(yaml_data["problems"][sub_prob]["header"])  # parse the rst of the subproblem
+            p = ParsableText(
+                yaml_data["problems"][sub_prob]["header"]
+            )  # parse the rst of the subproblem
             p.parse(debug=True)
         return {}
     except BaseException as e:  # Rendering of Task failing
-        print('{}: WEB TASK ERROR: {}'.format(yaml_path, e), file=sys.stderr)
+        print("{}: WEB TASK ERROR: {}".format(yaml_path, e), file=sys.stderr)
         return yaml_data
 
 
@@ -177,10 +205,12 @@ def test_submission_yaml(client, path, output, client_sync):
     :return: None
     """
     # print(os.path.join(test_path, yaml_file.name))
-    with open(path, 'r') as yaml:
+    with open(path, "r") as yaml:
         yaml_data = load(yaml, Loader=SafeLoader)
         course = Course.get(yaml_data["courseid"])
-        res = test_task(yaml_data, course, course.get_task(yaml_data["taskid"]), client, client_sync)
+        res = test_task(
+            yaml_data, course, course.get_task(yaml_data["taskid"]), client, client_sync
+        )
         if res != {}:
             output[path] = res
 
@@ -195,7 +225,7 @@ def test_task_yaml(path, output, task_name, course_name):
     :param config: dict, contains configuration variable
     :return: None
     """
-    with open(path, 'r') as yaml_file:
+    with open(path, "r") as yaml_file:
         yaml_data = load(yaml_file, Loader=SafeLoader)
     course = Course.get(course_name)
     res = test_web_task(yaml_data, course, course.get_task(task_name), path)
@@ -224,10 +254,16 @@ def test_all_files(config, client):
                     test_path = os.path.join(task.path, "test")
                     test_files = os.scandir(test_path)
                     for yaml_file in test_files:
-                        if not yaml_file.name.startswith('.') and yaml_file.is_file():  # Exclude possible failures
-                            test_submission_yaml(client, yaml_file.path, test_output, client_sync)
+                        if (
+                            not yaml_file.name.startswith(".") and yaml_file.is_file()
+                        ):  # Exclude possible failures
+                            test_submission_yaml(
+                                client, yaml_file.path, test_output, client_sync
+                            )
                 task_yaml_path = os.path.join(task.path, "task.yaml")
-                test_task_yaml(task_yaml_path, test_output, task.name, os.path.split(dir_path)[1])
+                test_task_yaml(
+                    task_yaml_path, test_output, task.name, os.path.split(dir_path)[1]
+                )
     if test_output != {}:  # errors in task.yaml ou submission.test
         output = json.dumps(test_output)
         if "file" in config:
@@ -241,13 +277,25 @@ def test_all_files(config, client):
 
 def main():
     # Arguments parsing
-    parser = argparse.ArgumentParser(description="Test the correctness of results contained in yaml files")
-    parser.add_argument("--logging", '-l', help="enables logging", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="Test the correctness of results contained in yaml files"
+    )
+    parser.add_argument("--logging", "-l", help="enables logging", action="store_true")
     parser.add_argument("task_dir", help="Courses directory")
     parser.add_argument("course_dir", help="Repository for the course to test")
-    parser.add_argument("-f", "--file", help="Store in the specified file in a json format")
-    parser.add_argument("--tdisp", nargs="+", help="Python class import path for additionnal task dispensers")
-    parser.add_argument("--ptype", nargs="+", help="Python class import path for additionnal subproblem types")
+    parser.add_argument(
+        "-f", "--file", help="Store in the specified file in a json format"
+    )
+    parser.add_argument(
+        "--tdisp",
+        nargs="+",
+        help="Python class import path for additionnal task dispensers",
+    )
+    parser.add_argument(
+        "--ptype",
+        nargs="+",
+        help="Python class import path for additionnal subproblem types",
+    )
 
     args = parser.parse_args()
 
@@ -276,7 +324,7 @@ def main():
     if args.ptype:
         load_modules(args.ptype, register_problem_types)
 
-    config = { "course_directory": args.course_dir, "backend": "local"}
+    config = {"course_directory": args.course_dir, "backend": "local"}
     if args.file:
         config["file"] = args.file
 
@@ -288,7 +336,11 @@ def main():
         print("\nAn error has occured: {}\n".format(e), file=sys.stderr)
         exit(66)
 
-    print("\nAll yaml files in {} directory are consistent with the tests\n".format(args.course_dir))
+    print(
+        "\nAll yaml files in {} directory are consistent with the tests\n".format(
+            args.course_dir
+        )
+    )
 
 
 if __name__ == "__main__":

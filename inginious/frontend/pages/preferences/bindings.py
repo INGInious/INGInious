@@ -3,25 +3,32 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Auth bindings page """
-from flask import  session, request, redirect, render_template, url_for
+"""Auth bindings page"""
+
+from flask import session, request, redirect, render_template, url_for
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User
 
+
 class BindingsPage(INGIniousAuthPage):
-    """ Bindings page for DB-authenticated users"""
+    """Bindings page for DB-authenticated users"""
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         auth_methods = self.user_manager.get_auth_methods()
         user_data = self.user_manager.get_user_info(session.username)
         bindings = user_data.bindings
-        return render_template("preferences/bindings.html", bindings=bindings,
-                                           auth_methods=auth_methods, msg="", error=False)
+        return render_template(
+            "preferences/bindings.html",
+            bindings=bindings,
+            auth_methods=auth_methods,
+            msg="",
+            error=False,
+        )
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
-        """ POST request """
+        """POST request"""
         msg = ""
         error = False
 
@@ -43,5 +50,10 @@ class BindingsPage(INGIniousAuthPage):
 
         bindings = user_data.bindings
 
-        return render_template("preferences/bindings.html", bindings=bindings,
-                                           auth_methods=auth_methods, msg=msg, error=error)
+        return render_template(
+            "preferences/bindings.html",
+            bindings=bindings,
+            auth_methods=auth_methods,
+            msg=msg,
+            error=error,
+        )

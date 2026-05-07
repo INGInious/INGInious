@@ -3,8 +3,10 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Some common functions for logging """
+"""Some common functions for logging"""
+
 import logging
+
 
 def init_logging(log_level=logging.DEBUG):
     """
@@ -16,7 +18,9 @@ def init_logging(log_level=logging.DEBUG):
     # Log format
     ch = logging.StreamHandler()
     ch.setLevel(log_level)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     ch.setFormatter(formatter)
 
     # Base INGInious logger
@@ -34,9 +38,10 @@ def init_logging(log_level=logging.DEBUG):
     werkzeug_log.setLevel(log_level)
     werkzeug_log.addHandler(ch)
 
+
 def get_course_logger(coursename):
     """
     :param coursename: the course id
     :return: a logger object associated to a specific course
     """
-    return logging.getLogger("inginious.course."+coursename)
+    return logging.getLogger("inginious.course." + coursename)

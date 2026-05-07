@@ -3,7 +3,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Some type of exceptions used by parts of INGInious """
+"""Some type of exceptions used by parts of INGInious"""
+
 
 class NotLoadedException(Exception):
     pass
@@ -15,6 +16,7 @@ class InvalidNameException(Exception):
 
 class CourseNotFoundException(Exception):
     pass
+
 
 class CourseNotArchivable(Exception):
     pass
@@ -31,8 +33,10 @@ class CourseUnreadableException(Exception):
 class CourseAlreadyExistsException(Exception):
     pass
 
+
 class TaskAlreadyExistsException(Exception):
     pass
+
 
 class TaskUnreadableException(Exception):
     pass
@@ -44,4 +48,3 @@ class TaskReaderNotFoundException(Exception):
 
 class ImportCourseException(Exception):
     pass
-

@@ -21,7 +21,8 @@ from inginious.frontend.courses import Course
 def get_dc(user_manager):
 
     class INGIniousDAVDomainController(BaseDomainController):
-        """ Authenticates users using the API key and their username """
+        """Authenticates users using the API key and their username"""
+
         def __init__(self, wsgidav_app, config):
             super(INGIniousDAVDomainController, self).__init__(wsgidav_app, config)
 
@@ -64,27 +65,29 @@ def get_dc(user_manager):
             """Computes digest hash A1 part."""
             if not self.is_user_realm_admin(realm, user_name):
                 return False
-            password = user_manager.get_user_api_key(user_name, create=True) or ''
+            password = user_manager.get_user_api_key(user_name, create=True) or ""
             return self._compute_http_digest_a1(realm, user_name, password)
 
     return INGIniousDAVDomainController
 
+
 class INGIniousDAVCourseFile(FileResource):
-    """ Protects the course description file. """
+    """Protects the course description file."""
+
     def __init__(self, path, environ, filePath, course_id):
         super(INGIniousDAVCourseFile, self).__init__(path, environ, filePath)
         self._course_id = course_id
 
     def delete(self):
-        """ It is forbidden to delete a course description file"""
+        """It is forbidden to delete a course description file"""
         raise DAVError(HTTP_FORBIDDEN)
 
     def copy_move_single(self, dest_path, is_move):
-        """ It is forbidden to delete a course description file"""
+        """It is forbidden to delete a course description file"""
         raise DAVError(HTTP_FORBIDDEN)
 
     def move_recursive(self, dest_path):
-        """ It is forbidden to delete a course description file"""
+        """It is forbidden to delete a course description file"""
         raise DAVError(HTTP_FORBIDDEN)
 
     def begin_write(self, content_type=None):
@@ -95,7 +98,7 @@ class INGIniousDAVCourseFile(FileResource):
         return open(self._file_path + ".webdav_tmp", "wb", 8192)
 
     def end_write(self, with_errors):
-        """ Update the course.yaml if possible. Verifies the content first, and make backups beforehand. """
+        """Update the course.yaml if possible. Verifies the content first, and make backups beforehand."""
 
         if with_errors:
             # something happened while uploading, let's remove the tmp file
@@ -107,7 +110,7 @@ class INGIniousDAVCourseFile(FileResource):
             # get the new content that just has been uploaded
             with open(self._file_path + ".webdav_tmp", "rb") as new_file:
                 new_content = new_file.read()
-            os.remove(self._file_path + ".webdav_tmp") #the file is not needed anymore
+            os.remove(self._file_path + ".webdav_tmp")  # the file is not needed anymore
 
             # backup the original content. In case inginious-webdav crashes while updating the file.
             with open(self._file_path + ".webdav_backup", "wb", 8192) as backup_file:
@@ -131,7 +134,8 @@ class INGIniousDAVCourseFile(FileResource):
 
 
 class INGIniousFilesystemProvider(DAVProvider):
-    """ A DAVProvider adapted to the structure of INGInious """
+    """A DAVProvider adapted to the structure of INGInious"""
+
     def __init__(self):
         super(INGIniousFilesystemProvider, self).__init__()
         self.readonly = False
@@ -141,7 +145,7 @@ class INGIniousFilesystemProvider(DAVProvider):
         return path_parts[0]
 
     def _get_inner_path(self, path):
-        """ Get the path to the file (as a list of string) beyond the course main folder """
+        """Get the path to the file (as a list of string) beyond the course main folder"""
         path_parts = self._get_path_parts(path)
         return path_parts[1:]
 
@@ -163,9 +167,15 @@ class INGIniousFilesystemProvider(DAVProvider):
         path_to_course_fs = course.get_fs()
         path_to_course = os.path.abspath(path_to_course_fs.prefix)
 
-        file_path = os.path.abspath(os.path.join(path_to_course, *self._get_inner_path(path)))
+        file_path = os.path.abspath(
+            os.path.join(path_to_course, *self._get_inner_path(path))
+        )
         if not file_path.startswith(path_to_course):
-            raise RuntimeError("Security exception: tried to access file outside course root: {}".format(file_path))
+            raise RuntimeError(
+                "Security exception: tried to access file outside course root: {}".format(
+                    file_path
+                )
+            )
 
         # Convert to unicode
         file_path = util.to_unicode_safe(file_path)
@@ -196,15 +206,21 @@ class INGIniousFilesystemProvider(DAVProvider):
 
 
 def get_app(config):
-    """ Init the webdav app """
-    connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
+    """Init the webdav app"""
+    connect(
+        config.get("database", "INGInious"),
+        host=config.get("mongo_opt", {}).get("host", "localhost"),
+        tz_aware=True,
+    )
 
     # Create the FS provider
     if "tasks_directory" not in config:
-        raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
+        raise RuntimeError(
+            "WebDav access is only supported if INGInious is using a local filesystem to access tasks"
+        )
 
     init_fs_provider(LocalFSProvider(config["tasks_directory"]))
-    user_manager = UserManager(config.get('superadmins', []))
+    user_manager = UserManager(config.get("superadmins", []))
 
     config = dict(wsgidav_app.DEFAULT_CONFIG)
     config["provider_mapping"] = {"/": INGIniousFilesystemProvider()}

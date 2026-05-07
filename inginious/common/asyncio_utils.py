@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """
-    Utilities for asyncio
+Utilities for asyncio
 """
 
 import asyncio
@@ -15,7 +15,8 @@ from typing import TypeVar, Generic
 
 
 class AsyncIteratorWrapper(object):
-    """ A wrapper that converts old-style-generators to async generators using run_in_executor """
+    """A wrapper that converts old-style-generators to async generators using run_in_executor"""
+
     def __init__(self, obj):
         self._it = obj
         self._loop = asyncio.get_event_loop()
@@ -40,17 +41,22 @@ class AsyncIteratorWrapper(object):
     def _unroll(self):
         try:
             for i in self._it:
-                self._loop.call_soon_threadsafe(asyncio.ensure_future, self._add_to_queue(i))
+                self._loop.call_soon_threadsafe(
+                    asyncio.ensure_future, self._add_to_queue(i)
+                )
         except Exception:
             pass
-        self._loop.call_soon_threadsafe(asyncio.ensure_future, self._add_to_queue(self._last_item))
+        self._loop.call_soon_threadsafe(
+            asyncio.ensure_future, self._add_to_queue(self._last_item)
+        )
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class AsyncProxy(Generic[T]):
-    """ An asyncio proxy for modules and classes """
+    """An asyncio proxy for modules and classes"""
+
     def __init__(self, module: T, loop=None, executor=None):
         self._module = module
         self._loop = loop or asyncio.get_event_loop()
@@ -58,7 +64,7 @@ class AsyncProxy(Generic[T]):
 
     @property
     def sync(self) -> T:
-        """ Return the original sync module/class """
+        """Return the original sync module/class"""
         return self._module
 
     def __getattr__(self, name):
@@ -81,7 +87,7 @@ __background_tasks = weakref.WeakKeyDictionary()
 
 
 def create_safe_task(loop, logger, coroutine):
-    """ Calls loop.create_task with a safe (with logged exception / protection against garbage collection) coroutine """
+    """Calls loop.create_task with a safe (with logged exception / protection against garbage collection) coroutine"""
     task = loop.create_task(coroutine)
     task.add_done_callback(lambda task: __log_safe_task(logger, task))
     if loop not in __background_tasks:
@@ -92,7 +98,9 @@ def create_safe_task(loop, logger, coroutine):
 
 
 def __log_safe_task(logger, task):
-    """ Logs the exception if one occurs in a given task """
+    """Logs the exception if one occurs in a given task"""
     exception = task.exception()
     if exception is not None:
-        logger.exception("An exception occurred while running a Task", exc_info=exception)
+        logger.exception(
+            "An exception occurred while running a Task", exc_info=exception
+        )

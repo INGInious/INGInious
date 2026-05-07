@@ -10,11 +10,12 @@ from flask import session, request, render_template
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 from inginious.frontend.models import UserTask
 
+
 class CourseStudentInfoPage(INGIniousAdminPage):
-    """ List information about a student """
+    """List information about a student"""
 
     def GET_AUTH(self, courseid, username):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         course, __ = self.get_course_and_check_rights(courseid)
         return self.page(course, username)
 
@@ -23,23 +24,41 @@ class CourseStudentInfoPage(INGIniousAdminPage):
         taskid = data["taskid"]
         course, __ = self.get_course_and_check_rights(courseid)
 
-        UserTask.objects.get(username=username, courseid=courseid, taskid=taskid).reset_state()
+        UserTask.objects.get(
+            username=username, courseid=courseid, taskid=taskid
+        ).reset_state()
 
         return self.page(course, username)
 
     def submission_url_generator(self, username, taskid):
-        """ Generates a submission url """
+        """Generates a submission url"""
         return "?tasks=" + taskid + "&users=" + username
 
     def page(self, course, username):
-        """ Get all data and display the page """
+        """Get all data and display the page"""
         data = UserTask.objects(username=username, courseid=course.get_id())
 
         tasks = course.get_task_dispenser().get_ordered_tasks()
-        user_task_list = course.get_task_dispenser().get_user_task_list([username])[username]
-        result = OrderedDict([(taskid, {"taskid": taskid, "name": tasks[taskid].get_name(session.language),
-                                 "tried": 0, "status": "notviewed", "grade": 0, "visible": False,
-                                 "url": self.submission_url_generator(username, taskid)}) for taskid in tasks])
+        user_task_list = course.get_task_dispenser().get_user_task_list([username])[
+            username
+        ]
+        result = OrderedDict(
+            [
+                (
+                    taskid,
+                    {
+                        "taskid": taskid,
+                        "name": tasks[taskid].get_name(session.language),
+                        "tried": 0,
+                        "status": "notviewed",
+                        "grade": 0,
+                        "visible": False,
+                        "url": self.submission_url_generator(username, taskid),
+                    },
+                )
+                for taskid in tasks
+            ]
+        )
 
         for taskdata in data:
             if taskdata["taskid"] in result:
@@ -51,7 +70,9 @@ class CourseStudentInfoPage(INGIniousAdminPage):
                 else:
                     result[taskdata["taskid"]]["status"] = "failed"
                 result[taskdata["taskid"]]["grade"] = taskdata["grade"]
-                result[taskdata["taskid"]]["submissionid"] = str(taskdata["submissionid"])
+                result[taskdata["taskid"]]["submissionid"] = str(
+                    taskdata["submissionid"]
+                )
 
         for taskid in user_task_list:
             result[taskid]["visible"] = True
@@ -59,5 +80,9 @@ class CourseStudentInfoPage(INGIniousAdminPage):
         if "csv" in request.args:
             return make_csv(result)
 
-        return render_template("course_admin/student_info.html", course=course,
-                                           username=username, data=result)
+        return render_template(
+            "course_admin/student_info.html",
+            course=course,
+            username=username,
+            data=result,
+        )

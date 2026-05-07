@@ -3,7 +3,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Course page """
+"""Course page"""
+
 import sys
 from flask import session, request, redirect, render_template, url_for
 from werkzeug.exceptions import Forbidden
@@ -13,28 +14,34 @@ from inginious.common.exceptions import ImportCourseException
 from inginious.common.log import get_course_logger
 
 from inginious.frontend.courses import Course
-from inginious.frontend.marketplace_courses import get_all_marketplace_courses, get_marketplace_course
+from inginious.frontend.marketplace_courses import (
+    get_all_marketplace_courses,
+    get_marketplace_course,
+)
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import pbs
-    git = pbs.Command('git')
+
+    git = pbs.Command("git")
 else:
     from sh import git  # pylint: disable=no-name-in-module
 
 
 class MarketplacePage(INGIniousAuthPage):
-    """ Course marketplace """
+    """Course marketplace"""
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         # Change to teacher privilege when created
         if not self.user_manager.user_is_superadmin():
-            raise Forbidden(description=_("You don't have superadmin rights on this course."))
+            raise Forbidden(
+                description=_("You don't have superadmin rights on this course.")
+            )
         return self.show_page()
 
     def POST_AUTH(self):  # pylint: disable=arguments-differ
-        """ POST request """
+        """POST request"""
         # Change to teacher privilege when created
         if not self.user_manager.user_is_superadmin():
             raise Forbidden(description=_("You're not allowed to do that"))
@@ -55,7 +62,7 @@ class MarketplacePage(INGIniousAuthPage):
         return self.show_page(errors)
 
     def show_page(self, errors=None):
-        """ Prepares and shows the course marketplace """
+        """Prepares and shows the course marketplace"""
         if errors is None:
             errors = []
         courses = get_all_marketplace_courses()
@@ -68,7 +75,9 @@ def import_course(course, new_courseid, username):
 
     course_fs = Course(new_courseid, {"name": new_courseid}).get_fs()
     if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
-        raise ImportCourseException("Course with id " + new_courseid + " already exists.")
+        raise ImportCourseException(
+            "Course with id " + new_courseid + " already exists."
+        )
 
     try:
         git.clone(course.get_link(), course_fs.prefix)
@@ -78,12 +87,14 @@ def import_course(course, new_courseid, username):
     try:
         old_descriptor = Course.get(new_courseid).get_descriptor()
     except:
-        old_descriptor ={}
+        old_descriptor = {}
 
-    new_descriptor = {"description": old_descriptor.get("description", ""),
-                      'admins': [username],
-                      "accessible": False,
-                      "tags": old_descriptor.get("tags", {})}
+    new_descriptor = {
+        "description": old_descriptor.get("description", ""),
+        "admins": [username],
+        "accessible": False,
+        "tags": old_descriptor.get("tags", {}),
+    }
     if "name" in old_descriptor:
         new_descriptor["name"] = old_descriptor["name"] + " - " + new_courseid
     else:
@@ -95,7 +106,10 @@ def import_course(course, new_courseid, username):
     try:
         Course(new_courseid, new_descriptor).save()
     except:
-        raise ImportCourseException(_("An error occur while editing the course description"))
+        raise ImportCourseException(
+            _("An error occur while editing the course description")
+        )
 
-    get_course_logger(new_courseid).info("Course %s cloned from the marketplace.", new_courseid)
-
+    get_course_logger(new_courseid).info(
+        "Course %s cloned from the marketplace.", new_courseid
+    )

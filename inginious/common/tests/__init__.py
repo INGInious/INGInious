@@ -3,4 +3,4 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Tests for the inginious.common package """
+"""Tests for the inginious.common package"""

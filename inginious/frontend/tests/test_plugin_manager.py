@@ -11,7 +11,7 @@ class TestPluginManager(object):
         raise Exception()
 
     def test_exception(self):
-        """ Hook Manager should silently ignore hooks that make exceptions"""
+        """Hook Manager should silently ignore hooks that make exceptions"""
         plugin_manager.add_hook("test", self.make_exception)
         plugin_manager.add_hook("test", lambda: 42)
         retval = plugin_manager.call_hook("test")

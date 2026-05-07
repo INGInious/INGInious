@@ -5,7 +5,14 @@
 
 import tzlocal
 
-from mongoengine import Document,  StringField, ListField, MapField, BooleanField, DynamicField
+from mongoengine import (
+    Document,
+    StringField,
+    ListField,
+    MapField,
+    BooleanField,
+    DynamicField,
+)
 
 
 class User(Document):
@@ -15,8 +22,10 @@ class User(Document):
     password = StringField()
     language = StringField(required=True, default="en")
     code_indentation = StringField(choices=["2", "3", "4", "tabs"], default="4")
-    bindings = MapField(ListField()) # TODO: use custom validation or refactor
-    ltibindings = MapField(MapField(DynamicField())) # TODO: use custom validation or refactor
+    bindings = MapField(ListField())  # TODO: use custom validation or refactor
+    ltibindings = MapField(
+        MapField(DynamicField())
+    )  # TODO: use custom validation or refactor
     tos_accepted = BooleanField(default=False)
     apikey = StringField(default=None)
     timezone = StringField(default=lambda: tzlocal.get_localzone_name())

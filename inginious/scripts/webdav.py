@@ -5,7 +5,7 @@
 # more information about the licensing of this file.
 #
 
-""" Starts the webdav """
+"""Starts the webdav"""
 
 import argparse
 import logging
@@ -25,17 +25,31 @@ import inginious.frontend.webdav
 def limited_input_middleware(app):
     # Ensure wsgi.input is a bounded stream
     def new_app(environ, start_response):
-        environ['wsgi.input'] = get_input_stream(environ)
+        environ["wsgi.input"] = get_input_stream(environ)
         return app(environ, start_response)
+
     return new_app
+
 
 def main():
     # Parse the paramaters from command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config",
-                        help="Path to configuration file. By default: configuration.yaml or configuration.json", default=os.environ.get("INGINIOUS_WEBAPP_CONFIG", ""))
-    parser.add_argument("--host", help="Host to bind to. Default is localhost.", default=os.environ.get("INGINIOUS_WEBDAV_HOST", "localhost"))
-    parser.add_argument("--port", help="Port to listen to. Default is 8080.", type=int, default=os.environ.get("INGINIOUS_WEBDAV_PORT", "8080"))
+    parser.add_argument(
+        "--config",
+        help="Path to configuration file. By default: configuration.yaml or configuration.json",
+        default=os.environ.get("INGINIOUS_WEBAPP_CONFIG", ""),
+    )
+    parser.add_argument(
+        "--host",
+        help="Host to bind to. Default is localhost.",
+        default=os.environ.get("INGINIOUS_WEBDAV_HOST", "localhost"),
+    )
+    parser.add_argument(
+        "--port",
+        help="Port to listen to. Default is 8080.",
+        type=int,
+        default=os.environ.get("INGINIOUS_WEBDAV_PORT", "8080"),
+    )
     args = parser.parse_args()
 
     host = args.host
@@ -53,22 +67,33 @@ def main():
     # Load configuration and application (!!! For mod_wsgi, application identifier must be present)
     config = load_json_or_yaml(configfile)
     # Init logging
-    init_logging(config.get('log_level', 'INFO'))
+    init_logging(config.get("log_level", "INFO"))
     logging.getLogger("inginious.webdav").info("http://%s:%d/" % (host, int(port)))
     application = inginious.frontend.webdav.get_app(config)
 
-    if 'SERVER_SOFTWARE' in os.environ:  # cgi
-        os.environ['FCGI_FORCE_CGI'] = 'Y'
+    if "SERVER_SOFTWARE" in os.environ:  # cgi
+        os.environ["FCGI_FORCE_CGI"] = "Y"
 
-    if 'PHP_FCGI_CHILDREN' in os.environ or 'SERVER_SOFTWARE' in os.environ:  # lighttpd fastcgi
+    if (
+        "PHP_FCGI_CHILDREN" in os.environ or "SERVER_SOFTWARE" in os.environ
+    ):  # lighttpd fastcgi
         import flup.server.fcgi as flups
-        flups.WSGIServer(application, multiplexed=True, bindAddress=None, debug=False).run()
+
+        flups.WSGIServer(
+            application, multiplexed=True, bindAddress=None, debug=False
+        ).run()
 
     # Ensure WsgiDAV receive limited streams for PUT requests
     application = limited_input_middleware(application)
 
     # Launch the app
-    run_simple(host, port, application, use_debugger=config.get("web_debug", False), threaded=True)
+    run_simple(
+        host,
+        port,
+        application,
+        use_debugger=config.get("web_debug", False),
+        threaded=True,
+    )
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" SAML SSO plugin """
+"""SAML SSO plugin"""
 
 import copy
 import html
@@ -42,11 +42,16 @@ class SAMLAuthMethod(AuthMethod):
 
     def get_imlink(self):
         if self._imlink:
-            return '<img src="' + self._imlink + \
-                   '" style="-moz-user-select: none; -webkit-user-select: none; ' \
-                   'user-select: none; max-height:50px;" />'
+            return (
+                '<img src="'
+                + self._imlink
+                + '" style="-moz-user-select: none; -webkit-user-select: none; '
+                'user-select: none; max-height:50px;" />'
+            )
         else:
-            return '<i class="fa fa-id-card" style="font-size:50px; color:#000000;"></i>'
+            return (
+                '<i class="fa fa-id-card" style="font-size:50px; color:#000000;"></i>'
+            )
 
     def get_auth_link(self, auth_storage):
         auth = OneLogin_Saml2_Auth(prepare_request(self._settings), self._settings)
@@ -57,7 +62,10 @@ class SAMLAuthMethod(AuthMethod):
         input_data = flask.request.form
 
         if "alreadyRedirected" not in input_data:
-            raise abort(Response(status=200, response="""
+            raise abort(
+                Response(
+                    status=200,
+                    response="""
                 <!DOCTYPE html>
                 <html>
                     <head>
@@ -84,7 +92,12 @@ class SAMLAuthMethod(AuthMethod):
                         </form>
                     </body>
                 </html>
-            """.format(RelayState=html.escape(input_data["RelayState"]), SAMLResponse=html.escape(input_data["SAMLResponse"]))))
+            """.format(
+                        RelayState=html.escape(input_data["RelayState"]),
+                        SAMLResponse=html.escape(input_data["SAMLResponse"]),
+                    ),
+                )
+            )
 
         auth = OneLogin_Saml2_Auth(req, self._settings)
         auth.process_response()
@@ -93,9 +106,14 @@ class SAMLAuthMethod(AuthMethod):
         # Try and check if IdP is using several signature certificates
         # This is a limitation of python3-saml
         for cert in self._settings["idp"].get("additionalX509certs", []):
-            if auth.get_last_error_reason() == "Signature validation failed. SAML Response rejected":
+            if (
+                auth.get_last_error_reason()
+                == "Signature validation failed. SAML Response rejected"
+            ):
                 # Change used IdP certificate
-                logging.getLogger('inginious.webapp.plugin.auth.saml').debug("Trying another certificate...")
+                logging.getLogger("inginious.webapp.plugin.auth.saml").debug(
+                    "Trying another certificate..."
+                )
                 new_settings = copy.deepcopy(self._settings)
                 new_settings["idp"]["x509cert"] = cert
                 # Retry processing response
@@ -115,13 +133,14 @@ class SAMLAuthMethod(AuthMethod):
 
             # Redirect to desired url
             self_url = OneLogin_Saml2_Utils.get_self_url(req)
-            if 'RelayState' in input_data and self_url != input_data['RelayState']:
-                auth_storage.update(json.loads(input_data['RelayState']))
+            if "RelayState" in input_data and self_url != input_data["RelayState"]:
+                auth_storage.update(json.loads(input_data["RelayState"]))
                 # Initialize session in user manager and update cache
                 return str(username), realname, email, additional
         else:
-            logging.getLogger('inginious.webapp.plugin.auth.saml').error("Errors while processing response : " +
-                                                                         ", ".join(errors))
+            logging.getLogger("inginious.webapp.plugin.auth.saml").error(
+                "Errors while processing response : " + ", ".join(errors)
+            )
             return None
 
     def get_settings(self):
@@ -129,26 +148,26 @@ class SAMLAuthMethod(AuthMethod):
 
 
 def prepare_request(settings):
-    """ Prepare SAML request """
+    """Prepare SAML request"""
 
     # Set the ACS url and binding method
     settings["sp"]["assertionConsumerService"] = {
         "url": flask.request.url_root + "auth/callback/" + settings["id"],
-        "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+        "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
     }
 
     # If server is behind proxys or balancers use the HTTP_X_FORWARDED fields
     url_data = urlparse(flask.request.url)
     return {
-        'https': 'on' if flask.request.scheme == 'https' else 'off',
-        'http_host': flask.request.host,
-        'server_port': url_data.port,
-        'script_name': flask.request.path,
-        'get_data': flask.request.args.copy(),
-        'post_data': flask.request.form.copy(),
+        "https": "on" if flask.request.scheme == "https" else "off",
+        "http_host": flask.request.host,
+        "server_port": url_data.port,
+        "script_name": flask.request.path,
+        "get_data": flask.request.args.copy(),
+        "post_data": flask.request.form.copy(),
         # Uncomment if using ADFS as IdP, https://github.com/onelogin/python-saml/pull/144
         # 'lowercase_urlencoding': True,
-        'query_string': flask.request.query_string
+        "query_string": flask.request.query_string,
     }
 
 
@@ -162,10 +181,15 @@ class MetadataPage(INGIniousPage):
         if len(errors) == 0:
             return Response(response=metadata, status=200, mimetype="text/xml")
         else:
-            raise InternalServerError(description=', '.join(errors))
+            raise InternalServerError(description=", ".join(errors))
 
 
 def init(plugin_manager, client, conf):
-    plugin_manager.add_page('/auth/<id>/metadata', MetadataPage.as_view('metadatapage_' + conf.get("id")))
-    plugin_manager.register_auth_method(SAMLAuthMethod(conf.get("id"), conf.get('name', 'SAML'), conf.get('imlink', ''), conf))
-
+    plugin_manager.add_page(
+        "/auth/<id>/metadata", MetadataPage.as_view("metadatapage_" + conf.get("id"))
+    )
+    plugin_manager.register_auth_method(
+        SAMLAuthMethod(
+            conf.get("id"), conf.get("name", "SAML"), conf.get("imlink", ""), conf
+        )
+    )

@@ -11,11 +11,11 @@ import docker
 from dotenv import load_dotenv
 
 
-INFO = '\033[94m'
-WARNING = '\033[33m'
-FAIL = '\033[91m'
-ENDC = '\033[0m'
-UNDERLINE = '\033[4m'
+INFO = "\033[94m"
+WARNING = "\033[33m"
+FAIL = "\033[91m"
+ENDC = "\033[0m"
+UNDERLINE = "\033[4m"
 
 
 def ask_boolean(question, default):
@@ -37,22 +37,28 @@ def ask_with_default(question, default=""):
 
 
 def main():
-    """ Updates all "stock" images (images beginning with 'inginious/env-') """
+    """Updates all "stock" images (images beginning with 'inginious/env-')"""
     load_dotenv()
-    registry = os.environ.get('REGISTRY', "ghcr.io")
-    version = os.environ.get('VERSION', "latest")
+    registry = os.environ.get("REGISTRY", "ghcr.io")
+    version = os.environ.get("VERSION", "latest")
 
     # Get the local images
     stock_images = []
     try:
-        docker_connection = docker.from_env() 
+        docker_connection = docker.from_env()
         for image in docker_connection.images.list():
             for tag in image.attrs["RepoTags"]:
-                if re.match(fr"^{registry}/inginious/env-(base|default):{version}", tag):
+                if re.match(
+                    rf"^{registry}/inginious/env-(base|default):{version}", tag
+                ):
                     stock_images.append(tag)
     except:
         print(FAIL + "Cannot connect to Docker!" + ENDC)
-        print(FAIL + "Restart this command after making sure the command `docker info` works" + ENDC)
+        print(
+            FAIL
+            + "Restart this command after making sure the command `docker info` works"
+            + ENDC
+        )
         return
 
     # Minimum mandatory images are available locally, redownload ?
@@ -63,17 +69,31 @@ def main():
                 print(INFO + ("Updating %s" % image) + ENDC)
                 docker_connection.images.pull(image)
             print(INFO + "Images update done" + ENDC)
-            print(INFO + "Images for version " + version + " were successfully re-downloaded !" + ENDC)
+            print(
+                INFO
+                + "Images for version "
+                + version
+                + " were successfully re-downloaded !"
+                + ENDC
+            )
             return
         print("Nothing happened")
-        
+
     # No local image, download ?
     elif len(stock_images) == 0:
         print(" You don't have local images compatible for the version " + version)
-        if ask_boolean("Do you want to download images for version " + version + " ?", "yes"):
+        if ask_boolean(
+            "Do you want to download images for version " + version + " ?", "yes"
+        ):
             docker_connection.images.pull(f"{registry}/inginious/env-base:{version}")
             docker_connection.images.pull(f"{registry}/inginious/env-default:{version}")
-            print(INFO + "Images for version " + version + " were successfully downloaded !" + ENDC)
+            print(
+                INFO
+                + "Images for version "
+                + version
+                + " were successfully downloaded !"
+                + ENDC
+            )
             return
         print(INFO + "Nothing happened" + ENDC)
 

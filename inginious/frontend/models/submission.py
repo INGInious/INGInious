@@ -5,7 +5,16 @@
 
 import bson
 
-from mongoengine import Document, StringField, ListField, MapField, FileField, DateTimeField, FloatField, IntField
+from mongoengine import (
+    Document,
+    StringField,
+    ListField,
+    MapField,
+    FileField,
+    DateTimeField,
+    FloatField,
+    IntField,
+)
 
 
 class Submission(Document):
@@ -16,28 +25,34 @@ class Submission(Document):
     archive = FileField()
     status = StringField(choices=["done", "error", "waiting"], required=True)
     submitted_on = DateTimeField(required=True)
-    response_type = StringField(default='rst') # Deprecated
-    grade = FloatField(default=0.0) # TODO: use min_value and max_value and change container API
+    response_type = StringField(default="rst")  # Deprecated
+    grade = FloatField(
+        default=0.0
+    )  # TODO: use min_value and max_value and change container API
     custom = MapField(StringField())
     problems = MapField(StringField())
-    result = StringField(default="crash") # TODO: restrict possible values and change container API
-    stderr  = StringField()
-    stdout  = StringField()
+    result = StringField(
+        default="crash"
+    )  # TODO: restrict possible values and change container API
+    stderr = StringField()
+    stdout = StringField()
     tests = MapField(StringField())
     text = StringField(default="")
     user_ip = StringField()
     state = StringField()
-    jobid = StringField() # Following fields are used during job processing
+    jobid = StringField()  # Following fields are used during job processing
     ssh_host = StringField()
     ssh_port = IntField()
     ssh_user = StringField()
     ssh_password = StringField()
     last_replay = DateTimeField()
-    lti_version = StringField() # This should be refactored in the future to avoid storing data from modules
-    message_launch_id = StringField() # LTI1.3 field
-    outcome_service_url = StringField() # LTI1.1 field
-    outcome_result_id = StringField() # LTI 1.1 field
-    outcome_consumer_key = StringField() #LTI1.1 field
+    lti_version = (
+        StringField()
+    )  # This should be refactored in the future to avoid storing data from modules
+    message_launch_id = StringField()  # LTI1.3 field
+    outcome_service_url = StringField()  # LTI1.1 field
+    outcome_result_id = StringField()  # LTI 1.1 field
+    outcome_consumer_key = StringField()  # LTI1.1 field
 
     def get_input(self):
         value = bson.BSON.decode(self.input.read())
@@ -54,6 +69,6 @@ class Submission(Document):
             "courseid",
             ("courseid", "taskid"),
             "-submitted_on",
-            "status"
-        ]
+            "status",
+        ],
     }

@@ -7,11 +7,10 @@ from collections import namedtuple
 from inginious.common.base import id_checker
 from inginious.frontend.accessible_time import AccessibleTime
 
-SectionConfigItem = namedtuple('SectionConfigItem', ['label', 'type', 'default'])
+SectionConfigItem = namedtuple("SectionConfigItem", ["label", "type", "default"])
 
 
 class TaskConfigItem(metaclass=ABCMeta):
-
     @classmethod
     @abstractmethod
     def get_template(cls):
@@ -125,7 +124,10 @@ class EvaluationMode(TaskConfigItem):
     def get_value(cls, task_config):
         evaluation_mode = task_config.get(cls.get_id(), cls.default)
         if evaluation_mode != "best" and evaluation_mode != "last":
-            raise InvalidTocException("The evaluation mode must be either best or last but is " + str(evaluation_mode))
+            raise InvalidTocException(
+                "The evaluation mode must be either best or last but is "
+                + str(evaluation_mode)
+            )
         return evaluation_mode
 
 
@@ -148,7 +150,9 @@ class Categories(TaskConfigItem):
     def get_value(cls, task_config):
         categories = task_config.get(cls.get_id(), cls.default)
         if "" in categories:
-            raise InvalidTocException("All categories must have a name but are :" + str(categories))
+            raise InvalidTocException(
+                "All categories must have a name but are :" + str(categories)
+            )
         return categories
 
 
@@ -170,10 +174,15 @@ class SubmissionLimit(TaskConfigItem):
     @classmethod
     def get_value(cls, task_config):
         submission_limit = task_config.get(cls.get_id(), cls.default)
-        if not type(submission_limit["amount"]) == int or not type(submission_limit["period"]) == int:
+        if (
+            not type(submission_limit["amount"]) == int
+            or not type(submission_limit["period"]) == int
+        ):
             raise InvalidTocException("Invalid submission limit")
         elif submission_limit["amount"] < -1 or submission_limit["period"] < -1:
-            raise InvalidTocException("Submission limit values must be higher than or equal to -1")
+            raise InvalidTocException(
+                "Submission limit values must be higher than or equal to -1"
+            )
         return submission_limit
 
 
@@ -205,8 +214,9 @@ class Accessibility(TaskConfigItem):
 class InvalidTocException(Exception):
     pass
 
+
 class SectionsList(object):
-    """ A list of section for a course structure """
+    """A list of section for a course structure"""
 
     def __init__(self, structure):
         self._sections = []
@@ -216,7 +226,9 @@ class SectionsList(object):
             elif "tasks_list" in section:
                 self._sections.append(TerminalSection(section))
             else:
-                raise InvalidTocException(_("One section don't contain a sections list nor a tasks list"))
+                raise InvalidTocException(
+                    _("One section don't contain a sections list nor a tasks list")
+                )
 
     def __iter__(self):
         return iter(self._sections)
@@ -294,14 +306,19 @@ class NonTerminalSection(Section):
         """
         :return: The structure in YAML format
         """
-        return {"title": self._title, "sections_list": self._sections_list.to_structure()}
+        return {
+            "title": self._title,
+            "sections_list": self._sections_list.to_structure(),
+        }
 
 
 class TerminalSection(Section):
     def __init__(self, structure):
         Section.__init__(self, structure)
         if not all(id_checker(id) for id in structure["tasks_list"]):
-            raise InvalidTocException(_("One task id contains non alphanumerical characters"))
+            raise InvalidTocException(
+                _("One task id contains non alphanumerical characters")
+            )
         self._task_list = structure["tasks_list"]
 
     def is_terminal(self):
@@ -323,10 +340,7 @@ class TerminalSection(Section):
         """
         :return: The structure in YAML format
         """
-        return {
-            "title": self._title,
-            "tasks_list": self._task_list
-        }
+        return {"title": self._title, "tasks_list": self._task_list}
 
 
 def check_toc(toc):
@@ -372,6 +386,6 @@ def check_task_config(task_list, config_items, data):
     """
     try:
         parse_tasks_config(task_list, config_items, data)
-        return data, ''
+        return data, ""
     except Exception as ex:
         return None, str(ex)

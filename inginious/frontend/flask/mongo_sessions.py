@@ -30,11 +30,11 @@ class MongoDBSessionInterface(SessionInterface):
     def _get_signer(self, app):
         if not app.secret_key:
             return None
-        return Signer(app.secret_key, salt='flask-session', key_derivation='hmac')
+        return Signer(app.secret_key, salt="flask-session", key_derivation="hmac")
 
     def open_session(self, app, request):
         # Check for LTI session in the path
-        lti_session = request.args.get('session_id')
+        lti_session = request.args.get("session_id")
 
         # If LTI launch page, then generate a new LTI session
         try:
@@ -43,7 +43,7 @@ class MongoDBSessionInterface(SessionInterface):
             if endpoint in [LTI11LaunchPage.endpoint, LTI13LaunchPage.endpoint]:
                 return Session(permanent=self.permanent, is_lti=True)
         except HTTPException:
-            pass # Could not determine endpoint, continue
+            pass  # Could not determine endpoint, continue
 
         sid = lti_session or request.cookies.get(self.get_cookie_name(app))
 
@@ -73,10 +73,21 @@ class MongoDBSessionInterface(SessionInterface):
         session.save()
 
         if not session.is_lti:
-            session_id = self._get_signer(app).sign(str(session.id)).decode() if self.use_signer else session.id
+            session_id = (
+                self._get_signer(app).sign(str(session.id)).decode()
+                if self.use_signer
+                else session.id
+            )
             domain = self.get_cookie_domain(app)
             path = self.get_cookie_path(app)
             httponly = self.get_cookie_httponly(app)
             secure = self.get_cookie_secure(app)
-            response.set_cookie(self.get_cookie_name(app), session_id, expires=expires, httponly=httponly,
-                                domain=domain, path=path, secure=secure)
+            response.set_cookie(
+                self.get_cookie_name(app),
+                session_id,
+                expires=expires,
+                httponly=httponly,
+                domain=domain,
+                path=path,
+                secure=secure,
+            )

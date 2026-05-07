@@ -5,7 +5,7 @@
 
 import logging
 
-from flask import  session, request, redirect, render_template, url_for
+from flask import session, request, redirect, render_template, url_for
 from werkzeug.exceptions import NotFound, Forbidden
 from bson.errors import InvalidId
 
@@ -13,7 +13,8 @@ from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 
 
 class SubmissionPage(INGIniousAdminPage):
-    """ List information about a task done by a student """
+    """List information about a task done by a student"""
+
     _logger = logging.getLogger("inginious.frontend.submissions")
 
     def fetch_submission(self, submissionid):
@@ -31,7 +32,7 @@ class SubmissionPage(INGIniousAdminPage):
         return course, task, submission
 
     def GET_AUTH(self, submissionid):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         course, task, submission = self.fetch_submission(submissionid)
         return self.page(course, task, submission)
 
@@ -41,36 +42,55 @@ class SubmissionPage(INGIniousAdminPage):
 
         webinput = request.form
         if "replay" in webinput and is_admin:
-            self.submission_manager.replay_job(course, task, submission, course.get_task_dispenser())
+            self.submission_manager.replay_job(
+                course, task, submission, course.get_task_dispenser()
+            )
         elif "replay-copy" in webinput:  # Authorized for tutors
-            self.submission_manager.replay_job(course, task, submission, course.get_task_dispenser(), True)
-            return redirect(url_for("taskpage", courseid=course.get_id(), taskid=task.get_id()))
+            self.submission_manager.replay_job(
+                course, task, submission, course.get_task_dispenser(), True
+            )
+            return redirect(
+                url_for("taskpage", courseid=course.get_id(), taskid=task.get_id())
+            )
         elif "replay-debug" in webinput and is_admin:
-            self.submission_manager.replay_job(course, task, submission, course.get_task_dispenser(), True, "ssh")
-            return redirect(url_for("taskpage", courseid=course.get_id(), taskid=task.get_id()))
+            self.submission_manager.replay_job(
+                course, task, submission, course.get_task_dispenser(), True, "ssh"
+            )
+            return redirect(
+                url_for("taskpage", courseid=course.get_id(), taskid=task.get_id())
+            )
 
         return self.page(course, task, submission)
 
     def page(self, course, task, submission):
-        """ Get all data and display the page """
-        submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=True)
+        """Get all data and display the page"""
+        submission = self.submission_manager.get_feedback_from_submission(
+            submission, show_everything=True
+        )
 
         to_display = {
             problem.get_id(): {
                 "id": problem.get_id(),
                 "name": problem.get_name(session.language),
-                "defined": True
-            } for problem in task.get_problems()
+                "defined": True,
+            }
+            for problem in task.get_problems()
         }
 
-        to_display.update({
-            pid: {
-                "id": pid,
-                "name": pid,
-                "defined": False
-            } for pid in (set(submission.get_input()) - set(to_display))
-        })
+        to_display.update(
+            {
+                pid: {"id": pid, "name": pid, "defined": False}
+                for pid in (set(submission.get_input()) - set(to_display))
+            }
+        )
 
-        return render_template("course_admin/submission.html", course=course, task=task,
-                                           submission=submission, to_display=to_display.values(),
-                                           pdict={problem.get_id(): problem.get_type() for problem in task.get_problems()})
+        return render_template(
+            "course_admin/submission.html",
+            course=course,
+            task=task,
+            submission=submission,
+            to_display=to_display.values(),
+            pdict={
+                problem.get_id(): problem.get_type() for problem in task.get_problems()
+            },
+        )

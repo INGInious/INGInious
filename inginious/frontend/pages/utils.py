@@ -3,7 +3,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Some utils for all the pages """
+"""Some utils for all the pages"""
+
 import logging
 import os
 
@@ -27,54 +28,56 @@ class INGIniousPage(MethodView):
 
     @property
     def is_lti_page(self):
-        """ True if the current page allows LTI sessions. False else. """
+        """True if the current page allows LTI sessions. False else."""
         return False
 
     def _pre_check(self):
-        """ Checks for language. """
+        """Checks for language."""
         if "lang" in request.args and request.args["lang"] in available_languages:
             session.language = request.args["lang"]
         elif not session.language:
-            best_lang = request.accept_languages.best_match(available_languages,default="en")
+            best_lang = request.accept_languages.best_match(
+                available_languages, default="en"
+            )
             session.language = best_lang
 
     def GET(self, *args, **kwargs):
-        """ Handles GET requests. It should be redefined by subclasses. """
+        """Handles GET requests. It should be redefined by subclasses."""
         raise MethodNotAllowed()
 
     def POST(self, *args, **kwargs):
-        """ Handles POST requests. It should be redefined by subclasses. """
+        """Handles POST requests. It should be redefined by subclasses."""
         raise MethodNotAllowed()
 
     def get(self, *args, **kwargs):
-        """ Interfaces INGInious pages with Flask views for GET requests. """
+        """Interfaces INGInious pages with Flask views for GET requests."""
         self._pre_check()
         return self.GET(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        """ Interfaces INGInious pages with Flask views for POST requests. """
+        """Interfaces INGInious pages with Flask views for POST requests."""
         self._pre_check()
         return self.POST(*args, **kwargs)
 
     @property
     def submission_manager(self) -> WebAppSubmissionManager:
-        """ Returns the submission manager singleton"""
+        """Returns the submission manager singleton"""
         return current_app.submission_manager
 
     @property
     def user_manager(self) -> UserManager:
-        """ Returns the user manager singleton """
+        """Returns the user manager singleton"""
         return current_app.user_manager
 
     @property
     def client(self) -> Client:
-        """ Returns the INGInious client """
+        """Returns the INGInious client"""
         return current_app.client
 
     @property
     def logger(self) -> logging.Logger:
-        """ Logger """
-        return logging.getLogger('inginious.webapp.pages')
+        """Logger"""
+        return logging.getLogger("inginious.webapp.pages")
 
 
 class INGIniousAuthPage(INGIniousPage):
@@ -94,27 +97,38 @@ class INGIniousAuthPage(INGIniousPage):
         Otherwise, returns the login template.
         """
         if session.loggedin:
-            if (not session.username or (current_app.config["IS_TOS_DEFINED"] and not session.tos_signed)) \
-                    and not self.__class__.__name__ == "ProfilePage":
+            if (
+                not session.username
+                or (current_app.config["IS_TOS_DEFINED"] and not session.tos_signed)
+            ) and not self.__class__.__name__ == "ProfilePage":
                 return redirect(url_for("profilepage"))
 
             if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
-                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template(
+                    "auth.html", auth_methods=self.user_manager.get_auth_methods()
+                )
 
             return self.GET_AUTH(*args, **kwargs)
         elif self.preview_allowed(*args, **kwargs):
             return self.GET_AUTH(*args, **kwargs)
         else:
-            error = ''
+            error = ""
             if "binderror" in request.args:
-                error = _("An account using this email already exists and is not bound with this service. "
-                          "For security reasons, please log in via another method and bind your account in your profile.")
+                error = _(
+                    "An account using this email already exists and is not bound with this service. "
+                    "For security reasons, please log in via another method and bind your account in your profile."
+                )
             if "callbackerror" in request.args:
-                error = _("Couldn't fetch the required information from the service. Please check the provided "
-                          "permissions (name, email) and contact your INGInious administrator if the error persists.")
-            return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
-                                               error=error)
+                error = _(
+                    "Couldn't fetch the required information from the service. Please check the provided "
+                    "permissions (name, email) and contact your INGInious administrator if the error persists."
+                )
+            return render_template(
+                "auth.html",
+                auth_methods=self.user_manager.get_auth_methods(),
+                error=error,
+            )
 
     def POST(self, *args, **kwargs):
         """
@@ -127,33 +141,45 @@ class INGIniousAuthPage(INGIniousPage):
 
             if not self.is_lti_page and session.is_lti:  # lti session
                 self.user_manager.disconnect_user()
-                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template(
+                    "auth.html", auth_methods=self.user_manager.get_auth_methods()
+                )
 
             return self.POST_AUTH(*args, **kwargs)
         else:
             user_input = request.form
             if "login" in user_input and "password" in user_input:
-                if self.user_manager.auth_user(user_input["login"].strip(), user_input["password"]) is not None:
+                if (
+                    self.user_manager.auth_user(
+                        user_input["login"].strip(), user_input["password"]
+                    )
+                    is not None
+                ):
                     return self.GET_AUTH(*args, **kwargs)
                 else:
-                    return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
-                                                       error=_("Invalid login/password"))
+                    return render_template(
+                        "auth.html",
+                        auth_methods=self.user_manager.get_auth_methods(),
+                        error=_("Invalid login/password"),
+                    )
             elif self.preview_allowed(*args, **kwargs):
                 return self.POST_AUTH(*args, **kwargs)
             else:
-                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template(
+                    "auth.html", auth_methods=self.user_manager.get_auth_methods()
+                )
 
     def preview_allowed(self, *args, **kwargs):
         """
-            If this function returns True, the auth check is disabled.
-            Override this function with a custom check if needed.
+        If this function returns True, the auth check is disabled.
+        Override this function with a custom check if needed.
         """
         return False
 
 
 class INGIniousAdministratorPage(INGIniousAuthPage):
     """
-       Augmented version of INGIniousAuthPage that checks if user is administrator (superadmin).
+    Augmented version of INGIniousAuthPage that checks if user is administrator (superadmin).
     """
 
     def GET(self, *args, **kwargs):
@@ -164,8 +190,7 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         username = session.username
         if session.loggedin:
             if not self.user_manager.user_is_superadmin(username):
-                return render_template("forbidden.html",
-                                                   message=_("Forbidden"))
+                return render_template("forbidden.html", message=_("Forbidden"))
             return self.GET_AUTH(*args, **kwargs)
         return INGIniousAuthPage.GET(self, *args, **kwargs)
 
@@ -178,8 +203,10 @@ class INGIniousAdministratorPage(INGIniousAuthPage):
         username = session.username
         if session.loggedin and self.user_manager.user_is_superadmin(username):
             return self.POST_AUTH()
-        return render_template("forbidden.html",
-                                           message=_("You have not sufficient right to see this part."))
+        return render_template(
+            "forbidden.html",
+            message=_("You have not sufficient right to see this part."),
+        )
 
 
 class SignInPage(INGIniousAuthPage):
@@ -219,8 +246,10 @@ class INGIniousStaticPage(INGIniousPage):
         # Check for the file
         filename = None
         mtime = None
-        filepaths = [os.path.join(static_directory, page + ".yaml"),
-                     os.path.join(static_directory, page + "." + language + ".yaml")]
+        filepaths = [
+            os.path.join(static_directory, page + ".yaml"),
+            os.path.join(static_directory, page + "." + language + ".yaml"),
+        ]
 
         for filepath in filepaths:
             if os.path.exists(filepath):
@@ -240,4 +269,3 @@ class INGIniousStaticPage(INGIniousPage):
         content = ParsableText.rst(filecontent["content"], initial_header_level=2)
 
         return render_template("static.html", pagetitle=title, content=content)
-

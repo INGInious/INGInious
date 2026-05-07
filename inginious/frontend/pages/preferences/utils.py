@@ -10,13 +10,13 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
 class PrefRedirectPage(INGIniousAuthPage):
-    """ Redirect preferences to /profile """
+    """Redirect preferences to /profile"""
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
 
-        return redirect('/preferences/profile')
+        return redirect("/preferences/profile")
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ POST request """
+        """POST request"""
         return self.GET_AUTH()

@@ -18,10 +18,10 @@ class GenericDockerOCIRuntime(FrontendEnvType):
     def check_task_environment_parameters(self, data):
         out = {}
         # Ensure that run_cmd is in the correct format
-        if data.get('run_cmd', '') == '':
-            out['run_cmd'] = None
+        if data.get("run_cmd", "") == "":
+            out["run_cmd"] = None
         else:
-            out['run_cmd'] = data['run_cmd']
+            out["run_cmd"] = data["run_cmd"]
 
         # Network access in grading container?
         out["network_grading"] = data.get("network_grading", False)
@@ -30,18 +30,22 @@ class GenericDockerOCIRuntime(FrontendEnvType):
         limits = {"time": 20, "memory": 1024, "disk": 1024}
         if "limits" in data:
             try:
-                limits['time'] = int(data["limits"].get("time", 20))
-                hard_time = data["limits"].get("hard_time", '')
-                if str(hard_time).strip() == '':
-                    hard_time = 3*limits['time']
+                limits["time"] = int(data["limits"].get("time", 20))
+                hard_time = data["limits"].get("hard_time", "")
+                if str(hard_time).strip() == "":
+                    hard_time = 3 * limits["time"]
                 else:
                     hard_time = int(hard_time)
-                limits['hard_time'] = hard_time
-                limits['memory'] = int(data["limits"].get("memory", 1024))
-                limits['disk'] = int(data["limits"].get("disk", 1024))
+                limits["hard_time"] = hard_time
+                limits["memory"] = int(data["limits"].get("memory", 1024))
+                limits["disk"] = int(data["limits"].get("disk", 1024))
 
-                if limits['time'] <= 0 or limits['hard_time'] <= 0 or limits['memory'] <= 0 or \
-                        limits['disk'] <= 0:
+                if (
+                    limits["time"] <= 0
+                    or limits["hard_time"] <= 0
+                    or limits["memory"] <= 0
+                    or limits["disk"] <= 0
+                ):
                     raise Exception("Invalid limit")
             except:
                 raise Exception("Invalid limit")
@@ -50,8 +54,11 @@ class GenericDockerOCIRuntime(FrontendEnvType):
         return out
 
     def studio_env_template(self, task):
-        return render_template("course_admin/edit_tabs/env_generic_docker_oci.html",
-                               env_params=task.get("environment_parameters", {}), env_id=self.id)
+        return render_template(
+            "course_admin/edit_tabs/env_generic_docker_oci.html",
+            env_params=task.get("environment_parameters", {}),
+            env_id=self.id,
+        )
 
     def __init__(self, ssh_allowed=False):
         self._ssh_allowed = ssh_allowed

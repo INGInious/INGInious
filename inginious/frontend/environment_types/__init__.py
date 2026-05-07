@@ -9,7 +9,7 @@ __env_types = {}
 
 
 def get_env_type(idx):
-    """ Return the FrontendEnvType with id idx. If this object does not exists, returns None."""
+    """Return the FrontendEnvType with id idx. If this object does not exists, returns None."""
     return __env_types.get(idx, None)
 
 
@@ -18,7 +18,7 @@ def get_all_env_types():
 
 
 def register_env_type(env_obj):
-    """ env_obj is an instance of FrontendEnvType """
+    """env_obj is an instance of FrontendEnvType"""
     __env_types[env_obj.id] = env_obj
 
 

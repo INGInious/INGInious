@@ -3,7 +3,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Course page """
+"""Course page"""
+
 from flask import session, request, redirect, render_template, url_for
 from werkzeug.exceptions import Forbidden
 
@@ -14,10 +15,10 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 
 
 class MarketplaceCoursePage(INGIniousAuthPage):
-    """ Course marketplace """
+    """Course marketplace"""
 
     def get_course(self, courseid):
-        """ Return the course """
+        """Return the course"""
         try:
             course = get_marketplace_course(courseid)
         except:
@@ -26,7 +27,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
         return course
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ GET request """
+        """GET request"""
         # Change to teacher privilege when created
         if not self.user_manager.user_is_superadmin():
             raise Forbidden(description=_("You're not allowed to do that"))
@@ -35,7 +36,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
         return self.show_page(course)
 
     def POST_AUTH(self, courseid):  # pylint: disable=arguments-differ
-        """ POST request """
+        """POST request"""
         # Change to teacher privilege when created
         if not self.user_manager.user_is_superadmin():
             raise Forbidden(description=_("You're not allowed to do that"))
@@ -54,7 +55,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
         return self.show_page(course, errors)
 
     def show_page(self, course, errors=None):
-        """ Prepares and shows the course marketplace """
+        """Prepares and shows the course marketplace"""
         if errors is None:
             errors = []
 

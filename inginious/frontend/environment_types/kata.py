@@ -1,4 +1,6 @@
-from inginious.frontend.environment_types.generic_docker_oci_runtime import GenericDockerOCIRuntime
+from inginious.frontend.environment_types.generic_docker_oci_runtime import (
+    GenericDockerOCIRuntime,
+)
 
 
 class KataEnvType(GenericDockerOCIRuntime):
@@ -8,4 +10,8 @@ class KataEnvType(GenericDockerOCIRuntime):
 
     @property
     def name(self):
-        return _("Container running as root (Kata) + SSH") if self._ssh_allowed else _("Container running as root (Kata)")
+        return (
+            _("Container running as root (Kata) + SSH")
+            if self._ssh_allowed
+            else _("Container running as root (Kata)")
+        )

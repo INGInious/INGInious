@@ -3,19 +3,27 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Submissions """
+"""Submissions"""
 
 import base64
 import flask
 
 from flask import current_app, session
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.pages.api._api_page import (
+    APIAuthenticatedPage,
+    APINotFound,
+    APIForbidden,
+    APIInvalidArguments,
+    APIError,
+)
 
 
-def _get_submissions(submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
+def _get_submissions(
+    submission_manager, user_manager, courseid, taskid, with_input, submissionid=None
+):
     """
-        Helper for the GET methods of the two following classes
+    Helper for the GET methods of the two following classes
     """
 
     try:
@@ -38,7 +46,10 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
             submissions = [submission_manager.get_submission(submissionid)]
         except:
             raise APINotFound("Submission not found")
-        if submissions[0]["taskid"] != task.get_id() or submissions[0]["courseid"] != course.get_id():
+        if (
+            submissions[0]["taskid"] != task.get_id()
+            or submissions[0]["courseid"] != course.get_id()
+        ):
             raise APINotFound("Submission not found")
 
     output = []
@@ -46,16 +57,20 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, session.username)
+            show_everything=user_manager.has_staff_rights_on_course(
+                course, session.username
+            ),
         )
         data = {
             "id": str(submission["_id"]),
             "submitted_on": submission["submitted_on"].isoformat(),
-            "status": submission["status"]
+            "status": submission["status"],
         }
 
         if with_input:
-            data["input"] = submission_manager.get_input_from_submission(submission, True)
+            data["input"] = submission_manager.get_input_from_submission(
+                submission, True
+            )
 
             # base64 encode file to allow JSON encoding
             for d in data["input"]:
@@ -75,96 +90,105 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
 
 class APISubmissionSingle(APIAuthenticatedPage):
     r"""
-        Endpoint
-          ::
+    Endpoint
+      ::
 
-            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions/[a-zA-Z_\-\.0-9]+
+        /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions/[a-zA-Z_\-\.0-9]+
 
     """
 
     def API_GET(self, courseid, taskid, submissionid):  # pylint: disable=arguments-differ
         """
-            List all the submissions that the connected user made. Returns list of the form
+        List all the submissions that the connected user made. Returns list of the form
 
-            ::
+        ::
 
-                [
+            [
+                {
+                    "id": "submission_id1",
+                    "submitted_on": "date",
+                    "status" : "done",          #can be "done", "waiting", "error" (execution status of the task).
+                    "grade": 0.0,
+                    "input": {},                #the input data. File are base64 encoded.
+                    "result" : "success"        #only if status=done. Result of the execution.
+                    "feedback": ""              #only if status=done. the HTML global feedback for the task
+                    "problems_feedback":        #only if status=done. HTML feedback per problem. Some pid may be absent.
                     {
-                        "id": "submission_id1",
-                        "submitted_on": "date",
-                        "status" : "done",          #can be "done", "waiting", "error" (execution status of the task).
-                        "grade": 0.0,
-                        "input": {},                #the input data. File are base64 encoded.
-                        "result" : "success"        #only if status=done. Result of the execution.
-                        "feedback": ""              #only if status=done. the HTML global feedback for the task
-                        "problems_feedback":        #only if status=done. HTML feedback per problem. Some pid may be absent.
-                        {
-                            "pid1": "feedback1",
-                            #...
-                        }
+                        "pid1": "feedback1",
+                        #...
                     }
-                    #...
-                ]
+                }
+                #...
+            ]
 
-            If you use the endpoint /api/v0/courses/the_course_id/tasks/the_task_id/submissions/submissionid,
-            this dict will contain one entry or the page will return 404 Not Found.
+        If you use the endpoint /api/v0/courses/the_course_id/tasks/the_task_id/submissions/submissionid,
+        this dict will contain one entry or the page will return 404 Not Found.
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
+        return _get_submissions(
+            self.submission_manager,
+            self.user_manager,
+            courseid,
+            taskid,
+            with_input,
+            submissionid,
+        )
 
 
 class APISubmissions(APIAuthenticatedPage):
     r"""
-        Endpoint
-          ::
+    Endpoint
+      ::
 
-            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions
+        /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions
 
     """
 
     def API_GET(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
-            List all the submissions that the connected user made. Returns dicts in the form
+        List all the submissions that the connected user made. Returns dicts in the form
 
-            ::
+        ::
 
-                [
+            [
+                {
+                    "id": "submission_id1",
+                    "submitted_on": "date",
+                    "status" : "done",          #can be "done", "waiting", "error" (execution status of the task).
+                    "grade": 0.0,
+                    "input": {},                #the input data. File are base64 encoded.
+                    "result" : "success"        #only if status=done. Result of the execution.
+                    "feedback": ""              #only if status=done. the HTML global feedback for the task
+                    "problems_feedback":        #only if status=done. HTML feedback per problem. Some pid may be absent.
                     {
-                        "id": "submission_id1",
-                        "submitted_on": "date",
-                        "status" : "done",          #can be "done", "waiting", "error" (execution status of the task).
-                        "grade": 0.0,
-                        "input": {},                #the input data. File are base64 encoded.
-                        "result" : "success"        #only if status=done. Result of the execution.
-                        "feedback": ""              #only if status=done. the HTML global feedback for the task
-                        "problems_feedback":        #only if status=done. HTML feedback per problem. Some pid may be absent.
-                        {
-                            "pid1": "feedback1",
-                            #...
-                        }
+                        "pid1": "feedback1",
+                        #...
                     }
-                    #...
-                ]
+                }
+                #...
+            ]
 
-            If you use the endpoint /api/v0/courses/the_course_id/tasks/the_task_id/submissions/submissionid,
-            this dict will contain one entry or the page will return 404 Not Found.
+        If you use the endpoint /api/v0/courses/the_course_id/tasks/the_task_id/submissions/submissionid,
+        this dict will contain one entry or the page will return 404 Not Found.
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input)
+        return _get_submissions(
+            self.submission_manager, self.user_manager, courseid, taskid, with_input
+        )
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
-            Creates a new submissions. Takes as (POST) input the key of the subproblems, with the value assigned each time.
+        Creates a new submissions. Takes as (POST) input the key of the subproblems, with the value assigned each time.
 
-            Returns
+        Returns
 
-            - an error 400 Bad Request if all the input is not (correctly) given,
-            - an error 403 Forbidden if you are not allowed to create a new submission for this task
-            - an error 404 Not found if the course/task id not found
-            - an error 500 Internal server error if the grader is not available,
-            - 200 Ok, with {"submissionid": "the submission id"} as output.
+        - an error 400 Bad Request if all the input is not (correctly) given,
+        - an error 403 Forbidden if you are not allowed to create a new submission for this task
+        - an error 404 Not found if the course/task id not found
+        - an error 500 Internal server error if the grader is not available,
+        - 200 Ok, with {"submissionid": "the submission id"} as output.
         """
 
         try:
@@ -200,17 +224,21 @@ class APISubmissions(APIAuthenticatedPage):
 
         user_input = task.adapt_input_for_backend(user_input)
 
-        if not task.input_is_consistent(user_input, current_app.config('ALLOWED_FILE_EXTENSIONS'),
-                                        current_app.config.get('MAX_FILE_SIZE')):
+        if not task.input_is_consistent(
+            user_input,
+            current_app.config("ALLOWED_FILE_EXTENSIONS"),
+            current_app.config.get("MAX_FILE_SIZE"),
+        ):
             raise APIInvalidArguments()
 
         # Get debug info if the current user is an admin
         debug = self.user_manager.has_admin_rights_on_course(course, username)
 
-
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug)
+            submissionid, _ = self.submission_manager.add_job(
+                course, task, user_input, course.get_task_dispenser(), debug
+            )
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))

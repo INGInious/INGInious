@@ -12,8 +12,9 @@ from zmq.asyncio import ZMQEventLoop, Context
 
 from inginious.client.client import Client
 
+
 def start_asyncio_and_zmq(debug_asyncio=False):
-    """ Init asyncio and ZMQ. Starts a daemon thread in which the asyncio loops run.
+    """Init asyncio and ZMQ. Starts a daemon thread in which the asyncio loops run.
     :return: a ZMQ context and a Thread object (as a tuple)
     """
     loop = ZMQEventLoop()
@@ -26,6 +27,7 @@ def start_asyncio_and_zmq(debug_asyncio=False):
     t.start()
 
     return zmq_context, t
+
 
 def _run_asyncio(loop, zmq_context):
     """
@@ -43,8 +45,9 @@ def _run_asyncio(loop, zmq_context):
         loop.close()
         zmq_context.destroy(1000)
 
+
 async def _restart_on_cancel(logger, agent):
-    """ Restarts an agent when it is cancelled """
+    """Restarts an agent when it is cancelled"""
     while True:
         try:
             await agent.run()
@@ -52,8 +55,9 @@ async def _restart_on_cancel(logger, agent):
             logger.exception("Restarting agent")
             pass
 
+
 def create_arch(configuration, context):
-    """ Helper that can start a simple complete INGInious arch locally if needed, or a client to a remote backend.
+    """Helper that can start a simple complete INGInious arch locally if needed, or a client to a remote backend.
     Intended to be used on command line, makes uses of exit() and the logger inginious.frontend.
     :param configuration: configuration dict
     :param context: a ZMQ context
@@ -65,7 +69,9 @@ def create_arch(configuration, context):
 
     backend_link = configuration["BACKEND"]
     if backend_link == "local":
-        logger.info("Starting a simple arch (backend, docker-agent and mcq-agent) locally")
+        logger.info(
+            "Starting a simple arch (backend, docker-agent and mcq-agent) locally"
+        )
 
         local_config = configuration["LOCAL-CONFIG"]
         concurrency = local_config.get("concurrency", multiprocessing.cpu_count())
@@ -79,7 +85,9 @@ def create_arch(configuration, context):
                 debug_ports = debug_ports.split("-")
                 debug_ports = range(int(debug_ports[0]), int(debug_ports[1]))
             except:
-                logger.error("debug_ports should be in the format 'begin-end', for example '1000-2000'")
+                logger.error(
+                    "debug_ports should be in the format 'begin-end', for example '1000-2000'"
+                )
                 exit(1)
         else:
             debug_ports = range(64100, 64111)
@@ -93,7 +101,17 @@ def create_arch(configuration, context):
 
         client = Client(context, "inproc://backend_client")
         backend = Backend(context, "inproc://backend_agent", "inproc://backend_client")
-        agent_docker = DockerAgent(context, "inproc://backend_agent", "Docker - Local agent", concurrency, debug_host, debug_ports, debugger, tmp_dir, ssh_allowed=True)
+        agent_docker = DockerAgent(
+            context,
+            "inproc://backend_agent",
+            "Docker - Local agent",
+            concurrency,
+            debug_host,
+            debug_ports,
+            debugger,
+            tmp_dir,
+            ssh_allowed=True,
+        )
         agent_mcq = MCQAgent(context, "inproc://backend_agent", "MCQ - Local agent", 1)
 
         asyncio.ensure_future(_restart_on_cancel(logger, agent_docker))
@@ -104,10 +122,13 @@ def create_arch(configuration, context):
         client = Client(context, backend_link)
 
     # check for old-style configuration entries
-    old_style_configs = ["agents", 'containers', "machines", "docker_daemons"]
+    old_style_configs = ["agents", "containers", "machines", "docker_daemons"]
     for c in old_style_configs:
         if c in configuration:
-            logger.warning("Option %s in configuration.yaml is not used anymore.\n"
-                           "Have a look at the 'update' section of the INGInious documentation in order to upgrade your configuration.yaml", c)
+            logger.warning(
+                "Option %s in configuration.yaml is not used anymore.\n"
+                "Have a look at the 'update' section of the INGInious documentation in order to upgrade your configuration.yaml",
+                c,
+            )
 
     return client
