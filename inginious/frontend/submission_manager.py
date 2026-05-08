@@ -185,7 +185,7 @@ class WebAppSubmissionManager:
 
         # Don't enable ssh debug
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
-        job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment()}
+        job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
 
         jobid = self._client.new_job(1, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
@@ -282,7 +282,7 @@ class WebAppSubmissionManager:
         to_remove = self._after_submission_insertion(course, task, inputdata, debug, obj, submissionid, task_dispenser)
 
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
-        job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment()}
+        job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
 
         jobid = self._client.new_job(0, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
