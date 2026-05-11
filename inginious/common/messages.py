@@ -33,7 +33,7 @@ class ClientNewJob:
     priority: int  # the job priority
     course_id: Union[str, None]  # course id of the task to run
     task_id: Union[str, None]  # task id of the task to run
-    task_problems: Union[Dict[str, Any], None]  # task dictionary
+    task_problems: Dict[str, Any]  # task dictionary
     inputdata: Dict[str, Any]  # student input data
     environment_type: str  # environment type
     environment: str  # environment to use (must exist in the environment type)

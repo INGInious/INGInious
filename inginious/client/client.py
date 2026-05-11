@@ -322,7 +322,7 @@ class Client(BetterParanoidPirateClient):
                                job_info["environment_type"], job_info["environment"], task.get_environment_parameters(),
                                debug, launcher_name)
         else:
-            msg = ClientNewJob(job_id, priority, None, None, None, inputdata,
+            msg = ClientNewJob(job_id, priority, None, None, {}, inputdata,
                                job_info["environment_type"], job_info["environment"], {}, debug,
                                launcher_name)
 
