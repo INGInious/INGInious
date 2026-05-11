@@ -272,7 +272,13 @@ class Client(BetterParanoidPirateClient):
     def new_job(self, priority, job_info, inputdata, callback, launcher_name="Unknown", debug=False, ssh_callback=None):
         """ Add a new job. Every callback will be called once and only once.
         :param priority: Priority of the job
-        : param job_info: a dict containing all the needed information about the job (course, task, environment type, environment)
+        : param job_info: a dict containing all the needed information about the job. It takes the following structure :
+            {
+                course: Course,             Course object related to the submission, optional, can be None
+                task: Task,                 Task object related to the submission, optional, can be None
+                environment_type: str,      Type of the environment to run the job (ex : docker, docker_ssh, mcq, ...)
+                environment: str            Name of the environment to run the job in.
+            }
         : type job_info: dict
         :param inputdata: input from the student
         :type inputdata: Storage or dict
@@ -297,8 +303,8 @@ class Client(BetterParanoidPirateClient):
         job_id = str(uuid.uuid4())
         safe_callback = _callable_once(callback)
 
-        course = job_info["course"]
-        task = job_info["task"]
+        course = job_info.get("course", None)
+        task = job_info.get("task", None)
 
         if debug == "ssh" and ssh_callback is None:
             self._logger.error("SSH callback not set in %s",
