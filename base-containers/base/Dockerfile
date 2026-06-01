@@ -8,7 +8,7 @@ ENV LC_ALL en_US.UTF-8
 LABEL org.opencontainers.image.source=https://github.com/INGInious/containers
 LABEL org.opencontainers.image.description="Base INGInious grading environment."
 
-LABEL org.inginious.grading.agent_version=3
+LABEL org.inginious.grading.agent_version=4
 
 # Install python, needed for scripts used in INGInious + locale support
 RUN     dnf clean metadata && \
