@@ -7,7 +7,7 @@
     (not asyncio) Interface to Docker
 """
 import os
-from datetime import datetime
+import random
 from typing import List, Tuple, Dict
 
 import docker
@@ -147,27 +147,29 @@ class DockerInterface(object):  # pragma: no cover
             extra_hosts={"host.docker.internal": "host-gateway"},
             environment={"DEBUGGER" : debugger},
             volumes={
-                task_path: {'bind': '/task'},
-                sockets_path: {'bind': '/sockets'},
-                course_common_path: {'bind': '/course/common', 'mode': 'ro'},
-                course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro'}
+                task_path: {'bind': '/task', 'mode': 'Z'},
+                sockets_path: {'bind': '/sockets', 'mode': 'Z'},
+                course_common_path: {'bind': '/course/common', 'mode': 'ro,Z'},
+                course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro,Z'}
             },
             runtime=runtime,
-            ulimits=[nofile_limit]
+            ulimits=[nofile_limit],
+            security_opt=self._get_security_opts(sockets_path)
         )
         return response.id
 
     def create_container_student(self, runtime: str, image: str, mem_limit, student_path,
-                                 socket_path, systemfiles_path, course_common_student_path,
+                                 sockets_path, socket_id, systemfiles_path, course_common_student_path,
                                  parent_runtime: str,fd_limit, share_network_of_container: str=None, ports=None):
         """
         Creates a student container
         :param fd_limit:Tuple with soft and hard limits per slot for FS
         :param runtime: name of the docker runtime to use
         :param image: env to start (name/id of a docker image)
-        :param mem_limit: in Mo
+        :param mem_limit: in MB
         :param student_path: path to the task directory that will be mounted in the container
-        :param socket_path: path to the socket that will be mounted in the container
+        :param sockets_path: path to the parent container sockets
+        :param socket_id: id of the socket that will be mounted in the container
         :param systemfiles_path: path to the systemfiles folder containing files that can override partially some defined system files
         :param course_common_student_path:
         :param share_network_of_container: (deprecated) if a container id is given, the new container will share its
@@ -176,7 +178,7 @@ class DockerInterface(object):  # pragma: no cover
         :return: the container id
         """
         student_path = os.path.abspath(student_path)
-        socket_path = os.path.abspath(socket_path)
+        parent_socket_path = os.path.abspath(os.path.join(sockets_path, str(socket_id) + ".sock"))
         systemfiles_path = os.path.abspath(systemfiles_path)
         course_common_student_path = os.path.abspath(course_common_student_path)
         secured_scripts_path = student_path+"/scripts"
@@ -204,14 +206,15 @@ class DockerInterface(object):  # pragma: no cover
             network_mode=net_mode,
             ports=ports,
             volumes={
-                student_path: {'bind': '/task/student'},
-                secured_scripts_path: {'bind': '/task/student/scripts'},
-                socket_path: {'bind': '/__parent.sock'},
-                systemfiles_path: {'bind': '/task/systemfiles', 'mode': 'ro'},
-                course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro'}
+                student_path: {'bind': '/task/student', 'mode': 'Z'},
+                secured_scripts_path: {'bind': '/task/student/scripts', 'mode': 'Z'},
+                parent_socket_path: {'bind': '/__parent.sock', 'mode': 'Z'},
+                systemfiles_path: {'bind': '/task/systemfiles', 'mode': 'ro,Z'},
+                course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro,Z'}
             },
             runtime=runtime,
-            ulimits=[nofile_limit]
+            ulimits=[nofile_limit],
+            security_opt=self._get_security_opts(sockets_path)
         )
 
         return response.id
@@ -275,3 +278,10 @@ class DockerInterface(object):  # pragma: no cover
         :return: dict of runtime: path_to_runtime
         """
         return {name: x["path"] for name, x in self._docker.info()["Runtimes"].items()}
+
+    def _get_security_opts(self, seed: str) -> str:
+        """
+        :return: SELinux MCS label based on the given seed
+        """
+        c1, c2 = random.Random(seed).sample(range(1024), 2)
+        return [f"label=level:s0:c{c1},c{c2}"]
