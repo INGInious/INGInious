@@ -495,10 +495,10 @@ class DockerAgent(Agent):
                 ports[p] = self._external_ports.pop()
 
             try:
-                socket_path = path_join(parent_info.sockets_path, str(socket_id) + ".sock")
                 container_id = await self._docker.create_container_student(runtime, environment,
                                                                            memory_limit, parent_info.student_path,
-                                                                           socket_path,
+                                                                           parent_info.sockets_path,
+                                                                           socket_id,
                                                                            parent_info.systemfiles_path,
                                                                            parent_info.course_common_student_path,
                                                                            parent_info.environment_type,
