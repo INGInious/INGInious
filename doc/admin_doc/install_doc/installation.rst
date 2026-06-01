@@ -29,9 +29,6 @@ INGInious needs:
 RHEL/Rocky/Alma Linux 8+, Fedora 34+
 `````````````````````````````
 
-.. DANGER::
-    Due to compatibility issues, it is recommended to disable SELinux on the target machine.
-
 The previously mentioned dependencies can be installed, for Cent OS 7+ :
 
 .. code-block:: bash
