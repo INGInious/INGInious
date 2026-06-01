@@ -17,7 +17,7 @@ from docker.types import Ulimit
 
 from inginious.agent.docker_agent._docker_runtime import DockerRuntime
 
-DOCKER_AGENT_VERSION = 3
+DOCKER_AGENT_VERSION = 4
 
 
 class DockerInterface(object):  # pragma: no cover
@@ -30,6 +30,12 @@ class DockerInterface(object):  # pragma: no cover
     @property
     def _docker(self):
         return docker.from_env()
+
+    def get_cgroup_version(self) -> str:
+        """
+        :return: the cgroup version, that is, "1" or "2".
+        """
+        return self._docker.info().get("CgroupVersion")
     
     def get_containers(self, runtimes: List[DockerRuntime]) -> Dict[str, Dict[str, Dict[str, str]]]:
         """
@@ -135,13 +141,15 @@ class DockerInterface(object):  # pragma: no cover
 
         nofile_limit = Ulimit(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
 
+        cgroups1_params = {
+            "mem_swappiness": 0, "oom_kill_disable": True
+        } if self.get_cgroup_version() == "1" else {}
+
         response = self._docker.containers.create(
             image,
             stdin_open=True,
             mem_limit=str(mem_limit) + "M",
             memswap_limit=str(mem_limit) + "M",
-            mem_swappiness=0,
-            oom_kill_disable=True,
             network_mode=("bridge" if (network_grading or len(ports) > 0) else 'none'),
             ports=ports,
             extra_hosts={"host.docker.internal": "host-gateway"},
@@ -154,7 +162,8 @@ class DockerInterface(object):  # pragma: no cover
             },
             runtime=runtime,
             ulimits=[nofile_limit],
-            security_opt=self._get_security_opts(sockets_path)
+            security_opt=self._get_security_opts(sockets_path),
+            **cgroups1_params
         )
         return response.id
 
@@ -195,14 +204,16 @@ class DockerInterface(object):  # pragma: no cover
 
         nofile_limit = Ulimit(name='nofile', soft=fd_limit[0], hard=fd_limit[1])
 
+        cgroups1_params = {
+            "mem_swappiness": 0, "oom_kill_disable": True
+        } if self.get_cgroup_version() == "1" else {}
+
         response = self._docker.containers.create(
             image,
             stdin_open=True,
             command="_run_student_intern "+runtime + " " + parent_runtime,  # the script takes the runtimes as arguments
             mem_limit=str(mem_limit) + "M",
             memswap_limit=str(mem_limit) + "M",
-            mem_swappiness=0,
-            oom_kill_disable=True,
             network_mode=net_mode,
             ports=ports,
             volumes={
@@ -214,7 +225,8 @@ class DockerInterface(object):  # pragma: no cover
             },
             runtime=runtime,
             ulimits=[nofile_limit],
-            security_opt=self._get_security_opts(sockets_path)
+            security_opt=self._get_security_opts(sockets_path),
+            **cgroups1_params
         )
 
         return response.id
@@ -262,6 +274,13 @@ class DockerInterface(object):  # pragma: no cover
         :param signal: custom signal. Default is SIGKILL.
         """
         self._docker.containers.get(container_id).kill(signal)
+
+    def was_oom_killed(self, container_id):
+        """
+        :param container_id:
+        :return: True if the container was killed by the OOM killer, False otherwise
+        """
+        return self._docker.containers.get(container_id).attrs['State'].get('OOMKilled', False)
 
     def event_stream(self, filters=None, since=None):
         """
