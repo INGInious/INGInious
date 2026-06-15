@@ -15,40 +15,8 @@ Here is an example of a taskless job running a simple Hello World script and ret
 to provide any data you want to provide to the job. You can then retrieve it with the get_input INGInious API. The environment,
 as any other grading environment is based on the INGInious base environment.
 
-""""""
-Dockerfile
-""""""
+All the files are present in the taskless-hello-world plugin folder.
 
-.. code-block:: Dockerfile
-
-    ARG   VERSION=latest
-    ARG   REGISTRY=ghcr.io
-    FROM  ${REGISTRY}/inginious/env-base:${VERSION}
-
-    LABEL org.opencontainers.image.description="Demo environment for taskless jobs. This envionment only returns a Hello World message."
-    LABEL org.inginious.grading.name="taskless-hello_world"
-
-
-    # clean and update
-    RUN dnf clean metadata && \
-        dnf -y upgrade
-
-    # copy runfile to the course directory
-    COPY run.py /course/run.py
-
-""""""
-run.py
-""""""
-
-.. code-block:: python
-
-    from inginious_container_api import feedback, input
-
-    message = "Hello World!"
-    additional_message = input.get_input("hello_world_message")
-
-    feedback.set_global_feedback(message + " " + additional_message)
-    feedback.set_global_result("success")
 
 """""""""""""""
 Running the job
@@ -56,12 +24,13 @@ Running the job
 
 .. code-block:: python
 
-    job_info = { "environment_type": "docker", "environment": "taskless-hello-world" }
+    job_info = { "environment_type": "docker", "environment": "taskless-hello_world" }
     job_input = {
                 "hello_world_message": "My name is John Doe and I am a software engineer."
             }
 
     ... = client_sync.new_job(0, job_info=job_info, inputdata=job_input, launcher_name="Plugin - taskless Hello World", debug=True)
+
 
 
 ^^^^^^^^^^^^^^^^^
