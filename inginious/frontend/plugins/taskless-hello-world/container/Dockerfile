@@ -3,6 +3,7 @@
     FROM  ${REGISTRY}/inginious/env-base:${VERSION}
 
     LABEL org.opencontainers.image.description="Demo environment for taskless jobs. This envionment only returns a Hello World message."
+    LABEL org.inginious.grading.name="taskless-hello-world"
 
 
     # clean and update

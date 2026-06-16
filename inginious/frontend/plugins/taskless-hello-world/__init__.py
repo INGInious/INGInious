@@ -8,7 +8,7 @@
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.client.client_sync import ClientSync
 
-from flask import render_template
+from flask import render_template, request
 import os
 
 
@@ -24,23 +24,24 @@ def init(plugin_manager, client, config):
 
         def GET(self):
             """ GET request : render simple page with button that will call the taskless hello world job"""
-            return render_template("taskless-hello_world/templates/call.html", template_folder=PATH_TO_TEMPLATES)
+            return render_template("taskless-hello-world/templates/call.html", template_folder=PATH_TO_TEMPLATES)
 
 
         def POST(self):
             """ POST request : call the taskless hello world job and return the result """
             client_sync = ClientSync(client)
 
+            name = request.form.get("name", "")
             result, grade, problems, tests, custom, state, archive, stdout, stderr = client_sync.new_job(
                 priority=0,
-                job_info={"environment_type": "docker", "environment": "taskless-hello_world"},
-                inputdata={"hello_world_message": "My name is John Doe and I am a software engineer."},
+                job_info={"environment_type": "docker", "environment": "taskless-hello-world"},
+                inputdata={"hello_world_name": name},
                 launcher_name="Plugin - taskless Hello World",
                 debug=False
             )
 
-            return render_template("taskless-hello_world/templates/result.html", template_folder=PATH_TO_TEMPLATES, message=result[1])
+            return render_template("taskless-hello-world/templates/result.html", template_folder=PATH_TO_TEMPLATES, message=result[1])
 
 
     plugin_manager.add_page("/taskless_hello_world",TasklessJobPage.as_view('taskless_hello_world'))
-    plugin_manager.add_template_prefix("taskless-hello_world", PATH_TO_PLUGIN)
+    plugin_manager.add_template_prefix("taskless-hello-world", PATH_TO_PLUGIN)
