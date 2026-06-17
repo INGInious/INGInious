@@ -176,8 +176,9 @@ class Backend(object):
 
         #jobs_waiting: a list of tuples in the form
         #(job_id, is_current_client_job, info, launcher, max_time)
-        jobs_waiting = [(job.job_id, job.client_addr == client_addr, job.msg.course_id+"/"+job.msg.task_id, job.msg.launcher,
-                                     self._get_time_limit_estimate(job.msg)) for job in self._waiting_jobs.values()]
+        jobs_waiting = [(job.job_id, job.client_addr == client_addr, job.msg.course_id+"/"+job.msg.task_id
+                        if job.msg.course_id and job.msg.task_id else job.msg.environment, job.msg.launcher,
+                        self._get_time_limit_estimate(job.msg)) for job in self._waiting_jobs.values()]
 
         await ZMQUtils.send_with_addr(self._client_socket, client_addr, BackendGetQueue(jobs_running, jobs_waiting))
 
