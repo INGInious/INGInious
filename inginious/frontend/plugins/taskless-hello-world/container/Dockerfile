@@ -4,6 +4,7 @@
 
     LABEL org.opencontainers.image.description="Demo environment for taskless jobs. This envionment only returns a Hello World message."
     LABEL org.inginious.grading.name="taskless-hello-world"
+    LABEL org.inginious.grading.advertise="false"
 
 
     # clean and update

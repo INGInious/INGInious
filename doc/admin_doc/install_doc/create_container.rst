@@ -37,6 +37,11 @@ the default image provided with INGInious. This default image is itself based on
 as package manager. It is already provided with Python and basic commands, and with all the files needed by INGInious
 to work. The second line is used to indicate the environment name (here, ```some_name```) that will be used for tasks.
 
+An additional label can be set to indicate you do not wish to advertise this environment for grading jobs. Meaning it
+wont be visible from the web interface. You will still be able to run jobs with those environments in the project's code
+by using the client's `new_job()` method. To do so, add the following label to your Dockerfile:
+``LABEL org.inginious.grading.advertise="false"``. By default, an environment is advertised.
+
 The line ```RUN yum -y install php-cli``` indicates to Docker that it must run the command ```yum -y install php-cli```
 inside the image. The ```yum``` command is the equivalent of ```apt-get``` (that is the package manager for Debian,
 Ubuntu and derivates), but for Linux distributions that derivates from Fedora, like CentOS. This will install the package
