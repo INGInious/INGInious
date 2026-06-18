@@ -91,6 +91,7 @@ class Agent(object, metaclass=ABCMeta):
                             "id": "env img id",   # "sha256:715...dd3"
                             "created": 12345678,  # create date
                             "ports": [22, 434],   # list of ports needed
+                            "advertised": True,           # if False, the environment will not be proposed to the clients, but can still be used in new_job() method
                         }
                     }
                 }

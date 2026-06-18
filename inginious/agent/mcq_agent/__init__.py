@@ -34,7 +34,7 @@ class MCQAgent(Agent):
 
     @property
     def environments(self):
-        return {"mcq": {"mcq": {"id": "mcq", "created": 0}}}
+        return {"mcq": {"mcq": {"id": "mcq", "created": 0, "advertised": True}}}
 
     def check_answer(self, problems, task_input, language):
         """ Verify the answers in task_input. Returns six values:
