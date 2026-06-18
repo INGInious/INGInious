@@ -523,7 +523,7 @@ class WebAppSubmissionManager:
             elif remaining_sub_folders[0] == "group":
                 yield from generate_paths(sub, path + ['-'.join(sorted(sub['username']))], remaining_sub_folders[1:])
             elif remaining_sub_folders[0] == "submissionid":
-                yield from generate_paths(sub, path + [str(sub['_id'])], remaining_sub_folders[1:])
+                yield from generate_paths(sub, path + [str(sub['id'])], remaining_sub_folders[1:])
             elif remaining_sub_folders[0] == "submissiondateid":
                 yield from generate_paths(sub, path + [(sub['submitted_on']).isoformat()], remaining_sub_folders[1:])
             else:
