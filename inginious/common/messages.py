@@ -31,13 +31,13 @@ class ClientNewJob:
     """ Creates a new job """
     job_id: ClientJobId  # the client-side job id that is associated to this job
     priority: int  # the job priority
-    course_id: str  # course id of the task to run
-    task_id: str  # task id of the task to run
+    course_id: Union[str, None]  # course id of the task to run
+    task_id: Union[str, None]  # task id of the task to run
     task_problems: Dict[str, Any]  # task dictionary
     inputdata: Dict[str, Any]  # student input data
     environment_type: str  # environment type
     environment: str  # environment to use (must exist in the environment type)
-    environment_parameters: Dict[str, Any]  # parameters for the environment (timeouts, limits, ...)
+    environment_parameters: Dict[str, Any] # parameters for the environment (timeouts, limits, ...)
     debug: Union[str, bool]  # True to enable debug, False to disable it, "ssh" to enable ssh debug
     launcher: str  # the name of the entity that launched this job, for logging purposes
 
@@ -117,7 +117,7 @@ class BackendGetQueue:
         - job_id is a job id. It may be from another client.
         - is_current_client_job is a boolean indicating if the client that asked the request has started the job
         - agent_name is the agent name
-        - info is "courseid/taskid"
+        - info is "courseid/taskid" or None if no course and task were given
         - launcher is the name of the launcher, which may be anything
         - started_at the time (in seconds since UNIX epoch) at which the job started
         - max_time the maximum time that can be used, or -1 if no timeout is set
@@ -128,13 +128,13 @@ class BackendGetQueue:
 
         - job_id is a job id. It may be from another client.
         - is_current_client_job is a boolean indicating if the client that asked the request has started the job
-        - info is "courseid/taskid"
+        - info is "courseid/taskid" or None if no course and task were given
         - launcher is the name of the launcher, which may be anything
         - max_time the maximum time that can be used, or -1 if no timeout is set
 
     """
-    jobs_running: List[Tuple[ClientJobId, bool, str, str, str, int, int]]
-    jobs_waiting: List[Tuple[ClientJobId, bool, str, str, int]]
+    jobs_running: List[Tuple[ClientJobId, bool, str, Union[str, None], str, int, int]]
+    jobs_waiting: List[Tuple[ClientJobId, bool, Union[str, None], str, int]]
 
 
 #################################################################
@@ -148,8 +148,8 @@ class BackendGetQueue:
 class BackendNewJob:
     """ Creates a new job """
     job_id: BackendJobId  # the backend-side job id that is associated to this job
-    course_id: str  # course id of the task to run
-    task_id: str  # task id of the task to run
+    course_id: Union[str, None]  # course id of the task to run
+    task_id: Union[str, None]  # task id of the task to run
     task_problems: Dict[str, Any]  # task dictionary
     inputdata: Dict[str, Any]  # student input data
     environment_type: str  # environment type
@@ -184,6 +184,7 @@ class AgentHello:
     #             "id": "env img id",   # "sha256:715c5cb5575cdb2641956e42af4a53e69edf763ce701006b2c6e0f4f39b68dd3"
     #             "created": 12345678,  # create date
     #             "ports": [22, 434],   # list of ports needed
+    #             "advertised": True,       # if False, the environment will not be advertised to the clients and thus not be accessible for from the frontend.
     #         }
     #     }
     # }

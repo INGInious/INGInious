@@ -91,6 +91,7 @@ class Agent(object, metaclass=ABCMeta):
                             "id": "env img id",   # "sha256:715...dd3"
                             "created": 12345678,  # create date
                             "ports": [22, 434],   # list of ports needed
+                            "advertised": True,           # if False, the environment will not be proposed to the clients, but can still be used in new_job() method
                         }
                     }
                 }
@@ -166,6 +167,11 @@ class Agent(object, metaclass=ABCMeta):
         # Tell the backend we started running the job
         await ZMQUtils.send(self.__backend_socket, AgentJobStarted(message.job_id))
 
+        if message.course_id is None and message.task_id is None:
+            # job not linked to a course/task
+            await self.new_job(message)
+            return
+        
         try:
             if message.environment_type not in self.environments or message.environment not in self.environments[message.environment_type]:
                 self._logger.warning("Task %s/%s ask for an unknown environment %s/%s", message.course_id, message.task_id,

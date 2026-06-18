@@ -185,8 +185,9 @@ class WebAppSubmissionManager:
 
         # Don't enable ssh debug
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
+        job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
 
-        jobid = self._client.new_job(1, course, task, inputdata,
+        jobid = self._client.new_job(1, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
                                                               custom, state, archive, stdout, stderr, task_dispenser, copy)),
@@ -281,8 +282,9 @@ class WebAppSubmissionManager:
         to_remove = self._after_submission_insertion(course, task, inputdata, debug, obj, submissionid, task_dispenser)
 
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
+        job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
 
-        jobid = self._client.new_job(0, course, task, inputdata,
+        jobid = self._client.new_job(0, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
                                                               custom, state, archive, stdout, stderr, task_dispenser, True)),
@@ -295,6 +297,7 @@ class WebAppSubmissionManager:
                           session.email, course.get_id(), task.get_id(), flask.request.remote_addr)
 
         return submissionid, to_remove
+
 
     def _delete_exceeding_submissions(self, username, course, task, task_dispenser):
         """ Deletes exceeding submissions from the database, to keep the database relatively small """

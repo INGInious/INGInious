@@ -24,7 +24,7 @@ from inginious.common.messages import BackendNewJob, AgentJobStarted, AgentJobDo
 WaitingJob = namedtuple('WaitingJob', ['priority', 'time_received', 'client_addr', 'job_id', 'msg'])
 
 RunningJob = namedtuple('RunningJob', ['agent_addr', 'client_addr', 'msg', 'time_started'])
-EnvironmentInfo = namedtuple('EnvironmentInfo', ['last_id', 'created_last', 'agents', 'type'])
+EnvironmentInfo = namedtuple('EnvironmentInfo', ['last_id', 'created_last', 'agents', 'type', 'is_advertised'])
 AgentInfo = namedtuple('AgentInfo', ['name', 'environments'])  # environments is a list of tuple (type, environment)
 
 class Backend(object):
@@ -108,7 +108,10 @@ class Backend(object):
     async def send_environment_update_to_client(self, client_addrs):
         """ :param client_addrs: list of clients to which we should send the update """
         self._logger.debug("Sending environments updates...")
-        available_environments = {type: list(environments.keys()) for type, environments in self._environments.items()}
+        available_environments = {
+            env_type: [name for name, env in environments.items() if env.is_advertised]
+            for env_type, environments in self._environments.items()
+        }
         msg = BackendUpdateEnvironments(available_environments)
         for client in client_addrs:
             await ZMQUtils.send_with_addr(self._client_socket, client, msg)
@@ -171,13 +174,14 @@ class Backend(object):
         for job_id, content in self._job_running.items():
             agent_friendly_name = self._registered_agents[content.agent_addr].name
             jobs_running.append((content.msg.job_id, content.client_addr == client_addr, agent_friendly_name,
-                                 content.msg.course_id+"/"+content.msg.task_id,
+                                 content.msg.course_id+"/"+content.msg.task_id if content.msg.course_id and content.msg.task_id else content.msg.environment,
                                  content.msg.launcher, int(content.time_started), self._get_time_limit_estimate(content.msg)))
 
         #jobs_waiting: a list of tuples in the form
         #(job_id, is_current_client_job, info, launcher, max_time)
-        jobs_waiting = [(job.job_id, job.client_addr == client_addr, job.msg.course_id+"/"+job.msg.task_id, job.msg.launcher,
-                                     self._get_time_limit_estimate(job.msg)) for job in self._waiting_jobs.values()]
+        jobs_waiting = [(job.job_id, job.client_addr == client_addr, job.msg.course_id+"/"+job.msg.task_id
+                        if job.msg.course_id and job.msg.task_id else job.msg.environment, job.msg.launcher,
+                        self._get_time_limit_estimate(job.msg)) for job in self._waiting_jobs.values()]
 
         await ZMQUtils.send_with_addr(self._client_socket, client_addr, BackendGetQueue(jobs_running, jobs_waiting))
 
@@ -271,11 +275,11 @@ class Backend(object):
                                              env_dict[name].last_id, env_dict[name].created_last,
                                              str(agent_addr), environment_info["id"], environment_info["created"])
                         env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"],
-                                                         env_dict[name].agents + [agent_addr], environment_type)
+                                                         env_dict[name].agents + [agent_addr], environment_type, environment_info["advertised"])
                 else:
                     # just add it
                     self._logger.debug("Registering environment %s/%s for agent %s", environment_type, name, str(agent_addr))
-                    env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"], [agent_addr], environment_type)
+                    env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"], [agent_addr], environment_type, environment_info["advertised"])
 
         # update the queue
         await self.update_queue()

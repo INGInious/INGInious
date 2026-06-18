@@ -79,7 +79,8 @@ class DockerInterface(object):  # pragma: no cover
                         "title": title,
                         "created": created,
                         "ports": ports,
-                        "runtime": docker_runtime.runtime
+                        "runtime": docker_runtime.runtime,
+                        "advertised": x.labels.get("org.inginious.grading.advertise", "true") == "true"
                     }
             except:
                 logging.getLogger("inginious.agent").exception("Container %s is badly formatted", title or "[cannot load title]")
