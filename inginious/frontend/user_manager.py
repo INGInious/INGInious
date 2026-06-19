@@ -554,7 +554,7 @@ class UserManager:
                 old_submission.state = def_sub["state"]
                 old_submission.submissionid = def_sub.id
                 old_submission.save()
-            elif old_submission.submissionid == submission["_id"]: # otherwise, update cache if needed
+            elif old_submission.submissionid == submission["id"]: # otherwise, update cache if needed
                 old_submission.succeeded = submission["result"] == "success"
                 old_submission.grade = submission["grade"]
                 old_submission.state = submission["state"]

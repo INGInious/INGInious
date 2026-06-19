@@ -49,7 +49,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
             show_everything=user_manager.has_staff_rights_on_course(course, session.username)
         )
         data = {
-            "id": str(submission["_id"]),
+            "id": str(submission["id"]),
             "submitted_on": submission["submitted_on"].isoformat(),
             "status": submission["status"]
         }

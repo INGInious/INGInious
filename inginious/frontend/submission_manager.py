@@ -373,7 +373,7 @@ class WebAppSubmissionManager:
                                                                      show_everything).parse())
                     except TypeError:
                         self._logger.error(
-                            "Something went wrong with provided feedback for submission %s", str(submission["_id"])
+                            "Something went wrong with provided feedback for submission %s", str(submission["id"])
                             )
                         submission["problems"][problem] = (
                             'crash', ParsableText(_("Feedback is badly formatted."),"rst", show_everything).parse())
@@ -516,14 +516,14 @@ class WebAppSubmissionManager:
                     if username in student_audiences:
                         for audience in student_audiences[username]:
                             yield from generate_paths(sub, path +
-                                                      [(audience["description"] +" (" + str(audience["_id"]) + ")").replace(" ", "_")],
+                                                      [(audience["description"] +" (" + str(audience["id"]) + ")").replace(" ", "_")],
                                                       remaining_sub_folders[1:])
                     else:
                         yield from generate_paths(sub, path + ['-'.join(sorted(sub['username']))], remaining_sub_folders[1:])
             elif remaining_sub_folders[0] == "group":
                 yield from generate_paths(sub, path + ['-'.join(sorted(sub['username']))], remaining_sub_folders[1:])
             elif remaining_sub_folders[0] == "submissionid":
-                yield from generate_paths(sub, path + [str(sub['_id'])], remaining_sub_folders[1:])
+                yield from generate_paths(sub, path + [str(sub['id'])], remaining_sub_folders[1:])
             elif remaining_sub_folders[0] == "submissiondateid":
                 yield from generate_paths(sub, path + [(sub['submitted_on']).isoformat()], remaining_sub_folders[1:])
             else:
