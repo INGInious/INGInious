@@ -62,7 +62,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
         audiences = self.user_manager.get_course_audiences(course)
         tasks = course.get_task_dispenser().get_ordered_tasks()
 
-        tutored_audiences = [str(audience["_id"]) for audience in audiences if
+        tutored_audiences = [str(audience["id"]) for audience in audiences if
                              session.username in audience["tutors"]]
         tutored_users = []
         for audience in audiences:
@@ -94,7 +94,7 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
         # Sanitise audiences
         if len(user_input.get("audiences", [])) == 1 and "," in user_input["audiences"][0]:
             user_input["audiences"] = user_input["audiences"][0].split(',')
-        user_input["audiences"] = [audience for audience in user_input["audiences"] if any(str(a["_id"]) == audience for a in audiences)]
+        user_input["audiences"] = [audience for audience in user_input["audiences"] if any(str(a["id"]) == audience for a in audiences)]
 
         # Sanitise tasks
         if not user_input.get("tasks", []):
