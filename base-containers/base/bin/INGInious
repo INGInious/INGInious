@@ -353,6 +353,18 @@ class INGIniousMainRunner:
 
         ok_to_start = True
 
+        # Check cgroupsv2 OOM policy
+        oom_group_path = "/sys/fs/cgroup/memory.oom.group"
+        if os.path.exists(oom_group_path):
+            with open(oom_group_path, "r", encoding="utf-8") as f:
+                oom_group = f.read().strip()
+            if oom_group == "0":
+                inginious_container_api.feedback.set_global_result('crash')
+                inginious_container_api.feedback.set_global_feedback(
+                    "Cgroup flag memory.oom.group is not set. Please refer to the setup documentation."
+                )
+                ok_to_start = False
+
         # Add some elements to /etc/hosts and /etc/resolv.conf if needed
         system_files = {"hosts": ("/etc/hosts", True), "resolv.conf": ("/etc/resolv.conf", False)}
         for name, (spath, append) in system_files.items():

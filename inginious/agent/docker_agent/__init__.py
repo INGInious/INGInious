@@ -230,8 +230,10 @@ class DockerAgent(Agent):
         since = None  # last time we saw something. Useful if a restart happens...
         while not shutdown:
             try:
+                # Catch oom events with cgroups1 only, not to kill twice
+                event_filter = ["die", "oom"] if await self._docker.get_cgroup_version() == "1" else ["die"]
                 source = AsyncIteratorWrapper(
-                    self._docker.sync.event_stream(filters={"event": ["die", "oom"]}, since=since))
+                    self._docker.sync.event_stream(filters={"event": event_filter}, since=since))
                 self._logger.info("Docker event stream started")
                 async for event in source:
                     try:
@@ -247,11 +249,19 @@ class DockerAgent(Agent):
                                 self._logger.exception("Cannot parse exitCode for container %s", container_id)
                                 retval = -1
 
+                            # Check if the container was killed due to OOM.
+                            oom_killed = await self._docker.was_oom_killed(container_id)
+                            if oom_killed and (container_id in self._containers_running or
+                                               container_id in self._student_containers_running):
+                                self._logger.info("Container %s did OOM and was killed.", container_id)
+                                self._containers_killed[container_id] = "overflow"
+
                             if container_id in self._containers_running:
                                 self._create_safe_task(self.handle_job_closing(container_id, retval))
                             elif container_id in self._student_containers_running:
                                 self._create_safe_task(self.handle_student_job_closing(container_id, retval))
                         elif event["Type"] == "container" and event["Action"] == "oom":
+                            # On cgroups v1, the OOM killer is disabled to make sure the whole container is killed.
                             container_id = event["Actor"]["ID"]
                             if container_id in self._containers_running or container_id in self._student_containers_running:
                                 self._logger.info("Container %s did OOM, killing it", container_id)
@@ -508,10 +518,10 @@ class DockerAgent(Agent):
                 ports[p] = self._external_ports.pop()
 
             try:
-                socket_path = path_join(parent_info.sockets_path, str(socket_id) + ".sock")
                 container_id = await self._docker.create_container_student(runtime, environment,
                                                                            memory_limit, parent_info.student_path,
-                                                                           socket_path,
+                                                                           parent_info.sockets_path,
+                                                                           socket_id,
                                                                            parent_info.systemfiles_path,
                                                                            parent_info.course_common_student_path,
                                                                            parent_info.environment_type,
