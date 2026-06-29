@@ -4,12 +4,18 @@ services:
     image: ${REGISTRY}/inginious/env-base:${VERSION}
     build:
       context: base-containers/base/
+      args:
+        - VERSION=${VERSION}
+        - REGISTRY=${REGISTRY}
     command: /bin/true
 
   env-default:
     image: ${REGISTRY}/inginious/env-default:${VERSION}
     build:
       context: base-containers/default/
+      args:
+        - VERSION=${VERSION}
+        - REGISTRY=${REGISTRY}
     depends_on:
       - env-base
     command: /bin/true
@@ -28,7 +34,32 @@ services:
     command: /bin/true
 
   db:
-    image: mongo:6.0.2
+    image: mongo:8.3.4
+    volumes:
+      - ./deploy/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+      - ./mongo:/data
+    environment:
+      MONGO_INITDB_DATABASE: "INGInious"
+
+      # MANDATORY ARGUMENT, INITIALISATION WILL FAIL IF NOT PROVIDED.
+      # Output of 'echo -n "superadmin" | argon2  ASUPERSECURESALT -id -t 3 -m 16 -l 64 -e'.
+      # $ are doubled because of variable expansion in compose env var.
+      INGINIOUS_SUPERADMIN_PASSWORD: '$$argon2id$$v=19$$m=65536,t=3,p=1$$QVNVUEVSU0VDVVJFU0FMVA$$NpeSDEsx+FwrIS277T9o/Q4z4Ypicibs3LiLZrftXsBUmBxFnK8FKa45w5q85ewM+dOlzZPMFdAmxpmDVAmLlQ'
+
+      # Username. Defaults to "superadmin" if not provided.
+      INGINIOUS_SUPERADMIN_USERNAME: "superadmin"
+
+      # Real name. Defaults to "INGInious superadmin" if not provided.
+      INGINIOUS_SUPERADMIN_REALNAME: "INGInious superadmin"
+
+      # Email. Defaults to "superadmin@inginious.org" if not provided.
+      INGINIOUS_SUPERADMIN_EMAIL: "superadmin@inginious.org"
+
+      # Optionnal superadmin language
+      # INGINIOUS_SUPERADMIN_LANG: "en"
+      #
+      # Optionnal superadmin code indentation
+      # INGINIOUS_SUPERADMIN_INDENT: "4"
     networks:
       - inginious
 
@@ -64,7 +95,6 @@ services:
      - /var/run/docker.sock:/var/run/docker.sock
      # See https://github.com/INGInious/INGInious/issues/352
      - ./tasks/:/inginious/tasks
-     - ./backups/:/inginious/backups
      # See https://github.com/INGInious/INGInious/issues/799
      - /tmp/agent_data/:/tmp/agent_data/
     networks:
@@ -86,7 +116,6 @@ services:
     volumes:
      # See https://github.com/INGInious/INGInious/issues/352
      - ./tasks/:/inginious/tasks
-     - ./backups/:/inginious/backups
      # See https://github.com/INGInious/INGInious/issues/799
      - /tmp/agent_data/:/tmp/agent_data/
     networks:
@@ -105,12 +134,12 @@ services:
       - agent-mcq
       - env-base
       - env-default
+      - env-python3
     environment:
       - INGINIOUS_WEBAPP_HOST=0.0.0.0
     volumes:
       - ./configuration.deploy.yaml:/inginious/configuration.yaml
       - ./tasks/:/inginious/tasks
-      - ./backups/:/inginious/backups
     ports:
       - 9000:8080
     networks:
