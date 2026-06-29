@@ -1,5 +1,5 @@
 # DOCKER-VERSION 1.1.0
-FROM    rockylinux:8
+FROM    rockylinux/rockylinux:10
 
 ENV LANG en_US.UTF-8  
 ENV LANGUAGE en_US:en  
@@ -15,8 +15,8 @@ RUN     dnf clean metadata && \
         dnf -y install langpacks-en glibc-langpack-en && \
         dnf -y install epel-release && \
         dnf -y upgrade && \
-        dnf -y install python38 python38-pip python38-devel zip unzip tar sed openssh-server openssl bind-utils iproute file jq procps-ng man curl net-tools screen nano bc  && \
-        pip3.8 install msgpack pyzmq jinja2 PyYAML timeout-decorator ipython mypy pydevd-pycharm && \
+        dnf -y install python3.14 python3.14-pip python3.14-devel zip unzip tar sed openssh-server openssl bind-utils iproute file jq procps-ng man curl net-tools screen nano bc  && \
+        pip3.14 install msgpack pyzmq jinja2 PyYAML timeout-decorator ipython mypy pydevd-pycharm && \
         dnf clean all
 
 # Allow to run commands
