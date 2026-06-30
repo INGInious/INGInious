@@ -140,10 +140,22 @@ services:
     volumes:
       - ./configuration.deploy.yaml:/inginious/configuration.yaml
       - ./tasks/:/inginious/tasks
-    ports:
-      - 9000:8080
     networks:
       - inginious
+
+  caddy:
+    image: docker.io/library/caddy:2.11.4-alpine
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - frontend
+    ports:
+      - 443:443
+    # For illustration purpose, not useful in real deployments.
+    networks:
+      inginious:
+        aliases:
+          - inginious.local
 
 networks:
   inginious:
