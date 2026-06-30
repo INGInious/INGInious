@@ -1,0 +1,5 @@
+# Replace me with dedicated FQDN.
+inginious.local localhost {
+	header -Server
+	reverse_proxy frontend:8080
+}
