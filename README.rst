@@ -36,9 +36,43 @@ Simply run:
 
    $ docker compose up --build
 
-And access http://localhost:9000 in your browser.
+And access https://localhost in your browser.
 
 *The default login and password are* ``superadmin``.
+
+You may alternatively add ``127.0.0.1 inginious.local`` to your ``/etc/hosts`` file and access https://inginious.local in your browser.
+
+The superadmin account is configurable at the database instantiation through 6 environment variables to specify in the `docker-compose.yml` file:
+
+* INGINIOUS_SUPERADMIN_PASSWORD: Sepcifies the superadmin password. **MUST BE ENCODED WITH argon2id.**
+* INGINIOUS_SUPERADMIN_USERNAME: Defines the superadmin username. Defaults to `"superadmin"` if not provided.
+* INGINIOUS_SUPERADMIN_REALNAME: Defines the superadmin real name. Defaults to `"INGInious superadmin"` if not provided.
+* INGINIOUS_SUPERADMIN_EMAIL: Defines the superadmin email address. Defaults to `"superadmin@inginious.org"`.
+* INGINIOUS_SUPERADMIN_LANG: Defines the superadmin language. Defaults to `"en"`.
+* INIGNIOUS_SUPERADMIN_INDENT: Defines the text indentation (in number of spaces) for the superadmin account. Defaults to `"4"`.
+
+Currently supported **INGINIOUS_SUPERADMIN_LANG** values are:
+
+======= ========
+Code    Language
+======= ========
+`en`    English
+`el`    Greek
+`es`    Spanish
+`fr`    French
+`he`    Hebrew
+`nl`    Dutch
+`nb_NO` Norwegian
+`pt`    Portuguese
+`vi`    Vietnamese
+======= ========
+
+Currently supported **INGINIOUS_SUPERADMIN_INDENT** values are: "2", "3", "4" and "tabs".
+
+.. _Caddyfile documentation: https://caddyserver.com/docs/caddyfile
+
+The INGInious frontend is exposed via the Caddy reverse proxy. A sample configuration file is located at `deploy/Caddyfile`.
+Refer to the `Caddyfile documentation`_ for more advanced proxy configuration.
 
 The ``--build`` argument is optional, use it if you want to rebuild locally the core containers.
 If you want to simply pull them from the project's registry, this argument is not required.
