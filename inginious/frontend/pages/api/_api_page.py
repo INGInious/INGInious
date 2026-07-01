@@ -123,20 +123,14 @@ class APITokenAuthPage(APIAuthenticatedPage):
         """ Verify that the given token is valid """
 
 
-        db_token = "my_token"  # TODO : get token from request
-
         auth_header = flask.request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             raise APIForbidden("Missing or malformed Authorization header")
         token = auth_header.removeprefix("Bearer ").strip()
 
+        self.user = User.objects(apitoken=token, activate__exists=False).first()
 
-
-        self.user = User.objects(username="superadmin", activate__exists=False).first() # TODO get user using token given in the request
-
-
-        #if not self.user:
-        if token != db_token:
+        if not self.user:
             raise APIForbidden("Invalid token")
         return handler(*args, **kwargs)
 
