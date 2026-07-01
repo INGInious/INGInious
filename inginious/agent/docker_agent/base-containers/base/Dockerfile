@@ -20,21 +20,25 @@ RUN     dnf clean metadata && \
         dnf clean all
 
 # Allow to run commands
-ADD     . /INGInious
+ADD     ./base-containers/base/ /INGInious
 RUN     chmod -R 755 /INGInious/bin && \
         chmod 700 /INGInious/bin/INGInious && \
         mv /INGInious/bin/* /bin
 
+ARG PYTHON_VERSION="3.8"
+ARG LIB_PATH="/usr/lib/python${PYTHON_VERSION}/site-packages"
+
 # Install everything needed to allow INGInious' python libs to be loaded
 RUN     chmod -R 644 /INGInious/inginious_container_api && \
-        mkdir -p /usr/lib/python3.8/site-packages/inginious_container_api && \
-        cp -R /INGInious/inginious_container_api/*.py  /usr/lib/python3.8/site-packages/inginious_container_api && \
-        echo "inginious_container_api" > /usr/lib/python3.8/site-packages/inginious_container_api.pth
+        mkdir -p "${LIB_PATH}"/inginious_container_api && \
+        cp -R /INGInious/inginious_container_api/*.py  "${LIB_PATH}"/inginious_container_api && \
+        echo "inginious_container_api" > "${LIB_PATH}"/inginious_container_api.pth
 
 # This maintains backward compatibility
-RUN     mkdir -p /usr/lib/python3.8/site-packages/inginious && \
-        cp -R /INGInious/inginious_container_api/*.py  /usr/lib/python3.8/site-packages/inginious && \
-        echo "inginious" > /usr/lib/python3.8/site-packages/inginious.pth
+RUN     mkdir -p "${LIB_PATH}"/inginious/docker_agent && \
+        cp -R /INGInious/inginious_container_api/*.py  "${LIB_PATH}"/inginious && \
+        echo "inginious" > "${LIB_PATH}"/inginious.pth
+COPY    ./messages.py "${LIB_PATH}"/inginious/docker_agent
 
 # Delete unneeded folders
 RUN     rm -R /INGInious
