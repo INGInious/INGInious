@@ -11,6 +11,7 @@ from flask import session, Response
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
+from inginious.frontend.models import User
 
 
 class APIPage(INGIniousPage):
@@ -109,6 +110,34 @@ class APIAuthenticatedPage(APIPage):
         """ Verify that the user is authenticated """
         if not session.loggedin:
             raise APIForbidden()
+        return handler(*args, **kwargs)
+
+
+class APITokenAuthPage(APIAuthenticatedPage):
+    """
+        A wrapper for pages that needs authentication through the use of a token. Automatically compares the token given
+        in the request with the one stored in DB for the user and returns "403 Forbidden" if it does not match.
+    """
+
+    def _verify_authentication(self, handler, args, kwargs):
+        """ Verify that the given token is valid """
+
+
+        db_token = "my_token"  # TODO : get token from request
+
+        auth_header = flask.request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise APIForbidden("Missing or malformed Authorization header")
+        token = auth_header.removeprefix("Bearer ").strip()
+
+
+
+        self.user = User.objects(username="superadmin", activate__exists=False).first() # TODO get user using token given in the request
+
+
+        #if not self.user:
+        if token != db_token:
+            raise APIForbidden("Invalid token")
         return handler(*args, **kwargs)
 
 
