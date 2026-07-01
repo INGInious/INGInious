@@ -128,7 +128,7 @@ class INGIniousMainRunner:
         except (asyncio.CancelledError, KeyboardInterrupt):
             return
         except:
-            self._logger.exception("Exception occured while reading agent stream")
+            self._logger.exception("Exception occured while reading stdin")
             os._exit(1)  # DIE!
 
     async def send_intern_message(self, msg):
