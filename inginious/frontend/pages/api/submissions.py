@@ -10,7 +10,7 @@ import flask
 
 from flask import current_app, session
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APITokenAuthPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
 
 def _get_submissions(submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
@@ -214,3 +214,52 @@ class APISubmissions(APIAuthenticatedPage):
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
+
+
+
+class APISubmissionsTest(APITokenAuthPage):
+
+    def API_GET(self):
+        """
+            Test endpoint.
+            Returns a 200 OK if the endpoint is reachable and the user has access to it.
+            Returns 403 Forbidden if the user does not have access to the course/task.
+            Returns 404 Not Found if the course/task does not exist.
+        """
+
+
+        # Does APITokenAuthPage automatically checks for APIForbidden? -> normally yes,
+
+        # TODO : get user from token, for now we use a hardcoded username
+
+        return 200, {"message": "Submissions endpoint is reachable and user has access."}
+
+
+class APISubmissionsCourse(APITokenAuthPage):
+
+    def API_GET(self, courseid):
+        """
+            Test endpoint.
+            Returns a 200 OK if the endpoint is reachable and the user has access to it.
+            Returns 403 Forbidden if the user does not have access to the course/task.
+            Returns 404 Not Found if the course does not exist.
+        """
+
+        # Does APITokenAuthPage automatically checks for APIForbidden? -> normally yes,
+
+        # TODO : get user from token, for now we use a hardcoded username
+        username = self.user.username
+
+        try:
+            course = Course.get(courseid)
+        except:
+            raise APINotFound("Course not found")
+
+        if not self.user_manager.course_is_open_to_user(course, username, False):
+            raise APIForbidden("You are not registered to this course")
+
+        # Verify rights
+        #if not self.user_manager.task_can_user_submit(course, task, username, False):
+        #    raise APIForbidden("You are not allowed to submit for this task")
+
+        return 200, {"message": "Submissions endpoint is reachable and user has access."}
