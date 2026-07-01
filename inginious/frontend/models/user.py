@@ -19,6 +19,7 @@ class User(Document):
     ltibindings = MapField(MapField(DynamicField())) # TODO: use custom validation or refactor
     tos_accepted = BooleanField(default=False)
     apikey = StringField(default=None)
+    apitoken = StringField(default="my_token")
     timezone = StringField(default=lambda: tzlocal.get_localzone_name())
     pinned_courses = ListField(StringField(), default=[])
     activate = StringField()
