@@ -1,0 +1,51 @@
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+
+{% extends "layout.html" %}
+{% block title %}{{ _("API Token") }}{% endblock %}
+
+{% block column %}
+{% with current='api_token' %}{% include 'preferences/menu.html' %}{% endwith %}
+{% endblock %}
+
+{% block navbar %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('prefredirectpage') }}" title="{{ _('Preferences') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-gears"></i></a>
+            </li>
+            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-user"></i> {{ _("API token") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block content %}
+<h2>{{ _("My API token") }}</h2>
+
+<div class="col-sm-12">
+    <p>
+        {{ _("Your API token allows external applications and scripts to authenticate as you and interact with "
+             "INGInious on your behalf, without needing your password. Keep it secret: anyone who has it can "
+             "access the API using your account permissions. If you believe your token has been compromised, "
+             "generate a new one below to invalidate the old one immediately. See the INGInious documentation "
+             "for usage.") }}
+    </p>
+</div>
+<div>
+
+    <div class="col-sm-12">
+        <h3>{{ _("Current token") }}</h3>
+        <div id="current-api-token" class="form-control">
+            {% if api_token %}
+                {{ api_token }}
+            {% else %}
+                <em>{{ _("No token has been generated yet.") }}</em>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-sm-12"><br />
+        <button type="submit" name="generate" class="btn btn-primary btn-block"><i class="fa fa-save"></i> {{ _("Generate a new token") }}</button>
+    </div>
+</div>
+{% endblock %}
