@@ -8,6 +8,9 @@
     <a href="{{ url_for('bindingspage') }}" class="list-group-item list-group-item-action {% if current == 'bindings' %}active{% endif %}">
         <i class='fa fa-id-card-o fa-fw mr-2'></i>{{ _("Authentication bindings") }}
     </a>
+    <a href="{{ url_for('apitokenpage') }}" class="list-group-item list-group-item-action {% if current == 'api_token' %}active{% endif %}">
+        <i class='fa fa-key fa-fw mr-2'></i>{{ _("API token") }}
+    </a>
     {% if config.ALLOW_DELETION %}
     <a href="{{ url_for('deletepage') }}" class="list-group-item list-group-item-action list-group-item-danger {% if current == 'delete' %}active{% endif %}">
         <i class='fa fa-user-times fa-fw mr-2'></i>{{ _("Delete my account") }}

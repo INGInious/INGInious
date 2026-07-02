@@ -3,8 +3,6 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from werkzeug.routing import BaseConverter
-
 from inginious.frontend.pages.admin.admin import AdministrationUsersPage, \
     AdministrationUserActionPage
 from inginious.frontend.pages.maintenance import MaintenancePage
@@ -16,6 +14,7 @@ from inginious.frontend.pages.mycourses import MyCoursesPage
 from inginious.frontend.pages.preferences.bindings import BindingsPage
 from inginious.frontend.pages.preferences.delete import DeletePage
 from inginious.frontend.pages.preferences.profile import ProfilePage
+from inginious.frontend.pages.preferences.apitoken import APITokenPage
 from inginious.frontend.pages.preferences.utils import PrefRedirectPage
 from inginious.frontend.pages.utils import SignInPage, LogOutPage
 from inginious.frontend.pages.register import RegistrationPage
@@ -84,6 +83,7 @@ def init_flask_mapping(flask_app):
                            view_func=BindingsPage.as_view('bindingspage'))
     flask_app.add_url_rule('/preferences/delete', view_func=DeletePage.as_view('deletepage'))
     flask_app.add_url_rule('/preferences/profile', view_func=ProfilePage.as_view('profilepage'))
+    flask_app.add_url_rule('/preferences/apitoken', view_func=APITokenPage.as_view('apitokenpage'))
     flask_app.add_url_rule('/lti/task', view_func=LTITaskPage.as_view('ltitaskpage'))
     flask_app.add_url_rule('/lti/<courseid>/<taskid>',
                            view_func=LTI11LaunchPage.as_view('ltilaunchpage'))
