@@ -21,6 +21,12 @@
 
 {% block content %}
 <h2>{{ _("My API token") }}</h2>
+{% for error in errors %}
+    <div class="alert alert-danger alert-dismissable" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        {{ error }}
+    </div>
+{% endfor %}
 
 <div class="col-sm-12">
     <p>
@@ -37,15 +43,19 @@
         <h3>{{ _("Current token") }}</h3>
         <div id="current-api-token" class="form-control">
             {% if api_token %}
-                {{ api_token }}
+                {{ api_token }} <b>{{ expiration }}</b>
             {% else %}
                 <em>{{ _("No token has been generated yet.") }}</em>
             {% endif %}
         </div>
     </div>
 
-    <div class="col-sm-12"><br />
-        <button type="submit" name="generate" class="btn btn-primary btn-block"><i class="fa fa-save"></i> {{ _("Generate a new token") }}</button>
-    </div>
+    <form method="post" action="{{ url_for('.apitokenpage') }}">
+        <div class="col-sm-12"><br />
+            <button type="submit" name="generate" class="btn btn-primary btn-block">
+                <i class="fa fa-save"></i> {{ _("Generate a new token") }}
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
