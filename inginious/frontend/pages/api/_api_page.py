@@ -8,6 +8,7 @@
 import json
 import flask
 from flask import session, Response
+import jwt
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
@@ -128,9 +129,19 @@ class APITokenAuthPage(APIAuthenticatedPage):
             raise APIForbidden("Missing or malformed Authorization header")
         token = auth_header.removeprefix("Bearer ").strip()
 
-        self.user = User.objects(apitoken=token, activate__exists=False).first()
+        JWT_SECRET = "your-secret-key"
+        JWT_ALGORITHM = "HS256"
 
-        if not self.user:
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        except jwt.ExpiredSignatureError:
+            raise APIForbidden("Your token has expired, please generate a new one.")
+        except jwt.InvalidTokenError:
+            raise APIForbidden("Invalid token, please generate a new one.")
+
+        self.user = User.objects(username=payload["username"]).first()
+
+        if token != self.user.apitoken:
             raise APIForbidden("Invalid token")
         return handler(*args, **kwargs)
 

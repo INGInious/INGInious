@@ -43,7 +43,7 @@
         <h3>{{ _("Current token") }}</h3>
         <div id="current-api-token" class="form-control">
             {% if api_token %}
-                {{ api_token }} <b>{{ expiration }}</b>
+                {{ api_token }} <b>{{ show_time(expiration) }}</b>
             {% else %}
                 <em>{{ _("No token has been generated yet.") }}</em>
             {% endif %}
