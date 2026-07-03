@@ -17,7 +17,7 @@ from inginious.frontend.models import User
 # one secret key per user ? If the secret key is found out, every user is at risk.
 JWT_SECRET = "your-secret-key"
 JWT_ALGORITHM = "HS256"
-TOKEN_LIFETIME = datetime.timedelta(hours=1)
+TOKEN_LIFETIME = datetime.timedelta(days=365)  # Token lifetime of 1 year
 
 
 class APITokenPage(INGIniousAuthPage):
@@ -35,7 +35,7 @@ class APITokenPage(INGIniousAuthPage):
         except jwt.InvalidTokenError:
             return self.show_page(errors=["Invalid token, please generate a new one."])
 
-        expiration = datetime.datetime.fromtimestamp(payload["exp"], tz=timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+        expiration = datetime.datetime.fromtimestamp(payload["exp"], tz=timezone.utc).astimezone()
 
         return self.show_page(api_token=user.apitoken, expiration=expiration)
 
@@ -46,7 +46,7 @@ class APITokenPage(INGIniousAuthPage):
 
         now = datetime.datetime.now(timezone.utc)
         payload = {
-            "user": user.username, # jwt.encode only transforms datetime to timestamp only for exp, iat and nbf claims, so we need to convert to timestamp for other claims if needed
+            "username": user.username,
             "exp": now + TOKEN_LIFETIME,
         }
         token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -54,7 +54,7 @@ class APITokenPage(INGIniousAuthPage):
         user.apitoken = token
         user.save()
 
-        expiration = payload["exp"].astimezone().strftime("%Y-%m-%d %H:%M:%S %Z") # TODO: use user's timezone
+        expiration = payload["exp"].astimezone()
 
         return self.show_page(api_token=token, expiration=expiration)
 
