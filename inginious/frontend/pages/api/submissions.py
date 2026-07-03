@@ -7,10 +7,12 @@
 
 import base64
 import flask
+import json
 
 from flask import current_app, session
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APITokenAuthPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.models.submission import Submission
 
 
 def _get_submissions(submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
@@ -239,15 +241,12 @@ class APISubmissionsCourse(APITokenAuthPage):
 
     def API_GET(self, courseid):
         """
-            Test endpoint.
+            Endpoint sending back all submissions of a course. Only accessible to staff members of the course.
             Returns a 200 OK if the endpoint is reachable and the user has access to it.
             Returns 403 Forbidden if the user does not have access to the course/task.
             Returns 404 Not Found if the course does not exist.
         """
 
-        # Does APITokenAuthPage automatically checks for APIForbidden? -> normally yes,
-
-        # TODO : get user from token, for now we use a hardcoded username
         username = self.user.username
 
         try:
@@ -255,11 +254,20 @@ class APISubmissionsCourse(APITokenAuthPage):
         except:
             raise APINotFound("Course not found")
 
-        if not self.user_manager.course_is_open_to_user(course, username, False):
+        if not self.user_manager.has_staff_rights_on_course(course, username, include_superadmins=True):
             raise APIForbidden("You are not registered to this course")
 
-        # Verify rights
-        #if not self.user_manager.task_can_user_submit(course, task, username, False):
-        #    raise APIForbidden("You are not allowed to submit for this task")
+        submissions = Submission.objects(courseid=courseid, status="done").only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input").order_by("-submitted_on")
+        submissions_list = json.loads(submissions.to_json())
 
-        return 200, {"message": "Submissions endpoint is reachable and user has access."}
+        return 200, submissions_list
+
+
+    # warning
+    # format submitted_on correctly
+    # format input correctly (base64 encode files) -> use .get_input ?
+    # send back archive ?
+    # send back text feedback ? -> text sent back to the student after submitting its work, not the feedback sent back by the grader
+
+    # filter on date range ?
+
