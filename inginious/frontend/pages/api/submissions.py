@@ -9,7 +9,7 @@ import base64
 import flask
 import json
 
-from flask import current_app, session
+from flask import current_app, session, request
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APITokenAuthPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 from inginious.frontend.models.submission import Submission
@@ -239,7 +239,7 @@ class APISubmissionsTest(APITokenAuthPage):
 
 class APISubmissionsCourse(APITokenAuthPage):
 
-    def API_GET(self, courseid):
+    def API_POST(self, courseid):
         """
             Endpoint sending back all submissions of a course. Only accessible to staff members of the course.
             Returns a 200 OK if the endpoint is reachable and the user has access to it.
@@ -255,10 +255,53 @@ class APISubmissionsCourse(APITokenAuthPage):
             raise APINotFound("Course not found")
 
         if not self.user_manager.has_staff_rights_on_course(course, username, include_superadmins=True):
-            raise APIForbidden("You are not registered to this course")
+            raise APIForbidden("You cannot access this course")
 
-        submissions = Submission.objects(courseid=courseid, status="done").only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input").order_by("-submitted_on")
-        submissions_list = json.loads(submissions.to_json())
+        data = request.get_json(silent=True) or {}
+
+        select = data.get("select", "all")
+        usernames = data.get("username", None)
+        response_format = data.get("format", "json")
+
+        if select not in ("all", "best", "last"):
+            raise APIInvalidArguments()
+        if response_format not in ("json", "csv"):
+            raise APIInvalidArguments()
+        if usernames is not None and not isinstance(usernames, list):
+            raise APIInvalidArguments()
+
+        query = {"courseid": courseid, "status": "done"}
+        if usernames:
+            query["username__in"] = usernames
+
+        submissions = Submission.objects(**query) \
+            .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
+            .order_by("-submitted_on")
+
+        if select == "last":
+            seen = set()
+            result = []
+            for s in submissions:
+                key = tuple(sorted(s.username))
+                if key not in seen:
+                    seen.add(key)
+                    result.append(s)
+            submissions = result
+
+        elif select == "best":
+            best = {}
+            for s in submissions:
+                key = tuple(sorted(s.username))
+                if key not in best or s.grade > best[key].grade:
+                    best[key] = s
+            submissions = list(best.values())
+
+        # TODO : implement CSV format functionality
+
+        if select in ("best", "last"):
+            submissions_list = [json.loads(s.to_json()) for s in submissions]
+        else:
+            submissions_list = json.loads(submissions.to_json())
 
         return 200, submissions_list
 
