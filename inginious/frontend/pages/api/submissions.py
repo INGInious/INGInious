@@ -274,31 +274,33 @@ class APISubmissionsCourse(APITokenAuthPage):
         if usernames:
             query["username__in"] = usernames
 
-        submissions = Submission.objects(**query) \
-            .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
-            .order_by("-submitted_on")
+        unique_users = Submission.objects(courseid=courseid).distinct("username") # ERROR : does not display every user ...
 
-        if select == "last":
+        if select == "best":
+            submissions = Submission.objects(**query) \
+                .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
+                .order_by("-grade", "-submitted_on")
+
+        else: # select == "last" or select == "all"
+            submissions = Submission.objects(**query) \
+                .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
+                .order_by("-submitted_on")
+
+
+        # Possible TODO : use mongoDB aggregation
+
+        # TODO : implement CSV format functionality
+
+        if select in ("best", "last"):
             seen = set()
             result = []
             for s in submissions:
-                key = tuple(sorted(s.username))
+                key = (tuple(sorted(s.username)), s.taskid)  # TODO : check here if correct
                 if key not in seen:
                     seen.add(key)
                     result.append(s)
             submissions = result
 
-        elif select == "best":
-            best = {}
-            for s in submissions:
-                key = tuple(sorted(s.username))
-                if key not in best or s.grade > best[key].grade:
-                    best[key] = s
-            submissions = list(best.values())
-
-        # TODO : implement CSV format functionality
-
-        if select in ("best", "last"):
             submissions_list = [json.loads(s.to_json()) for s in submissions]
         else:
             submissions_list = json.loads(submissions.to_json())
