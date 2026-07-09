@@ -1,0 +1,12 @@
+#! /usr/bin/env python3
+import sys
+import os
+
+from inginious_container_api import feedback
+from inginious_container_api.run_student import run_student
+
+status = run_student("echo hello", stdout=sys.stdout, stderr=sys.stderr)
+print(os.listdir('/'))
+status = 'crash' if status == 254 else 'success'
+feedback.set_global_result(status)
+feedback.set_global_feedback('Sample feedback.')
