@@ -274,8 +274,6 @@ class APISubmissionsCourse(APITokenAuthPage):
         if usernames:
             query["username__in"] = usernames
 
-        unique_users = Submission.objects(courseid=courseid).distinct("username") # ERROR : does not display every user ...
-
         if select == "best":
             submissions = Submission.objects(**query) \
                 .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
@@ -287,23 +285,33 @@ class APISubmissionsCourse(APITokenAuthPage):
                 .order_by("-submitted_on")
 
 
-        # Possible TODO : use mongoDB aggregation
-
         # TODO : implement CSV format functionality
 
         if select in ("best", "last"):
             seen = set()
             result = []
             for s in submissions:
-                key = (tuple(sorted(s.username)), s.taskid)  # TODO : check here if correct
+                key = (tuple(sorted(s.username)), s.taskid)
                 if key not in seen:
                     seen.add(key)
                     result.append(s)
             submissions = result
 
-            submissions_list = [json.loads(s.to_json()) for s in submissions]
-        else:
-            submissions_list = json.loads(submissions.to_json())
+
+
+        def serialize(s):
+            return {
+                "courseid": s.courseid,
+                "taskid": s.taskid,
+                "username": s.username,
+                "submitted_on": s.submitted_on.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "result": s.result,
+                "grade": s.grade,
+                "stderr": s.stderr,
+                "stdout": s.stdout,
+            }
+
+        submissions_list = [serialize(s) for s in submissions]
 
         return 200, submissions_list
 
