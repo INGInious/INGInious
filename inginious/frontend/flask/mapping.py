@@ -148,6 +148,8 @@ def init_flask_mapping(flask_app):
                            view_func=APISubmissionsTest.as_view('apisubmissionstest'))
     flask_app.add_url_rule('/api/v0/token/courses/<courseid>/submissions',
                            view_func=APISubmissionsCourse.as_view('apisubmissionscourse'))
+    flask_app.add_url_rule('/api/v0/token/courses/<courseid>/<taskid>/submissions',
+                           view_func=APISubmissionsCourse.as_view('apisubmissionscoursetasks'))
     flask_app.add_url_rule('/administrator/users',
                            view_func=AdministrationUsersPage.as_view('administrationuserspage'))
     flask_app.add_url_rule('/administrator/user_action',
