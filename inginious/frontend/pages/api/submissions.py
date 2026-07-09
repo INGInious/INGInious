@@ -243,10 +243,63 @@ class APISubmissionsCourse(APITokenAuthPage):
     def API_POST(self, courseid, taskid
     =None):
         """
-            Endpoint sending back all submissions of a course. Only accessible to staff members of the course.
+            List all the submissions from a course that were evaluated (done). Or all submissions for a particular task in case a task id is given.
+            # TODO : have two different docs ?How to display them separately in the documentation ?
+            Only accessible to staff members of the course.
             Returns a 200 OK if the endpoint is reachable and the user has access to it.
             Returns 403 Forbidden if the user does not have access to the course/task.
             Returns 404 Not Found if the course does not exist.
+
+            Returns list of the form :
+            ::
+
+                [
+                    {
+                        "courseid": "submission_id1",
+                        "taskid": "date",
+                        "username" : ["user1", "user2", ...],          #list of users related to that submissions (multiple users in case of a group submission)
+                        "submitted_on": "2026-06-23T15:01:44Z",     #date in the ISO 8601 format
+                        "result" : "success"        #can be success, failure, crash (execution status of the task).
+                        "grade": 0.0,
+                        "stderr": "stderr output of the submission",
+                        "stdout": "stdout output of the submission",
+                        "input": {  #input data from the submission, additional info and input submitted by the student.
+                            "@username" : "user1",
+                            "@email" : "user1@email.com",
+                            "@lang" : "en",
+                            "@time": "2026-06-23 15:01:44.706579+00:00",
+                            "@attempts": "5",
+                            "@random": [],
+                            "@state": "",
+                            ...
+                        },
+                    }
+                ]
+
+            The input field also contains the inputs of the student for all problems of the task. File contents are encoded in base64.
+             The structure depends on the type of the problem :
+
+
+                {
+                    "code_problem": ""print(\"Hello world!\")"",
+                    "file_problem": {
+                        "filename": "file1.zip",
+                        "value": "sDBBQAVcbcAWpn2wFoAQAAYi9maXp6YnV6e......DQAH4NsBagbcAWrg2wFqdXgLAAEE6AMAAAToAwAAUEsFBgAAAAAEAAQAVgEAAEACAAAAAA=="
+                        },
+                    "qcm_problem": {
+                    ... # TODO
+                    }
+
+            This endpoint takes a token in the header (accessible from your account settings) and a JSON body with the following fields :
+            - select: "all" (default), "best", "last" : select all submissions, the best submission per student, or the last submission per student
+            - username: a list of usernames to filter the submissions. If none is provided (or it is empty), the submissions for all users are returned
+            - format: "json" (default), "csv" : format of the response.
+
+            example of a call to this endpoint using curl: :
+                curl -X POST "http://localhost:8080/api/v0/token/courses/tutorial/submissions"
+                -H "Authorization: Bearer <token>"
+                -H "Content-Type: application/json"  -d '{ "select": "last", "format": "json", "username" : ["user1"] }'
+
         """
 
         username = self.user.username
@@ -256,7 +309,7 @@ class APISubmissionsCourse(APITokenAuthPage):
         except:
             raise APINotFound("Course not found")
         try:
-            task = course.get_task(taskid)
+            _ = course.get_task(taskid) if taskid else None
         except:
             raise APINotFound("Task not found")
 
@@ -323,6 +376,7 @@ class APISubmissionsCourse(APITokenAuthPage):
 
 
     # send back text feedback ? -> text sent back to the student after submitting its work, not the feedback sent back by the grader
+    # send back submission id ?
 
     # filter on date range ?
 
