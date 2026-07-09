@@ -140,18 +140,6 @@ def check_runtimes(runtime, parent_runtime):
     return shared_kernel, dual_dockers
 
 
-def recv_fds(sock, msglen, maxfds):
-    """ Receive FDs from the unix socket. Copy-pasted from the Python doc.
-    Used only if both grading and student containers are using docker runtime"""
-    fds = array.array("i")  # Array of ints
-    msg, ancdata, _, addr = sock.recvmsg(msglen, socket.CMSG_LEN(maxfds * fds.itemsize))
-    for cmsg_level, cmsg_type, cmsg_data in ancdata:
-        if (cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS):
-            # Append data, ignoring any truncated integers at the end.
-            fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
-    return msg, list(fds)
-
-
 async def write_stdout(msg, container_stdout):
     """ Helper to send messages to the agent on the container stdout stream """
     msg = msgpack.dumps(msg, use_bin_type=True)
@@ -175,61 +163,51 @@ def handle_signals(concerned_subprocess, com_socket):
             if signal == b'---' or len(signal) < 3:  # quit
                 return
             concerned_subprocess.send_signal(int(signal.decode('utf8')))
-        except:
+        except Exception:
             sys.exit()
 
 
-def handle_ssh_session(container_id, both_dockers, event_loop, socket_unix, container_stdout, user):
+def handle_ssh_session(container_id, event_loop, socket_unix, container_stdout, user):
     """ Start the ssh server and send identification information """
     ssh_user, password = start_ssh_server(user)
-    if both_dockers:
-        # Send ssh information to the grading container
-        message = msgpack.dumps({"type": "ssh_student", "ssh_user": ssh_user, "password": password})  # constant size
-        message_size = struct.pack('!I', len(message))
-        socket_unix.send(message_size)
-        socket_unix.send(message)
-    else:
-        # Send ssh information directly to the agent
-        msg = {"type": "ssh_student", "ssh_user": ssh_user, "ssh_key": password,
-               "container_id": container_id}
-        event_loop.run_until_complete(write_stdout(msg, container_stdout))
+
+    # Send ssh information to the grading container
+    # TODO: Replace by dataclass
+    msg = msgpack.dumps({
+        "type": "ssh_student",
+        "ssh_user": ssh_user,
+        "password": password
+    })  # constant size
+    socket_unix.send(len(msg).to_bytes(4, "big") + msg)
+
     # Wait for user to connect and leave
     ssh_retval = ssh_wait(ssh_user)
     return ssh_retval
 
 
-def receive_initial_command(both_dockers, container_stdin, event_loop):
+def receive_initial_command(container_stdin, event_loop, token: bytes):
     """ Receive the command to run (directly from student-grading socket if both dockers or via the agent otherwise)"""
-    if both_dockers:  # Grading and student containers are both on docker
-        # Connect to the socket
-        my_socket = socket.socket(socket.AF_UNIX)  # , socket.SOCK_CLOEXEC) # for linux only
-        my_socket.connect("/__parent.sock")
-        # Say hello
-        print("Saying hello")
-        my_socket.send(b'H')
-        print("Said hello")
-        # Receive fds
-        print("Receiving fds")
-        msg, fds = recv_fds(my_socket, 1, 3)
-        assert msg == b'S'
-        print("Received fds")
-        # Unpack the start message
-        print("Unpacking start cmd")
-        unpacker = msgpack.Unpacker()
-        start_cmd = None
-        while start_cmd is None:
-            data = my_socket.recv(1)
-            unpacker.feed(data)
-            for msg in unpacker:
-                if msg["type"] == "run_student_command":
-                    return my_socket, fds, msg
-                raise Exception("Received wrong initial message")
-    else:  # Grading or student container is on Kata
-        msg = event_loop.run_until_complete(receive_message(container_stdin))
-        if msg["type"] != "run_student_init":
-            raise Exception("Received wrong initial message")
-        return None, None, msg
 
+    # Connect to the socket
+    sk = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sk.connect("/__parent.sock")
+
+    # Send token
+    sk.send(token)
+
+    # Receive initial command.
+    msg_len = int.from_bytes(sk.recv(4), 'big')
+    msg = msgpack.loads(sk.recv(msg_len))
+
+    # Sanity check.
+    if msg["type"] != "run_student_command":
+        raise Exception("Received wrong initial message")
+    
+    fds = [msg['stdin_fd'], msg['stdout_fd'], msg['stderr_fd']]
+    del msg['stdin_fd']
+    del msg['stdout_fd']
+    del msg['stderr_fd']
+    return sk, fds, msg
 
 async def handle_stdin(reader: asyncio.StreamReader, proc_input, proc):
     """ Deamon to handle messages from the agent.
