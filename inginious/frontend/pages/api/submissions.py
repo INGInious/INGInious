@@ -8,6 +8,7 @@
 import base64
 import flask
 import json
+from bson import json_util, Binary
 
 from flask import current_app, session, request
 from inginious.frontend.courses import Course
@@ -298,7 +299,6 @@ class APISubmissionsCourse(APITokenAuthPage):
             submissions = result
 
 
-
         def serialize(s):
             return {
                 "courseid": s.courseid,
@@ -309,6 +309,7 @@ class APISubmissionsCourse(APITokenAuthPage):
                 "grade": s.grade,
                 "stderr": s.stderr,
                 "stdout": s.stdout,
+                "input": json.loads(json_util.dumps(s.get_input())),
             }
 
         submissions_list = [serialize(s) for s in submissions]
@@ -316,10 +317,6 @@ class APISubmissionsCourse(APITokenAuthPage):
         return 200, submissions_list
 
 
-    # warning
-    # format submitted_on correctly
-    # format input correctly (base64 encode files) -> use .get_input ?
-    # send back archive ?
     # send back text feedback ? -> text sent back to the student after submitting its work, not the feedback sent back by the grader
 
     # filter on date range ?
