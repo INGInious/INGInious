@@ -240,7 +240,8 @@ class APISubmissionsTest(APITokenAuthPage):
 
 class APISubmissionsCourse(APITokenAuthPage):
 
-    def API_POST(self, courseid):
+    def API_POST(self, courseid, taskid
+    =None):
         """
             Endpoint sending back all submissions of a course. Only accessible to staff members of the course.
             Returns a 200 OK if the endpoint is reachable and the user has access to it.
@@ -254,6 +255,10 @@ class APISubmissionsCourse(APITokenAuthPage):
             course = Course.get(courseid)
         except:
             raise APINotFound("Course not found")
+        try:
+            task = course.get_task(taskid)
+        except:
+            raise APINotFound("Task not found")
 
         if not self.user_manager.has_staff_rights_on_course(course, username, include_superadmins=True):
             raise APIForbidden("You cannot access this course")
@@ -271,7 +276,7 @@ class APISubmissionsCourse(APITokenAuthPage):
         if usernames is not None and not isinstance(usernames, list):
             raise APIInvalidArguments()
 
-        query = {"courseid": courseid, "status": "done"}
+        query = {"courseid": courseid, "status": "done"} if taskid is None else {"courseid": courseid, "taskid": taskid, "status": "done"}
         if usernames:
             query["username__in"] = usernames
 
