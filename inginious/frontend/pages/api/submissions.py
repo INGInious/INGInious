@@ -8,7 +8,9 @@
 import base64
 import flask
 import json
-from bson import json_util, Binary
+import csv
+import io
+from bson import json_util
 
 from flask import current_app, session, request
 from inginious.frontend.courses import Course
@@ -240,6 +242,57 @@ class APISubmissionsTest(APITokenAuthPage):
 
 class APISubmissionsCourse(APITokenAuthPage):
 
+    @staticmethod
+    def _to_csv_response(submissions_list):
+        """
+            Flattens a list of serialized submissions (as produced by `serialize`) into a CSV file.
+            Since the "input" field's structure varies per task (and even per problem type within
+            a task), the set of CSV columns is computed dynamically as the union of all input keys
+            found across the submissions, prefixed with "input.".
+        """
+
+        base_fields = ["courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout"]
+
+        # Collect the union of all "input" keys across submissions, to build stable CSV columns.
+        input_fields = []
+        seen_input_fields = set()
+        for s in submissions_list:
+            for key in s.get("input", {}).keys():
+                if key not in seen_input_fields:
+                    seen_input_fields.add(key)
+                    input_fields.append(key)
+
+        fieldnames = base_fields + ["input." + f for f in input_fields]
+
+        buffer = io.StringIO()
+        writer = csv.DictWriter(buffer, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+
+        def stringify(value):
+            # Lists, dicts, and nested structures (e.g. file_problem, qcm_problem, @random)
+            # are serialized as JSON strings so they fit into a single CSV cell.
+            if isinstance(value, (list, dict)):
+                return json.dumps(value)
+            if value is None:
+                return ""
+            return value
+
+        for s in submissions_list:
+            row = {field: stringify(s.get(field)) for field in base_fields}
+            row["username"] = ",".join(s.get("username", []))
+
+            input_data = s.get("input", {})
+            for key in input_fields:
+                row["input." + key] = stringify(input_data.get(key))
+
+            writer.writerow(row)
+
+        csv_data = buffer.getvalue()
+        buffer.close()
+
+        return csv_data
+
+
     def API_POST(self, courseid, taskid
     =None):
         """
@@ -337,14 +390,10 @@ class APISubmissionsCourse(APITokenAuthPage):
             submissions = Submission.objects(**query) \
                 .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
                 .order_by("-grade", "-submitted_on")
-
-        else: # select == "last" or select == "all"
+        else:  # select == "last" or select == "all"
             submissions = Submission.objects(**query) \
                 .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
                 .order_by("-submitted_on")
-
-
-        # TODO : implement CSV format functionality
 
         if select in ("best", "last"):
             seen = set()
@@ -355,7 +404,6 @@ class APISubmissionsCourse(APITokenAuthPage):
                     seen.add(key)
                     result.append(s)
             submissions = result
-
 
         def serialize(s):
             return {
@@ -371,6 +419,9 @@ class APISubmissionsCourse(APITokenAuthPage):
             }
 
         submissions_list = [serialize(s) for s in submissions]
+
+        if response_format == "csv":
+            return 200, self._to_csv_response(submissions_list)
 
         return 200, submissions_list
 
