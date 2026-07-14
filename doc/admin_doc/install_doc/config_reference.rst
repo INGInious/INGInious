@@ -137,6 +137,9 @@ The different entries are :
    Link to the INGInious webdav app with the following syntax: ``http[s]://host:port``.
    If set, a new page displays a WebDAV URL and login/password for administrators to access
    the course filesystem.
+   For newer `compose`-based deployments, it must reflect the configuration of the reverse-proxy.
+   It also supports sub-paths in a URL, e.g., given that the INGInious frontend lies at ``https://inginious.org``,
+   the webdav may be served under ``https://inginious.org/dav``.
 
 ``welcome_page``
     Static page id to serve instead of the course list as home page. (see :ref:`StaticPages`)
