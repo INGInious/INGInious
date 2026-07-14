@@ -143,12 +143,28 @@ services:
     networks:
       - inginious
 
+  webdav:
+    image: ${REGISTRY}/inginious/core-webdav:${VERSION}
+    build:
+      dockerfile: deploy/webdav.containerfile
+      args:
+        - VERSION=${VERSION}
+        - REGISTRY=${REGISTRY}
+    environment:
+      - INGINIOUS_WEBDAV_HOST=0.0.0.0
+    volumes:
+      - ./configuration.deploy.yaml:/inginious/configuration.yaml
+      - ./tasks/:/inginious/tasks
+    networks:
+      - inginious
+
   caddy:
     image: docker.io/library/caddy:2.11.4-alpine
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile
     depends_on:
       - frontend
+      - webdav
     ports:
       - 443:443
     # For illustration purpose, not useful in real deployments.
