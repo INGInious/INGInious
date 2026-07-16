@@ -307,8 +307,9 @@ class Client(BetterParanoidPirateClient):
         task = job_info.get("task", None)
 
         if debug == "ssh" and ssh_callback is None:
-            self._logger.error("SSH callback not set in %s",
-                               f"{course.get_id() if course else job_info["environment_type"]}/{task.get_id() if task else job_info["environment"]}")
+            course_id = course.get_id() if course else job_info["environment_type"]
+            task_id = task.get_id() if task else job_info["environment"]
+            self._logger.error(f"SSH callback not set in {course_id}/{task_id}")
             safe_callback(("crash", "SSH callback not set."), 0.0, {}, {}, {}, "", None, "", "")
             return None
         # wrap ssh_callback to ensure it is called at most once, and that it can always be called to simplify code
