@@ -18,8 +18,7 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v2
-
+      - uses: actions/checkout@v7
       - name: Start services
         run: |
           sudo systemctl start docker
@@ -55,7 +54,7 @@ jobs:
   compose_build_and_deploy:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: Start services
         run: |
@@ -90,10 +89,10 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python_version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
