@@ -1,5 +1,5 @@
-@import url(//fonts.googleapis.com/css?family=Yanone+Kaffeesatz:300);
-@import url(//fonts.googleapis.com/css?family=Source+Code+Pro);
+@import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:300);
+@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro);
 html {
   height: 100%;
 }
@@ -307,6 +307,11 @@ body {
   }
   body.sidebar-state-1 #inginious-sidebar-toggle i {
     transform: rotate(90deg);
+  }
+}
+@media (max-width: 700px) {
+  h2 {
+    font-size: 20px;
   }
 }
 #inginious-logo {
