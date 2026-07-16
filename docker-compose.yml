@@ -2,12 +2,14 @@ services:
 
   env-base:
     image: ${REGISTRY}/inginious/env-base:${VERSION}
+    attach: false
     build:
       context: base-containers/base/
     command: /bin/true
 
   env-default:
     image: ${REGISTRY}/inginious/env-default:${VERSION}
+    attach: false
     build:
       context: base-containers/default/
     depends_on:
@@ -16,10 +18,12 @@ services:
 
   env-python3:
     image: ${REGISTRY}/inginious/env-python3:${VERSION}
+    attach: false
     command: /bin/true
 
   base:
     image: ${REGISTRY}/inginious/core-base:${VERSION}
+    attach: false
     build:
       dockerfile: deploy/inginious-base.containerfile
       args:
@@ -35,7 +39,10 @@ services:
   backend:
     image: ${REGISTRY}/inginious/core-backend:${VERSION}
     depends_on:
-      - base
+      db:
+        condition: service_started
+      base:
+        condition: service_completed_successfully
     build:
       dockerfile: deploy/backend.containerfile
       args:
@@ -100,12 +107,20 @@ services:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
     depends_on:
-      - db
-      - backend
-      - agent-docker
-      - agent-mcq
-      - env-base
-      - env-default
+      db:
+        condition: service_started
+      backend:
+        condition: service_started
+      agent-docker:
+        condition: service_started
+      agent-mcq:
+        condition: service_started
+      env-base:
+        condition: service_completed_successfully
+      env-default:
+        condition: service_completed_successfully
+      env-python3:
+        condition: service_completed_successfully
     environment:
       - INGINIOUS_WEBAPP_HOST=0.0.0.0
     volumes:
@@ -114,6 +129,13 @@ services:
       - ./backups/:/inginious/backups
     ports:
       - 9000:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     networks:
       - inginious
 
