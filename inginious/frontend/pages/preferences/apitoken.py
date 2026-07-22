@@ -10,7 +10,7 @@ import datetime
 from datetime import timezone
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.models import User
+from inginious.frontend.models import User, APIToken
 
 
 # test values to move to config file or configure in api token page (lifetime)
@@ -27,39 +27,56 @@ class APITokenPage(INGIniousAuthPage):
         """ GET request """
 
         user = User.objects(username=session["username"]).first()
+        token_dict = {} # contains the expiration date and description, not the token hash itself. There is  no point...
 
-        try:
-            payload = jwt.decode(user.apitoken, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        except jwt.ExpiredSignatureError:
-            return self.show_page(errors=["Your token has expired, please generate a new one."])
-        except jwt.InvalidTokenError:
-            return self.show_page(errors=["Invalid token, please generate a new one."])
+        for token in user.apitokens:
+            token_dict[token.token] = token
 
-        expiration = datetime.datetime.fromtimestamp(payload["exp"], tz=timezone.utc).astimezone()
+        #token_dict = dict(sorted(token_dict.items(), key=lambda item: item[1]["expiration"], reverse=True))  # sort by expiration date
 
-        return self.show_page(api_token=user.apitoken, expiration=expiration)
+        #return self.show_page(api_token=user.apitoken, expiration=expiration)
+        return self.show_page()
 
     def POST_AUTH(self):
         """ POST request, generates a new token for the user """
 
         user = User.objects(username=session["username"]).first()
 
-        now = datetime.datetime.now(timezone.utc)
-        payload = {
-            "username": user.username,
-            "exp": now + TOKEN_LIFETIME,
-        }
-        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        # generate a new token
+        if "generate" in request.form:
+            description = request.form.get("description", "")
+            expiration = datetime.datetime.now(tz=timezone.utc) + TOKEN_LIFETIME
+            payload = {
+                "username": user.username,
+                "exp": expiration.timestamp(),
+                "description": description
+            }
+            token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM) # TODO : hash token
+            user.apitokens.append(APIToken(token=token, expires=expiration, description=description))
+            user.save()
 
-        user.apitoken = token
-        user.save()
 
-        expiration = payload["exp"].astimezone()
+        # TODO : render form to choose description
+        # TODO : show token
 
-        return self.show_page(api_token=token, expiration=expiration)
+        # invalidates a token
+        if "delete" in request.form:
+            token_to_delete = request.form.get('token')
+            user.apitokens = [token for token in user.apitokens if token.token != token_to_delete]
+            user.save()
 
-    def show_page(self, errors=None, api_token=None, expiration=None):
+
+        return self.show_page()
+
+    def show_page(self, errors=None):
         """ Prepares and shows the course marketplace """
         if errors is None:
             errors = []
-        return render_template("apitoken.html", errors=errors, api_token=api_token, expiration=expiration)
+
+        user = User.objects(username=session["username"]).first()
+        token_list = []
+
+        for token in user.apitokens:
+            token_list.append(token)
+
+        return render_template("apitoken.html", errors=errors, token_list=token_list)
