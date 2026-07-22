@@ -21,6 +21,7 @@ logger = setup_logger()
 # Check the runtimes
 runtime = sys.argv[1]
 parent_runtime = sys.argv[2]
+token = sys.argv[3]
 shared_kernel, both_same_kernel = check_runtimes(runtime, parent_runtime)
 # shared_kernal: boolean, True when this student_container is running on docker runtime. False when running on kata runtime.
 # only_dockers: boolean, True when this student_container and its parent grading_container are both running on docker runtimes.
@@ -36,7 +37,7 @@ else:
 
 
 # Get the command to be run
-socket_unix, fds, start_cmd = receive_initial_command(both_same_kernel, container_stdin, event_loop)
+socket_unix, fds, start_cmd = receive_initial_command(container_stdin, event_loop, token)
 
 # Check security
 student_container_id = start_cmd["student_container_id"]

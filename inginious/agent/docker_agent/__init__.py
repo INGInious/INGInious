@@ -17,6 +17,7 @@ from typing import Dict, Any, Union, List, Set
 import msgpack
 import psutil
 from inginious.agent.docker_agent._docker_interface import DockerInterface
+from inginious.agent.docker_agent.messages import _MsgBase, StudentInit, StudentRetVal, StudentStarted, AgentInitGrading
 
 from inginious.agent import Agent, CannotCreateJobException
 from inginious.agent.docker_agent._docker_runtime import DockerRuntime
@@ -24,6 +25,9 @@ from inginious.agent.docker_agent._timeout_watcher import TimeoutWatcher
 from inginious.common.asyncio_utils import AsyncIteratorWrapper, AsyncProxy
 from inginious.common.base import id_checker, id_checker_tests
 from inginious.common.messages import BackendNewJob, BackendKillJob
+
+
+GRADING_CONTAINER_TCP_PORT = 5000
 
 
 @dataclass
@@ -403,11 +407,19 @@ class DockerAgent(Agent):
 
         # Run the container
         try:
-            container_id = self._docker.sync.create_container(environment, enable_network, self._debugger, mem_limit, task_path,
-                                                              sockets_path, course_common_path,
-                                                              course_common_student_path,
-                                                              self.__get_fd_limit(), runtime,
-                                                              ports)
+            container_id = self._docker.sync.create_container(
+                environment,
+                enable_network,
+                self._debugger,
+                mem_limit,
+                task_path,
+                sockets_path,
+                course_common_path,
+                course_common_student_path,
+                self.__get_fd_limit(),
+                runtime,
+                ports
+            )
         except Exception as e:
             self._logger.warning("Cannot create container! %s", str(e), exc_info=True)
             shutil.rmtree(container_path)
@@ -461,9 +473,18 @@ class DockerAgent(Agent):
         Handles a new job: starts the grading container
         """
         future_results = asyncio.Future()
-        out = await self._loop.run_in_executor(None, lambda: self.__new_job_sync(message, future_results))
-        self._create_safe_task(self.handle_running_container(out, future_results=future_results))
-        await self._timeout_watcher.register_container(out.container_id, out.time_limit, out.hard_time_limit)
+        out = await self._loop.run_in_executor(
+            None,
+            lambda: self.__new_job_sync(message, future_results)
+        )
+        self._create_safe_task(
+            self.handle_grading_container(out, future_results=future_results)
+        )
+        await self._timeout_watcher.register_container(
+            out.container_id,
+            out.time_limit,
+            out.hard_time_limit
+        )
 
     async def create_student_container(self, parent_info, socket_id, environment_name,
                                        memory_limit, time_limit, hard_time_limit, share_network, write_stream, ssh,
@@ -480,8 +501,8 @@ class DockerAgent(Agent):
             if environment_type not in self._containers or environment_name not in self._containers[environment_type]:
                 self._logger.warning("Student container asked for an unknown environment %s/%s",
                                      environment_type, environment_name)
-                await self._write_to_container_stdin(write_stream, {"type": "run_student_retval", "retval": 254,
-                                                                    "socket_id": socket_id})
+                msg = StudentRetVal(254, socket_id)
+                await self._write_to_container_stdin(write_stream, msg)
                 return
 
             environment = self._containers[environment_type][environment_name]["id"]
@@ -502,8 +523,8 @@ class DockerAgent(Agent):
                             self._external_ports.add(ports[port_to_free])
                     self._logger.exception(
                         "Cannot create student container! No ports are available right now. Please retry later.")
-                    await self._write_to_container_stdin(write_stream, {"type": "run_student_retval", "retval": 254,
-                                                                        "socket_id": socket_id})
+                    msg = StudentRetVal(254, socket_id)
+                    await self._write_to_container_stdin(write_stream, msg)
                     raise CannotCreateJobException('No ports are available right now. Please retry later.')
                 ports[p] = self._external_ports.pop()
 
@@ -520,8 +541,8 @@ class DockerAgent(Agent):
                                                                            ports)
             except Exception as e:
                 self._logger.exception("Cannot create student container!")
-                await self._write_to_container_stdin(write_stream, {"type": "run_student_retval", "retval": 254,
-                                                                    "socket_id": socket_id})
+                msg = StudentRetVal(254, socket_id)
+                await self._write_to_container_stdin(write_stream, msg)
 
                 if isinstance(e, asyncio.CancelledError):
                     raise
@@ -542,15 +563,15 @@ class DockerAgent(Agent):
             self._student_containers_running[container_id] = info
 
             # send to the container that the sibling has started
-            await self._write_to_container_stdin(write_stream, {"type": "run_student_started", "socket_id": socket_id,
-                                                                "container_id": container_id})
+            msg = StudentStarted(socket_id, container_id)
+            await self._write_to_container_stdin(write_stream, msg)
 
             try:
                 await self._docker.start_container(container_id)
             except Exception as e:
                 self._logger.exception("Cannot start student container!")
-                await self._write_to_container_stdin(write_stream, {"type": "run_student_retval", "retval": 254,
-                                                                    "socket_id": socket_id})
+                msg = StudentRetVal(254, socket_id)
+                await self._write_to_container_stdin(write_stream, msg)
 
                 if isinstance(e, asyncio.CancelledError):
                     raise
@@ -626,15 +647,16 @@ class DockerAgent(Agent):
             self._logger.exception("Received incorrect message from container %s (job id %s)", info.container_id,
                                    info.job_id)
 
-    async def _write_to_container_stdin(self, write_stream, message):
+    async def _send_grading_ctrl(self, write_stream, message: _MsgBase):
         """
-        Send a message to the stdin of a container, with the right data
+        Send a message to the control stream of a grading container.
         :param write_stream: asyncio write stream to the stdin of the container
         :param message: dict to be msgpacked and sent
         """
-        msg = msgpack.dumps(message, use_bin_type=True)
-        self._logger.debug("Sending %i bytes to container", len(msg))
-        write_stream.write(struct.pack('!I', len(msg)))
+        msg = message.serialize()
+        msg_len = len(msg)
+        self._logger.debug("Sending %i bytes to container", msg_len)
+        write_stream.write(struct.pack('!I', msg_len))
         write_stream.write(msg)
         await write_stream.drain()
 
@@ -661,28 +683,37 @@ class DockerAgent(Agent):
         except:
             self._logger.exception("Received incorrect message from student container")
 
-    async def handle_running_container(self, info: DockerRunningJob, future_results):
-        """ Talk with a container. Sends the initial input. Allows to start student containers """
-        sock = await self._docker.attach_to_container(info.container_id)
+    async def handle_grading_container(self, info: DockerRunningJob, future_results):
+        """ Talk with a grading container. Sends the initial input. Allows to start student containers """
+
+        # Get IP adress of the grading container and initiate a new ctrl channel with it.
+        attrs = self._docker.sync._docker.containers.get(info.container_id).attrs
         try:
-            reader_stream, write_stream = await asyncio.open_connection(sock=sock._sock)
+            ip = attrs['NetworkSettings']['Networks']['bridge']['IPAddress']
+        except KeyError:
+            self._logger.exception("Failed to fetch grading container IP from container attributes.")
+            return None
+        try:
+            reader_stream, write_stream = await asyncio.open_connection(ip, GRADING_CONTAINER_TCP_PORT)
         except asyncio.CancelledError:
             raise
-        except:
-            self._logger.exception("Exception occurred while creating read/write stream to container")
+        except Exception as e:
+            self._logger.exception(f"Exception occurred while creating grading container ctrl channels: {e}.")
             return None
 
-        # Send hello msg
-        hello_msg = {"type": "start", "input": info.inputdata, "debug": info.debug,
-                     "envtypes": {x.envtype: x.shared_kernel for x in self._runtimes.values()}}
-        if info.run_cmd is not None:
-            hello_msg["run_cmd"] = info.run_cmd
-        hello_msg["run_as_root"] = self._runtimes[info.environment_type].run_as_root
-        hello_msg["shared_kernel"] = self._runtimes[info.environment_type].shared_kernel
+        # Initialise grading container state.
+        hello_msg = AgentInitGrading(
+            info.inputdata,
+            info.debug,
+            {x.envtype: x.shared_kernel for x in self._runtimes.values()},
+            info.run_cmd,
+            self._runtimes[info.environment_type].run_as_root,
+            self._runtimes[info.environment_type].shared_kernel
+        )
+        await self._send_grading_ctrl(write_stream, hello_msg)
 
-        await self._write_to_container_stdin(write_stream, hello_msg)
+        # Process messages from the grading container.
         result = None
-
         buffer = bytearray()
         try:
             student_containers_streams = {}
@@ -720,17 +751,18 @@ class DockerAgent(Agent):
                                 student_containers_streams[
                                     msg["student_container_id"]] = await self.open_student_stream(
                                     msg["student_container_id"])
-                            await self._write_to_container_stdin(
-                                student_containers_streams[msg["student_container_id"]][1],
-                                {"type": "run_student_init",
-                                 "socket_id": msg["socket_id"],
-                                 "command": msg["command"],
-                                 "teardown_script": msg["teardown_script"],
-                                 "student_container_id": msg[
-                                     "student_container_id"],
-                                 "working_dir": msg["working_dir"],
-                                 "ssh": msg["ssh"],
-                                 "user": msg["user"]})
+
+                            resp_stream = student_containers_streams[msg["student_container_id"]][1]
+                            resp = StudentInit(
+                                msg['socket_id'],
+                                msg['command'],
+                                msg['teardown_script'],
+                                msg['student_container_id'],
+                                msg['workinh_dir'],
+                                msg['ssh'],
+                                msg['user']
+                            )
+                            await self._write_to_container_stdin(resp_stream, resp)
 
                             if msg["ssh"]:
                                 await self.start_ssh(student_containers_streams[msg["student_container_id"]][0],
@@ -739,6 +771,7 @@ class DockerAgent(Agent):
                                 self._start_background_task(self._handle_student_container_outputs(
                                     student_containers_streams[msg["student_container_id"]][0], write_stream))
 
+                        # TODO: Move to IPC stream
                         elif msg["type"] in ["stdin", "student_signal"]:  # Simply transfer to student_container
                             if msg["student_container_id"] not in student_containers_streams:
                                 student_containers_streams[
@@ -826,8 +859,8 @@ class DockerAgent(Agent):
                 retval = 252
 
             try:
-                await self._write_to_container_stdin(info.write_stream, {"type": "run_student_retval", "retval": retval,
-                                                                         "socket_id": info.socket_id})
+                msg = StudentRetVal(retval, info.socket_id)
+                await self._write_to_container_stdin(info.write_stream, msg)
             except asyncio.CancelledError:
                 raise
             except:

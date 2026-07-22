@@ -1,0 +1,545 @@
+#!/bin/python3
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import json
+import logging
+import sys
+import shutil
+import os
+import socket
+import os.path
+import tarfile
+import base64
+import msgpack
+import asyncio
+import pydevd_pycharm
+import secrets
+import threading
+
+import inginious_container_api.feedback
+from inginious_container_api.run_types import run_types
+from inginious_container_api.utils import start_ssh_server, ssh_wait, execute_process
+from inginious.agent.docker_agent.common import GRADING_CONTAINER_TCP_PORT, GRADING_CONTAINER_SK
+from inginious.agent.docker_agent.messages import _MsgBase, MsgType,\
+     AgentInitGrading, GradingResult, GradingStatus, _StudentBase, asdict,\
+     GradingError 
+from inginious_container_api import _InternalMsgBase, InternalDone, InternalMsgType
+
+
+debug_server_unavailable = False
+if os.environ["DEBUGGER"] == "True":
+    print("Starting in debug mode, waiting for pycharm to connect...")
+    try:
+        pydevd_pycharm.settrace(
+            'host.docker.internal',
+            port=5678,
+            stdout_to_server=True,
+            stderr_to_server=True,
+            suspend=False
+        )
+    except Exception:
+        debug_server_unavailable = True
+
+if (agent_ip := os.environ.get('AGENT_IP')) is None:
+    raise ValueError('AGENT_IP env var not provided.')
+
+
+ELF_MAGIC = b"\x7F\x45\x4C\x46"
+SHEBANG_MAGIC = b"\x23\x21"
+
+background_tasks = set()
+def start_as_background_task(loop, fun):
+    task = loop.create_task(fun)
+    background_tasks.add(task)
+    task.add_done_callback(background_tasks.discard)
+
+class HandleInternalMessages(asyncio.Protocol):
+    sk = None
+    runner = None
+    logger = None
+
+    def __init__(self, runner):
+        self.runner = runner
+        self.logger = self.runner._logger
+    
+    def connection_made(self, transport):
+        self.sk = transport
+        self.logger.info("Peer process connected.")
+
+    def connection_closed(self, exc):
+        self.logger.info("Internal channel closed. Stopping loops.")
+        self.runner.on_close.set_result(True)
+
+    def data_received(self, data: bytes):
+        try:
+            msg = _InternalMsgBase.deserialize(data)
+            self.handle_msg(msg)
+        except Exception as e:
+            self.logger.exception(f'Failed to parse Internal data: {e}. Ignoring...')
+
+    def handle_msg(self, msg: _InternalMsgBase):
+        self.logger.info(f"rx Internal: Handling {msg}")
+        if msg.type == InternalMsgType.Done:
+            if msg.token == self.runner.token:
+                self.sk.close()
+                self.connection_closed(None)
+            else:
+                self.logger.warning('Unauthenticated done request!!')
+        elif msg.type == InternalMsgType.ProxyToAgent:
+            # Sanity check: try parsing proxied message to ensure correctness.
+            try:
+                submsg = _MsgBase.from_dict(msg.msg)
+            except Exception as e:
+                self.logger.exception(f'Failed to load proxied message: {e}. Ignoring...')
+                return
+
+            # Sanity check: only Student messages can be proxied to Agent.
+            if not submsg.is_student():
+                self.logger.warning(f'Proxied message is not a student type: {submsg.type}. Ignoring...')
+                return
+            
+            # If msg is a request to create the student container, and the socket is free,
+            # register student socket_id
+            if submsg.type == MsgType.StudentRun and submsg.socket_id not in self.runner.running_student_container:
+                with self.runner.lock:
+                    self.runner.running_student_container[submsg.socket_id] = self.sk
+
+            # Proxy msg to Agent.
+            self.runner.agent.write(submsg.serialize())
+        else:
+            self.logger.warning(f'Unexpected internal message {msg.type}. Ignoring...')
+
+
+class HandleAgentMessages(asyncio.Protocol):
+    sk = None
+    logger = None
+    runner = None
+
+    def __init__(self, runner):
+        self.runner = runner
+        self.logger = self.runner._logger
+
+    def connection_made(self, transport):
+        # We accept a single connection from the Agent.
+        # TODO: Authenticate connection?
+        if self.sk is not None:
+            self.logger.info('Ignoring unexpected connection request.')
+        else:
+            self.sk = transport
+            self.runner.agent = self.sk
+            self.logger.info("Connected to Agent.")
+
+    def data_received(self, data: bytes):
+        try:
+            msg = _MsgBase.deserialize(data)
+            try:
+                self.handle_msg(msg)
+            except Exception as e:
+                self.logger.exception(f'Failed to handle Agent message: {e}')
+                self.sk.write(GradingError(str(e)).serialize())
+                self.sk.close()
+                self.runner.on_close.set_result(False)
+        except Exception as e:
+            self.logger.warning(f'Failed to parse Agent data: {e}. Ignoring...')
+
+    def handle_msg(self, msg: _MsgBase):
+        self.logger.info(f"rx Agent: Handling {msg}")
+        if msg.type == MsgType.AgentInitMsg:
+            start_as_background_task(self.runner._loop, self.runner.start_cmd(msg))
+        elif msg.is_student():
+            self.handle_student_msg(msg)
+        else:
+            raise TypeError("Unexpected message type. Ignoring..")
+
+    def handle_student_msg(self, msg: _StudentBase):
+        with self.runner.lock:
+            channel = self.runner.running_student_container.get(msg.socket_id)
+
+        if channel is None:
+            raise ValueError(f"Received a message from agent for student container at {msg.socket_id} but its is not registered...")
+        
+        if msg.type == MsgType.StudentRetVal:
+            # Cleanup terminated student container state
+            with self.runner.lock:
+                del self.runner.running_student_container[msg.socket_id]
+        elif msg.type == MsgType.StudentStarted:
+            # Expected message.
+            pass
+        else:
+            # Unexpected messages.
+            self.logger.warning(f"Received unexpected student container message {msg.type}. Ignoring..")
+            return
+
+        channel.write(msg.serialize())
+
+class INGIniousMainRunner:
+    def __init__(self):
+
+        # Setup logger
+        logger = logging.getLogger("inginious")
+        logger.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+        self._logger = logger
+        self._logger.info("Hello")
+
+        # List of socket_id of running student containers, and a lock protecting
+        # from concurrent accesses to the list.
+        self.running_student_container = None
+        self.lock = threading.Lock()
+        
+        # A token to authenticate critical internal messages.
+        self.token = secrets.token_bytes(64)
+
+        # The internal ctrl channel.
+        self.intern = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        # The ctrl channel towards the agent.
+        self.agent = None
+
+        # Whether we run commands as root in the containers.
+        self.run_as_root = False
+
+        self._loop = asyncio.new_event_loop()
+        # A future to gracefully close the processing loop.
+        self.on_close = self._loop.create_future()
+        self._loop.run_until_complete(self.serve())
+
+    def copy_tree(self, src, dst, symlinks=False, ignore=None):
+        """ Custom copy tree to allow to copy into existing directories """
+        for item in os.listdir(src):
+            s = os.path.join(src, item)
+            d = os.path.join(dst, item)
+            if os.path.isdir(s):
+                shutil.copytree(s, d, symlinks, ignore)
+            else:
+                shutil.copy2(s, d)
+
+    def set_directory_rights(self, path):
+        os.chmod(path, 0o777)
+        os.chown(path, 4242, 4242)
+        for root, dirs, files in os.walk(path):
+            for d in dirs:
+                os.chmod(os.path.join(root, d), 0o777)
+                os.chown(os.path.join(root, d), 4242, 4242)
+            for f in files:
+                os.chmod(os.path.join(root, f), 0o777)
+                os.chown(os.path.join(root, f), 4242, 4242)
+
+    def b64tararchive(self):
+        with tarfile.open('/tmp/archive.tgz', "w:gz") as tar:
+            tar.add('/archive/', arcname='/')
+
+        with open('/tmp/archive.tgz', "rb") as tar:
+            encoded_string = base64.b64encode(tar.read())
+
+        return encoded_string.decode('utf-8')
+
+    async def serve(self):
+        self._logger.info("Starting serve")
+
+        # Processes channel.
+        sk = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sk.bind(GRADING_CONTAINER_SK)
+        sk.listen()
+        server = await self._loop.create_unix_server(
+            lambda: HandleInternalMessages(self),
+            sock=sk,
+        )
+
+        # Allow to communicate with myself.
+        self.intern.connect(GRADING_CONTAINER_SK)
+
+        # Start ctrl channel with Agent.
+        (sk, _) = await self._loop.create_connection(
+            lambda: HandleAgentMessages(self),
+            host=agent_ip,
+            port=GRADING_CONTAINER_TCP_PORT
+        )
+
+        self.running_student_container = {}  # socket_id : addr
+
+        self._logger.info("Serving...")
+
+        try:
+            await self.on_close
+            self._logger.info("Closing container.")
+            self.intern.close()
+            server.close()
+            await server.wait_closed()
+            sk.close()
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            return
+        except Exception:
+            self._logger.exception("An exception occured while serving")
+        finally:
+            os.unlink(GRADING_CONTAINER_SK)
+
+    # async def handle_agent_msg(self, msg: _MsgBase):
+    #     self._logger.info(f"rx agent msg {msg}.")
+    #     try:
+    #         if msg.type == MsgType.AgentInitMsg:
+    #             start_as_background_task(self._loop, self.start_cmd(msg))
+    #         elif msg.is_student():
+    #             await self.handle_student_msg(msg)
+    #         else:
+    #             self._logger.warning("Unexpected message type. Ignoring..")
+                
+    #         # TODO: WHO SENDS THAT KIND OF MSG????
+    #         # if message["type"] in ["stdout", "stderr"]:
+    #         #     if message["socket_id"] in self.running_student_container:
+    #         #         addr = self.running_student_container[message["socket_id"]]
+    #         #         await self.intern.send_multipart([addr, b'', msgpack.dumps(message, use_bin_type=True)])
+    #     except Exception as e:
+    #         self._logger.exception(f"An exception occured while reading stdin: {e}")
+
+    async def handle_intern_message(self, addr, msg: _InternalMsgBase):
+        self._logger.info(f"rx intern msg {msg}.")
+        try:
+            # if message["type"] == "ssh_debug":
+            #     # copy the dict manually to ensure the corectness of the message
+            #     await self.write_stdout({"type": "ssh_debug", "ssh_user": message["ssh_user"], "ssh_key": message["ssh_key"]})
+            #     await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "ok"}, use_bin_type=True)])
+            #     return False
+            # if message["type"] == "ssh_student":
+            #     # copy the dict manually to ensure the corectness of the message
+            #     await self.write_stdout({"type": "ssh_student", "ssh_user": message["ssh_user"], "ssh_key": message["ssh_key"], "container_id": message["container_id"]})
+            #     await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "ok"}, use_bin_type=True)])
+            #     return False
+            # if message["type"] == "run_student":
+                # copy the dict manually to ensure the correctness of the message
+            #     self.running_student_container[message["socket_id"]] = addr
+            #     await self.write_stdout({"type": "run_student", "environment": message["environment"],
+            #                              "time_limit": message["time_limit"],
+            #                              "hard_time_limit": message["hard_time_limit"],
+            #                              "memory_limit": message["memory_limit"],
+            #                              "share_network": message["share_network"],
+            #                              "socket_id": message["socket_id"],
+            #                              "ssh": message["ssh"],
+            #                              "run_as_root": message["run_as_root"]})
+            #     return False
+            # if message["type"] == "run_student_init":  # This message may be sent from run_student to transfer to the student_container via the agent (only when starting a kata student_container)
+            #     await self.write_stdout({"type": "run_student_init",
+            #                              "socket_id": message["socket_id"],
+            #                              "student_container_id": message["student_container_id"],
+            #                              "command": message["command"],
+            #                              "teardown_script": message["teardown_script"],
+            #                              "working_dir": message["working_dir"],
+            #                              "ssh": message["ssh"],
+            #                              "user": message["user"]
+            #                              })
+            #     await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "dummy_message"}, use_bin_type=True)])  # ping pong answer
+            #     return False
+            # if message["type"] == "dummy_message":
+            #     # ignore, just a dummy message
+            #     return False
+            # if message["type"] in ["student_signal", "stdin"]:
+            #     await self.write_stdout(message)
+            #     await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "dummy_message"}, use_bin_type=True)])  # ping pong answer
+            #     return False
+            # if message["type"] == "done":
+            #     await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "ok"}, use_bin_type=True)])
+            #     return True
+            if msg.type == InternalMsgType.Done:
+                # TODO: Send to student containers . processes ?
+                return True
+            return False
+        except Exception:
+            self._logger.exception("Exception occured while handling an internal message")
+
+    async def start_cmd(self, msg: AgentInitGrading):
+        result: GradingResult = None
+        try:
+            result = await self._loop.run_in_executor(
+                None,
+                lambda: self._start_cmd_sync(msg)
+            )
+        except Exception as e:
+            self._logger.exception("Exception while running start_cmd")
+            result = GradingResult(
+                GradingStatus.Crash,
+                f"Exception occured in container ({e})"
+            )
+
+        # Send GradingResult to Agent and Done internally to close loops.
+        self.agent.write(result.serialize())
+        InternalDone(token=self.token).send(self.intern)
+
+    def write_inputdata(self, msg: AgentInitGrading):
+        unwritable_idx = 0
+        for d in msg.input.values():
+            try:
+                if d.keys() == {"filename", "value"}:
+                    filename = "/.__input/__inputfile_{}".format(unwritable_idx)
+                    unwritable_idx += 1
+                    open(filename, 'wb').write(d["value"])
+                    d["value"] = filename
+            except Exception:
+                pass
+
+        f = open('/.__input/__inputdata.json', 'w')
+        f.write(json.dumps(asdict(msg)))
+        f.close()
+
+    def _detect_run_file(self, run_cmd=None):
+        """ Detect the run file. The order of the resolution is as follows:
+        - If run_cmd is not None, then run it.
+        - If /task/run exists, then run it.
+        - For all runtypes (with extension `ext` and command `cmd`) inside the runtypes dictionnary:
+            - if `/task/run.ext` exists, then run  `cmd /task/run.ext`
+        - If /course/run exists, then run it
+        - For all runtypes (with extension `ext` and command `cmd`) inside the runtypes dictionnary:
+            - if `/course/run.ext` exists, then run  `cmd /task/run.ext`
+        - Produce an error.
+
+        :returns: a list containing the command to be run by execute_process, or None if no run file is found.
+        """
+
+        if run_cmd is not None:
+            return run_cmd.split(" ")
+        for prefix in ["task", "course/common", "course"]:
+            if os.path.exists("/{}/run".format(prefix)):
+                return ["/{}/run".format(prefix)]
+            for ext, cmd in run_types.items():
+                if os.path.exists("/{}/run.{}".format(prefix, ext)):
+                    return cmd + ["/{}/run.{}".format(prefix, ext)]
+
+        return None
+
+    def _start_cmd_sync(self, msg: AgentInitGrading):
+        self._logger.info("starting run")
+        # Determining if debug mode or not
+        debug = (sys.argv[1:] and sys.argv[1] == '--debug') or msg.debug
+
+        # Run as root? Shared kernel?
+        self.run_as_root = msg.run_as_root
+        # FIXME: Unused for now, reuse with KVM integration.
+        self.shared_kernel = msg.shared_kernel
+
+        # Create input data directory
+        if not os.path.exists("/.__input"):
+            os.mkdir("/.__input")
+        self.write_inputdata(msg)
+
+        # Create output directory
+        if not os.path.exists("/.__output"):
+            os.mkdir("/.__output")
+
+        # Create archive directory
+        if not os.path.exists("/archive"):
+            os.mkdir("/archive")
+
+        # Touch __feedback.json (to set the rights)
+        open('/.__output/__feedback.json', 'w').close()
+
+        # Verify that task directory exists
+        if not os.path.exists("/task"):
+            os.mkdir("/task")
+
+        # Assert that the directory .ssh does not exists
+        if os.path.exists("/task/.ssh"):
+            shutil.rmtree("/task/.ssh")
+
+        # Set rights on some files
+        self.set_directory_rights("/tmp")
+        self.set_directory_rights("/task")
+        self.set_directory_rights("/.__output")
+        self.set_directory_rights("/archive")
+
+        # Set a flag file indicating if the runtime allows run_student to be run
+        # if self.shared_kernel:
+        #     open('/.__input/__shared_kernel', 'w').close()
+
+        ok_to_start = True
+
+        # Add some elements to /etc/hosts and /etc/resolv.conf if needed
+        system_files = {"hosts": ("/etc/hosts", True), "resolv.conf": ("/etc/resolv.conf", False)}
+        for name, (spath, append) in system_files.items():
+            if os.path.exists(os.path.join('/task/systemfiles/', name)):
+                try:
+                    open(spath, 'ab' if append else 'wb').write(
+                        b'\n' + open(os.path.join('/task/systemfiles/', name), 'rb').read())
+                except IOError:
+                    inginious_container_api.feedback.set_global_result('crash')
+                    inginious_container_api.feedback.set_global_feedback(
+                        "Cannot read/use %s" % os.path.join('/task/systemfiles/', name))
+                    ok_to_start = False
+        os.chown('/etc/hosts', 0, 4242)
+        os.chown('/etc/resolv.conf', 0, 4242)
+        os.chmod('/etc/hosts', 0o664)
+        os.chmod('/etc/resolv.conf', 0o664)
+
+        # Ensure the worker can read the main socket
+        try:
+            os.chown(GRADING_CONTAINER_SK, 4242, 4242)
+            os.chmod(GRADING_CONTAINER_SK, 0o770)
+        except OSError:
+            pass
+
+        # Launch everything
+        stdout, stderr = b"", b""
+        if not ok_to_start:
+            pass  # do not start ;-)
+        elif debug != "ssh":  # normal start
+            run_final_cmd = self._detect_run_file(msg.run_cmd)
+
+            if run_final_cmd is not None:
+                os.chdir("/task")
+                try:
+                    user = "root" if self.run_as_root else "worker"
+                    stdout, stderr = execute_process(run_final_cmd, user=user)
+                except Exception:
+                    inginious_container_api.feedback.set_global_result('crash')
+                    inginious_container_api.feedback.set_global_feedback(
+                        "An error occured while running the grading script. It is possible that it is non-executable or made a timeout")
+            else:
+                inginious_container_api.feedback.set_global_result('crash')
+                inginious_container_api.feedback.set_global_feedback("'/task/run' could not be found")
+        else:
+            # Start the ssh server
+            ssh_user, password = start_ssh_server("root" if self.run_as_root else "worker")
+            # Send ssh information
+            self._loop.call_soon_threadsafe(
+                asyncio.ensure_future,
+                self.send_intern_message({
+                    "type": "ssh_debug",
+                    "ssh_user": ssh_user,
+                    "ssh_key": password})
+            )
+            # Wait for user to connect and leave (user can stay connected max 30 min)
+            status = ssh_wait(ssh_user, 30*60)
+            if status == 253:
+                inginious_container_api.feedback.set_global_result('crash')
+                inginious_container_api.feedback.set_global_feedback('[SSH Debug] Nobody connected to the SSH server.')
+            stdout, stderr = b"", b""
+
+        if os.environ["DEBUGGER"] and debug_server_unavailable:
+            stderr += b"[DEBUG] WARNING : Debug server was unavailable.\n"
+
+        # Produce feedback
+        feedback = inginious_container_api.feedback.get_feedback()
+        if not feedback:
+            status = GradingStatus.Crash
+            text = "No feedback was given !"
+        else:
+            status = feedback.get('result')
+            text = feedback.get('text')
+
+        result = GradingResult(
+            status,
+            text,
+            stdout=stdout.decode('utf-8', 'replace') if debug else None,
+            stderr=stderr.decode('utf-8', 'replace') if debug else None,
+            archive = self.b64tararchive() if feedback is not None else None
+        )
+
+        self.set_directory_rights('/task')
+        self._logger.info(f"returning results <{result}>")
+        return result
+
+INGIniousMainRunner()
