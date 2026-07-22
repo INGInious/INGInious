@@ -2,7 +2,7 @@
 {# more information about the licensing of this file. #}
 
 {% extends "layout.html" %}
-{% block title %}{{ _("API Token") }}{% endblock %}
+{% block title %}{{ _("API Tokens") }}{% endblock %}
 
 {% block column %}
 {% with current='api_token' %}{% include 'preferences/menu.html' %}{% endwith %}
@@ -20,7 +20,7 @@
 {% endblock %}
 
 {% block content %}
-<h2>{{ _("My API token") }}</h2>
+<h2>{{ _("My API tokens") }}</h2>
 {% for error in errors %}
     <div class="alert alert-danger alert-dismissable" role="alert">
         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
@@ -40,14 +40,22 @@
 <div>
 
     <div class="col-sm-12">
-        <h3>{{ _("Current token") }}</h3>
-        <div id="current-api-token" class="form-control">
-            {% if api_token %}
-                {{ api_token }} <b>{{ show_time(expiration) }}</b>
-            {% else %}
-                <em>{{ _("No token has been generated yet.") }}</em>
-            {% endif %}
-        </div>
+        {% for token in token_list %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h4 class="card-title">{{ token.description }}</h4>
+                    <p class="card-text"><small class="text-muted">{{ _("Expires on:") }} {{ show_time(token.expires) }}</small></p>
+                    <form method="post" action="{{ url_for('.apitokenpage') }}">
+                        <input type="hidden" name="token" value="{{ token.token }}">
+                        <button type="submit" name="delete" class="btn btn-danger btn-sm">
+                            <i class="fa fa-trash"></i> {{ _("Delete") }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <p>{{ _("You have no API tokens.") }}</p>
+        {% endfor %}
     </div>
 
     <form method="post" action="{{ url_for('.apitokenpage') }}">
