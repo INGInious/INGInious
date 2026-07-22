@@ -221,25 +221,6 @@ class APISubmissions(APIAuthenticatedPage):
             raise APIError(500, str(ex))
 
 
-
-class APISubmissionsTest(APITokenAuthPage):
-
-    def API_GET(self):
-        """
-            Test endpoint.
-            Returns a 200 OK if the endpoint is reachable and the user has access to it.
-            Returns 403 Forbidden if the user does not have access to the course/task.
-            Returns 404 Not Found if the course/task does not exist.
-        """
-
-
-        # Does APITokenAuthPage automatically checks for APIForbidden? -> normally yes,
-
-        # TODO : get user from token, for now we use a hardcoded username
-
-        return 200, {"message": "Submissions endpoint is reachable and user has access."}
-
-
 class APISubmissionsCourse(APITokenAuthPage):
 
     @staticmethod
