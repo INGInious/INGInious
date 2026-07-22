@@ -5,7 +5,7 @@
 
 """ Index page """
 from collections import OrderedDict
-from flask import session, request, render_template
+from flask import session, request, render_template, url_for
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
@@ -47,7 +47,7 @@ class MyCoursesPage(INGIniousAuthPage):
                     "is_lti" : course.is_lti(),
                     "lti_url" : course.lti_url(),
                     "name": course.get_name(session.language),
-                    "path": self.app.get_path("course", courseid),
+                    "path": url_for("coursepage", courseid=courseid),
                     "description": str(course.get_description(session.language))
                 }
                 return pin_html_data
