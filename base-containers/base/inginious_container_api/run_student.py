@@ -313,8 +313,5 @@ def handle_ssh(ssh, connection, student_container_id, both_dockers):
                    "container_id": student_container_id}
             send_socket = zmq.asyncio.Context().socket(zmq.REQ)
             send_socket.connect("ipc:///sockets/main.sock")
-            loop = asyncio.get_event_loop()
-            task = loop.create_task(_send_intern_message(send_socket, msg))
-            loop.run_until_complete(task)
-            loop.close()
+            asyncio.run(_send_intern_message(send_socket, msg))
     return
