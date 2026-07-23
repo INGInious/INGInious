@@ -25,18 +25,16 @@ jobs:
 
       - name: Build core services
         run: |
-          docker build -t ghcr.io/inginious/core-base:latest -f deploy/inginious-base.containerfile .
-          docker build -t ghcr.io/inginious/core-frontend:latest -f deploy/frontend.containerfile .
-          docker build -t ghcr.io/inginious/core-backend:latest -f deploy/backend.containerfile .
-          docker build -t ghcr.io/inginious/core-agent_mcq:latest -f deploy/agent-mcq.containerfile .
-          docker build -t ghcr.io/inginious/core-agent_docker:latest -f deploy/agent-docker.containerfile .
+          docker build -t ghcr.io/inginious/core-frontend:latest --target frontend -f deploy/Containerfile .
+          docker build -t ghcr.io/inginious/core-backend:latest --target backend -f deploy/Containerfile .
+          docker build -t ghcr.io/inginious/core-agent_mcq:latest --target agent_mcq -f deploy/Containerfile .
+          docker build -t ghcr.io/inginious/core-agent_docker:latest --target agent_docker -f deploy/Containerfile .
 
       - name: Build base environments
         run: |
-          docker build -t ghcr.io/inginious/env-base:latest -f base-containers/base/Dockerfile base-containers/base
-          docker build -t ghcr.io/inginious/env-default:latest -f base-containers/default/Dockerfile base-containers/default
+          docker build -t ghcr.io/inginious/env-base:latest --target base -f base-containers/base/Dockerfile base-containers/base
+          docker build -t ghcr.io/inginious/env-default:latest --target default -f base-containers/base/Dockerfile base-containers/base
           # Quick hack, we do not launch any actual task.
-          docker tag ghcr.io/inginious/env-base:latest ghcr.io/inginious/env-python3:latest
 
       - name: Test deployment
         id: deploy

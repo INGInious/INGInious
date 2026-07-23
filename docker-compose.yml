@@ -5,27 +5,18 @@ services:
     attach: false
     build:
       context: base-containers/base/
+      target: base
+      args:
+        - VERSION=${VERSION}
+        - REGISTRY=${REGISTRY}
     command: /bin/true
 
   env-default:
     image: ${REGISTRY}/inginious/env-default:${VERSION}
     attach: false
     build:
-      context: base-containers/default/
-    depends_on:
-      - env-base
-    command: /bin/true
-
-  env-python3:
-    image: ${REGISTRY}/inginious/env-python3:${VERSION}
-    attach: false
-    command: /bin/true
-
-  base:
-    image: ${REGISTRY}/inginious/core-base:${VERSION}
-    attach: false
-    build:
-      dockerfile: deploy/inginious-base.containerfile
+      context: base-containers/base/
+      target: default
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
@@ -41,10 +32,9 @@ services:
     depends_on:
       db:
         condition: service_started
-      base:
-        condition: service_completed_successfully
     build:
-      dockerfile: deploy/backend.containerfile
+      dockerfile: deploy/Containerfile
+      target: backend
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
@@ -61,7 +51,8 @@ services:
     deploy:
       replicas: 1
     build:
-      dockerfile: deploy/agent-docker.containerfile
+      dockerfile: deploy/Containerfile
+      target: agent_docker
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
@@ -84,7 +75,8 @@ services:
     deploy:
       replicas: 1
     build:
-      dockerfile: deploy/agent-mcq.containerfile
+      dockerfile: deploy/Containerfile
+      target: agent_mcq
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
@@ -102,7 +94,8 @@ services:
   frontend:
     image: ${REGISTRY}/inginious/core-frontend:${VERSION}
     build:
-      dockerfile: deploy/frontend.containerfile
+      dockerfile: deploy/Containerfile
+      target: frontend
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
@@ -118,8 +111,6 @@ services:
       env-base:
         condition: service_completed_successfully
       env-default:
-        condition: service_completed_successfully
-      env-python3:
         condition: service_completed_successfully
     environment:
       - INGINIOUS_WEBAPP_HOST=0.0.0.0
