@@ -100,6 +100,7 @@ services:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
     depends_on:
+      - db
       - backend
       - agent-docker
       - agent-mcq
