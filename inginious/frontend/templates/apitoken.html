@@ -58,12 +58,44 @@
         {% endfor %}
     </div>
 
-    <form method="post" action="{{ url_for('.apitokenpage') }}">
-        <div class="col-sm-12"><br />
-            <button type="submit" name="generate" class="btn btn-primary btn-block">
-                <i class="fa fa-save"></i> {{ _("Generate a new token") }}
-            </button>
-        </div>
-    </form>
 </div>
+
+{% if generated_token is not none %}
+    <div class="col-sm-12">
+        <div class="alert alert-success alert-dismissable" role="alert">
+            <form method="post" action="{{ url_for('.apitokenpage') }}">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                {{ _("A new API token has been generated:") }}
+                {{ _("Please copy it now, as it will not be shown again.") }}
+                {{ _("Please provide a description to more easily distinguish the token.") }}
+                <input type="text" class="form-control" name="description" placeholder="{{ _('Description') }}" />
+                <input type="text" class="form-control" name="generated_token"  value="{{generated_token}}" readonly/>
+                <div class="row justify-content-center">
+                    <div class="col-sm-6">
+                            <button type="submit" name="save" class="btn btn-primary btn-block">
+                                <i class="fa fa-save"></i> {{ _("Save") }}
+                            </button>
+                    </div>
+                    <div class="col-sm-6">
+                        <form method="get" action="{{ url_for('.apitokenpage') }}">
+                            <button type="submit" class=" btn btn-danger btn-block ">
+                                <i class="fa fa-close"></i> {{ _("Close") }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{%else %}
+    <form method="post" action="{{ url_for('.apitokenpage') }}">
+    <div class="col-sm-12"><br />
+        <button type="submit" name="generate" class="btn btn-primary btn-block">
+            <i class="fa fa-save"></i> {{ _("Generate a new token") }}
+        </button>
+    </div>
+</form>
+
+{% endif %}
+
 {% endblock %}
