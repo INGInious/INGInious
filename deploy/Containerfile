@@ -1,0 +1,90 @@
+# Base core container. This is not a service per-se but is used as a common layer for the core services.
+FROM rockylinux/rockylinux:10 AS core
+
+ARG PYTHON_VERSION=3.14
+
+RUN dnf update -y && dnf install -y python"${PYTHON_VERSION}" python"${PYTHON_VERSION}"-pip git
+
+WORKDIR /inginious
+COPY pyproject.toml README.rst ./
+COPY inginious/common/ inginious/common/
+COPY inginious/__init__.py inginious/
+
+# See https://github.com/pypa/setuptools_scm/#usage-from-docker
+RUN --mount=source=.git,target=.git,type=bind \
+    pip"${PYTHON_VERSION}" install --no-cache-dir -e .
+
+RUN rm /bin/python3 && ln -s /bin/python"${PYTHON_VERSION}" /bin/python3
+
+#########
+# BACKEND
+##########
+FROM core AS backend 
+
+ENV  PYTHON_VERSION="${PYTHON_VERSION}"
+
+COPY inginious/backend/ inginious/backend/
+COPY inginious/scripts/ inginious/scripts/
+
+# See https://github.com/pypa/setuptools_scm/#usage-from-docker
+RUN  --mount=source=.git,target=.git,type=bind \
+     pip"${PYTHON_VERSION}" install --no-cache-dir -e .
+
+CMD  ["sh", "-c", "python${PYTHON_VERSION} -m inginious.scripts.backend ${AGENT} ${CLIENT}"]
+
+
+#######
+# FRONTEND
+#######
+FROM core AS frontend 
+
+ENV  PYTHON_VERSION="${PYTHON_VERSION}"
+
+COPY inginious/frontend inginious/frontend/
+COPY inginious/client inginious/client/
+COPY inginious/scripts inginious/scripts
+
+# See https://github.com/pypa/setuptools_scm/#usage-from-docker
+RUN  --mount=source=.git,target=.git,type=bind \
+    pip"${PYTHON_VERSION}" install --no-cache-dir -e .
+
+COPY deploy/db_setup.py /tmp/db_setup.py
+
+CMD ["sh", "-c", "python3 /tmp/db_setup.py; python3 -m inginious.scripts.webapp"]
+
+
+##
+# AGENT MCQ 
+###
+
+FROM core AS agent_mcq
+
+ENV  PYTHON_VERSION="${PYTHON_VERSION}"
+
+COPY inginious/agent/__init__.py inginious/agent/
+COPY inginious/agent/mcq_agent/ inginious/agent/mcq_agent/
+COPY inginious/scripts inginious/scripts
+
+# See https://github.com/pypa/setuptools_scm/#usage-from-docker
+RUN --mount=source=.git,target=.git,type=bind \
+    pip"${PYTHON_VERSION}" install --no-cache-dir -e .
+
+CMD ["sh", "-c", "python${PYTHON_VERSION} -m inginious.scripts.agent_mcq ${BACKEND}"]
+
+
+# AGENT DOCKER
+
+FROM core AS agent_docker
+
+ENV  PYTHON_VERSION="${PYTHON_VERSION}"
+
+COPY inginious/agent/__init__.py inginious/agent/
+COPY inginious/agent/docker_agent/ inginious/agent/docker_agent/
+COPY inginious/scripts inginious/scripts
+
+# See https://github.com/pypa/setuptools_scm/#usage-from-docker
+RUN --mount=source=.git,target=.git,type=bind \
+    pip"${PYTHON_VERSION}" install --no-cache-dir -e .
+
+CMD ["sh", "-c", "python${PYTHON_VERSION} -m inginious.scripts.agent_docker ${BACKEND} --tmpdir=/tmp/agent_data/"]
+

@@ -15,13 +15,68 @@ on:
 
 jobs:
 
+  build_and_deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start services
+        run: |
+          sudo systemctl start docker
+
+      - name: Build core services
+        run: |
+          docker build -t ghcr.io/inginious/core-frontend:latest --target frontend -f deploy/Containerfile .
+          docker build -t ghcr.io/inginious/core-backend:latest --target backend -f deploy/Containerfile .
+          docker build -t ghcr.io/inginious/core-agent_mcq:latest --target agent_mcq -f deploy/Containerfile .
+          docker build -t ghcr.io/inginious/core-agent_docker:latest --target agent_docker -f deploy/Containerfile .
+
+      - name: Build base environments
+        run: |
+          docker build -t ghcr.io/inginious/env-base:latest --target base -f base-containers/base/Dockerfile base-containers/base
+          docker build -t ghcr.io/inginious/env-default:latest --target default -f base-containers/base/Dockerfile base-containers/base
+          # Quick hack, we do not launch any actual task.
+
+      - name: Test deployment
+        id: deploy
+        run: |
+          docker compose up --wait --wait-timeout 60
+        timeout-minutes: 2
+        continue-on-error: true
+
+      - name: Compose logs on failure
+        if: steps.deploy.outcome == 'failure'
+        run: |
+          docker compose logs
+          exit 1
+
+  compose_build_and_deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Start services
+        run: |
+          sudo systemctl start docker
+
+      - name: Test deployment
+        id: deploy
+        run: docker compose up --build --wait --wait-timeout 600
+        timeout-minutes: 15
+        continue-on-error: true
+        
+      - name: Compose logs on failure
+        if: steps.deploy.outcome == 'failure'
+        run: |
+          docker compose logs
+          exit 1
+
   tests:
 
     strategy:
       # Ensure that each python version will be tested even if one of them fails.
       fail-fast: false
       matrix:
-        python_version: ["3.10", "3.11", "3.12", "3.13"]
+        python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     runs-on: ubuntu-24.04
     services:
@@ -32,10 +87,10 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python_version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
