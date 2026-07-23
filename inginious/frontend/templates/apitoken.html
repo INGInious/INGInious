@@ -40,53 +40,60 @@
 <div>
 
     <div class="col-sm-12">
-        {% for token in token_list %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h4 class="card-title">{{ token.description }}</h4>
-                    <p class="card-text"><small class="text-muted">{{ _("Expires on:") }} {{ show_time(token.expires) }}</small></p>
-                    <form method="post" action="{{ url_for('.apitokenpage') }}">
-                        <input type="hidden" name="token" value="{{ token.token }}">
-                        <button type="submit" name="delete" class="btn btn-danger btn-sm">
-                            <i class="fa fa-trash"></i> {{ _("Delete") }}
-                        </button>
-                    </form>
+    {% for token in token_list %}
+        <div class="card mb-3">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="card-title mb-1">{{ token.description }}</h4>
+                    <p class="card-text "><small class="text-muted ml-1">{{ _("Expires on:") }} {{ show_time(token.expires) }}</small></p>
                 </div>
+                <form method="post" action="{{ url_for('.apitokenpage') }}" >
+                    <input type="hidden" name="token" value="{{ token.token }}">
+                    <button type="submit" name="delete" class="btn btn-danger btn-sm">
+                        <i class="fa fa-trash"></i> {{ _("Delete") }}
+                    </button>
+                </form>
             </div>
-        {% else %}
-            <p>{{ _("You have no API tokens.") }}</p>
-        {% endfor %}
-    </div>
+        </div>
+    {% else %}
+        <p>{{ _("You have no API tokens.") }}</p>
+    {% endfor %}
+</div>
 
 </div>
 
 {% if generated_token is not none %}
-    <div class="col-sm-12">
-        <div class="alert alert-success alert-dismissable" role="alert">
-            <form method="post" action="{{ url_for('.apitokenpage') }}">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                {{ _("A new API token has been generated:") }}
-                {{ _("Please copy it now, as it will not be shown again.") }}
-                {{ _("Please provide a description to more easily distinguish the token.") }}
-                <input type="text" class="form-control" name="description" placeholder="{{ _('Description') }}" />
-                <input type="text" class="form-control" name="generated_token"  value="{{generated_token}}" readonly/>
-                <div class="row justify-content-center">
-                    <div class="col-sm-6">
-                            <button type="submit" name="save" class="btn btn-primary btn-block">
-                                <i class="fa fa-save"></i> {{ _("Save") }}
-                            </button>
-                    </div>
-                    <div class="col-sm-6">
-                        <form method="get" action="{{ url_for('.apitokenpage') }}">
-                            <button type="submit" class=" btn btn-danger btn-block ">
-                                <i class="fa fa-close"></i> {{ _("Close") }}
-                            </button>
-                        </form>
-                    </div>
+<div>
+    <div class="alert alert-success alert-dismissable" role="alert">
+        <form method="post" class="p-2" action="{{ url_for('.apitokenpage') }}" >
+            <h5>
+                {{ _("A new API token has been generated. Please copy it now, as it will not be shown again.") }}
+            </h5>
+
+            <div class="mb-2">
+                <input type="text" class="form-control" name="description" placeholder="{{ _('Provide a description for your token.') }}" />
+            </div>
+            <div class="mb-2">
+                <input type="text" class="form-control" name="generated_token" value="{{ generated_token }}" readonly/>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-sm-6">
+                        <button type="submit" name="save" class="btn btn-primary btn-block ">
+                            <i class="fa fa-save"></i> {{ _("Save") }}
+                        </button>
                 </div>
-            </form>
-        </div>
+                <div class="col-sm-6">
+                    <form method="get" action="{{ url_for('.apitokenpage') }}">
+                        <button type="submit" class=" btn btn-danger btn-block ">
+                            <i class="fa fa-close"></i> {{ _("Close") }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 {%else %}
     <form method="post" action="{{ url_for('.apitokenpage') }}">
     <div class="col-sm-12"><br />
