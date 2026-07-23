@@ -91,7 +91,7 @@ def ssh_wait(ssh_user, timeout=None):
     while connected_workers == 0 and attempts < 120:  # wait max 2min for someone to connect
         time.sleep(1)
         stdout, stderr = execute_process(
-            ["/bin/bash", "-c", "ps -f -C sshd | grep '{}@pts' | wc -l".format(ssh_user)], internal_command=True, user=ssh_user)
+            ["/bin/bash", "-c", "pgrep -u {} sshd-session | wc -l".format(ssh_user)], internal_command=True, user=ssh_user)
         connected_workers = int(stdout)
         attempts += 1
     attempts = 0
@@ -102,7 +102,7 @@ def ssh_wait(ssh_user, timeout=None):
                 return 253  # timeout
             time.sleep(1)
             stdout, stderr = execute_process(
-                ["/bin/bash", "-c", "ps -f -C sshd | grep '{}@pts' | wc -l".format(ssh_user)], internal_command=True, user=ssh_user)
+                ["/bin/bash", "-c", "pgrep -u {} sshd-session | wc -l".format(ssh_user)], internal_command=True, user=ssh_user)
             connected_workers = int(stdout)
             attempts += 1
         return 0  # The user connected and disconnected
