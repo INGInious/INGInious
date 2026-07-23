@@ -101,6 +101,13 @@ class TestCourse(object):
         t = c.get_tasks()
         assert t == {}
 
+    def test_empty_staff_lists(self, ressource):
+        c = Course("empty-staff", {"name": "Empty staff", "admins": None, "tutors": None})
+
+        assert c.get_admins() == []
+        assert c.get_tutors() == []
+        assert c.get_staff() == []
+
 
 class TestCourseWrite(object):
     """ Test the course update function """
