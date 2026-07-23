@@ -27,14 +27,11 @@ class APITokenPage(INGIniousAuthPage):
         """ GET request """
 
         user = User.objects(username=session["username"]).first()
-        token_dict = {} # contains the expiration date and description, not the token hash itself. There is  no point...
+        token_dict = {}
 
         for token in user.apitokens:
             token_dict[token.token] = token
 
-        #token_dict = dict(sorted(token_dict.items(), key=lambda item: item[1]["expiration"], reverse=True))  # sort by expiration date
-
-        #return self.show_page(api_token=user.apitoken, expiration=expiration)
         return self.show_page()
 
     def POST_AUTH(self):
@@ -44,20 +41,29 @@ class APITokenPage(INGIniousAuthPage):
 
         # generate a new token
         if "generate" in request.form:
-            description = request.form.get("description", "")
             expiration = datetime.datetime.now(tz=timezone.utc) + TOKEN_LIFETIME
             payload = {
                 "username": user.username,
                 "exp": expiration.timestamp(),
-                "description": description
             }
             token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM) # TODO : hash token
-            user.apitokens.append(APIToken(token=token, expires=expiration, description=description))
+
+            return self.show_page(generated_token=token)
+
+        # save the token and description in the database
+        if "save" in request.form:
+            generated_token = request.form.get("generated_token")
+            description = request.form.get("description")
+
+            if description == "" :
+                return self.show_page(errors=["Description is required to save the token."])
+
+            expiration = jwt.decode(generated_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])["exp"]
+            expiration  = datetime.datetime.fromtimestamp(expiration, tz=timezone.utc)
+            user.apitokens.append(APIToken(token=generated_token, expires=expiration, description=description))
             user.save()
 
-
-        # TODO : render form to choose description
-        # TODO : show token
+            return self.show_page()
 
         # invalidates a token
         if "delete" in request.form:
@@ -68,7 +74,7 @@ class APITokenPage(INGIniousAuthPage):
 
         return self.show_page()
 
-    def show_page(self, errors=None):
+    def show_page(self, generated_token=None, errors=None):
         """ Prepares and shows the course marketplace """
         if errors is None:
             errors = []
@@ -79,4 +85,4 @@ class APITokenPage(INGIniousAuthPage):
         for token in user.apitokens:
             token_list.append(token)
 
-        return render_template("apitoken.html", errors=errors, token_list=token_list)
+        return render_template("apitoken.html", errors=errors, generated_token=generated_token, token_list=token_list)
