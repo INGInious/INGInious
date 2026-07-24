@@ -65,7 +65,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
 
 
 class LTI13LaunchPage(INGIniousPage):
-    endpoint = 'lti13launchpage'
+    endpoint = 'lti1.3launchpage'
 
     def _handle_message_launch(self, courseid, taskid):
         """ Decrypt and process the LTI Launch message. """
