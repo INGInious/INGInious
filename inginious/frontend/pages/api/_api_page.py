@@ -7,10 +7,12 @@
 
 import json
 import flask
-from flask import session, Response
+from flask import Response, current_app
+import jwt
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
+from inginious.frontend.models import User
 
 
 class APIPage(INGIniousPage):
@@ -98,17 +100,36 @@ class APIPage(INGIniousPage):
 
 class APIAuthenticatedPage(APIPage):
     """
-        A wrapper for pages that needs authentication. Automatically checks that the client is authenticated and returns "403 Forbidden" if it's
-        not the case.
+        A wrapper for pages that needs authentication through the use of a token. Automatically compares the token given
+        in the request with the one stored in DB for the user and returns "403 Forbidden" if it does not match.
     """
 
     def _handle_api(self, handler, handler_args, handler_kwargs):
         return APIPage._handle_api(self, (lambda *args, **kwargs: self._verify_authentication(handler, args, kwargs)), handler_args, handler_kwargs)
 
     def _verify_authentication(self, handler, args, kwargs):
-        """ Verify that the user is authenticated """
-        if not session.loggedin:
-            raise APIForbidden()
+        """ Verify that the given token is valid """
+
+
+        auth_header = flask.request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise APIForbidden("Missing or malformed Authorization header")
+        token = auth_header.removeprefix("Bearer ").strip()
+
+        API_JWT_SECRET = current_app.config.get('API_JWT_SECRET')
+        API_JWT_ALGORITHM = current_app.config.get('API_JWT_ALGORITHM')
+
+        try:
+            payload = jwt.decode(token, API_JWT_SECRET, algorithms=[API_JWT_ALGORITHM])
+        except jwt.ExpiredSignatureError:
+            raise APIForbidden("Your token has expired, please generate a new one.")
+        except jwt.InvalidTokenError:
+            raise APIForbidden("Invalid token, please generate a new one.")
+
+        self.user = User.objects(username=payload["username"]).first()
+
+        if token not in [api_token.token for api_token in self.user.apitokens] :
+            raise APIForbidden("Invalid token")
         return handler(*args, **kwargs)
 
 

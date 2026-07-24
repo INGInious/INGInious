@@ -64,3 +64,8 @@ reverse-proxy-config:
     enable: false
     x_for: 1
     x_host: 1
+
+# API JSON Web Token parameters
+api_jwt_lifetime: 365 # in days
+api_jwt_secret: "jwt_secret_key" 
+api_jwt_algorithm: "HS256"

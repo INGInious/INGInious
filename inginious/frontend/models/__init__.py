@@ -13,7 +13,7 @@ from inginious.frontend.models.lti1_1 import LISOutcome, Nonce
 from inginious.frontend.models.lti1_3 import LTIGrade, LaunchData
 from inginious.frontend.models.session import Session, LTIData
 from inginious.frontend.models.submission import Submission
-from inginious.frontend.models.user import User
+from inginious.frontend.models.user import User, APIToken
 from inginious.frontend.models.user_task import UserTask
 
 

@@ -5,8 +5,14 @@
 
 import tzlocal
 
-from mongoengine import Document,  StringField, ListField, MapField, BooleanField, DynamicField
+from mongoengine import Document,  StringField, ListField, MapField, BooleanField, DynamicField, EmbeddedDocument, EmbeddedDocumentField, DateTimeField, EmbeddedDocumentField
 
+class APIToken(EmbeddedDocument):
+    """ Embedded document for API tokens. Contains the token hash, expiration date, description and hash algorithm used. """
+    token = StringField(required=True)
+    expires = DateTimeField(required=True)
+    description = StringField(required=True)
+    algorithm = StringField(required=True, default="HS256")
 
 class User(Document):
     username = StringField(required=True)
@@ -19,6 +25,7 @@ class User(Document):
     ltibindings = MapField(MapField(DynamicField())) # TODO: use custom validation or refactor
     tos_accepted = BooleanField(default=False)
     apikey = StringField(default=None)
+    apitokens = ListField(EmbeddedDocumentField(APIToken), default=[])
     timezone = StringField(default=lambda: tzlocal.get_localzone_name())
     pinned_courses = ListField(StringField(), default=[])
     activate = StringField()

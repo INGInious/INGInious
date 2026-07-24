@@ -3,8 +3,6 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from werkzeug.routing import BaseConverter
-
 from inginious.frontend.pages.admin.admin import AdministrationUsersPage, \
     AdministrationUserActionPage
 from inginious.frontend.pages.maintenance import MaintenancePage
@@ -16,6 +14,7 @@ from inginious.frontend.pages.mycourses import MyCoursesPage
 from inginious.frontend.pages.preferences.bindings import BindingsPage
 from inginious.frontend.pages.preferences.delete import DeletePage
 from inginious.frontend.pages.preferences.profile import ProfilePage
+from inginious.frontend.pages.preferences.apitoken import APITokenPage
 from inginious.frontend.pages.preferences.utils import PrefRedirectPage
 from inginious.frontend.pages.utils import SignInPage, LogOutPage
 from inginious.frontend.pages.register import RegistrationPage
@@ -33,8 +32,7 @@ from inginious.frontend.pages.api.auth_methods import APIAuthMethods
 from inginious.frontend.pages.api.authentication import APIAuthentication
 from inginious.frontend.pages.api.courses import APICourses
 from inginious.frontend.pages.api.tasks import APITasks
-from inginious.frontend.pages.api.submissions import APISubmissions
-from inginious.frontend.pages.api.submissions import APISubmissionSingle
+from inginious.frontend.pages.api.submissions import APISubmissions, APISubmissionSingle, APISubmissionsCourse
 from inginious.frontend.pages.course_admin.utils import CourseRedirectPage
 from inginious.frontend.pages.course_admin.settings import CourseSettingsPage
 from inginious.frontend.pages.course_admin.student_list import CourseStudentListPage
@@ -85,6 +83,7 @@ def init_flask_mapping(flask_app):
                            view_func=BindingsPage.as_view('bindingspage'))
     flask_app.add_url_rule('/preferences/delete', view_func=DeletePage.as_view('deletepage'))
     flask_app.add_url_rule('/preferences/profile', view_func=ProfilePage.as_view('profilepage'))
+    flask_app.add_url_rule('/preferences/apitoken', view_func=APITokenPage.as_view('apitokenpage'))
     flask_app.add_url_rule('/lti/task', view_func=LTITaskPage.as_view('ltitaskpage'))
     flask_app.add_url_rule('/lti/<courseid>/<taskid>',
                            view_func=LTI11LaunchPage.as_view('ltilaunchpage'))
@@ -145,6 +144,10 @@ def init_flask_mapping(flask_app):
                            view_func=APISubmissions.as_view('apisubmissions.alias'))
     flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
                            view_func=APISubmissionSingle.as_view('apisubmissions'))
+    flask_app.add_url_rule('/api/v0/token/courses/<courseid>/submissions',
+                           view_func=APISubmissionsCourse.as_view('apisubmissionscourse'))
+    flask_app.add_url_rule('/api/v0/token/courses/<courseid>/<taskid>/submissions',
+                           view_func=APISubmissionsCourse.as_view('apisubmissionscoursetasks'))
     flask_app.add_url_rule('/administrator/users',
                            view_func=AdministrationUsersPage.as_view('administrationuserspage'))
     flask_app.add_url_rule('/administrator/user_action',
