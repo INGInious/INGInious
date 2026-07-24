@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ API token page """
-from flask import session, request, redirect, render_template, url_for
+from flask import current_app, session, request, render_template
 import jwt
 import datetime
 from datetime import timezone
@@ -12,12 +12,6 @@ from datetime import timezone
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User, APIToken
 
-
-# test values to move to config file or configure in api token page (lifetime)
-# one secret key per user ? If the secret key is found out, every user is at risk.
-JWT_SECRET = "your-secret-key"
-JWT_ALGORITHM = "HS256"
-TOKEN_LIFETIME = datetime.timedelta(days=365)  # Token lifetime of 1 year
 
 
 class APITokenPage(INGIniousAuthPage):
@@ -37,16 +31,20 @@ class APITokenPage(INGIniousAuthPage):
     def POST_AUTH(self):
         """ POST request, generates a new token for the user """
 
+        API_JWT_SECRET = current_app.config.get('API_JWT_SECRET')
+        API_JWT_ALGORITHM = current_app.config.get('API_JWT_ALGORITHM')
+        API_JWT_LIFETIME = datetime.timedelta(days=current_app.config.get('API_JWT_LIFETIME'))
+
         user = User.objects(username=session["username"]).first()
 
         # generate a new token
         if "generate" in request.form:
-            expiration = datetime.datetime.now(tz=timezone.utc) + TOKEN_LIFETIME
+            expiration = datetime.datetime.now(tz=timezone.utc) + API_JWT_LIFETIME
             payload = {
                 "username": user.username,
                 "exp": expiration.timestamp(),
             }
-            token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM) # TODO : hash token
+            token = jwt.encode(payload, API_JWT_SECRET, algorithm=API_JWT_ALGORITHM) # TODO : hash token
 
             return self.show_page(generated_token=token)
 
@@ -58,7 +56,7 @@ class APITokenPage(INGIniousAuthPage):
             if description == "" :
                 return self.show_page(errors=["Description is required to save the token."])
 
-            expiration = jwt.decode(generated_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])["exp"]
+            expiration = jwt.decode(generated_token, API_JWT_SECRET, algorithms=[API_JWT_ALGORITHM])["exp"]
             expiration  = datetime.datetime.fromtimestamp(expiration, tz=timezone.utc)
             user.apitokens.append(APIToken(token=generated_token, expires=expiration, description=description))
             user.save()

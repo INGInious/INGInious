@@ -7,7 +7,7 @@
 
 import json
 import flask
-from flask import Response
+from flask import Response, current_app
 import jwt
 
 import inginious.common.custom_yaml as yaml
@@ -116,11 +116,11 @@ class APIAuthenticatedPage(APIPage):
             raise APIForbidden("Missing or malformed Authorization header")
         token = auth_header.removeprefix("Bearer ").strip()
 
-        JWT_SECRET = "your-secret-key"
-        JWT_ALGORITHM = "HS256"
+        API_JWT_SECRET = current_app.config.get('API_JWT_SECRET')
+        API_JWT_ALGORITHM = current_app.config.get('API_JWT_ALGORITHM')
 
         try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            payload = jwt.decode(token, API_JWT_SECRET, algorithms=[API_JWT_ALGORITHM])
         except jwt.ExpiredSignatureError:
             raise APIForbidden("Your token has expired, please generate a new one.")
         except jwt.InvalidTokenError:
