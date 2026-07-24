@@ -99,7 +99,7 @@ class LTIBindPage(INGIniousAuthPage):
                                  data["username"],
                                  data["task"][0],
                                  field,
-                                 user_profile.get("ltibindings", {}).get(data["task"][0], {}).get(field, ""))
+                                 user_profile.ltibindings.get(data["task"][0], {}).get(field, ""))
                 return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                    data=data, error=_("Your account is already bound with this context."))
 
