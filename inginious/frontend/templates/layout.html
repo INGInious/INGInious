@@ -110,7 +110,7 @@
     {% endif %}
 
     <script type="text/javascript">
-        CodeMirror.modeURL = "{{ url_for('static', filename='js/codemirror/mode') }}/%N/%N.js";
+        CodeMirror.modeURL = "{{ url_for('static', filename='js/codemirror/mode/%N/%N.js') | replace('%25', '%') }}";
     </script>
 
     {% for entry in plugin_manager.call_hook("css") %}
