@@ -1,0 +1,10 @@
+# Replace me with dedicated FQDN.
+inginious.local localhost {
+	header -Server
+	reverse_proxy frontend:8080
+}
+
+inginious.local/dav/ localhost/dav/ {
+	header -Server
+	reverse_proxy webdav:8080
+}
