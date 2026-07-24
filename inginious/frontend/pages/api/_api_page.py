@@ -128,7 +128,7 @@ class APIAuthenticatedPage(APIPage):
 
         self.user = User.objects(username=payload["username"]).first()
 
-        if token != self.user.apitoken:
+        if token not in [api_token.token for api_token in self.user.apitokens] :
             raise APIForbidden("Invalid token")
         return handler(*args, **kwargs)
 

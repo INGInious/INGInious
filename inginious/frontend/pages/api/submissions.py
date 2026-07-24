@@ -28,7 +28,7 @@ def _get_submissions(username, submission_manager, user_manager, courseid, taski
     except:
         raise APINotFound("Course not found")
 
-    if not user_manager.course_is_open_to_user(course, lti=False):
+    if not user_manager.course_is_open_to_user(course, username, lti=False):
         raise APIForbidden("You are not registered to this course")
 
     try:
@@ -37,10 +37,10 @@ def _get_submissions(username, submission_manager, user_manager, courseid, taski
         raise APINotFound("Task not found")
 
     if submissionid is None:
-        submissions = submission_manager.get_user_submissions(course, task)
+        submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
-            submissions = [submission_manager.get_submission(submissionid)]
+            submissions = [submission_manager.get_submission(submissionid, user_check=False)]
         except:
             raise APINotFound("Submission not found")
         if submissions[0]["taskid"] != task.get_id() or submissions[0]["courseid"] != course.get_id():
@@ -68,10 +68,10 @@ def _get_submissions(username, submission_manager, user_manager, courseid, taski
                     d["value"] = base64.b64encode(d["value"]).decode("utf8")
 
         if submission["status"] == "done":
-            data["grade"] = submission.get("grade", 0)
-            data["result"] = submission.get("result", "crash")
-            data["feedback"] = submission.get("text", "")
-            data["problems_feedback"] = submission.get("problems", {})
+            data["grade"] = submission.grade
+            data["result"] = submission.result
+            data["feedback"] = submission.text
+            data["problems_feedback"] = submission.problems
 
         output.append(data)
 
@@ -164,6 +164,7 @@ class APISubmissions(APIAuthenticatedPage):
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
             Creates a new submissions. Takes as (POST) input the key of the subproblems, with the value assigned each time.
+            Allow for application/json input or multipart/form-data input. For file input problems, the form-data input is required.
 
             Returns
 
@@ -195,19 +196,23 @@ class APISubmissions(APIAuthenticatedPage):
         if not self.user_manager.task_can_user_submit(course, task, username, False):
             raise APIForbidden("You are not allowed to submit for this task")
 
-        user_input = flask.request.form.copy()
-        for problem in task.get_problems():
-            pid = problem.get_id()
-            if problem.input_type() == list:
-                user_input[pid] = flask.request.form.getlist(pid)
-            elif problem.input_type() == dict:
-                user_input[pid] = flask.request.files.get(pid)
-            else:
-                user_input[pid] = flask.request.form.get(pid)
+        if flask.request.is_json:
+            user_input = flask.request.get_json()
+
+        else:
+            user_input = flask.request.form.copy()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    user_input[pid] = flask.request.form.getlist(pid)
+                elif problem.input_type() == dict:
+                    user_input[pid] = flask.request.files.get(pid)
+                else:
+                    user_input[pid] = flask.request.form.get(pid)
 
         user_input = task.adapt_input_for_backend(user_input)
 
-        if not task.input_is_consistent(user_input, current_app.config('ALLOWED_FILE_EXTENSIONS'),
+        if not task.input_is_consistent(user_input, current_app.config.get('ALLOWED_FILE_EXTENSIONS'),
                                         current_app.config.get('MAX_FILE_SIZE')):
             raise APIInvalidArguments()
 
@@ -217,7 +222,7 @@ class APISubmissions(APIAuthenticatedPage):
 
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug)
+            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug, username)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
