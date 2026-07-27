@@ -45,7 +45,13 @@
             <div class="card-body d-flex justify-content-between align-items-center">
                 <div>
                     <h4 class="card-title mb-1">{{ token.description }}</h4>
-                    <p class="card-text "><small class="text-muted ml-1">{{ _("Expires on:") }} {{ show_time(token.expires) }}</small></p>
+                    <p class="card-text ">
+                        {% if token.expires < token.expires.now().astimezone() %}
+                            <small class="text-danger ml-1">{{ _("Expired on:") }} {{ show_time(token.expires) }}</small>
+                        {% else %}
+                            <small class="text-muted ml-1">{{ _("Expires on:") }} {{ show_time(token.expires) }}</small>
+                        {% endif %}
+                    </p>
                 </div>
                 <form method="post" action="{{ url_for('.apitokenpage') }}" >
                     <input type="hidden" name="token" value="{{ token.token }}">

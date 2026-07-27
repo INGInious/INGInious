@@ -125,12 +125,12 @@ class APIAuthenticatedPage(APIPage):
         except jwt.ExpiredSignatureError:
             raise APIForbidden("Your token has expired, please generate a new one.")
         except jwt.InvalidTokenError:
-            raise APIForbidden("Invalid token, please generate a new one.")
+            raise APIForbidden("Invalid token. It is not correctly formatted.")
 
         self.user = User.objects(username=payload["username"]).first()
 
         if not any(UserManager.verify_hash(api_token["token"], token) for api_token in self.user.apitokens) :
-            raise APIForbidden("Invalid token")
+            raise APIForbidden("Invalid token. It is correctly formatted but does not belong to the user in the JWT.")
         return handler(*args, **kwargs)
 
 
