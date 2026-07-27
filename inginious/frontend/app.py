@@ -62,7 +62,7 @@ def _put_configuration_defaults(config):
         "ALLOW_REGISTRATION": config.get("allow_registration", True),
         "API_JWT_SECRET": config.get("api_jwt_secret", "jwt_secret_key"),
         "API_JWT_LIFETIME": config.get("api_jwt_lifetime", 365),
-        "API_JWT_ALGORITHM": config.get("api_jwt_algorithm", "HS256"),
+        "API_JWT_ALGORITHM": "HS256",
         "BACKEND": config.get("backend", "local"),
         "DEBUG": config.get("web_debug", False),
         "DEBUG_ASYNCIO": config.get('debug_asyncio', False),
