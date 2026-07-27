@@ -328,7 +328,11 @@ class APISubmissionsCourse(APIAuthenticatedPage):
                         "value": "sDBBQAVcbcAWpn2wFoAQAAYi9maXp6YnV6e......DQAH4NsBagbcAWrg2wFqdXgLAAEE6AMAAAToAwAAUEsFBgAAAAAEAAQAVgEAAEACAAAAAA=="
                         },
                     "qcm_problem": {
-                    ... # TODO
+                        # number of the selected answer for each question, starting from 0.
+                        "qcm1": "0",
+                        "qcm2": "2",
+                        "qcm3": "1",
+                        ...
                     }
 
             This endpoint takes a token in the header (accessible from your account settings) and a JSON body with the following fields :
