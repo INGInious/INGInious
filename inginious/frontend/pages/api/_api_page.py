@@ -13,6 +13,7 @@ import jwt
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.models import User
+from inginious.frontend.user_manager import UserManager
 
 
 class APIPage(INGIniousPage):
@@ -128,7 +129,7 @@ class APIAuthenticatedPage(APIPage):
 
         self.user = User.objects(username=payload["username"]).first()
 
-        if token not in [api_token.token for api_token in self.user.apitokens] :
+        if not any(UserManager.verify_hash(api_token["token"], token) for api_token in self.user.apitokens) :
             raise APIForbidden("Invalid token")
         return handler(*args, **kwargs)
 

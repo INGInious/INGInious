@@ -11,6 +11,7 @@ from datetime import timezone
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User, APIToken
+from inginious.frontend.user_manager import UserManager
 
 
 
@@ -58,7 +59,7 @@ class APITokenPage(INGIniousAuthPage):
 
             expiration = jwt.decode(generated_token, API_JWT_SECRET, algorithms=[API_JWT_ALGORITHM])["exp"]
             expiration  = datetime.datetime.fromtimestamp(expiration, tz=timezone.utc)
-            user.apitokens.append(APIToken(token=generated_token, expires=expiration, description=description))
+            user.apitokens.append(APIToken(token=UserManager.hash_password(generated_token), expires=expiration, description=description))
             user.save()
 
             return self.show_page()
