@@ -345,43 +345,13 @@
             </div>
           </div>
           <div class="card-body tab-pane fade" id="tab_lti">
-            <div class="form-group row lti">
+            <div class="form-group row">
                 <label for="lti_url" class="col-sm-2 control-label">{{ _("External platform URL") }}</label>
                 <div class="col-sm-10">
                     <input type="text" class="form-control" id="lti_url" name="lti_url" placeholder="{{ _('External platform URL') }}" value="{{course.lti_url()}}">
                 </div>
             </div>
-            <div class="form-group row lti">
-                <label for="lti_keys" class="col-sm-2 control-label">{{ _("LTI 1.1 consumer keys and secrets") }}</label>
-                <div class="col-sm-10">
-                    <textarea class="form-control" id="lti_keys" name="lti_keys" rows="10" placeholder="{{ _('LTI consumer keys and secrets in the form key:secret, separated by newlines. Please ensure keys are long enough and random.') }}"
-                    >{% for a,b in course.lti_keys().items() %}{{a ~ ":" ~ b ~ "\n"}}{%endfor %}</textarea>
-                </div>
-            </div>
-            <div class="form-group row lti">
-                <label for="lti_config" class="col-sm-2 control-label">{{ _("LTI 1.3 (Feature preview) Tool configuration") }}</label>
-                <div class="col-sm-10">
-                    <textarea class="form-control" id="lti_config" name="lti_config" rows="10" placeholder="{{ _('LTI 1.3 Tool configuration in JSON form, refer to INGInious teachers documentation.') }}"
-                    >{{ course.lti_config() | tojson(2) }}</textarea>
-                </div>
-            </div>
-            <div class="form-group row lti">
-                <label class="col-sm-2 control-label">{{ _("LTI 1.3 (Feature preview) JSON Web Key Sets") }}:</label>
-                <div class="col-sm-10">
-                    <ul class="list-group">
-                        {% for iss, config in course.lti_config().items() %}
-                            {% for client_config in config %}
-                                {% set path = url_for('lti1.3jwkspage', courseid=course.get_id(), keyset_hash=course.lti_keyset_hash(iss, client_config['client_id'])) %}
-                        <div class="list-group-item">
-                            <a href="{{ path }}" target="_blank">{{ path }}</a>
-                            <span>Issuer {{ iss }}, client id {{ client_config['client_id']}}</span>
-                        </div>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-            <div class="form-group row lti">
+            <div class="form-group row">
                 <label for="lti_send_back_grade" class="col-sm-2 control-label">{{ _("Send back grades") }}</label>
                 <div class="col-sm-10">
                     <label>
@@ -391,6 +361,92 @@
                                {% endif %}
                         /> {{ _("Enable this to send back grades to the calling Tool Consumer (which is, most of the time, your LMS). INGInious will deactivate students' access to the course and tasks from the web application when enabled. Tasks will be only available from the LTI interface.") }}
                     </label><br/>
+                </div>
+            </div>
+
+            <div id="accordion">
+                <div class="card mb-3">
+                    <div class="card-header" role="tab" id="heading_lti11">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <span role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_lti11" aria-controls="collapse_lti11">
+                                    <i class="fa fa-chevron-right"></i> LTI 1.1</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="collapse_lti11" class="collapse in" role="tabpanel" aria-labelledby="heading_lti11">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <div class="alert alert-warning">
+                                    {{ _("LTI 1.1 is deprecated and support will be removed in a future release.") }}
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="name-PID" class="col-sm-2 control-label">{{  _("Launch URL") }}</label>
+                                <div class="col-sm-10">
+                                    <code>{{ url_for("ltilaunchpage", _external=True, courseid=course.get_id(), taskid="&lt;taskid&gt;") | safe }}</code>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="lti_keys" class="col-sm-2 control-label">{{ _("Consumer keys and secrets") }}</label>
+                                <div class="col-sm-10">
+                                    <textarea class="form-control" id="lti_keys" name="lti_keys" rows="10" placeholder="{{ _('LTI consumer keys and secrets in the form key:secret, separated by newlines. Please ensure keys are long enough and random.') }}"
+                                    >{% for a,b in course.lti_keys().items() %}{{a ~ ":" ~ b ~ "\n"}}{%endfor %}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header" role="tab" id="heading_lti13">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <span role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_lti13" aria-controls="collapse_lti13">
+                                    <i class="fa fa-chevron-right"></i> LTI 1.3</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="collapse_lti13" class="collapse in" role="tabpanel" aria-labelledby="heading_lti13">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <div class="alert alert-warning">
+                                    {{ _("This is a feature preview. Implementation may change in a future release.") }}
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="name-PID" class="col-sm-2 control-label">{{  _("Launch URL") }}</label>
+                                <div class="col-sm-10">
+                                    <code>{{ url_for("lti1.3launchpage", _external=True, courseid=course.get_id(), taskid="&lt;taskid&gt;") | safe }}</code>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="lti_config" class="col-sm-2 control-label">{{ _("Tool configuration") }}</label>
+                                <div class="col-sm-10">
+                                    <textarea class="form-control" id="lti_config" name="lti_config" rows="10" placeholder="{{ _('LTI 1.3 Tool configuration in JSON form, refer to INGInious teachers documentation.') }}"
+                                    >{{ course.lti_config() | tojson(2) }}</textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-2 control-label">{{ _("JSON Web Key Sets") }}:</label>
+                                <div class="col-sm-10">
+                                    <ul class="list-group">
+                                        {% for iss, config in course.lti_config().items() %}
+                                            {% for client_config in config %}
+                                                {% set path = url_for('lti1.3jwkspage', courseid=course.get_id(), keyset_hash=course.lti_keyset_hash(iss, client_config['client_id'])) %}
+                                        <div class="list-group-item">
+                                            <a href="{{ path }}" target="_blank">{{ path }}</a>
+                                            <span>Issuer {{ iss }}, client id {{ client_config['client_id']}}</span>
+                                        </div>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
           </div>
