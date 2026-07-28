@@ -142,25 +142,25 @@ def init_flask_mapping(flask_app):
                            view_func=CourseDangerZonePage.as_view('coursedangerzonepage'))
     flask_app.add_url_rule('/admin/<courseid>/stats',
                            view_func=CourseStatisticsPage.as_view('coursestatisticspage'))
-    flask_app.add_url_rule('/api/v0/auth_methods',
+    flask_app.add_url_rule('/api/v1/auth_methods',
                            view_func=APIAuthMethods.as_view('apiauthmethods'))
-    flask_app.add_url_rule('/api/v0/authentication',
+    flask_app.add_url_rule('/api/v1/authentication',
                            view_func=APIAuthentication.as_view('apiauthentication'))
-    flask_app.add_url_rule('/api/v0/courses', view_func=APICourses.as_view('apicourses.alias'),
+    flask_app.add_url_rule('/api/v1/courses', view_func=APICourses.as_view('apicourses.alias'),
                            defaults={'courseid': None})
-    flask_app.add_url_rule('/api/v0/courses/<courseid>',
+    flask_app.add_url_rule('/api/v1/courses/<courseid>',
                            view_func=APICourses.as_view('apicourses'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks',
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks',
                            view_func=APITasks.as_view('apitasks.alias'), defaults={'taskid': None})
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>',
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks/<taskid>',
                            view_func=APITasks.as_view('apitasks'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions',
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/<taskid>/my_submissions',
                            view_func=APISubmissions.as_view('apisubmissions.alias'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/<taskid>/my_submissions/<submissionid>',
                            view_func=APISubmissionSingle.as_view('apisubmissions'))
-    flask_app.add_url_rule('/api/v0/token/courses/<courseid>/submissions',
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/submissions',
                            view_func=APISubmissionsCourse.as_view('apisubmissionscourse'))
-    flask_app.add_url_rule('/api/v0/token/courses/<courseid>/<taskid>/submissions',
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/<taskid>/submissions',
                            view_func=APISubmissionsCourse.as_view('apisubmissionscoursetasks'))
     flask_app.add_url_rule('/administrator/users',
                            view_func=AdministrationUsersPage.as_view('administrationuserspage'))
