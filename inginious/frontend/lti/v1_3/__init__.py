@@ -19,23 +19,20 @@ class MongoLTILaunchDataStorage(LaunchDataStorage):
     Stores LTI Launch messages in database during the handshake process and
     to submit grades later using the LTIGradeManager.
     """
-    def __init__(self, courseid, taskid, *args, **kwargs) -> None:
-        self.query_context = (courseid, taskid)
-        self._session_cookie_name = ""  # Disables session scope mechanism in favor of query_context
-        super().__init__(*args, **kwargs)
+    _session_cookie_name = None
 
     def can_set_keys_expiration(self) -> bool:
         return False  # TODO(mp): I think it's reasonable to clean LTI Launch messages further than a week away tho
 
     def get_value(self, key: str):
-        entry = LaunchData.objects(key=key, context=self.query_context).first()
+        entry = LaunchData.objects(key=key).first()
         return entry.value if entry else None
 
     def set_value(self, key: str, value, exp) -> None:
-        LaunchData.objects(key=key, context=self.query_context).update(key=key, value=value, upsert=True)
+        LaunchData.objects(key=key).update(key=key, value=value, upsert=True)
 
     def check_value(self, key: str) -> bool:
-        return bool(LaunchData.objects(key=key, context=self.query_context).first())
+        return bool(LaunchData.objects(key=key).first())
 
 
 class LTIGradeManager(LTIScorePublisher):
@@ -50,7 +47,7 @@ class LTIGradeManager(LTIScorePublisher):
 
         try:
             course = Course.get(courseid)
-            message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=course.lti_tool(), launch_data_storage=MongoLTILaunchDataStorage(courseid, taskid))
+            message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=course.lti_tool(), launch_data_storage=MongoLTILaunchDataStorage())
             launch_data = message_launch.get_launch_data()
             ags = message_launch.get_ags()
 
