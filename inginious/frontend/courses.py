@@ -77,6 +77,7 @@ class Course(object):
             self._lti_url = self._content.get('lti_url', '')
             self._lti_keys = self._content.get('lti_keys', {})
             self._lti_config = self._content.get('lti_config', {})
+            self._lti_secrets = self._content.get('lti_secrets', {})
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
             task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
@@ -96,6 +97,7 @@ class Course(object):
             self._allow_unregister = False
         else:
             self._lti_keys = {}
+            self._lti_secrets = {}
             self._lti_config = {}
             self._lti_url = ''
             self._lti_send_back_grade = False
@@ -215,12 +217,9 @@ class Course(object):
         """ LTI Tool config dictionary. Specs are at https://github.com/dmitry-viskov/pylti1.3/blob/master/README.rst?plain=1#L70-L98 """
         return self._lti_config if self._is_lti else {}
 
-    def lti_platform_instances_ids(self, global_config) -> Iterable[str]:
-        for lti_config in [self.lti_config(), global_config]:
-            for iss in lti_config:
-                for client_config in lti_config[iss]:
-                    for deployment_id in client_config['deployment_ids']:
-                        yield '/'.join([iss, client_config['client_id'], deployment_id])
+    def lti_secrets(self):
+        """ {deployment: secret} for the LTI 1.3 consumers """
+        return self._lti_secrets if self._is_lti else {}
 
     def lti_url(self):
         """ Returns the URL to the external platform the course is hosted on """

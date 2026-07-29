@@ -106,6 +106,7 @@ class LTI13LaunchPage(INGIniousPage):
         custom_data = launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"]
         courseid = courseid or custom_data.get('courseid')
         taskid = taskid or custom_data.get('taskid')
+        secret = custom_data.get('secret', '')
 
         if not session.is_lti:
             raise Exception("Not an LTI session")
@@ -119,6 +120,7 @@ class LTI13LaunchPage(INGIniousPage):
             roles = roles,
             task = (courseid, taskid),
             platform_instance_id = platform_instance_id,
+            course_secret=secret,
             message_launch_id = launch_id if can_report_grades else None,
             context_title = context_title,
             context_label = context_label,
@@ -159,11 +161,11 @@ class LTI13LaunchPage(INGIniousPage):
 
 class LTI13BindPage(LTIBindPage):
     _field = "platform_instance_id"
-    _ids_fct = lambda cls, course: course.lti_platform_instances_ids(current_app.config["LTI_CONFIG"])
+    _check_access = lambda cls, course: course.lti_secrets().get(session.lti["platform_instance_id"]) == session.lti["course_secret"]
     _lti_version = "1.3"
 
 
 class LTI13LoginPage(LTILoginPage):
     _field = "platform_instance_id"
-    _ids_fct = lambda cls, course: course.lti_platform_instances_ids(current_app.config["LTI_CONFIG"])
+    _check_access = lambda cls, course: course.lti_secrets().get(session.lti["platform_instance_id"]) == session.lti["course_secret"]
     _lti_version = "1.3"

@@ -132,6 +132,12 @@ class CourseSettingsPage(INGIniousAdminPage):
         except Exception as ex:
             errors.append(_('LTI config is incorrect') + ' - ' + str(ex))
 
+        course_content['lti_secrets'] = dict([x.rsplit("/", 1) for x in data['lti_secrets'].splitlines() if x])
+
+        for deployment, secret in course_content['lti_secrets'].items():
+            if not re.match("^[a-zA-Z0-9]*$", secret):
+                errors.append(_("LTI deployment secrets must be alphanumerical."))
+
         course_content['lti_send_back_grade'] = 'lti_send_back_grade' in data and data['lti_send_back_grade'] == "true"
 
         tag_error = self.define_tags(course, data, course_content)

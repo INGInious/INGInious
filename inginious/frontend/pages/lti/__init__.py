@@ -49,7 +49,7 @@ class LTIAssetPage(INGIniousAuthPage):
 
 class LTIBindPage(INGIniousAuthPage):
     _field = "consumer_key"
-    _ids_fct = lambda cls, course: course.lti_keys().keys()
+    _check_access = lambda cls, course: session.lti["consumer_key"] in course.lti_keys().keys()
     _lti_version = ""
 
     def is_lti_page(self):
@@ -78,10 +78,11 @@ class LTIBindPage(INGIniousAuthPage):
 
         try:
             course = Course.get(data["task"][0])
-            if data[self._field] not in self._ids_fct(course):
-                raise Exception()
         except:
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
+
+        if not self._check_access(course):
+            return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI secret"))
 
         if data:
             user_profile = User.objects.get(username=session.username)
@@ -108,8 +109,8 @@ class LTIBindPage(INGIniousAuthPage):
 
 class LTILoginPage(INGIniousPage):
     _field = "consumer_key"
-    _ids_fct = lambda cls, course: course.lti_keys().keys()
     _lti_version = ""
+    _check_access = lambda cls, course: session.lti["consumer_key"] in course.lti_keys().keys()
 
     def is_lti_page(self):
         return True
@@ -128,11 +129,12 @@ class LTILoginPage(INGIniousPage):
 
         try:
             course = Course.get(data["task"][0])
-            if data[self._field] not in self._ids_fct(course):
-                raise Exception()
         except:
             return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                session_id="", data=None, error="Invalid LTI data")
+
+        if not self._check_access(course):
+            return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI secret"))
 
         user_profile = User.objects(**{
             "ltibindings__" + data["task"][0] + "__" + field: data["username"]
