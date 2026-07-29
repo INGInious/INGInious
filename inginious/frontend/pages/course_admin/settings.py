@@ -15,6 +15,7 @@ from inginious.common.base import dict_from_prefix, id_checker
 from inginious.frontend.courses import Course
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.lti.v1_3 import lti_keyset_hash
 
 
 class CourseSettingsPage(INGIniousAdminPage):
@@ -147,7 +148,8 @@ class CourseSettingsPage(INGIniousAdminPage):
 
     def page(self, course, errors=None, saved=False):
         """ Get all data and display the page """
-        return render_template("course_admin/settings.html", course=course, errors=errors, saved=saved)
+        return render_template("course_admin/settings.html",
+                               course=course, errors=errors, saved=saved, lti_keyset_hash=lti_keyset_hash)
 
     def define_tags(self, course, data, course_content):
         tags = self.prepare_datas(data, "tags")

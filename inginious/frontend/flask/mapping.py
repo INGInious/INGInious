@@ -93,11 +93,19 @@ def init_flask_mapping(flask_app):
     flask_app.add_url_rule('/lti/asset/<path:asset_url>',
                            view_func=LTIAssetPage.as_view('ltiassetpage'))
 
-    flask_app.add_url_rule('/lti1.3/oidc_login/<courseid>',
-                           view_func=LTI13OIDCLoginPage.as_view('lti1.3oidcloginpage'))
-    flask_app.add_url_rule('/lti1.3/launch/<courseid>/<taskid>',
-                           view_func=LTI13LaunchPage.as_view('lti1.3launchpage'))
-    flask_app.add_url_rule('/lti1.3/jwks/<courseid>/<keyset_hash>', view_func=LTI13JWKSPage.as_view('lti1.3jwkspage'))
+    lti13oidcloginpage_view = LTI13OIDCLoginPage.as_view('lti1.3oidcloginpage')
+    flask_app.add_url_rule('/lti1.3/oidc_login', view_func=lti13oidcloginpage_view, defaults={'courseid': None})
+    flask_app.add_url_rule('/lti1.3/oidc_login/<courseid>', view_func=lti13oidcloginpage_view)
+
+    lti13launchpage_view = LTI13LaunchPage.as_view('lti1.3launchpage')
+    flask_app.add_url_rule('/lti1.3/launch', view_func=lti13launchpage_view,
+                           defaults={'courseid': None, 'taskid': None})
+    flask_app.add_url_rule('/lti1.3/launch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': None})
+    flask_app.add_url_rule('/lti1.3/launch/<courseid>/<taskid>', view_func=lti13launchpage_view)
+
+    lti13jwkspage_view = LTI13JWKSPage.as_view('lti1.3jwkspage')
+    flask_app.add_url_rule('/lti1.3/jwks/<keyset_hash>', view_func=lti13jwkspage_view, defaults={'courseid': None})
+    flask_app.add_url_rule('/lti1.3/jwks/<courseid>/<keyset_hash>', view_func=lti13jwkspage_view)
     flask_app.add_url_rule('/lti1.3/bind', view_func=LTI13BindPage.as_view('lti1.3bindpage'))
     flask_app.add_url_rule('/lti1.3/login', view_func=LTI13LoginPage.as_view('lti1.3loginpage'))
 

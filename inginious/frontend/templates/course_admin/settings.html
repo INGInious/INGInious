@@ -435,7 +435,7 @@
                                     <ul class="list-group">
                                         {% for iss, config in course.lti_config().items() %}
                                             {% for client_config in config %}
-                                                {% set path = url_for('lti1.3jwkspage', courseid=course.get_id(), keyset_hash=course.lti_keyset_hash(iss, client_config['client_id'])) %}
+                                                {% set path = url_for('lti1.3jwkspage', courseid=course.get_id(), keyset_hash=lti_keyset_hash(iss, client_config['client_id'])) %}
                                         <div class="list-group-item">
                                             <a href="{{ path }}" target="_blank">{{ path }}</a>
                                             <span>Issuer {{ iss }}, client id {{ client_config['client_id']}}</span>

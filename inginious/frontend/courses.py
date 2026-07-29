@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import copy
 import gettext
-import hashlib
 import re
 import os
 import logging
 from typing import Iterable, List, Any
-from pylti1p3.tool_config import ToolConfDict
 from datetime import datetime
 
 from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
@@ -217,24 +215,12 @@ class Course(object):
         """ LTI Tool config dictionary. Specs are at https://github.com/dmitry-viskov/pylti1.3/blob/master/README.rst?plain=1#L70-L98 """
         return self._lti_config if self._is_lti else {}
 
-    def lti_tool(self) -> ToolConfDict:
-        """ LTI Tool object. """
-        lti_tool = ToolConfDict(self._lti_config)
-        for iss in self._lti_config:
-            for client_config in self._lti_config[iss]:
-                lti_tool.set_private_key(iss, client_config['private_key'], client_id=client_config['client_id'])
-                lti_tool.set_public_key(iss, client_config['public_key'], client_id=client_config['client_id'])
-        return lti_tool
-
-    def lti_platform_instances_ids(self) -> Iterable[str]:
-        """ Set of LTI Platform instance ids registered for this course. """
-        for iss in self._lti_config:
-            for client_config in self._lti_config[iss]:
-                for deployment_id in client_config['deployment_ids']:
-                    yield '/'.join([iss, client_config['client_id'], deployment_id])
-
-    def lti_keyset_hash(self, issuer: str, client_id: str) -> str:
-        return hashlib.md5((issuer + client_id).encode('utf-8')).digest().hex()
+    def lti_platform_instances_ids(self, global_config) -> Iterable[str]:
+        for lti_config in [self.lti_config(), global_config]:
+            for iss in lti_config:
+                for client_config in lti_config[iss]:
+                    for deployment_id in client_config['deployment_ids']:
+                        yield '/'.join([iss, client_config['client_id'], deployment_id])
 
     def lti_url(self):
         """ Returns the URL to the external platform the course is hosted on """
