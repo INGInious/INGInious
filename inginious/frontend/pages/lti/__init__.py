@@ -8,32 +8,8 @@
 from flask import  redirect, request, render_template, session, url_for
 from werkzeug.exceptions import Forbidden
 
-from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.pages.tasks import BaseTaskPage
-
 from inginious.frontend.models import User, Session
-
-class LTITaskPage(INGIniousAuthPage):
-    def is_lti_page(self):
-        return True
-
-    def GET_AUTH(self):
-        data = session.lti
-        if data is None:
-            raise Forbidden(description=_("No LTI data available."))
-        (courseid, taskid) = data['task']
-
-        return BaseTaskPage(self).GET(courseid, taskid, True)
-
-    def POST_AUTH(self):
-        data = session.lti
-        if data is None:
-            raise Forbidden(description=_("No LTI data available."))
-        (courseid, taskid) = data['task']
-
-        return BaseTaskPage(self).POST(courseid, taskid, True)
-
 
 class LTIAssetPage(INGIniousAuthPage):
     def is_lti_page(self):
@@ -49,7 +25,6 @@ class LTIAssetPage(INGIniousAuthPage):
 
 class LTIBindPage(INGIniousAuthPage):
     _lti_version = ""
-    _check_access = lambda cls, data, course: data["consumer_key"] in course.lti_keys().keys()
     _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
@@ -73,14 +48,6 @@ class LTIBindPage(INGIniousAuthPage):
         if error:
             return error
 
-        try:
-            course = Course.get(data["task"][0])
-        except:
-            return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
-
-        if not self._check_access(data, course):
-            return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI secret"))
-
         if data:
             field = self._mongo_field(data)
             user_profile = User.objects.get(username=session.username)
@@ -91,10 +58,9 @@ class LTIBindPage(INGIniousAuthPage):
                 user_profile.save()
             elif not (lti_user_profile and user_profile["username"] == lti_user_profile["username"]):
                 # There exists an LTI binding for another account, refuse auth!
-                self.logger.info("User %s tried to bind LTI user %s in for %s:%s, but %s is already bound.",
+                self.logger.info("User %s tried to bind LTI user %s in for %s, but %s is already bound.",
                                  user_profile["username"],
                                  data["username"],
-                                 data["task"][0],
                                  field,
                                  user_profile.ltibindings.get(field, ""))
                 return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
@@ -105,7 +71,6 @@ class LTIBindPage(INGIniousAuthPage):
 
 class LTILoginPage(INGIniousPage):
     _lti_version = ""
-    _check_access = lambda cls, data, course: data["consumer_key"] in course.lti_keys().keys()
     _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
@@ -120,22 +85,12 @@ class LTILoginPage(INGIniousPage):
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
 
-        try:
-            course = Course.get(data["task"][0])
-        except:
-            return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
-                                               session_id="", data=None, error="Invalid LTI data")
-
-        if not self._check_access(data, course):
-            return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI secret"))
-
         user_profile = User.objects(**{"ltibindings__" + self._mongo_field(data): data["username"]}).first()
-
         if user_profile:
             self.user_manager.connect_user(user_profile)
 
         if session.loggedin:
-            return redirect(url_for("ltitaskpage"))
+            return redirect(data.redir_url)
 
         return render_template("lti/login.html", lti_version=self._lti_version)
 

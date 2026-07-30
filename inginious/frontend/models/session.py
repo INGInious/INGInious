@@ -16,6 +16,7 @@ class LTIData(EmbeddedDocument):
     realname = StringField(required=True, default="")
     roles = ListField(StringField())
     task = ListField(StringField(), required=True, default=['', ''])
+    redir_url = StringField(required=True, default="")
 
     context_title = StringField()
     context_label = StringField()

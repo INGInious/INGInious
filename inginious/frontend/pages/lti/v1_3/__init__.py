@@ -6,16 +6,46 @@
 """ LTI v1.3 """
 
 from flask import jsonify, redirect, session, url_for, current_app
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotFound, Forbidden
 from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest
 
-from inginious.common import exceptions
-from inginious.frontend.pages.utils import INGIniousPage
+from inginious.common.exceptions import CourseNotFoundException
+from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
+from inginious.frontend.pages.tasks import BaseTaskPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.lti.v1_3 import MongoLTILaunchDataStorage, lti_tool, lti_keyset_hash
 from inginious.frontend.courses import Course
 
 from inginious.frontend.models import LTIData
+
+class LTI13TaskPage(INGIniousAuthPage):
+    def is_lti_page(self):
+        return True
+
+    def check_access(self):
+        data = session.lti
+        if data is None:
+            raise Forbidden(description=_("No LTI data available."))
+
+        courseid, taskid = data['task']
+
+        try:
+            course = Course.get(courseid)
+        except CourseNotFoundException as ex:
+            raise NotFound(description=str(ex))
+
+        if not course.lti_secrets().get(data["platform_instance_id"]) == data["course_secret"]:
+            raise Forbidden(description=_("Invalid LTI secret"))
+
+        return courseid, taskid
+
+    def GET_AUTH(self):
+        courseid, taskid= self.check_access()
+        return BaseTaskPage(self).GET(courseid, taskid, True)
+
+    def POST_AUTH(self):
+        courseid, taskid = self.check_access()
+        return BaseTaskPage(self).POST(courseid, taskid, True)
 
 class LTI13JWKSPage(INGIniousPage):
     endpoint = 'ltijwkspage'
@@ -23,7 +53,7 @@ class LTI13JWKSPage(INGIniousPage):
     def GET(self, courseid, keyset_hash):
         try:
             lti_config = Course.get(courseid).lti_config() if courseid else {}
-        except exceptions.CourseNotFoundException as ex:
+        except CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
         global_config = current_app.config.get("LTI_CONFIG")
@@ -49,7 +79,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
         """ Initiates the LTI 1.3 OIDC login. """
         try:
             lti_config = Course.get(courseid).lti_config() if courseid else {}
-        except exceptions.CourseNotFoundException as ex:
+        except CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
         flask_request = FlaskRequest()
@@ -75,7 +105,7 @@ class LTI13LaunchPage(INGIniousPage):
         """ Decrypt and process the LTI Launch message. """
         try:
             lti_config = Course.get(courseid).lti_config() if courseid else {}
-        except exceptions.CourseNotFoundException as ex:
+        except CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
         tool_conf = lti_tool(lti_config, current_app.config.get("LTI_CONFIG"))
@@ -95,18 +125,16 @@ class LTI13LaunchPage(INGIniousPage):
         tool_name = tool.get('name', 'N/A')
         tool_desc = tool.get('description', 'N/A')
         tool_url = tool.get('url', 'N/A')
-        context = launch_data['https://purl.imsglobal.org/spec/lti/claim/context']
+        context = launch_data.get('https://purl.imsglobal.org/spec/lti/claim/context', {})
         context_title = context.get('context_title', 'N/A')
         context_label = context.get('context_label', 'N/A')
-
-        auth_token_url = tool_conf.get_iss_config(iss=message_launch.get_iss(), client_id=message_launch.get_client_id()).get('auth_token_url')
-        can_report_grades = message_launch.has_ags() and auth_token_url
 
         # Fetch courseid and taskid
         custom_data = launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"]
         courseid = courseid or custom_data.get('courseid')
         taskid = taskid or custom_data.get('taskid')
         secret = custom_data.get('secret', '')
+        redir_url = url_for("lti1.3taskpage")
 
         if not session.is_lti:
             raise Exception("Not an LTI session")
@@ -121,12 +149,13 @@ class LTI13LaunchPage(INGIniousPage):
             task = (courseid, taskid),
             platform_instance_id = platform_instance_id,
             course_secret=secret,
-            message_launch_id = launch_id if can_report_grades else None,
+            message_launch_id = launch_id,
             context_title = context_title,
             context_label = context_label,
             tool_description = tool_desc,
             tool_name = tool_name,
             tool_url = tool_url,
+            redir_url=redir_url
         )
 
         return redirect(url_for("lti1.3loginpage"))
@@ -161,11 +190,9 @@ class LTI13LaunchPage(INGIniousPage):
 
 class LTI13BindPage(LTIBindPage):
     _lti_version = "1.3"
-    _check_access = lambda cls, data, course: course.lti_secrets().get(data["platform_instance_id"]) == data["course_secret"]
     _mongo_field = lambda cls, data: data["platform_instance_id"].replace(".", "").replace("$", "")
 
 
 class LTI13LoginPage(LTILoginPage):
     _lti_version = "1.3"
-    _check_access = lambda cls, data, course: course.lti_secrets().get(data["platform_instance_id"]) == data["course_secret"]
     _mongo_field = lambda cls, data: data["platform_instance_id"].replace(".", "").replace("$", "")
