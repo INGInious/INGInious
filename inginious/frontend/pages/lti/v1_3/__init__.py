@@ -160,12 +160,12 @@ class LTI13LaunchPage(INGIniousPage):
 
 
 class LTI13BindPage(LTIBindPage):
-    _field = "platform_instance_id"
-    _check_access = lambda cls, course: course.lti_secrets().get(session.lti["platform_instance_id"]) == session.lti["course_secret"]
     _lti_version = "1.3"
+    _check_access = lambda cls, data, course: course.lti_secrets().get(data["platform_instance_id"]) == data["course_secret"]
+    _mongo_field = lambda cls, data: data["platform_instance_id"].replace(".", "").replace("$", "")
 
 
 class LTI13LoginPage(LTILoginPage):
-    _field = "platform_instance_id"
-    _check_access = lambda cls, course: course.lti_secrets().get(session.lti["platform_instance_id"]) == session.lti["course_secret"]
     _lti_version = "1.3"
+    _check_access = lambda cls, data, course: course.lti_secrets().get(data["platform_instance_id"]) == data["course_secret"]
+    _mongo_field = lambda cls, data: data["platform_instance_id"].replace(".", "").replace("$", "")

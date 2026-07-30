@@ -48,9 +48,9 @@ class LTIAssetPage(INGIniousAuthPage):
 
 
 class LTIBindPage(INGIniousAuthPage):
-    _field = "consumer_key"
-    _check_access = lambda cls, course: session.lti["consumer_key"] in course.lti_keys().keys()
     _lti_version = ""
+    _check_access = lambda cls, data, course: data["consumer_key"] in course.lti_keys().keys()
+    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
         return False
@@ -73,25 +73,21 @@ class LTIBindPage(INGIniousAuthPage):
         if error:
             return error
 
-        # Sanitize field for mongoengine requests
-        field = data[self._field].replace(".", "").replace("$", "")
-
         try:
             course = Course.get(data["task"][0])
         except:
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
 
-        if not self._check_access(course):
+        if not self._check_access(data, course):
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI secret"))
 
         if data:
+            field = self._mongo_field(data)
             user_profile = User.objects.get(username=session.username)
-            lti_user_profile = User.objects(**{
-                "ltibindings__" + data["task"][0] + "__" + field: data["username"]
-            }).first()
-            if not user_profile.ltibindings.get(data["task"][0], {}).get(field, "") and not lti_user_profile:
+            lti_user_profile = User.objects(**{"ltibindings__" + field: data["username"]}).first()
+            if not user_profile.ltibindings.get(field, "") and not lti_user_profile:
                 # There is no binding yet, so bind LTI to this account
-                user_profile.ltibindings.setdefault(data["task"][0], {})[field] = data["username"]
+                user_profile.ltibindings[field] = data["username"]
                 user_profile.save()
             elif not (lti_user_profile and user_profile["username"] == lti_user_profile["username"]):
                 # There exists an LTI binding for another account, refuse auth!
@@ -100,7 +96,7 @@ class LTIBindPage(INGIniousAuthPage):
                                  data["username"],
                                  data["task"][0],
                                  field,
-                                 user_profile.ltibindings.get(data["task"][0], {}).get(field, ""))
+                                 user_profile.ltibindings.get(field, ""))
                 return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                    data=data, error=_("Your account is already bound with this context."))
 
@@ -108,9 +104,9 @@ class LTIBindPage(INGIniousAuthPage):
 
 
 class LTILoginPage(INGIniousPage):
-    _field = "consumer_key"
     _lti_version = ""
-    _check_access = lambda cls, course: session.lti["consumer_key"] in course.lti_keys().keys()
+    _check_access = lambda cls, data, course: data["consumer_key"] in course.lti_keys().keys()
+    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
         return True
@@ -124,21 +120,16 @@ class LTILoginPage(INGIniousPage):
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
 
-        # Sanitize field for mongoengine requests
-        field = data[self._field].replace(".", "").replace("$", "")
-
         try:
             course = Course.get(data["task"][0])
         except:
             return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                session_id="", data=None, error="Invalid LTI data")
 
-        if not self._check_access(course):
+        if not self._check_access(data, course):
             return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI secret"))
 
-        user_profile = User.objects(**{
-            "ltibindings__" + data["task"][0] + "__" + field: data["username"]
-        }).first()
+        user_profile = User.objects(**{"ltibindings__" + self._mongo_field(data): data["username"]}).first()
 
         if user_profile:
             self.user_manager.connect_user(user_profile)
