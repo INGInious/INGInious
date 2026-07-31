@@ -28,8 +28,6 @@ from inginious.frontend.pages.lti import LTIAssetPage
 from inginious.frontend.pages.group import GroupPage
 from inginious.frontend.pages.marketplace import MarketplacePage
 from inginious.frontend.pages.marketplace_course import MarketplaceCoursePage
-from inginious.frontend.pages.api.auth_methods import APIAuthMethods
-from inginious.frontend.pages.api.authentication import APIAuthentication
 from inginious.frontend.pages.api.courses import APICourses
 from inginious.frontend.pages.api.tasks import APITasks
 from inginious.frontend.pages.api.submissions import APISubmissions, APISubmissionSingle, APISubmissionsCourse
@@ -142,10 +140,6 @@ def init_flask_mapping(flask_app):
                            view_func=CourseDangerZonePage.as_view('coursedangerzonepage'))
     flask_app.add_url_rule('/admin/<courseid>/stats',
                            view_func=CourseStatisticsPage.as_view('coursestatisticspage'))
-    flask_app.add_url_rule('/api/v1/auth_methods',
-                           view_func=APIAuthMethods.as_view('apiauthmethods'))
-    flask_app.add_url_rule('/api/v1/authentication',
-                           view_func=APIAuthentication.as_view('apiauthentication'))
     flask_app.add_url_rule('/api/v1/courses', view_func=APICourses.as_view('apicourses.alias'),
                            defaults={'courseid': None})
     flask_app.add_url_rule('/api/v1/courses/<courseid>',
