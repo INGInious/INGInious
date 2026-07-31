@@ -54,7 +54,7 @@ class APICourses(APIAuthenticatedPage):
             except:
                 raise APINotFound("Course not found")
 
-        username = session.username
+        username = self.user.username
         user_info = self.user_manager.get_user_info(username)
 
         for courseid, course in courses.items():
