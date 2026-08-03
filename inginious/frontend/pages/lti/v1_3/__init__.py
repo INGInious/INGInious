@@ -5,9 +5,12 @@
 
 """ LTI v1.3 """
 
-from flask import jsonify, redirect, session, url_for, current_app
+import secrets
+
+from flask import jsonify, redirect, session, url_for, current_app, render_template, request
 from werkzeug.exceptions import NotFound, Forbidden
 from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest
+from pylti1p3.deep_link_resource import DeepLinkResource
 
 from inginious.common.exceptions import CourseNotFoundException
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
@@ -129,12 +132,18 @@ class LTI13LaunchPage(INGIniousPage):
         context_title = context.get('context_title', 'N/A')
         context_label = context.get('context_label', 'N/A')
 
-        # Fetch courseid and taskid
-        custom_data = launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"]
-        courseid = courseid or custom_data.get('courseid')
-        taskid = taskid or custom_data.get('taskid')
-        secret = custom_data.get('secret', '')
-        redir_url = url_for("lti1.3taskpage")
+        if message_launch.is_resource_launch():
+            # Fetch courseid and taskid
+            custom_data = launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"]
+            courseid = courseid or custom_data.get('courseid')
+            taskid = taskid or custom_data.get('taskid')
+            secret = custom_data.get('secret', '')
+            redir_url = url_for("lti1.3taskpage")
+        elif message_launch.is_deep_link_launch():
+            courseid = ""
+            taskid = ""
+            secret = ""
+            redir_url = url_for("lti1.3deeplinkpage")
 
         if not session.is_lti:
             raise Exception("Not an LTI session")
@@ -196,3 +205,62 @@ class LTI13BindPage(LTIBindPage):
 class LTI13LoginPage(LTILoginPage):
     _lti_version = "1.3"
     _mongo_field = lambda cls, data: data["platform_instance_id"].replace(".", "").replace("$", "")
+
+
+class LTI13DeepLinkPage(INGIniousPage):
+
+    def GET(self):
+        if not session.is_lti:
+            raise Exception("Not an LTI session")
+
+        lti_courses = {
+            courseid: course for courseid, course in Course.get_all().items()
+            if self.user_manager.has_admin_rights_on_course(course) and course.is_lti()
+        }
+
+        if (courseid := request.args.get("courseid")) is not None:
+            if courseid not in lti_courses:
+                raise Forbidden("Course not found")
+
+            course = lti_courses[courseid]
+            return {taskid: task.get_name(session.language) for taskid, task in course.get_tasks().items()}
+
+        return render_template("lti/deeplink.html", courses=lti_courses)
+
+    def POST(self):
+        if not session.is_lti:
+            raise Exception("Not an LTI session")
+
+        courseid = request.form.get("courseid")
+        taskid = request.form.get("taskid")
+
+        try:
+            course =  Course.get(courseid)
+            task = course.get_task(taskid)
+        except CourseNotFoundException as ex:
+            raise NotFound(description=_(str(ex)))
+
+        # Ftech LTI session info
+        message_launch_id = session.lti["message_launch_id"]
+        platform_instance_id = session.lti["platform_instance_id"]
+
+        # Fetch or generate the LTI1.3 course secret
+        lti_secrets = course.lti_secrets()
+        if platform_instance_id not in lti_secrets:
+            lti_secrets[platform_instance_id] = secrets.token_hex(16)
+            course.set_descriptor_element("lti_secrets", lti_secrets)
+            course.save()
+
+        # Ftech launch message from database
+        tool_config = lti_tool(course.lti_config(), current_app.config.get("LTI_CONFIG"))
+        message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=tool_config,
+                                                       launch_data_storage=MongoLTILaunchDataStorage())
+
+        # Generate deep link response
+        deep_link = message_launch.get_deep_link()
+        resource = DeepLinkResource()
+        resource.set_url(url_for("lti1.3launchpage", _external=True).split("?")[0]) \
+            .set_custom_params({'courseid': courseid, "taskid": taskid, "secret": lti_secrets[platform_instance_id]}) \
+            .set_title(task.get_name(session.language))
+
+        return deep_link.output_response_form([resource])
