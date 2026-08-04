@@ -1,0 +1,90 @@
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+
+<div id="{{ index }}" class="card mb-3 group-card group">
+    <div class="card-header clearfix" role="tab">
+        <div class="row">
+            <div class="col-sm-6 col-xs-6 col-md-6">
+                {{  _("Issuer") }} : <code>{{ iss }}</code>
+            </div>
+            <div class="col-sm-6 col-xs-6 col-md-6">
+                {{ _("Client ID") }} : <code>{{ client.client_id }}</code>
+            </div>
+        </div>
+    </div>
+    <div class="card-header clearfix" role="tab">
+        <div class="row">
+            <div class="col-sm-9 col-xs-12">
+                {{ _("Deployment secrets") }}
+            </div>
+            <div class="col-sm-2 col-xs-6" style="text-align: center">
+                <select style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" class="form-control input-xs" id="{{ iss ~ '/' ~ client.client_id }}">
+                    <option value="" disabled selected hidden> {{ _("Select a deployment id ...") }}</option>
+                    {% for deployment_id in client.deployment_ids %}
+                        {%  set deploy_str = iss ~ "/" ~ client.client_id ~ "/" ~ deployment_id %}
+                        {% if deploy_str not in secrets %}
+                            <option value="{{ deploy_str }}" data-client-id="{{ iss ~ "/" ~ client.client_id }}" data-deployment-id="{{ deployment_id }}">{{ deployment_id }}</option>
+                        {%  endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-1 col-xs-6">
+                <button type="button" style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" onclick="javascript:lti_secret_add($('select[id=\'{{ iss ~ '/' ~ client.client_id }}\']').val())" class="form-control btn btn-xs btn-warning"><span class="fa fa-plus"></span> {{ _("Generate secret") }}</button>
+            </div>
+        </div>
+    </div>
+    <ul class="list-group list-group-flush" data-client-id="{{ iss ~ "/" ~ client.client_id }}">
+        <li class="list-group-item" style="display:none;">
+            <span></span> : <code></code>
+            <div class="pull-right"><a href="#" onclick=""><i class="fa fa-trash-o fa-lg"></i></a></div>
+        </li>
+        {% for deployment_id in client.deployment_ids %}
+            {%  set deploy_str = iss ~ "/" ~ client.client_id ~ "/" ~ deployment_id %}
+            {% if deploy_str in secrets %}
+                <li class="list-group-item" id="{{deploy_str}}" data-client-id="{{ iss ~ "/" ~ client.client_id }}" data-deployment-id="{{ deployment_id }}">
+                    <span>{{deployment_id}}</span> : <code>{{ secrets[deploy_str] }}</code>
+                    <div class="pull-right"><a href="#" onclick="javascript:lti_secret_remove('{{ deploy_str }}')"><i class="fa fa-trash-o fa-lg"></i></a></div>
+                </li>
+            {%  endif %}
+        {% endfor %}
+    </ul>
+    <div class="card-header clearfix" role="tab" id="heading_lti13_{{ type }}_{{ index }}">
+        <span role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_lti13_{{ type }}_{{ index }}" aria-controls="collapse_lti13_{{ type }}_{{ index }}">
+           <i class="fa fa-chevron-right"></i> {{ _("Configuration details") }}</span>
+        </span>
+    </div>
+    <div id="collapse_lti13_{{ type }}_{{ index }}" class="collapse in" role="tabpanel" aria-labelledby="heading_lti13_{{ type }}_{{ index }}">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 mb-2">{{ _("Launch URL") }}</div>
+                {%  set params = {'courseid': course.get_id()}  if type == "course" else {} %}
+                <div class="col-md-4 mb-2"><code>{{  url_for('lti1.3launchpage',  _external=True, **params) }}</code></div>
+                <div class="col-md-2 mb-2">{{ _("Deep Link URL") }}</div>
+                <div class="col-md-4 mb-2"><code>{{ url_for('lti1.3launchpage', _external=True, **params) }}</code></div>
+                <div class="col-md-2 mb-2">{{ _("OIDC Login URL") }}</div>
+                <div class="col-md-4 mb-2"><code>{{ url_for('lti1.3oidcloginpage', _external=True, **params) }}</code></div>
+                <div class="col-md-2 mb-2">{{ _("Redirect URLs") }}</div>
+                <div class="col-md-4 mb-2"><code>[&quot;{{ url_for('lti1.3launchpage', _external=True, **params) }}&quot;]</code></div>
+            </div>
+            <div class="row mb-2">
+                {% set path = url_for('lti1.3jwkspage', keyset_hash=lti_keyset_hash(iss, client.client_id), _external=True, **params) %}
+                <div class="col-md-2">{{ _("JWKS keyset") }}</div>
+                <div class="col-md-10"><code>{{ path }}</code></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-2">{{ _("Public key") }}</div>
+                <div class="col-md-10"><pre>{{ client.public_key }}</pre></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-2">{{ _("Required custom parameters") }}</div>
+                <div class="col-md-10">
+                    {% if type == "global" %}
+                    <span class="badge badge-primary">courseid</span>
+                    {% endif %}
+                    <span class="badge badge-primary">taskid</span>
+                    <span class="badge badge-primary">secret</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

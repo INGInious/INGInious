@@ -417,39 +417,31 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="name-PID" class="col-sm-2 control-label">{{  _("Launch URL") }}</label>
+                                <input name="lti_secrets" type="hidden" value="{% for a,b in course.lti_secrets().items() %}{{a ~ '/' ~ b ~ '\n'}}{%endfor %}"/>
+                                <label for="lti_secrets" class="col-sm-2 control-label">{{ _("Configured clients") }}</label>
                                 <div class="col-sm-10">
-                                    <code>{{ url_for("lti1.3launchpage", _external=True, courseid=course.get_id(), taskid="&lt;taskid&gt;") | safe }}</code>
+                                    {%  set secrets = course.lti_secrets() %}
+                                    {%  for iss, clients in config.LTI_CONFIG.items() %}
+                                        {%  for client in clients %}
+                                            {%  with type= "global", index = loop.index %}
+                                                {%  include "course_admin/lti_config_card.html" %}
+                                            {%  endwith %}
+                                        {%  endfor %}
+                                    {% endfor %}
+                                    {%  for iss, clients in course.lti_config().items() %}
+                                        {%  for client in clients %}
+                                            {%  with type = "course", index = loop.index %}
+                                                {%  include "course_admin/lti_config_card.html" %}
+                                            {%  endwith %}
+                                        {%  endfor %}
+                                    {% endfor %}
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="lti_config" class="col-sm-2 control-label">{{ _("Tool configuration") }}</label>
+                                <label for="lti_config" class="col-sm-2 control-label">{{ _("Additional raw configuration") }}</label>
                                 <div class="col-sm-10">
-                                    <textarea class="form-control" id="lti_config" name="lti_config" rows="10" placeholder="{{ _('LTI 1.3 Tool configuration in JSON form, refer to INGInious teachers documentation.') }}"
+                                    <textarea class="form-control" id="lti_config" name="lti_config" rows="6" placeholder="{{ _('LTI 1.3 Tool configuration in JSON form, refer to INGInious teachers documentation.') }}"
                                     >{{ course.lti_config() | tojson(2) }}</textarea>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <label class="col-sm-2 control-label">{{ _("JSON Web Key Sets") }}:</label>
-                                <div class="col-sm-10">
-                                    <ul class="list-group">
-                                        {% for iss, config in course.lti_config().items() %}
-                                            {% for client_config in config %}
-                                                {% set path = url_for('lti1.3jwkspage', courseid=course.get_id(), keyset_hash=lti_keyset_hash(iss, client_config['client_id'])) %}
-                                        <div class="list-group-item">
-                                            <a href="{{ path }}" target="_blank">{{ path }}</a>
-                                            <span>Issuer {{ iss }}, client id {{ client_config['client_id']}}</span>
-                                        </div>
-                                            {% endfor %}
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <label for="lti_secrets" class="col-sm-2 control-label">{{ _("Deployment secrets") }}</label>
-                                <div class="col-sm-10">
-                                    <textarea class="form-control" id="lti_secrets" name="lti_secrets" rows="10" placeholder="{{ _('Secrets in the form iss/client_id/deployment_id/secret, separated by newlines. Please ensure secrets are long enough and random.') }}"
-                                    >{% for a,b in course.lti_secrets().items() %}{{a ~ "/" ~ b ~ "\n"}}{%endfor %}</textarea>
                                 </div>
                             </div>
                         </div>
