@@ -59,6 +59,10 @@ The different entries are :
 ``log_level``
     Can be set to ``INFO``, ``WARN``, or ``DEBUG``. Specifies the logging verbosity.
 
+``lti_config``
+    A dictionary containing the LTI v1.3 tool consumers configuration.
+    See :ref:`lti13` for configuration details.
+
 ``maintenance``
     Set to ``true`` if the webapp must be disabled.
 
