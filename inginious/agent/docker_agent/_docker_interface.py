@@ -94,13 +94,13 @@ class DockerInterface(object):  # pragma: no cover
                     latest[envtype][img_c["title"]] = {"id": img_id, **img_c}
         return latest
 
-    def get_host_ip(self, env_with_dig='ingi/inginious-c-default'):
+    def get_host_ip(self, image):
         """
         Get the external IP of the host of the docker daemon. Uses OpenDNS internally.
-        :param env_with_dig: any container image that has dig
+        :param image: any container image that has curl
         """
         try:
-            container = self._docker.containers.create(env_with_dig, command="dig +short myip.opendns.com @resolver1.opendns.com")
+            container = self._docker.containers.create(image, command="curl -s https://icanhazip.com")
             container.start()
             response = container.wait()
             assert response["StatusCode"] == 0 if isinstance(response, dict) else response == 0
