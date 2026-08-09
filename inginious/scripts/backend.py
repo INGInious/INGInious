@@ -10,7 +10,7 @@
 import argparse
 import logging
 
-from zmq.asyncio import ZMQEventLoop, Context
+from zmq.asyncio import Context
 import asyncio
 
 from inginious.backend.backend import Backend
@@ -36,7 +36,10 @@ def main():
     logger.addHandler(ch)
 
     # start asyncio and zmq
-    loop = ZMQEventLoop()
+    # ZMQEventLoop/zmq.asyncio.install() are deprecated since pyzmq 17: zmq
+    # sockets work with the regular asyncio event loop, no special
+    # integration is needed anymore.
+    loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     if args.debugmode:
         loop.set_debug(True)
