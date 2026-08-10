@@ -113,7 +113,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
             this dict will contain one entry or the page will return 404 Not Found.
         """
         with_input = "input" in flask.request.args
-        username = self.user.username
+        username = flask.g.user.username
 
         return _get_submissions(username, self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
 
@@ -155,7 +155,7 @@ class APISubmissions(APIAuthenticatedPage):
             this dict will contain one entry or the page will return 404 Not Found.
         """
         with_input = "input" in flask.request.args
-        username = self.user.username
+        username = flask.g.user.username
 
         return _get_submissions(username, self.submission_manager, self.user_manager, courseid, taskid, with_input)
 
@@ -178,7 +178,7 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        username = self.user.username
+        username = flask.g.user.username
 
         if not self.user_manager.course_is_open_to_user(course, username, False):
             raise APIForbidden("You are not registered to this course")
@@ -294,7 +294,7 @@ class APISubmissionsCourse(APIAuthenticatedPage):
 
         """
 
-        username = self.user.username
+        username = flask.g.user.username
 
         try:
             course = Course.get(courseid)

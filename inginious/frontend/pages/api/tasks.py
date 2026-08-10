@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Tasks """
-from flask import session
+import flask
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
@@ -62,7 +62,7 @@ class APITasks(APIAuthenticatedPage):
             Found.
         """
 
-        username = self.user.username
+        username = flask.g.user.username
 
         try:
             course = Course.get(courseid)
@@ -86,12 +86,12 @@ class APITasks(APIAuthenticatedPage):
 
             data = {
                 "id": taskid,
-                "name": task.get_name(self.user.language),
-                "authors": task.get_authors(self.user.language),
-                "contact_url": task.get_contact_url(self.user.language),
+                "name": task.get_name(flask.g.user.language),
+                "authors": task.get_authors(flask.g.user.language),
+                "contact_url": task.get_contact_url(flask.g.user.language),
                 "status": "notviewed" if task_cache is None else "notattempted" if task_cache["tried"] == 0 else "succeeded" if task_cache["succeeded"] else "failed",
                 "grade": task_cache.grade if task_cache is not None else 0.0,
-                "context": task.get_context(self.user.language).original_content(),
+                "context": task.get_context(flask.g.user.language).original_content(),
                 "problems": []
             }
 

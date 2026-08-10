@@ -127,9 +127,9 @@ class APIAuthenticatedPage(APIPage):
         except jwt.InvalidTokenError:
             raise APIForbidden("Invalid token. It is not correctly formatted.")
 
-        self.user = User.objects(username=payload["username"]).first()
+        flask.g.user = User.objects(username=payload["username"]).first()
 
-        if not any(UserManager.verify_hash(api_token["token"], token) for api_token in self.user.apitokens) :
+        if not any(UserManager.verify_hash(api_token["token"], token) for api_token in flask.g.user.apitokens) :
             raise APIForbidden("Invalid token. It is correctly formatted but does not belong to the user in the JWT.")
         return handler(*args, **kwargs)
 

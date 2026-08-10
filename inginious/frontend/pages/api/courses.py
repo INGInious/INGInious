@@ -5,6 +5,7 @@
 
 """ Courses """
 from flask import session
+import flask
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
@@ -54,7 +55,7 @@ class APICourses(APIAuthenticatedPage):
             except:
                 raise APINotFound("Course not found")
 
-        username = self.user.username
+        username = flask.g.user.username
         user_info = self.user_manager.get_user_info(username)
 
         for courseid, course in courses.items():
