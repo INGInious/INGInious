@@ -35,6 +35,8 @@ services:
 
   db:
     image: mongo:6.0.2
+    volumes:
+      - ./db:/data/db
     networks:
       - inginious
 
