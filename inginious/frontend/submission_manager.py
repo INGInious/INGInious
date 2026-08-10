@@ -91,7 +91,7 @@ class WebAppSubmissionManager:
             if lti_score_publisher:
                 lti_score_publisher.add(submission)
 
-    def _before_submission_insertion(self, course, task, inputdata, debug, obj):
+    def _before_submission_insertion(self, course, task, inputdata, debug, obj, username):
         """
         Called before any new submission is inserted into the database. Allows you to modify obj, the new document that will be inserted into the
         database. Should be overridden in subclasses.
@@ -101,14 +101,14 @@ class WebAppSubmissionManager:
         :param debug: True, False or "ssh". See add_job.
         :param obj: the new document that will be inserted
         """
-        if "username" not in obj:
-            username = session.username
 
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
         if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
             group = Group.objects.get(courseid=course.id, students=username)
             obj.update({"username": group["students"]})
+        else:
+            obj.update({"username": [username]})
 
         lti_info = session.lti
         if lti_info is not None and course.lti_send_back_grade():
@@ -119,7 +119,6 @@ class WebAppSubmissionManager:
 
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
-            username = session.username
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
                 group = Group.objects.get(courseid=course.id, students=username)
                 users = User.objects(username__in=group["students"])
@@ -215,7 +214,7 @@ class WebAppSubmissionManager:
             return None
         return sub
 
-    def add_job(self, course, task, inputdata, task_dispenser, debug=False, username=None):
+    def add_job(self, course, task, inputdata, task_dispenser, username, debug=False):
         """
         Add a job in the queue and returns a submission id.
         :param task:  Task instance
@@ -226,11 +225,6 @@ class WebAppSubmissionManager:
         :type debug: bool or string
         :returns: the new submission id and the removed submission id
         """
-        if username is None:
-            if not session.loggedin:
-                raise Exception("A user must be logged in to get his submissions")
-            else:
-                username = session.username
 
         # Prevent student from submitting several submissions together
         waiting_submission = Submission.objects(
@@ -275,7 +269,7 @@ class WebAppSubmissionManager:
 
         plugin_manager.call_hook("new_submission", submission=obj, inputdata=inputdata)
 
-        self._before_submission_insertion(course, task, inputdata, debug, obj)
+        self._before_submission_insertion(course, task, inputdata, debug, obj, username)
 
         submission = Submission(**obj)
         submission.set_input(inputdata)
@@ -412,23 +406,15 @@ class WebAppSubmissionManager:
         self._client.kill_job(submission["jobid"])
         return True
 
-    def user_is_submission_owner(self, submission, username=None):
+    def user_is_submission_owner(self, submission ):
         """ Returns true if the current user is the owner of this jobid, false else """
-        if username is None:
-            if not session.loggedin:
-                raise Exception("A user must be logged in to get his submissions")
-            else:
-                username = session.username
+        if not session.loggedin:
+            raise Exception("A user must be logged in to get his submissions")
 
-        return username in submission["username"]
+        return session.username in submission["username"]
 
-    def get_user_submissions(self, course, task, username=None):
+    def get_user_submissions(self, course, task, username):
         """ Get all the user's submissions for a given task """
-        if username is None :
-            if not session.loggedin:
-                raise Exception("A user must be logged in to get his submissions")
-            else :
-                username = session.username
 
         cursor = Submission.objects(
             username=username, taskid=task.get_id(), courseid=course.get_id()

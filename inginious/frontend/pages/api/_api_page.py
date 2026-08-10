@@ -117,11 +117,11 @@ class APIAuthenticatedPage(APIPage):
             raise APIForbidden("Missing or malformed Authorization header")
         token = auth_header.removeprefix("Bearer ").strip()
 
-        API_JWT_SECRET = current_app.config.get('API_JWT_SECRET')
-        API_JWT_ALGORITHM = current_app.config.get('API_JWT_ALGORITHM')
+        api_jwt_secret = current_app.config.get('API_JWT_SECRET')
+        api_jwt_algorithm = current_app.config.get('API_JWT_ALGORITHM')
 
         try:
-            payload = jwt.decode(token, API_JWT_SECRET, algorithms=[API_JWT_ALGORITHM])
+            payload = jwt.decode(token, api_jwt_secret, algorithms=[api_jwt_algorithm])
         except jwt.ExpiredSignatureError:
             raise APIForbidden("Your token has expired, please generate a new one.")
         except jwt.InvalidTokenError:

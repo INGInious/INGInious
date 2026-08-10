@@ -32,20 +32,20 @@ class APITokenPage(INGIniousAuthPage):
     def POST_AUTH(self):
         """ POST request, generates a new token for the user """
 
-        API_JWT_SECRET = current_app.config.get('API_JWT_SECRET')
-        API_JWT_ALGORITHM = current_app.config.get('API_JWT_ALGORITHM')
-        API_JWT_LIFETIME = datetime.timedelta(days=current_app.config.get('API_JWT_LIFETIME'))
+        api_jwt_secret = current_app.config.get('API_JWT_SECRET')
+        api_jwt_algorithm = current_app.config.get('API_JWT_ALGORITHM')
+        api_jwt_lifetime = datetime.timedelta(days=current_app.config.get('API_JWT_LIFETIME'))
 
         user = User.objects(username=session["username"]).first()
 
         # generate a new token
         if "generate" in request.form:
-            expiration = datetime.datetime.now(tz=timezone.utc) + API_JWT_LIFETIME
+            expiration = datetime.datetime.now(tz=timezone.utc) + api_jwt_lifetime
             payload = {
                 "username": user.username,
                 "exp": expiration.timestamp(),
             }
-            token = jwt.encode(payload, API_JWT_SECRET, algorithm=API_JWT_ALGORITHM) # TODO : hash token
+            token = jwt.encode(payload, api_jwt_secret, algorithm=api_jwt_algorithm) # TODO : hash token
 
             return self.show_page(generated_token=token)
 
@@ -57,7 +57,7 @@ class APITokenPage(INGIniousAuthPage):
             if description == "" :
                 return self.show_page(errors=["Description is required to save the token."])
 
-            expiration = jwt.decode(generated_token, API_JWT_SECRET, algorithms=[API_JWT_ALGORITHM])["exp"]
+            expiration = jwt.decode(generated_token, api_jwt_secret, algorithms=[api_jwt_algorithm])["exp"]
             expiration  = datetime.datetime.fromtimestamp(expiration, tz=timezone.utc)
             user.apitokens.append(APIToken(token=UserManager.hash_password(generated_token), expires=expiration, description=description))
             user.save()

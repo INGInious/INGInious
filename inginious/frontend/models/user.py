@@ -5,7 +5,7 @@
 
 import tzlocal
 
-from mongoengine import Document,  StringField, ListField, MapField, BooleanField, DynamicField, EmbeddedDocument, EmbeddedDocumentField, DateTimeField, EmbeddedDocumentField
+from mongoengine import Document,  StringField, ListField, MapField, BooleanField, DynamicField, EmbeddedDocument, EmbeddedDocumentField, DateTimeField
 
 class APIToken(EmbeddedDocument):
     """ Embedded document for API tokens. Contains the token hash, expiration date, description and hash algorithm used. """

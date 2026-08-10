@@ -51,7 +51,7 @@ def _get_submissions(username, submission_manager, user_manager, courseid, taski
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, username) #TODO : use username from token.
+            show_everything=user_manager.has_staff_rights_on_course(course, username)
         )
         data = {
             "id": str(submission["id"]),
@@ -212,8 +212,8 @@ class APISubmissions(APIAuthenticatedPage):
 
         user_input = task.adapt_input_for_backend(user_input)
 
-        if not task.input_is_consistent(user_input, current_app.config.get('ALLOWED_FILE_EXTENSIONS'),
-                                        current_app.config.get('MAX_FILE_SIZE')):
+        if not task.input_is_consistent(user_input, current_app.config['ALLOWED_FILE_EXTENSIONS'],
+                                        current_app.config['MAX_FILE_SIZE']):
             raise APIInvalidArguments()
 
         # Get debug info if the current user is an admin
@@ -222,7 +222,7 @@ class APISubmissions(APIAuthenticatedPage):
 
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug, username)
+            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), username, debug)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
@@ -417,9 +417,4 @@ class APISubmissionsCourse(APIAuthenticatedPage):
 
         return 200, submissions_list
 
-
-    # send back text feedback ? -> text sent back to the student after submitting its work, not the feedback sent back by the grader
-    # send back submission id ?
-
-    # filter on date range ?
 
