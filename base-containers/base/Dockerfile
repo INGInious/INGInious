@@ -1,5 +1,5 @@
 # DOCKER-VERSION 1.1.0
-FROM    rockylinux/rockylinux:10
+FROM    rockylinux/rockylinux:10 AS env-base
 
 ENV LANG en_US.UTF-8  
 ENV LANGUAGE en_US:en  
@@ -49,3 +49,21 @@ RUN     echo -e "LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8" >> /et
 RUN     sed -i.bak '/^AcceptEnv/ d' /etc/ssh/sshd_config
 
 CMD ["INGInious"]
+
+#############
+# ENV-DEFAULT
+#############
+
+FROM  env-base AS env-default
+
+LABEL org.opencontainers.image.description="Default INGInious grading environment."
+LABEL org.inginious.grading.name="default"
+
+#############
+# ENV-PYTHON3
+#############
+
+FROM  env-base AS env-python3
+
+LABEL org.opencontainers.image.description="Python 3 INGInious grading environment."
+LABEL org.inginious.grading.name="python3"

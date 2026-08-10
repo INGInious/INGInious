@@ -2,26 +2,32 @@ services:
 
   env-base:
     image: ${REGISTRY}/inginious/env-base:${VERSION}
+    attach: false
     build:
       context: base-containers/base/
+      target: env-base
+      args:
+        - VERSION=${VERSION}
+        - REGISTRY=${REGISTRY}
     command: /bin/true
 
   env-default:
     image: ${REGISTRY}/inginious/env-default:${VERSION}
+    attach: false
     build:
-      context: base-containers/default/
-    depends_on:
-      - env-base
+      context: base-containers/base/
+      target: env-default
+      args:
+        - VERSION=${VERSION}
+        - REGISTRY=${REGISTRY}
     command: /bin/true
 
   env-python3:
     image: ${REGISTRY}/inginious/env-python3:${VERSION}
-    command: /bin/true
-
-  base:
-    image: ${REGISTRY}/inginious/core-base:${VERSION}
+    attach: false
     build:
-      dockerfile: deploy/inginious-base.containerfile
+      context: base-containers/base/
+      target: env-python3
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
@@ -29,15 +35,16 @@ services:
 
   db:
     image: mongo:6.0.2
+    volumes:
+      - ./db:/data/db
     networks:
       - inginious
 
   backend:
     image: ${REGISTRY}/inginious/core-backend:${VERSION}
-    depends_on:
-      - base
     build:
-      dockerfile: deploy/backend.containerfile
+      dockerfile: deploy/Containerfile
+      target: backend
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
@@ -50,70 +57,86 @@ services:
   agent-docker:
     image: ${REGISTRY}/inginious/core-agent_docker:${VERSION}
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+      env-base:
+        condition: service_completed_successfully
+      env-default:
+        condition: service_completed_successfully
+      env-python3:
+        condition: service_completed_successfully
     deploy:
       replicas: 1
     build:
-      dockerfile: deploy/agent-docker.containerfile
+      dockerfile: deploy/Containerfile
+      target: agent_docker
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
     environment:
       BACKEND: "tcp://backend:2001"
     volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-     # See https://github.com/INGInious/INGInious/issues/352
-     - ./tasks/:/inginious/tasks
-     - ./backups/:/inginious/backups
-     # See https://github.com/INGInious/INGInious/issues/799
-     - /tmp/agent_data/:/tmp/agent_data/
+      - /var/run/docker.sock:/var/run/docker.sock
+      # See https://github.com/INGInious/INGInious/issues/352
+      - ./tasks:/inginious/tasks
+      - ./backups:/inginious/backups
+      # See https://github.com/INGInious/INGInious/issues/799
+      - /tmp/agent_data:/tmp/agent_data
     networks:
       - inginious
 
   agent-mcq:
     image: ${REGISTRY}/inginious/core-agent_mcq:${VERSION}
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     deploy:
       replicas: 1
     build:
-      dockerfile: deploy/agent-mcq.containerfile
+      dockerfile: deploy/Containerfile
+      target: agent_mcq
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
     environment:
       BACKEND: "tcp://backend:2001"
     volumes:
-     # See https://github.com/INGInious/INGInious/issues/352
-     - ./tasks/:/inginious/tasks
-     - ./backups/:/inginious/backups
-     # See https://github.com/INGInious/INGInious/issues/799
-     - /tmp/agent_data/:/tmp/agent_data/
+      # See https://github.com/INGInious/INGInious/issues/352
+      - ./tasks:/inginious/tasks
+      - ./backups:/inginious/backups
+      # See https://github.com/INGInious/INGInious/issues/799
+      - /tmp/agent_data:/tmp/agent_data
     networks:
       - inginious
 
   frontend:
     image: ${REGISTRY}/inginious/core-frontend:${VERSION}
     build:
-      dockerfile: deploy/frontend.containerfile
+      dockerfile: deploy/Containerfile
+      target: frontend
       args:
         - VERSION=${VERSION}
         - REGISTRY=${REGISTRY}
     depends_on:
-      - db
-      - backend
-      - agent-docker
-      - agent-mcq
-      - env-base
-      - env-default
+      db:
+        condition: service_started
+      backend:
+        condition: service_started
     environment:
       - INGINIOUS_WEBAPP_HOST=0.0.0.0
     volumes:
       - ./configuration.deploy.yaml:/inginious/configuration.yaml
-      - ./tasks/:/inginious/tasks
-      - ./backups/:/inginious/backups
+      - ./tasks:/inginious/tasks
+      - ./backups:/inginious/backups
     ports:
       - 9000:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     networks:
       - inginious
 
