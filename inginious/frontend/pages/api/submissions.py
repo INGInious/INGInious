@@ -8,8 +8,6 @@
 import base64
 import flask
 import json
-import csv
-import io
 from bson import json_util
 
 from flask import current_app, request
@@ -230,56 +228,6 @@ class APISubmissions(APIAuthenticatedPage):
 
 class APISubmissionsCourse(APIAuthenticatedPage):
 
-    @staticmethod
-    def _to_csv_response(submissions_list):
-        """
-            Flattens a list of serialized submissions (as produced by `serialize`) into a CSV file.
-            Since the "input" field's structure varies per task (and even per problem type within
-            a task), the set of CSV columns is computed dynamically as the union of all input keys
-            found across the submissions, prefixed with "input.".
-        """
-
-        base_fields = ["courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout"]
-
-        # Collect the union of all "input" keys across submissions, to build stable CSV columns.
-        input_fields = []
-        seen_input_fields = set()
-        for s in submissions_list:
-            for key in s.get("input", {}).keys():
-                if key not in seen_input_fields:
-                    seen_input_fields.add(key)
-                    input_fields.append(key)
-
-        fieldnames = base_fields + ["input." + f for f in input_fields]
-
-        buffer = io.StringIO()
-        writer = csv.DictWriter(buffer, fieldnames=fieldnames, extrasaction="ignore")
-        writer.writeheader()
-
-        def stringify(value):
-            # Lists, dicts, and nested structures (e.g. file_problem, qcm_problem, @random)
-            # are serialized as JSON strings so they fit into a single CSV cell.
-            if isinstance(value, (list, dict)):
-                return json.dumps(value)
-            if value is None:
-                return ""
-            return value
-
-        for s in submissions_list:
-            row = {field: stringify(s.get(field)) for field in base_fields}
-            row["username"] = ",".join(s.get("username", []))
-
-            input_data = s.get("input", {})
-            for key in input_fields:
-                row["input." + key] = stringify(input_data.get(key))
-
-            writer.writerow(row)
-
-        csv_data = buffer.getvalue()
-        buffer.close()
-
-        return csv_data
-
 
     def API_POST(self, courseid, taskid
     =None):
@@ -338,12 +286,11 @@ class APISubmissionsCourse(APIAuthenticatedPage):
             This endpoint takes a token in the header (accessible from your account settings) and a JSON body with the following fields :
             - select: "all" (default), "best", "last" : select all submissions, the best submission per student, or the last submission per student
             - username: a list of usernames to filter the submissions. If none is provided (or it is empty), the submissions for all users are returned
-            - format: "json" (default), "csv" : format of the response.
 
             example of a call to this endpoint using curl: :
                 curl -X POST "http://localhost:8080/api/v0/token/courses/tutorial/submissions"
                 -H "Authorization: Bearer <token>"
-                -H "Content-Type: application/json"  -d '{ "select": "last", "format": "json", "username" : ["user1"] }'
+                -H "Content-Type: application/json"  -d '{ "select": "last", "username" : ["user1"] }'
 
         """
 
@@ -365,11 +312,8 @@ class APISubmissionsCourse(APIAuthenticatedPage):
 
         select = data.get("select", "all")
         usernames = data.get("username", None)
-        response_format = data.get("format", "json")
 
         if select not in ("all", "best", "last"):
-            raise APIInvalidArguments()
-        if response_format not in ("json", "csv"):
             raise APIInvalidArguments()
         if usernames is not None and not isinstance(usernames, list):
             raise APIInvalidArguments()
@@ -411,9 +355,6 @@ class APISubmissionsCourse(APIAuthenticatedPage):
             }
 
         submissions_list = [serialize(s) for s in submissions]
-
-        if response_format == "csv":
-            return 200, self._to_csv_response(submissions_list)
 
         return 200, submissions_list
 
