@@ -1,5 +1,0 @@
-images:
-  base:
-  default:
-    - base
-base_path: "."
