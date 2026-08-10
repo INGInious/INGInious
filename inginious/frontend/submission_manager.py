@@ -348,35 +348,34 @@ class WebAppSubmissionManager:
             submission["input"] = inp
             return submission
 
-    def get_feedback_from_submission(self, submission, only_feedback=False, show_everything=False):
+    def get_feedback_from_submission(self, submission, show_everything=False):
         """
             Get the input of a submission. If only_input is False, returns the full submissions with a dictionnary object at the key "input".
             Else, returns only the dictionnary.
 
             If show_everything is True, feedback normally hidden is shown.
         """
-        if only_feedback:
-            submission = {"text": submission.get("text", None), "problems": dict(submission.get("problems", {}))}
-        if "text" in submission:
-            submission["text"] = ParsableText(submission["text"], "rst", show_everything).parse()
-        if "problems" in submission:
-            for problem in submission["problems"]:
-                if isinstance(submission["problems"][problem], str):  # fallback for old-style submissions
-                    submission["problems"][problem] = (
-                    submission.get('result', 'crash'), ParsableText(submission["problems"][problem],"rst",
-                                                                    show_everything).parse())
-                else:  # new-style submission
-
-                    try:
-                        submission["problems"][problem] = (
-                        submission["problems"][problem][0], ParsableText(submission["problems"][problem][1],"rst",
-                                                                     show_everything).parse())
-                    except TypeError:
-                        self._logger.error(
-                            "Something went wrong with provided feedback for submission %s", str(submission["id"])
-                            )
-                        submission["problems"][problem] = (
-                            'crash', ParsableText(_("Feedback is badly formatted."),"rst", show_everything).parse())
+        submission.text = ParsableText(submission.text, "rst", show_everything).parse()
+        for problem in submission.problems:
+            if isinstance(submission.problems[problem], str):  # fallback for old-style submissions
+                submission.problems[problem] = (
+                    submission.result,
+                    ParsableText(submission["problems"][problem], "rst", show_everything).parse()
+                )
+            else:  # new-style submission
+                try:
+                    submission.problems[problem] = (
+                        submission.problems[problem][0],
+                        ParsableText(submission.problems[problem][1],"rst", show_everything).parse()
+                    )
+                except TypeError:
+                    self._logger.error(
+                        "Something went wrong with provided feedback for submission %s", str(submission.id)
+                        )
+                    submission.problems[problem] = (
+                        'crash',
+                        ParsableText(_("Feedback is badly formatted."),"rst", show_everything).parse()
+                    )
         return submission
 
     def is_running(self, submissionid, user_check=True):
