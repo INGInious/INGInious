@@ -8,13 +8,11 @@ INGInious
    :alt: Codacy coverage Badge
    :target: https://app.codacy.com/gh/INGInious/INGInious/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_Coverage
 .. image:: https://github.com/INGInious/INGInious/actions/workflows/ci.yml/badge.svg
-    :target: https://github.com/INGInious/INGInious/actions
-.. image:: https://github.com/INGInious/INGInious/actions/workflows/env_containers.yml/badge.svg
-    :target: https://github.com/INGInious/INGInious/actions
+   :target: https://github.com/INGInious/INGInious/actions
 .. image:: https://readthedocs.org/projects/inginious/badge/?version=latest
-    :target: https://readthedocs.org/projects/inginious/?badge=latest
+   :target: https://readthedocs.org/projects/inginious/?badge=latest
 .. image:: https://weblate.info.ucl.ac.be/widgets/inginious/-/frontend/svg-badge.svg
-    :target: https://weblate.info.ucl.ac.be/engage/inginious/?utm_source=widget
+   :target: https://weblate.info.ucl.ac.be/engage/inginious/?utm_source=widget
 
 INGInious is an intelligent grader that allows secured and automated testing of code made by students.
 

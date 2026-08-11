@@ -1,41 +1,34 @@
-# This is a basic workflow to help you get started with Actions
+name: "CI/CD"
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ main, v0.9.x ]
   pull_request:
     branches: [ main, v0.9.x ]
-
-  # Allows you to run this workflow manually from the Actions tab
+  release:
+    types: [published]
   workflow_dispatch:
 
-jobs:
+env:
+  REGISTRY: "ghcr.io"
+  VERSION: "${{ github.event_name == 'push' && github.ref_name || github.event.release.tag_name }}"
+  CDVERSION: ":${{ github.event_name == 'push' && github.ref_name || github.event.release.tag_name }}"
+  CORE_CONTAINERS: "backend frontend agent_mcq agent_docker"
+  ENV_CONTAINERS: "base default python3"
 
-  build_and_deploy:
+jobs:
+  build_deploy_push:
     runs-on: ubuntu-24.04
+    needs: [tests]
     steps:
       - uses: actions/checkout@v7
-      - name: Start services
-        run: |
-          sudo systemctl start docker
 
       - name: Build core services
-        run: |
-          docker build -t ghcr.io/inginious/core-frontend:latest --target frontend -f deploy/Containerfile .
-          docker build -t ghcr.io/inginious/core-backend:latest --target backend -f deploy/Containerfile .
-          docker build -t ghcr.io/inginious/core-agent_mcq:latest --target agent_mcq -f deploy/Containerfile .
-          docker build -t ghcr.io/inginious/core-agent_docker:latest --target agent_docker -f deploy/Containerfile .
+        run: for stage in ${CORE_CONTAINERS}; do docker build -f deploy/Containerfile --target=${stage} -t ${REGISTRY}/inginious/core-${stage}${CDVERSION} . ; done
 
       - name: Build base environments
-        run: |
-          docker build -t ghcr.io/inginious/env-base:latest --target env-base -f base-containers/base/Dockerfile base-containers/base
-          docker build -t ghcr.io/inginious/env-default:latest --target env-default -f base-containers/base/Dockerfile base-containers/base
-          docker build -t ghcr.io/inginious/env-python3:latest --target env-python3 -f base-containers/base/Dockerfile base-containers/base
-          # Quick hack, we do not launch any actual task.
+        working-directory: base-containers/base
+        run: for stage in ${ENV_CONTAINERS}; do docker build --target=env-${stage} -t ${REGISTRY}/inginious/env-${stage}${CDVERSION} . ; done
 
       - name: Test deployment
         id: deploy
@@ -50,14 +43,25 @@ jobs:
           docker compose logs
           exit 1
 
+      - name: Login to Docker Hub
+        if: steps.deploy.outcome == 'success' && github.event_name != 'pull_request'
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Push containers
+        if: steps.deploy.outcome == 'success' && github.event_name != 'pull_request'
+        run: |
+          for stage in ${CORE_CONTAINERS}; do docker push ${REGISTRY}/inginious/core-${stage}${CDVERSION}; done
+          for stage in ${ENV_CONTAINERS}; do docker push ${REGISTRY}/inginious/env-${stage}${CDVERSION}; done
+
   compose_build_and_deploy:
     runs-on: ubuntu-24.04
+    needs: [tests]
     steps:
       - uses: actions/checkout@v7
-
-      - name: Start services
-        run: |
-          sudo systemctl start docker
 
       - name: Test deployment
         id: deploy
@@ -72,7 +76,6 @@ jobs:
           exit 1
 
   tests:
-
     strategy:
       # Ensure that each python version will be tested even if one of them fails.
       fail-fast: false
@@ -99,10 +102,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libtidy5deb1 libzmq3-dev
-
-      - name: Start services
-        run: |
-          sudo systemctl start docker
 
       - name: Install INGInious
         run: |
