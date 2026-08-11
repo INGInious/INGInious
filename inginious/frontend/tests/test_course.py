@@ -101,6 +101,34 @@ class TestCourse(object):
         t = c.get_tasks()
         assert t == {}
 
+    def test_empty_course_tutors_are_treated_as_empty(self, monkeypatch):
+        class DummyFSProvider:
+            def from_subfolder(self, courseid):
+                return self
+
+            def exists(self):
+                return False
+
+        monkeypatch.setattr("inginious.frontend.courses.get_fs_provider", lambda: DummyFSProvider())
+        course = Course("empty-staff", {"name": "Empty staff", "admins": ["admin"], "tutors": None})
+
+        assert course.get_tutors() == []  # nosec B101 - pytest assertion
+        assert course.get_staff() == ["admin"]  # nosec B101 - pytest assertion
+
+    def test_empty_course_admins_are_treated_as_empty(self, monkeypatch):
+        class DummyFSProvider:
+            def from_subfolder(self, courseid):
+                return self
+
+            def exists(self):
+                return False
+
+        monkeypatch.setattr("inginious.frontend.courses.get_fs_provider", lambda: DummyFSProvider())
+        course = Course("empty-admins", {"name": "Empty admins", "admins": None, "tutors": ["tutor"]})
+
+        assert course.get_admins() == []  # nosec B101 - pytest assertion
+        assert course.get_staff() == ["tutor"]  # nosec B101 - pytest assertion
+
 
 class TestCourseWrite(object):
     """ Test the course update function """
