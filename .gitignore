@@ -23,6 +23,8 @@ venv
 inginious/tasks
 # Default backup directory
 inginious/backup
+# default db directory for docker compose
+db
 
 # Build files
 build/lib
