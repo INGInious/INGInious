@@ -36,7 +36,7 @@ services:
   db:
     image: mongo:6.0.2
     volumes:
-      - ./db:/data/db
+      - ./db:/data/db:z
     networks:
       - inginious
 
@@ -75,6 +75,8 @@ services:
         - REGISTRY=${REGISTRY}
     environment:
       BACKEND: "tcp://backend:2001"
+    security_opt:
+      - "label=disable"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:z
       # See https://github.com/INGInious/INGInious/issues/352
