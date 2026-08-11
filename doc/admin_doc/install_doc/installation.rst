@@ -4,136 +4,109 @@ Installation and deployment
 Supported platforms
 -------------------
 
-INGInious is intended to run on Linux (kernel 3.10+), but can also be run on macOS thanks to the Docker toolbox.
+INGInious runs Linux containers and is therefore intended to run on Linux.
 
-.. NOTE::
-
-    While Docker is supported on Windows 10, INGInious does not provide support for Windows yet. If you are willing to
-    contribute this, feel free to contact us on Github.
+You may be able to run it on other platforms supporting Linux containers, but no support is provided yet.
+If you are willing to contribute this, feel free to contact us on Github.
 
 Dependencies setup
 ------------------
 
 INGInious needs:
 
-- Python_ 3
-- Docker_
+- Python_ 3.10+
+- Docker_ or Podman_
 - MongoDB_
-- Libtidy
-- LibZMQ
 
 .. _Docker: https://www.docker.com
+.. _Podman: https://podman.io/
 .. _Python: https://www.python.org/
 .. _MongoDB: http://www.mongodb.org/
 
-RHEL/Rocky/Alma Linux 8+, Fedora 34+
-`````````````````````````````
+RHEL/Rocky/Alma Linux 8+
+````````````````````````
 
-The previously mentioned dependencies can be installed, for Cent OS 7+ :
+#. The previously mentioned dependencies can be installed:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    # yum install -y epel-release
-    # yum install -y git gcc libtidy python3 python3-devel python3-pip zeromq-devel yum-utils
-    # yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    # yum install -y docker-ce docker-ce-cli
-    # cat <<EOF > /etc/yum.repos.d/mongodb-org-7.0.repo
-    [mongodb-org-7.0]
-    name=MongoDB Repository
-    baseurl=https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/x86_64/
-    gpgcheck=1
-    enabled=1
-    gpgkey=https://pgp.mongodb.com/server-7.0.asc
-    EOF
-    # yum install -y mongodb-org mongodb-org-server
+     # dnf install -y epel-release && crb enable
+     # dnf install -y git gcc python3.12 python3.12-devel python3.12-pip dnf-plugins-core
+     # dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+     # yum install -y docker-ce docker-ce-cli
+     # cat <<EOF > /etc/yum.repos.d/mongodb-org-8.0.repo
+     [mongodb-org-8.0]
+     name=MongoDB Repository
+     baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/8.0/x86_64/
+     gpgcheck=1
+     enabled=1
+     gpgkey=https://pgp.mongodb.com/server-8.0.asc
+     EOF
+     # dnf install -y mongodb-org mongodb-org-server
 
-Or, for Fedora 34+:
+   You may also add ``xmlsec1-openssl-devel libtool-ltdl-devel`` for the SAML2 auth plugin.
 
-.. code-block:: bash
+#. You can now enable and start the ``mongod`` and ``docker`` services:
+   ::
 
-    # yum install -y git gcc libtidy python3 python3-devel python3-pip python3-venv zeromq-devel dnf-plugins-core
-    # dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
-    # dnf install -y docker-ce docker-ce-cli
-    # cat <<EOF > /etc/yum.repos.d/mongodb-org-7.0.repo
-    [mongodb-org-7.0]
-    name=MongoDB Repository
-    baseurl=https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/x86_64/
-    gpgcheck=1
-    enabled=1
-    gpgkey=https://pgp.mongodb.com/server-7.0.asc
-    EOF
-    # yum install -y mongodb-org mongodb-org-server
+      # systemctl enable --now mongod docker
 
-You may also add ``xmlsec1-openssl-devel libtool-ltdl-devel`` for the SAML2 auth plugin.
+#. Check the cgroups version the container runtime is running on:
+   ::
+      # docker info | grep "Cgroup"
+   If the cgroups version is ``2`` and cgroups driver is ``systemd``, apply the following systemd rule:
+   ::
+      # cat /etc/systemd/system/docker-.scope.d/99-inginious.conf
+      [Scope]
+      OOMPolicy=kill
 
-You can now start and enable the ``mongod`` and ``docker`` services:
-::
-
-    # systemctl start mongod
-    # systemctl enable mongod
-    # systemctl start docker
-    # systemctl enable docker
-
-Ubuntu 22.04+
+Ubuntu 24.04+
 `````````````
 
+#. The previously mentioned dependencies can be installed:
 
-The previously mentioned dependencies can be installed, for Ubuntu 22.04+:
+   .. code-block:: bash
 
-As previously said, INGInious needs some specific packages. Those can simply be add by running this command:
+      $ sudo apt install git gcc python3-pip python3-dev python3-venv
+      $ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      $ sudo chmod a+r /etc/apt/keyrings/docker.asc
+      $ sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+      Types: deb
+      URIs: https://download.docker.com/linux/ubuntu
+      Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+      Components: stable
+      Architectures: $(dpkg --print-architecture)
+      Signed-By: /etc/apt/keyrings/docker.asc
+      EOF
+      $ sudo apt update
+      $ sudo apt install docker-ce docker-ce-cli
+      $ curl -fsSL https://pgp.mongodb.com/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
+      $ echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+      $ sudo apt update
+      $ sudo apt install mongodb-org
 
-.. code-block:: bash
+   You may also add ``libxmlsec1-dev libltdl-dev`` for the SAML2 auth plugin.
 
-    sudo apt install git gcc tidy python3-pip python3-dev python3-venv libzmq3-dev apt-transport-https
+#. You can now enable and start the ``mongod`` and ``docker`` services:
+   ::
 
-For Docker and MongoDB, some specific steps are needed:
+      # systemctl enable --now mongod docker
 
-First, Docker:
-
-.. code-block:: bash
-
-    sudo apt install curl gnupg lsb-release
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt update
-    sudo apt install docker-ce docker-ce-cli
-
-Then, Mongo:
-
-.. code-block:: bash
-
-    wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-    sudo apt update
-    wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
-    sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
-    sudo apt install -y mongodb-org
-
-.. NOTE::
-
-    Libssl installation is a temporary fix that is not required for all versions.
-    It may not work anymore (or may not be necessary) for future versions.
-
-You may also add ``libxmlsec1-dev libltdl-dev`` for the SAML2 auth plugin.
-
-You can now start and enable the ``mongod`` and ``docker`` services:
-::
-
-    # systemctl daemon-reload
-    # systemctl start mongod
-    # systemctl enable mongod
-    # systemctl start docker
-    # systemctl enable docker
-
-
+#. Check the cgroups version the container runtime is running on:
+   ::
+      # docker info | grep "Cgroup"
+   If the cgroups version is ``2`` and cgroups driver is ``systemd``, apply the following systemd rule:
+   ::
+      # cat /etc/systemd/system/docker-.scope.d/99-inginious.conf
+      [Scope]
+      OOMPolicy=kill
 
 macOS
 `````
 
 .. WARNING::
 
-    While Docker supports both x86 and ARM containers on Apple silicon, compatibility hasn't been tested yet.
-    Feel free to contribute.
+    Documentation for macOS is outdated. Feel free to contribute.
 
 We use brew_ to install some packages. Packages are certainly available too via macPorts.
 
