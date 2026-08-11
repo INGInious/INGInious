@@ -1,16 +1,19 @@
 name: CD
 
 on:
-  push:
-    branches: [main]
   release:
     types: [published]
-
+  workflow_run:
+    workflows: CI
+    branches: [main]
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
   env_containers:
     runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     env:
       REGISTRY: "ghcr.io"
@@ -32,6 +35,7 @@ jobs:
 
   core_containers:
     runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     env:
       REGISTRY: "ghcr.io"
