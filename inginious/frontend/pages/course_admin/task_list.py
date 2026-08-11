@@ -66,7 +66,7 @@ class CourseTaskListPage(INGIniousAdminPage):
                     errors.append(_("Couldn't create task {} : ").format(taskid) + str(ex))
             for taskid in json.loads(user_input.get("deleted_tasks", "[]")):
                 try:
-                    t = Task.get(taskid, course.get_fs())
+                    t = Task.get(courseid, taskid)
                     t.delete()
                 except Exception as ex:
                     errors.append(_("Couldn't delete task {} : ").format(taskid) + str(ex))
