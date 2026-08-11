@@ -36,9 +36,7 @@ def main():
     logger.addHandler(ch)
 
     # start asyncio and zmq
-    # ZMQEventLoop/zmq.asyncio.install() are deprecated since pyzmq 17: zmq
-    # sockets work with the regular asyncio event loop, no special
-    # integration is needed anymore.
+    # See inginious/frontend/arch_helper.py for why ZMQEventLoop is no longer used.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     if args.debugmode:
