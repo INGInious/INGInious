@@ -1,7 +1,7 @@
 # Replace me with dedicated FQDN.
 inginious.local localhost {
 	header -Server
-	reverse_proxy frontend:8080
+	reverse_proxy frontend:8000
 	handle /dav/* {
 		reverse_proxy webdav:8000
 	}

@@ -24,19 +24,7 @@ from inginious.common.base import load_json_or_yaml
 import inginious.frontend.app
 
 
-def main():
-    # Parse the paramaters from command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config",
-                        help="Path to configuration file. By default: configuration.yaml or configuration.json", default=os.environ.get("INGINIOUS_WEBAPP_CONFIG", ""))
-    parser.add_argument("--host", help="Host to bind to. Default is localhost.", default=os.environ.get("INGINIOUS_WEBAPP_HOST", "localhost"))
-    parser.add_argument("--port", help="Port to listen to. Default is 8080.", type=int, default=os.environ.get("INGINIOUS_WEBAPP_PORT", "8080"))
-    args = parser.parse_args()
-
-    host = args.host
-    port = args.port
-    configfile = args.config
-
+def get_app(configfile=None):
     if not configfile:
         if os.path.isfile("./configuration.yaml"):
             configfile = "./configuration.yaml"
@@ -50,16 +38,43 @@ def main():
 
     # Init logging
     init_logging(config.get('log_level', 'INFO'))
-    logging.getLogger("inginious.webapp").info("http://%s:%d/" % (host, int(port)))
 
     application, close_app_func = inginious.frontend.app.get_app(config)
 
     if 'SERVER_SOFTWARE' in os.environ:  # cgi
         os.environ['FCGI_FORCE_CGI'] = 'Y'
 
-    if 'PHP_FCGI_CHILDREN' in os.environ or 'SERVER_SOFTWARE' in os.environ:  # lighttpd fastcgi
-        import flup.server.fcgi as flups
-        flups.WSGIServer(application, multiplexed=True, bindAddress=None, debug=False).run()
+    # Add static redirection and request log
+    root_path = inginious.get_root_path()
+    application = SharedDataMiddleware(application, [
+        ('/static/', os.path.join(root_path, 'frontend', 'static'))
+    ])
+
+    # Close the client when interrupting the app
+    def close_app_signal():
+        close_app_func()
+        raise KeyboardInterrupt()
+
+    signal.signal(signal.SIGINT, lambda _, _2: close_app_signal())
+    signal.signal(signal.SIGTERM, lambda _, _2: close_app_signal())
+
+    return config, application
+
+def main():
+    # Parse the paramaters from command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config",
+                        help="Path to configuration file. By default: configuration.yaml or configuration.json", default=os.environ.get("INGINIOUS_WEBAPP_CONFIG", ""))
+    parser.add_argument("--host", help="Host to bind to. Default is localhost.", default=os.environ.get("INGINIOUS_WEBAPP_HOST", "localhost"))
+    parser.add_argument("--port", help="Port to listen to. Default is 8080.", type=int, default=os.environ.get("INGINIOUS_WEBAPP_PORT", "8080"))
+    args = parser.parse_args()
+
+    host = args.host
+    port = args.port
+    configfile = args.config
+
+    config, application = get_app(configfile)
+    logging.getLogger("inginious.webapp").info("http://%s:%d/" % (host, int(port)))
 
     # Fix Reverse Proxy
     reverse_proxy_config = config.get('reverse-proxy-config', {})
@@ -70,23 +85,11 @@ def main():
     if reverse_proxy_enable:
         application = ProxyFix(application, x_for=x_for, x_host=x_host)
 
-    # Close the client when interrupting the app
-    def close_app_signal():
-        close_app_func()
-        raise KeyboardInterrupt()
-
-    signal.signal(signal.SIGINT, lambda _, _2: close_app_signal())
-    signal.signal(signal.SIGTERM, lambda _, _2: close_app_signal())
-
-    # Add static redirection and request log
-    root_path = inginious.get_root_path()
-    application = SharedDataMiddleware(application, [
-        ('/static/', os.path.join(root_path, 'frontend', 'static'))
-    ])
-
     # Launch the app
     run_simple(host, port, application, use_debugger=config.get("web_debug", False), threaded=True)
 
 
 if __name__ == "__main__":
     main()
+else:
+    config, application = get_app(os.environ.get("INGINIOUS_WEBAPP_CONFIG"))
