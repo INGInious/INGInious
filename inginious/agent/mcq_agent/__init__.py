@@ -6,10 +6,11 @@ import json
 import logging
 import gettext
 
-from inginious.agent import Agent, CannotCreateJobException
+from inginious.agent import Agent, AgentType, CannotCreateJobException
 from inginious import get_root_path
 from inginious.common.messages import BackendNewJob, BackendKillJob
 from inginious.common.tasks_problems import get_problem_types
+from inginious.common.agents import AgentType, GradingEnvironment
 import os.path
 import builtins
 
@@ -31,10 +32,11 @@ class MCQAgent(Agent):
         self._translations.update({
             lang: gettext.translation('messages', get_root_path() + '/agent/mcq_agent/i18n', [lang]) for lang in available_translations
         })
+        self._type = AgentType.MCQ
 
     @property
     def environments(self):
-        return {"mcq": {"mcq": {"id": "mcq", "created": 0, "advertised": True}}}
+        return {"mcq": GradingEnvironment("mcq", 0, [])}
 
     def check_answer(self, problems, task_input, language):
         """ Verify the answers in task_input. Returns six values:
