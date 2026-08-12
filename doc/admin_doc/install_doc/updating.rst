@@ -34,3 +34,8 @@ Updating the database
 
 The database scheme may have changed since the last INGInious release. A tool is available to do this migration
 automatically from your configuration file. Please refer to :ref:`inginious-database-update`.
+
+To update the database in a `compose`-based installation, you may run the following command in the root of the project:
+::
+
+	$ docker run --network inginious_inginious -v ./configuration.deploy.yaml:/db/config.yml -v ./inginious/scripts/database_update.py:/db/db.py:z -w /db -it ghcr.io/inginious/core-base:main python3 db.py -c config.yml
