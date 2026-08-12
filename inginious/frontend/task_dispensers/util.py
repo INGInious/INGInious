@@ -172,6 +172,8 @@ class SubmissionLimit(TaskConfigItem):
         submission_limit = task_config.get(cls.get_id(), cls.default)
         if not type(submission_limit["amount"]) == int or not type(submission_limit["period"]) == int:
             raise InvalidTocException("Invalid submission limit")
+        elif submission_limit["amount"] == -1 and submission_limit["period"] != -1:
+            raise InvalidTocException("You have given a period but no amount for the submission limit")
         elif submission_limit["amount"] < -1 or submission_limit["period"] < -1:
             raise InvalidTocException("Submission limit values must be higher than or equal to -1")
         return submission_limit
