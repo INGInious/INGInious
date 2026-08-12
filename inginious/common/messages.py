@@ -68,7 +68,7 @@ class ClientGetQueue:
 class BackendUpdateEnvironments:
     """ Update the information about the environments on the client, from the informations retrieved from the agents """
     available_environments: Dict[str, List[str]]  # dict of available environment aliases (as keys) and type of the related agent (as value)
-    capabilities: dict[AgentType, Capabilities]
+    capabilities: dict[AgentType, dict[str, dict[str, str]]]
 
 
 @dataclass(frozen=True)

@@ -6,8 +6,10 @@
 """ Pages that allow editing of tasks """
 import json
 import logging
+import gettext
 
 import flask
+from flask import session
 from collections import OrderedDict
 from flask import render_template
 from werkzeug.exceptions import NotFound
@@ -43,7 +45,8 @@ class CourseEditTask(INGIniousAdminPage):
         environments = {
             agent_type: {
               'envs': envs,
-              'capabilities': self.client.agents_capabilities.get(agent_type),
+              'capabilities':
+                  caps.get(session.language, caps.get('en', {})) if (caps := self.client.agents_capabilities.get(agent_type, {})) is not None else {},
               'obj': get_env_from_type(agent_type)
             } for agent_type, envs in
             self.submission_manager.get_available_environments().items()
@@ -78,17 +81,18 @@ class CourseEditTask(INGIniousAdminPage):
             environment_type = data.get("environment_type", "")
             environment_parameters = dict_from_prefix("envparams", data).get(environment_type, {})
             environment_id = dict_from_prefix("environment_id", data).get(environment_type, "")
+            capabilities = list(c.keys()) if (c := dict_from_prefix("capabilities", data)) is not None else []
 
             data = {key: val for key, val in data.items() if
                     not key.startswith("problem")
                     and not key.startswith("envparams")
                     and not key.startswith("environment_id")
+                    and not key.startswith("capabilities")
                     and not key.startswith("/")
                     and not key == "@action"}
 
-            data["capabilities"] = [c for c in self.client.agents_capabilities.get(environment_type, {}) if environment_parameters.pop(c, False)]
-
             data["environment_id"] = environment_id # we do this after having removed all the environment_id[something] entries
+            data['capabilities'] = capabilities
 
             # Parse and order the problems (also deletes @order from the result)
             if problems is None:

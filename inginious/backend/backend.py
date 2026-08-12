@@ -58,7 +58,7 @@ class Backend:
 
         # The capabilities of each AgentType. Each Agent of a same type is expected
         # to expose the same set of capabilities, even if it supports none of them.
-        self._agent_capabilities: dict[AgentType, Capabilities] = {}
+        self._agent_capabilities: dict[AgentType, dict[str, dict[str, str]]] = {}
         self._registered_clients = set()  # addr of registered clients
 
         self._registered_agents: dict[bytes, AgentInfo] = {}  # all registered agents
@@ -284,7 +284,7 @@ class Backend:
             message.agent_type,
             message.friendly_name,
             message.environments,
-            [c for c, s in message.capabilities.items() if c != 'doc' and s ] if message.capabilities is not None else []
+            [c for c, s in message.capabilities.items() if c != 'translations' and s ] if message.capabilities is not None else []
         )
         self._available_agents.extend([agent_addr for _ in range(message.available_job_slots)])
         self._ping_count[agent_addr] = 0
@@ -294,7 +294,7 @@ class Backend:
         env_dict = self._environments[message.agent_type]
 
         # Save Capabilities of Agent type.
-        capabilities = c.get('doc') if (c := message.capabilities) is not None else c
+        capabilities = c.get('translations') if (c := message.capabilities) is not None else c
         if (c := self._agent_capabilities.get(message.agent_type)) is None:
             self._agent_capabilities[message.agent_type] = capabilities
         elif c != capabilities:
