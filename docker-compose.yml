@@ -163,6 +163,8 @@ services:
         - REGISTRY=${REGISTRY}
     environment:
       - INGINIOUS_WEBDAV_HOST=0.0.0.0
+    depends_on:
+      - db
     volumes:
       - ./configuration.deploy.yaml:/inginious/configuration.yaml:z
       - ./tasks/:/inginious/tasks:z

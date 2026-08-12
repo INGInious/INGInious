@@ -93,10 +93,12 @@ FROM core AS webdav
 ENV  PYTHON_VERSION="${PYTHON_VERSION}"
 
 COPY inginious/frontend inginious/frontend/
+COPY inginious/client inginious/client/
 COPY inginious/scripts inginious/scripts
 
 # See https://github.com/pypa/setuptools_scm/#usage-from-docker
 RUN --mount=source=.git,target=.git,type=bind \
-    pip"${PYTHON_VERSION}" install --no-cache-dir -e .
+    pip"${PYTHON_VERSION}" install --no-cache-dir -e . &&\
+    pip"${PYTHON_VERSION}" install 'gunicorn==26.0.0'
 
-CMD ["sh", "-c", "python${PYTHON_VERSION} -m inginious.scripts.webdav"]
+CMD ["sh", "-c", "python${PYTHON_VERSION} -m gunicorn.app.wsgiapp 'inginious.scripts.webdav:application' --bind 0.0.0.0 --workers 1"]

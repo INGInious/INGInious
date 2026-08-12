@@ -29,6 +29,30 @@ def limited_input_middleware(app):
         return app(environ, start_response)
     return new_app
 
+def get_app(configfile=None):
+
+    if not configfile:
+        if os.path.isfile("./configuration.yaml"):
+            configfile = "./configuration.yaml"
+        elif os.path.isfile("./configuration.json"):
+            configfile = "./configuration.json"
+        else:
+            raise Exception("No configuration file found")
+
+    # Load configuration and application (!!! For mod_wsgi, application identifier must be present)
+    config = load_json_or_yaml(configfile)
+
+    # Init logging
+    init_logging(config.get('log_level', 'INFO'))
+
+    application = inginious.frontend.webdav.get_app(config)
+
+    if 'SERVER_SOFTWARE' in os.environ:  # cgi
+        os.environ['FCGI_FORCE_CGI'] = 'Y'
+
+    # Ensure WsgiDAV receive limited streams for PUT requests
+    return config, limited_input_middleware(application)
+
 def main():
     # Parse the paramaters from command line arguments
     parser = argparse.ArgumentParser()
@@ -42,30 +66,8 @@ def main():
     port = args.port
     configfile = args.config
 
-    if not configfile:
-        if os.path.isfile("./configuration.yaml"):
-            configfile = "./configuration.yaml"
-        elif os.path.isfile("./configuration.json"):
-            configfile = "./configuration.json"
-        else:
-            raise Exception("No configuration file found")
-
-    # Load configuration and application (!!! For mod_wsgi, application identifier must be present)
-    config = load_json_or_yaml(configfile)
-    # Init logging
-    init_logging(config.get('log_level', 'INFO'))
+    config, application = get_app(configfile)
     logging.getLogger("inginious.webdav").info("http://%s:%d/" % (host, int(port)))
-    application = inginious.frontend.webdav.get_app(config)
-
-    if 'SERVER_SOFTWARE' in os.environ:  # cgi
-        os.environ['FCGI_FORCE_CGI'] = 'Y'
-
-    if 'PHP_FCGI_CHILDREN' in os.environ or 'SERVER_SOFTWARE' in os.environ:  # lighttpd fastcgi
-        import flup.server.fcgi as flups
-        flups.WSGIServer(application, multiplexed=True, bindAddress=None, debug=False).run()
-
-    # Ensure WsgiDAV receive limited streams for PUT requests
-    application = limited_input_middleware(application)
 
     # Launch the app
     run_simple(host, port, application, use_debugger=config.get("web_debug", False), threaded=True)
@@ -73,3 +75,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+else:
+    config, application = get_app(os.environ.get("INGINIOUS_WEBAPP_CONFIG"))
