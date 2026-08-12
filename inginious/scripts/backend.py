@@ -36,7 +36,6 @@ def main():
     logger.addHandler(ch)
 
     # start asyncio and zmq
-    # See inginious/frontend/arch_helper.py for why ZMQEventLoop is no longer used.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     if args.debugmode:

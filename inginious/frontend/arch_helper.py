@@ -16,9 +16,6 @@ def start_asyncio_and_zmq(debug_asyncio=False):
     """ Init asyncio and ZMQ. Starts a daemon thread in which the asyncio loops run.
     :return: a ZMQ context and a Thread object (as a tuple)
     """
-    # ZMQEventLoop/zmq.asyncio.install() are deprecated since pyzmq 17: zmq
-    # sockets work with the regular asyncio event loop, no special
-    # integration is needed anymore.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     if debug_asyncio:
