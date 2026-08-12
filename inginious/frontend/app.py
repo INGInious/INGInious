@@ -64,6 +64,7 @@ def _put_configuration_defaults(config):
         "DEBUG": config.get("web_debug", False),
         "DEBUG_ASYNCIO": config.get('debug_asyncio', False),
         "LOCAL-CONFIG": config.get("local-config", {}),
+        "LTI_CONFIG": config.get("lti_config", {}),
         "MAINTENANCE": config.get("maintenance", False),
         "MAX_FILE_SIZE": config.get('max_file_size', 1024 * 1024),
         "MONGO_OPT": config.get("mongo_opt", {}),
@@ -166,7 +167,7 @@ def get_app(config):
     client = create_arch(config, zmq_context)
 
     lti_score_publishers = {"1.1": LTIOutcomeManager(user_manager),
-                            "1.3": LTIGradeManager(user_manager)}
+                            "1.3": LTIGradeManager(user_manager, config["LTI_CONFIG"])}
 
     submission_manager = WebAppSubmissionManager(client, user_manager, lti_score_publishers)
 

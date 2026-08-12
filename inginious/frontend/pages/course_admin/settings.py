@@ -15,6 +15,7 @@ from inginious.common.base import dict_from_prefix, id_checker
 from inginious.frontend.courses import Course
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.lti.v1_3 import lti_keyset_hash
 
 
 class CourseSettingsPage(INGIniousAdminPage):
@@ -131,6 +132,12 @@ class CourseSettingsPage(INGIniousAdminPage):
         except Exception as ex:
             errors.append(_('LTI config is incorrect') + ' - ' + str(ex))
 
+        course_content['lti_secrets'] = dict([x.rsplit("/", 1) for x in data['lti_secrets'].splitlines() if x])
+
+        for deployment, secret in course_content['lti_secrets'].items():
+            if not re.match("^[a-zA-Z0-9]*$", secret):
+                errors.append(_("LTI deployment secrets must be alphanumerical."))
+
         course_content['lti_send_back_grade'] = 'lti_send_back_grade' in data and data['lti_send_back_grade'] == "true"
 
         tag_error = self.define_tags(course, data, course_content)
@@ -147,7 +154,8 @@ class CourseSettingsPage(INGIniousAdminPage):
 
     def page(self, course, errors=None, saved=False):
         """ Get all data and display the page """
-        return render_template("course_admin/settings.html", course=course, errors=errors, saved=saved)
+        return render_template("course_admin/settings.html",
+                               course=course, errors=errors, saved=saved, lti_keyset_hash=lti_keyset_hash)
 
     def define_tags(self, course, data, course_content):
         tags = self.prepare_datas(data, "tags")

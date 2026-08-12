@@ -77,3 +77,55 @@ function action_handler(action){
         }
     });
 }
+
+function lti_secret_add(deployment_str) {
+    if (!deployment_str)
+        return;
+
+    // generate secret
+    let new_secret = crypto.randomUUID().replace(/-/g, '');
+
+    // fetch client and deploy_id and remove option
+    let option = $("option[value='" + deployment_str + "']");
+    let client_id = option.data("client-id");
+    let deploy_id = option.data("deployment-id");
+    option.remove();
+
+    // append a new <li> with the secret
+    let ul = $("ul[data-client-id='" + client_id + "']");
+    let new_li = ul.find("li").first().clone();
+    new_li.attr("id", deployment_str);
+    new_li.find("span").text(deploy_id);
+    new_li.find("code").text(new_secret);
+    new_li.data("client-id", client_id);
+    new_li.data("deployment-id", deploy_id);
+    new_li.find("a").click(function(){ lti_secret_remove(deployment_str); })
+    new_li.removeAttr("style");
+    new_li.appendTo(ul);
+
+    // apply change to lti_secrets input
+    let lti_secrets = $("input[name='lti_secrets']").val();
+    $("input[name='lti_secrets']").val(lti_secrets + deployment_str + "/" + new_secret + "\n");
+}
+
+function lti_secret_remove(deployment_str) {
+    // fetch client and deploy id and remove the <li>
+    let secret_li = $("li[id='" + deployment_str+"']");
+    let client_id = secret_li.data("client-id");
+    let deploy_id = secret_li.data("deployment-id");
+    secret_li.remove();
+
+    // append a new option to the select
+    let option = jQuery("<option/>", { value: deployment_str, text: deploy_id});
+    option.data("client-id", client_id);
+    option.data("deployment-id", deploy_id);
+    $("select[id='" + client_id + "']").append(option);
+
+    // apply change to lti_secrets input
+    let lti_secrets = $("input[name='lti_secrets']").val();
+    $("input[name='lti_secrets']").val(lti_secrets
+        .split("\n")
+        .filter(ligne => !ligne.startsWith(deployment_str))
+        .join("\n")
+    );
+}

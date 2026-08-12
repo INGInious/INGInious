@@ -4,13 +4,20 @@ Using through LTI (edX, Moodle, ...)
 =====================================
 
 INGInious implements the LTI specification in order to integrate into edX, Moodle, or any other LMS that also implements
-this specification. To get started, all you need is to activate the LTI mode in the course administration. You'll then be able to use INGInious tasks as activities in your LMS.
+this specification. To get started, all you need is to activate the LTI mode in the INGInious course settings.
+You'll then be able to use INGInious tasks as activities in your LMS.
 
 
 .. _LTI11: https://www.imsglobal.org/spec/lti/v1p1p2
 
 Using LTI v1.1
 ``````````````
+
+.. DANGER::
+
+    LTI1.x is deprecated and support will be removed in a future release. Please consider upgrading
+    to LTI v1.3.
+
 
 Setting up INGInious
 --------------------
@@ -71,9 +78,32 @@ Click on *Add tool* below.
 
 The tool added will be listed in the activities that can be added to the course.
 
+.. _lti13:
 
 Using LTI v1.3
 ``````````````
+
+.. NOTE::
+
+    External platforms may already have been set up by your INGInious administrator. This documentation
+    details how to add new platform.
+
+`LTI v1.3 <https://www.imsglobal.org/spec/lti/v1p3>`__ is a interoperability protocol for LMS to integrate
+third-party software. It provides three services : the LTI launch allowing to launch an activity
+within the host LMS, the AGS allowing to put grades into the LMS gradebook and Deep Link allowing
+to select a specific activity within the integrated tool (that is, INGInious).
+
+An OIDC login is first initiated by the LMS to authenticate to INGInious. Then, the LMS performs
+either an activity launch or a deep link launch.
+
+To identify the INGInious task to integrate for a given LTI activity, INGInious uses the following
+custom LTI parameters :
+
+- ``courseid`` : the courseid as used in INGInious.
+- ``taskid`` : the taskid as used in INGInious.
+- ``secret`` : a secret preventing non-authorized users to integrate an INGinious task.
+  It is automatically setup when Deep Linking is used. In other cases, it can be generated
+  from the course *Settings* page.
 
 Generating a pair of keys
 -------------------------
@@ -100,21 +130,43 @@ In your course *Advanced settings*, make that the `lti_consumer` module is prese
 #. Set the *Tool Launch URL* to:
    ::
 
-     https://HOST:PORT/lti1.3/launch/course_id/task_id
+     https://HOST:PORT/lti1.3/launch/course_id
+   Or, for a global configuration:
+   ::
+
+     https://HOST:PORT/lti1.3/launch
 #. Set the *Registered Redirect URIs* to the single same value:
    ::
 
-    ["https://HOST:PORT/lti1.3/launch/course_id/task_id"]
+      ["https://HOST:PORT/lti1.3/launch/course_id", "https://HOST:PORT/lti1.3/deeplaunch/course_id"]
+
+    Or, for a global configuration:
+   ::
+
+      ["https://HOST:PORT/lti1.3/launch", "https://HOST:PORT/lti1.3/deeplaunch"]
 #. Set the *Tool Initiate Login URL* to:
    ::
 
-    https://HOST:PORT/lti1.3/oidc_login/course_id
+     https://HOST:PORT/lti1.3/oidc_login/course_id
+   Or, for a global configuration:
+   ::
+
+     https://HOST:PORT/lti1.3/oidc_login
+
 #. Choose the *Tool public key mode*.
 
    * If you choose *Public key (Default)*, copy/paste the whole key, including the header and footer.
    * If you choose *Keyset URL*, copy/paste the URL mentioned in your INGInious course settings page below the LTI1.3
      config field.
 
+#. Check *Enable Deep Linking* and set *Deep Linking Launch URL* to :
+   ::
+
+     https://HOST:PORT/lti1.3/deeplaunch/course_id
+   Or, for a global configuration:
+   ::
+
+     https://HOST:PORT/lti1.3/deeplaunch
 #. Optionally, activate or deactivate the *LTI Assignment and Grades Service* and then click on *Save*.
 
 The component then updates and gives you the configuration to import into your INGInious LTI settings.
@@ -126,6 +178,11 @@ The component then updates and gives you the configuration to import into your I
 * Access Token URL: ``https://courses.edx.org/api/lti_consumer/v1/token/<keyset_id>``
 * Login URL: ``https://courses.edx.org/api/lti_consumer/v1/launch/``
 
+You may want to ask the support staff to make the global configuration re-usable for all the tasks you want to integrate
+into your edX course.
+
+Once the component is set up, publish the block. You'll then be able to configure choose the exact INGInious task
+you want to add using the *Deep Linking Launch - Configure tool* link provided by edX.
 
 Setting up Moodle
 -----------------
@@ -135,10 +192,15 @@ Make sure the *External tool* (``mod_lti``) plugin is enabled. In case of doubt,
 In your course view, click on *More* and then *LTI External Tools*. Existing tools may be configured and listed here.
 Click on *Add tool* below.
 
-#. Set the *Tool name* to ``My INGInious task`` and the Tool URL to:
+#. Set the *Tool name* to ``INGInious`` and the *Tool URL* to:
    ::
 
-    https://HOST:PORT/lti1.3/launch/course_id/task_id
+    https://HOST:PORT/lti1.3/launch/course_id
+
+   Or, for a global configuration:
+   ::
+
+     https://HOST:PORT/lti1.3/launch
 
 #. Set the *LTI version* to  ``LTI1.3``
 #. Choose the way you want to share the public key.
@@ -150,7 +212,14 @@ Click on *Add tool* below.
    ::
 
     https://HOST:PORT/lti1.3/oidc_login/course_id
+
+   Or, for a global configuration:
+   ::
+
+     https://HOST:PORT/lti1.3/oidc_login
+
 #. Set the *Redirection URI* to the same value as *Tool URL*.
+#. Check *Supports Deep Linking* and set *Content Selection URL* to the same value as *Tool URL*.
 #. Optionally, enable the *IMS LTI Assignment and Grade Services* under the *Services* section and save.
 
 The tool added will be listed in the activities that can be added to the course.
@@ -158,7 +227,7 @@ The tool added will be listed in the activities that can be added to the course.
 In order to import the platform settings into our INGInious course, go to the *External tool* plugin
 administration and click on *Manage tools*. You will see a list of tiles of configured tools.
 
-In the tile named ``My INGInious task``, click on *View configurationd details*. Moodle will then provide you the
+In the tile named ``INGInious``, click on *View configurationd details*. Moodle will then provide you the
 following information :
 
 * Platform ID: ``<moodle_instance_url>``
@@ -168,10 +237,13 @@ following information :
 * Access token URL: ``<moodle_instance_url>/mod/lti/token.php``
 * Authentication request URL: ``<moodle_instance_url>/mod/lti/auth.php``
 
+When adding a new ``INGInious`` activity to Moodle, use the *Select Content* button to open INGInious
+and select a task to integrate. INGInious will automatically populates the LTI custom parameters.
+
 Setting up INGInious
 --------------------
 
-Once you have gathered all the information provided by the RSA keys and the platfor, update your *LTI 1.3* configuration
+Once you have gathered all the information provided by the RSA keys and the platform, update your *LTI 1.3* configuration
 in your INGInious course settings. This is defined using the JSON format:
 
 ::
@@ -199,9 +271,11 @@ Each platform, identified by ``platform_id``, is composed of a list of *LTI clie
 *LTI deployment IDs*. In the case the platform generates a new *LTI client ID* per activity, this configuration will
 have to be duplicated for each one.
 
+For a global configuration, put the above configuration dictionary in YAML format in your INGInious main configuration
+file. See :ref:`ConfigReference` for details.
+
 Setting up other LMS
-````````````````````
+--------------------
 
 INGInious has only been tested with edX and Moodle, but it should work out-of-the-box with any LMS that respects
-LTI 1.1 or LTI 1.3. You are on your own for the configuration, though; but with the LTI keys and the
-launch URL, it should be enough to configure anything.
+LTI 1.1 or LTI 1.3. You are on your own for the configuration.

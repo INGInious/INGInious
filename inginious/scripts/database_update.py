@@ -143,6 +143,44 @@ def main():
         database.old_submissions.drop()
         db_version = 18
 
+    if db_version < 19:
+        print("Updating database to db_version 19")
+        database.users.update_many(
+            {"ltibindings": { "$exists": True } },
+            [{
+                "$set": {
+                    "ltibindings": {
+                        "$arrayToObject": {
+                            "$reduce": {
+                                # reduce the array of arrays
+                                "input": {
+                                    "$map": {
+                                        # for each course in lti_binding
+                                        "input": {"$objectToArray": "$ltibindings"},
+                                        "as": "course",
+                                        "in": {
+                                            "$map": {
+                                                # for each consumer_id/platform_id in courses
+                                                "input": {"$objectToArray": "$$course.v"},
+                                                "as": "key",
+                                                "in": {
+                                                    "k": {"$concat": ["$$course.k", "/", "$$key.k"]},
+                                                    "v": "$$key.v"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "initialValue": [],
+                                "in": {"$concatArrays": ["$$value", "$$this"]}
+                            }
+                        }
+                    }
+                }
+            }]
+        )
+        db_version = 19
+
     database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
         
     print("Database up to date")

@@ -8,32 +8,8 @@
 from flask import  redirect, request, render_template, session, url_for
 from werkzeug.exceptions import Forbidden
 
-from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.pages.tasks import BaseTaskPage
-
 from inginious.frontend.models import User, Session
-
-class LTITaskPage(INGIniousAuthPage):
-    def is_lti_page(self):
-        return True
-
-    def GET_AUTH(self):
-        data = session.lti
-        if data is None:
-            raise Forbidden(description=_("No LTI data available."))
-        (courseid, taskid) = data['task']
-
-        return BaseTaskPage(self).GET(courseid, taskid, True)
-
-    def POST_AUTH(self):
-        data = session.lti
-        if data is None:
-            raise Forbidden(description=_("No LTI data available."))
-        (courseid, taskid) = data['task']
-
-        return BaseTaskPage(self).POST(courseid, taskid, True)
-
 
 class LTIAssetPage(INGIniousAuthPage):
     def is_lti_page(self):
@@ -48,9 +24,8 @@ class LTIAssetPage(INGIniousAuthPage):
 
 
 class LTIBindPage(INGIniousAuthPage):
-    _field = "consumer_key"
-    _ids_fct = lambda cls, course: course.lti_keys().keys()
     _lti_version = ""
+    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
         return False
@@ -73,33 +48,21 @@ class LTIBindPage(INGIniousAuthPage):
         if error:
             return error
 
-        # Sanitize field for mongoengine requests
-        field = data[self._field].replace(".", "").replace("$", "")
-
-        try:
-            course = Course.get(data["task"][0])
-            if data[self._field] not in self._ids_fct(course):
-                raise Exception()
-        except:
-            return render_template("lti/bind.html", success=False, data=None, error=_("Invalid LTI data"))
-
         if data:
+            field = self._mongo_field(data)
             user_profile = User.objects.get(username=session.username)
-            lti_user_profile = User.objects(**{
-                "ltibindings__" + data["task"][0] + "__" + field: data["username"]
-            }).first()
-            if not user_profile.ltibindings.get(data["task"][0], {}).get(field, "") and not lti_user_profile:
+            lti_user_profile = User.objects(**{"ltibindings__" + field: data["username"]}).first()
+            if not user_profile.ltibindings.get(field, "") and not lti_user_profile:
                 # There is no binding yet, so bind LTI to this account
-                user_profile.ltibindings.setdefault(data["task"][0], {})[field] = data["username"]
+                user_profile.ltibindings[field] = data["username"]
                 user_profile.save()
             elif not (lti_user_profile and user_profile["username"] == lti_user_profile["username"]):
                 # There exists an LTI binding for another account, refuse auth!
-                self.logger.info("User %s tried to bind LTI user %s in for %s:%s, but %s is already bound.",
+                self.logger.info("User %s tried to bind LTI user %s in for %s, but %s is already bound.",
                                  user_profile["username"],
                                  data["username"],
-                                 data["task"][0],
                                  field,
-                                 user_profile.ltibindings.get(data["task"][0], {}).get(field, ""))
+                                 user_profile.ltibindings.get(field, ""))
                 return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                    data=data, error=_("Your account is already bound with this context."))
 
@@ -107,9 +70,8 @@ class LTIBindPage(INGIniousAuthPage):
 
 
 class LTILoginPage(INGIniousPage):
-    _field = "consumer_key"
-    _ids_fct = lambda cls, course: course.lti_keys().keys()
     _lti_version = ""
+    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
         return True
@@ -123,26 +85,12 @@ class LTILoginPage(INGIniousPage):
         if data is None:
             raise Forbidden(description=_("No LTI data available."))
 
-        # Sanitize field for mongoengine requests
-        field = data[self._field].replace(".", "").replace("$", "")
-
-        try:
-            course = Course.get(data["task"][0])
-            if data[self._field] not in self._ids_fct(course):
-                raise Exception()
-        except:
-            return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
-                                               session_id="", data=None, error="Invalid LTI data")
-
-        user_profile = User.objects(**{
-            "ltibindings__" + data["task"][0] + "__" + field: data["username"]
-        }).first()
-
+        user_profile = User.objects(**{"ltibindings__" + self._mongo_field(data): data["username"]}).first()
         if user_profile:
             self.user_manager.connect_user(user_profile)
 
         if session.loggedin:
-            return redirect(url_for("ltitaskpage"))
+            return redirect(data.redir_url)
 
         return render_template("lti/login.html", lti_version=self._lti_version)
 

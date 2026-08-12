@@ -1,0 +1,84 @@
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+
+{% extends "layout.html" %}
+
+{% block title %} {{ _("LTI task picker") }} {% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-sm-8">
+    <div class="card border-primary">
+        <div class="card-header bg-primary text-white">{{ _("Task picker") }}</div>
+        <div class="card-body bg-light">
+            <form role="form" method="post">
+                <div class="form-group">
+                    <label>{{ _("Course") }} </label>
+                    <select name="courseid" class="form-control">
+                        <option value="">-- {{ _("Select a course") }} --</option>
+                        {% for courseid, course in courses.items() %}
+                            <option value="{{ courseid }}">{{ course.get_name(session.language) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>{{ _("Task") }} </label>
+                    <select name="taskid" class="form-control" disabled="true"></select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" tabindex="3">{{_("Select")}}</button>
+            </form>
+        </div>
+    </div>
+    </div>
+</div>
+<script>
+    $('select[name="courseid"]').selectize();
+    $('select[name="taskid"]').selectize({placeholder: '-- {{ _("Select a task") }} --'});
+
+    $(document).ready(function() {
+        $('select[name="courseid"]').on('change', function() {
+            var courseId = $(this).val();
+            var taskSelect = $('select[name="taskid"]')[0].selectize;
+
+            // clear and disable the select
+            taskSelect.clear();
+            taskSelect.clearOptions();
+            taskSelect.disable();
+
+            if (!courseId) {
+                taskSelect.addOption({value: '', text: '-- {{ _("Select a task") }} --' });
+                taskSelect.setValue("");
+                return;
+            }
+
+            taskSelect.addOption({ value: '', text: '-- {{ _("Loading") }} --' });
+            taskSelect.setValue("");
+
+            $.ajax({
+                url: '{{ url_for("lti1.3deeplinkpage") }}',
+                type: 'GET',
+                data: { courseid: courseId },
+                dataType: 'json',
+                success: function(response) {
+                    taskSelect.clear();
+                    taskSelect.clearOptions();
+                    if (response && Object.keys(response).length > 0) {
+                        $.each(response, function(id, name) {
+                            taskSelect.addOption({value: id, text: name});
+                        });
+                        taskSelect.enable();
+                    } else {
+                        taskSelect.addOption({value: '',  text: '-- {{ _("No task available") }} --'});
+                        taskSelect.setValue("");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    taskSelect.addOption('', { value: '', text: '-- {{ _("Something went wrong") }} --' });
+                    taskSelect.setValue("");
+                }
+            });
+        });
+    });
+
+</script>
+{% endblock %}
