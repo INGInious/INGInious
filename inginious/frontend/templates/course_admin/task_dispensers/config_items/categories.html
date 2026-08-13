@@ -31,7 +31,7 @@
 
         tasks.each(function () {
             var taskid = $(this).data("taskid");
-            dispenser_config[taskid]["categories"] = value.split(",");
+            dispenser_config[taskid]["categories"] = value.split(",").filter(item => item !== "");
             $("#task_" + taskid + " .categories-span").text(value);
         });
     });
