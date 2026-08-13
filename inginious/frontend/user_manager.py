@@ -692,7 +692,7 @@ class UserManager:
         Audience.objects(courseid=course_id, students=username).update(pull__students=username)
 
         # If user doesn't belong to a group, will ensure correct deletion
-        Group.objects(courseid=course_id, students=username).update(pull_students=username)
+        Group.objects(courseid=course_id, students=username).update(pull__students=username)
 
         CourseClass.objects(id=course_id).update(pull__students=username)
 
