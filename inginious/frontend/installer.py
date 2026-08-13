@@ -387,10 +387,10 @@ class Installer:
     #             CONTAINERS              #
     #######################################
 
-    def _build_container(self, name, folder):
+    def _build_container(self, name, folder, target=None):
         self._display_info("Building container {}...".format(name))
         docker_connection = docker.from_env()
-        docker_connection.images.build(path=folder, tag=name)
+        docker_connection.images.build(path=folder, tag=name, target=target)
         self._display_info("done.".format(name))
 
     def select_containers_to_build(self):
@@ -433,9 +433,9 @@ class Installer:
                 self._display_info("Downloading containers for version:" + containers_version)
                 self._retrieve_and_extract_tarball(tarball_url, tmpdirname)
                 self._build_container("ghcr.io/inginious/env-base",
-                                      os.path.join(tmpdirname, "base-containers", "base"))
+                                      os.path.join(tmpdirname, "base-containers", "base"), "env-base")
                 self._build_container("ghcr.io/inginious/env-default",
-                                      os.path.join(tmpdirname, "base-containers", "default"))
+                                      os.path.join(tmpdirname, "base-containers", "base"), "env-default")
                 if dev:
                     self._display_info("If you modified files in base-containers folder, don't forget to rebuild manually to make these changes effective !")
 
@@ -560,7 +560,10 @@ class Installer:
 
         password = self._ask_with_default("Enter the password of the superadmin", "superadmin")
 
-        User(username=username, realname=realname, email=email, password=UserManager.hash_password(password)).save()
+        if not User.objects(username=username):
+            User(username=username, realname=realname, email=email, password=UserManager.hash_password(password)).save()
+        else:
+            self._display_warning("User already exists, skipping creation.")
 
         options["superadmins"].append(username)
 
