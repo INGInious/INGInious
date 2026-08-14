@@ -11,8 +11,7 @@ on:
 
 env:
   REGISTRY: "ghcr.io"
-  VERSION: "${{ github.event_name == 'push' && github.ref_name || github.event.release.tag_name }}"
-  CDVERSION: ":${{ github.event_name == 'push' && github.ref_name || github.event.release.tag_name }}"
+  VERSION: "${{ github.event_name == 'push' && github.ref_name || (github.event_name == 'release' && github.event.release.tag_name || 'ci') }}"
   CORE_CONTAINERS: "backend frontend agent_mcq agent_docker"
   ENV_CONTAINERS: "base default python3"
 
@@ -24,11 +23,11 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Build core services
-        run: for stage in ${CORE_CONTAINERS}; do docker build -f deploy/Containerfile --target=${stage} -t ${REGISTRY}/inginious/core-${stage}${CDVERSION} . ; done
+        run: for stage in ${CORE_CONTAINERS}; do docker build -f deploy/Containerfile --target=${stage} -t ${REGISTRY}/inginious/core-${stage}:${VERSION} . ; done
 
       - name: Build base environments
         working-directory: base-containers/base
-        run: for stage in ${ENV_CONTAINERS}; do docker build --target=env-${stage} -t ${REGISTRY}/inginious/env-${stage}${CDVERSION} . ; done
+        run: for stage in ${ENV_CONTAINERS}; do docker build --target=env-${stage} -t ${REGISTRY}/inginious/env-${stage}:${VERSION} . ; done
 
       - name: Test deployment
         id: deploy
@@ -54,8 +53,8 @@ jobs:
       - name: Push containers
         if: steps.deploy.outcome == 'success' && github.event_name != 'pull_request'
         run: |
-          for stage in ${CORE_CONTAINERS}; do docker push ${REGISTRY}/inginious/core-${stage}${CDVERSION}; done
-          for stage in ${ENV_CONTAINERS}; do docker push ${REGISTRY}/inginious/env-${stage}${CDVERSION}; done
+          for stage in ${CORE_CONTAINERS}; do docker push ${REGISTRY}/inginious/core-${stage}:${VERSION}; done
+          for stage in ${ENV_CONTAINERS}; do docker push ${REGISTRY}/inginious/env-${stage}:${VERSION}; done
 
   compose_build_and_deploy:
     runs-on: ubuntu-24.04
