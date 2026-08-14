@@ -9,18 +9,19 @@ LABEL org.opencontainers.image.source=https://github.com/INGInious/containers
 LABEL org.opencontainers.image.description="Base INGInious grading environment."
 LABEL org.inginious.grading.agent_version=4
 
-ARG LIB_PATH="/usr/lib/python3.12/site-packages"
+ARG PYTHON_VERSION=3
 
 # Install python, needed for scripts used in INGInious + locale support
 RUN     dnf clean metadata && dnf -y upgrade && dnf -y install epel-release && crb enable && \
-        dnf -y install langpacks-en glibc-langpack-en python3 python3-pip python3-devel zip \
+        dnf -y install langpacks-en glibc-langpack-en python${PYTHON_VERSION} \
+                       python${PYTHON_VERSION}-pip python${PYTHON_VERSION}-devel zip \
                        unzip tar sed openssh-server openssl bind-utils iproute file jq \
                        procps-ng man curl net-tools screen nano bc && \
         dnf clean all
 
 # Install INGInious library and scripts via pyproject.toml
 ADD     . /INGInious
-RUN     pip3 install /INGInious
+RUN     pip${PYTHON_VERSION} install /INGInious
 
 # Delete unneeded source folder
 RUN     rm -R /INGInious
@@ -51,4 +52,4 @@ LABEL org.inginious.grading.name="default"
 FROM  env-base AS env-python3
 
 LABEL org.opencontainers.image.description="Python 3 INGInious grading environment."
-LABEL org.inginious.grading.name="python3"
+LABEL org.inginious.grading.name="python${PYTHON_VERSION}"
