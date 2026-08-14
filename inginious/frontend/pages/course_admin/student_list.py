@@ -255,7 +255,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                             existing_audience.tutors = audience["tutors"]
                             existing_audience.save()
 
-            active_tab = "tab_audiences"
+                active_tab = "tab_audiences"
         except Exception as e:
             msg["audiences"] = _('An error occurred while parsing the data.')
             error["audiences"] = True
