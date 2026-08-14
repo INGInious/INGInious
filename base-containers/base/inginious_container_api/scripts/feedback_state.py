@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import argparse
+import inginious_container_api.feedback
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='Set the task state as a string.\n')
+    parser.add_argument('value', help="the task state")
+    args = parser.parse_args()
+
+    value = args.value
+
+    # Doing the real stuff
+    inginious_container_api.feedback.set_state(value)
+
+
+if __name__ == "__main__":
+    main()

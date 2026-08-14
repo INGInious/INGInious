@@ -1,0 +1,27 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+#
+# Tool to generate an RST block for a given image file
+
+import argparse
+from inginious_container_api import rst
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, 
+                                     description='Generates reStructuredText for a given image.')
+    parser.add_argument('-f', '--format', help="explicit image format", default="")
+    parser.add_argument('filename', help="image filename")
+    args = parser.parse_args()
+
+    filename = args.filename
+    fmt = args.format
+
+    # Do the real stuff
+    print(rst.get_imageblock(filename, fmt))
+
+
+if __name__ == "__main__":
+    main()

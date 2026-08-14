@@ -9,35 +9,21 @@ LABEL org.opencontainers.image.source=https://github.com/INGInious/containers
 LABEL org.opencontainers.image.description="Base INGInious grading environment."
 LABEL org.inginious.grading.agent_version=4
 
-ARG LIB_PATH="/usr/lib/python3.12/site-packages"
+ARG PYTHON_VERSION=3
 
 # Install python, needed for scripts used in INGInious + locale support
-RUN     dnf clean metadata && \
-        dnf -y install langpacks-en glibc-langpack-en && \
-        dnf -y install epel-release && \
-        dnf -y upgrade && \
-        dnf -y install python3 python3-pip python3-devel zip unzip tar sed openssh-server openssl bind-utils iproute file jq procps-ng man curl net-tools screen nano bc  && \
-        pip3 install msgpack pyzmq jinja2 PyYAML timeout-decorator ipython mypy pydevd-pycharm && \
+RUN     dnf clean metadata && dnf -y upgrade && dnf -y install epel-release && crb enable && \
+        dnf -y install langpacks-en glibc-langpack-en python${PYTHON_VERSION} \
+                       python${PYTHON_VERSION}-pip python${PYTHON_VERSION}-devel zip \
+                       unzip tar sed openssh-server openssl bind-utils iproute file jq \
+                       procps-ng man curl net-tools screen nano bc && \
         dnf clean all
 
-# Allow to run commands
+# Install INGInious library and scripts via pyproject.toml
 ADD     . /INGInious
-RUN     chmod -R 755 /INGInious/bin && \
-        chmod 700 /INGInious/bin/INGInious && \
-        mv /INGInious/bin/* /bin
+RUN     pip${PYTHON_VERSION} install /INGInious
 
-# Install everything needed to allow INGInious' python libs to be loaded
-RUN     chmod -R 644 /INGInious/inginious_container_api && \
-        mkdir -p "${LIB_PATH}"/inginious_container_api && \
-        cp -R /INGInious/inginious_container_api/*.py  "${LIB_PATH}"/inginious_container_api && \
-        echo "inginious_container_api" > "${LIB_PATH}"/inginious_container_api.pth
-
-# This maintains backward compatibility
-RUN     mkdir -p "${LIB_PATH}"/inginious && \
-        cp -R /INGInious/inginious_container_api/*.py  "${LIB_PATH}"/inginious && \
-        echo "inginious" > "${LIB_PATH}"/inginious.pth
-
-# Delete unneeded folders
+# Delete unneeded source folder
 RUN     rm -R /INGInious
 
 # Create worker user
@@ -66,4 +52,4 @@ LABEL org.inginious.grading.name="default"
 FROM  env-base AS env-python3
 
 LABEL org.opencontainers.image.description="Python 3 INGInious grading environment."
-LABEL org.inginious.grading.name="python3"
+LABEL org.inginious.grading.name="python${PYTHON_VERSION}"

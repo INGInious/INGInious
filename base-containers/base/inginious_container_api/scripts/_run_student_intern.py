@@ -1,0 +1,108 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import os
+import shlex
+import subprocess
+import threading
+import sys
+import asyncio
+import zmq.asyncio
+from inginious_container_api.utils import set_limits_user, setup_logger, check_runtimes,\
+    run_teardown_script, handle_signals, handle_ssh_session, receive_initial_command, stdio,\
+    handle_stdin, handle_outputs_helper, scripts_isolation
+
+
+def main():
+    # Setup the logger
+    logger = setup_logger()
+
+    # Check the runtimes
+    runtime = sys.argv[1]
+    parent_runtime = sys.argv[2]
+    shared_kernel, both_same_kernel = check_runtimes(runtime, parent_runtime)
+
+    # Setup the asyncio loop and container_stdin/stdout streams for communications with agent when both containers are not on a shared kernel
+    if not both_same_kernel:
+        context = zmq.asyncio.Context()
+        event_loop = zmq.asyncio.ZMQEventLoop()
+        asyncio.set_event_loop(event_loop)
+        container_stdin, container_stdout = event_loop.run_until_complete(stdio())
+    else:
+        container_stdin, container_stdout, event_loop = None, None, None
+
+    # Get the command to be run
+    socket_unix, fds, start_cmd = receive_initial_command(both_same_kernel, container_stdin, event_loop)
+
+    # Check security
+    student_container_id = start_cmd["student_container_id"]
+    user = start_cmd["user"]  # Know if you are worker (on docker) or root (on Kata)
+    if user == "root" and shared_kernel:
+        logger.info("You can not run as root on a runtime with shared_kernel such as docker runtime")
+        sys.exit(251)
+
+    # Add some elements to /etc/hosts and /etc/resolv.conf if needed
+    system_files = {"hosts": ("/etc/hosts", True), "resolv.conf": ("/etc/resolv.conf", False)}
+    for name, (spath, append) in system_files.items():
+        if os.path.exists(os.path.join('/task/systemfiles/', name)):
+            try:
+                open(spath, 'ab' if append else 'wb').write(b'\n' + open(os.path.join('/task/systemfiles/', name), 'rb').read())
+            except IOError:
+                sys.exit(254)
+
+    logger.info("student container started and received initial command")
+
+    # Start the process
+    os.chdir(start_cmd["working_dir"])
+    set_limits = lambda: set_limits_user(user)  # To know if the command should be executed as root or worker
+    if start_cmd["command"] is None or start_cmd["command"] == "":  # Avoid to run an empty command
+        start_cmd["command"] = "echo 'info: student container started with no command set' "
+
+    # Run the student code in its own subprocess and handle inputs/outputs
+    if both_same_kernel:
+        p = subprocess.Popen(shlex.split(start_cmd["command"]), preexec_fn=set_limits, stdin=fds[0], stdout=fds[1],
+                             stderr=fds[2])
+        signal_thread = threading.Thread(target=lambda: handle_signals(p, socket_unix), daemon=True)
+        signal_thread.start()
+        retval = p.wait()
+    else:
+        p = subprocess.Popen(shlex.split(start_cmd["command"]), bufsize=0, preexec_fn=set_limits, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        write_lock = threading.Lock()  # Lock to avoid stdout_handler and stderr_handler to write on the stdout_stream at the same time
+        outputs_loop = asyncio.new_event_loop()  # Loop used in other threads
+        stdout_handler = threading.Thread(target=handle_outputs_helper, args=(p.stdout, start_cmd["socket_id"], "stdout", write_lock, event_loop, container_stdout, outputs_loop))
+        stderr_handler = threading.Thread(target=handle_outputs_helper, args=(p.stderr, start_cmd["socket_id"], "stderr", write_lock, event_loop, container_stdout, outputs_loop))
+        stdout_handler.start()
+        stderr_handler.start()
+        try:
+            event_loop.run_until_complete(handle_stdin(container_stdin, p.stdin, p))
+        except RuntimeError:  # The loop will be stopped by stdout_handler (causing a RuntimeError)
+            pass
+        logger.info("student code finished !")
+        retval = p.wait()
+        stdout_handler.join()
+        stderr_handler.join()
+
+    logger.info("student container finished running the student code")
+
+    scripts_isolation(True)  # Setup script finished, make the scripts directory isolated from student
+    # Handle SSH
+    if start_cmd["ssh"]:
+        logger.info("student container is starting ssh session")
+        retval = handle_ssh_session(student_container_id, both_same_kernel, event_loop, socket_unix, container_stdout, user)
+        logger.info("student container finished ssh session")
+
+    # Run teardown script
+    if start_cmd["teardown_script"]:
+        scripts_isolation(False)  # Make the scripts directory available and execute the teardown script
+        logger.info("student container is starting teardown script")
+        run_teardown_script(start_cmd["teardown_script"], set_limits)
+        logger.info("student container finished teardown script")
+        
+    sys.exit(retval)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,33 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+#
+# Tool to produce rst for a message block
+
+import sys
+import argparse
+from inginious_container_api import rst
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, 
+                                     description='Generates reStructuredText for a message block.',
+                                     epilog='If message is not specified, reads on stdin.')
+    parser.add_argument('-c', '--class', dest='cssclass', help="class [success|info|warning|danger]", default="")
+    parser.add_argument('-e', '--escape', help="interprets backslash escapes", action='store_true')
+    parser.add_argument('-t', '--title' , help="message title", default="")
+    parser.add_argument('-m', '--message' , help="message text", default="")
+    args = parser.parse_args()
+
+    cssclass = args.cssclass
+    title = args.title
+    message = args.message if args.message else sys.stdin.read()
+    text = message.encode('utf-8').decode('unicode-escape').encode('latin1').decode('utf-8') if args.escape else message
+
+    # Do the real stuff 
+    print(rst.get_admonition(cssclass, title, text))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,80 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import sys
+import json
+import argparse
+import inginious_container_api.feedback
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='Set the result of the task or specified problem.\n')
+    parser.add_argument('-r', '--result', help="result [success|failed|crash|timeout|overflow]", default='')
+    parser.add_argument('-g', '--grade', help="grade/score", default='')
+    parser.add_argument('-f', '--feedback', help="feedback text", default='')
+    parser.add_argument('-i', '--id', help="problem id", default="")
+    parser.add_argument('-e', '--escape', help="interprets backslash escapes", action='store_true')
+    parser.add_argument('-p', '--print', help="print JSON feedback", action='store_true')
+    parser.add_argument('-c', '--custom', help="custom k/v 'custom_name:custom_value'", default='')
+    parser.add_argument('-j', '--custom-json', dest='custom_json', help="custom JSON k/v 'custom_name:custom_json'", default='')
+    args = parser.parse_args()
+
+    result = args.result
+    feedback = args.feedback.encode('utf-8').decode('unicode-escape').encode('latin1').decode('utf-8') if args.escape else args.feedback
+    problem = args.id
+    grade = args.grade
+    getjson = args.print
+    custom_str = args.custom if not args.custom_json else args.custom_json
+    custom_json = True if args.custom_json else False
+
+    # Doing the real stuff
+
+    if result != '':
+        if problem == '':
+            inginious_container_api.feedback.set_global_result(result)
+        else:
+            inginious_container_api.feedback.set_problem_result(result, problem)
+
+    if grade:
+        inginious_container_api.feedback.set_grade(grade)
+        
+    if feedback != '':
+        if problem == '':
+            inginious_container_api.feedback.set_global_feedback(feedback)
+        else:
+            inginious_container_api.feedback.set_problem_feedback(feedback, problem)
+
+    if custom_str:
+        try:
+            custom_str = custom_str.split(':')
+            custom_name = custom_str[0]
+            custom_str = ":".join(custom_str[1:])
+        except:
+            print("Invalid value for --custom(-json)")
+            sys.exit(1)
+
+        if custom_json:
+            try:
+                custom_str = json.loads(custom_str)
+            except:
+                print("Cannot decode json. Invalid value for --custom-json")
+                sys.exit(1)
+        else:  # try to convert to int/float if possible
+            try:
+                custom_str = int(custom_str)
+            except:
+                try:
+                    custom_str = float(custom_str)
+                except:
+                    pass
+
+        inginious_container_api.feedback.set_custom_value(custom_name, custom_str)
+
+    if getjson:
+        print(json.dumps(inginious_container_api.feedback.get_feedback()))
+
+
+if __name__ == "__main__":
+    main()

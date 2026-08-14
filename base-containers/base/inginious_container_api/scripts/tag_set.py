@@ -1,0 +1,25 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import argparse
+from inginious_container_api import feedback
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='Set the tag to True of False.\n')
+    parser.add_argument('tag', help="id of the tag")
+    parser.add_argument('value', help="true or false")
+    args = parser.parse_args()
+
+    tag = args.tag
+    value = args.value
+    value = (value == "True" or value == "true")
+
+    # Doing the real stuff
+    feedback.set_tag(tag, value)
+
+
+if __name__ == "__main__":
+    main()
