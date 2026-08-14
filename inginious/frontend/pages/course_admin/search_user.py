@@ -20,8 +20,8 @@ class CourseAdminSearchUserPage(INGIniousAdminPage):
         self.get_course_and_check_rights(courseid, allow_all_staff=True)
 
         request = re.escape(request) # escape for safety. Maybe this is not needed...
-        query =  ((Q(username__iregex=".*" + request + ".*") or Q(realname__iregex=".*" + request + ".*"))
-                  and Q(activate__exists=False, username__ne=""))
+        query = ((Q(username__iregex=".*" + request + ".*") | Q(realname__iregex=".*" + request + ".*"))
+                 & Q(activate__exists=False, username__ne=""))
 
         users = User.objects(query).only("username", "realname").limit(10)
         return Response(content_type='text/json; charset=utf-8',response=json.dumps([[
