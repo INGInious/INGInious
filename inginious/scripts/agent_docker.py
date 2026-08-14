@@ -59,19 +59,13 @@ class RuntimeParser(argparse.Action):
         runtime = values[0]
         envtype = values[1]
         root = False
-        shared_kernel = False
         flags = set(values[2:])
         if "root" in flags:
             flags.remove("root")
             root = True
-        if "shared" in flags:
-            flags.remove("shared")
-            shared_kernel = True
-        if shared_kernel:  # If shared_kernel, run_as_root is forbidden
-            root = False
         for f in flags:
             raise argparse.ArgumentError(self, "Unknown flag {}".format(f))
-        items.append(DockerRuntime(runtime=runtime, envtype=envtype, run_as_root=root, shared_kernel=shared_kernel))
+        items.append(DockerRuntime(runtime=runtime, envtype=envtype, run_as_root=root))
         setattr(namespace, self.dest, items)
 
 
@@ -96,11 +90,10 @@ def main():
                         default=False)
     parser.add_argument("--runtime", nargs='+', action=RuntimeParser,
                         help="Add a runtime. Expects at least 2 arguments: the name of the runtime (eg runc), "
-                             "the name of the environment type (eg docker or kata). You can then add flags:\n"
+                             "the name of the environment type (eg docker). You can then add flags:\n"
                              "- 'root' indicates that the runtime starts containers as root\n"
-                             "- 'shared' indicates that the containers on this runtime use the host kernel (i.e. they are not VMs)"
                              "\n"
-                             "Common values are 'runc docker shared' and 'kata-runtime kata root'.")
+                             "Common values are 'runc docker'.")
     (args, fsprovider) = get_args_and_filesystem(parser)
     init_fs_provider(fsprovider)
 
