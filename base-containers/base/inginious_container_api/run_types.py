@@ -2,8 +2,8 @@
 """ Allow to resolve shells from file extension. """
 
 run_types = {
-    "py": ["/bin/inginious-ipython"],
-    "py3": ["/bin/inginious-ipython"],
+    "py": ["/usr/local/bin/inginious-ipython"],
+    "py3": ["/usr/local/bin/inginious-ipython"],
     "sh": ["/bin/bash"]
 }
 
