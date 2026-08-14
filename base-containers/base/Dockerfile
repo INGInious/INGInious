@@ -12,11 +12,10 @@ LABEL org.inginious.grading.agent_version=4
 ARG LIB_PATH="/usr/lib/python3.12/site-packages"
 
 # Install python, needed for scripts used in INGInious + locale support
-RUN     dnf clean metadata && \
-        dnf -y install langpacks-en glibc-langpack-en && \
-        dnf -y install epel-release && \
-        dnf -y upgrade && \
-        dnf -y install python3 python3-pip python3-devel zip unzip tar sed openssh-server openssl bind-utils iproute file jq procps-ng man curl net-tools screen nano bc && \
+RUN     dnf clean metadata && dnf -y upgrade && dnf -y install epel-release && crb enable && \
+        dnf -y install langpacks-en glibc-langpack-en python3 python3-pip python3-devel zip \
+                       unzip tar sed openssh-server openssl bind-utils iproute file jq \
+                       procps-ng man curl net-tools screen nano bc && \
         dnf clean all
 
 # Install INGInious library and scripts via pyproject.toml
