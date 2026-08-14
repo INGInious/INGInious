@@ -1,0 +1,39 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import argparse
+import sys
+from inginious_container_api import ssh_student
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description="Gives to the student a ssh access to a safe environment.\n\
+If a command was specified, runs it in the student container before starting the ssh server. \n\
+This command will proxy stdin, stdout, stderr, most signals and the return value. \n\
+Notice the ssh_student feature requires to allow internet connection in the environment configuration tab. \n\
+There are special return values: \n\
+* 252 means that the command was killed due to an out-of-memory \n\
+* 253 means that the command timed out \n\
+* 254 means that an error occured while running the proxy")
+    parser.add_argument('--container', help="Name of the container to use. The default is the same as the current container", default=None)
+    parser.add_argument('--time', help="Timeout (in CPU time) for the container. The default is the same as the current container", type=int, default=0)
+    parser.add_argument('--hard-time', help="Hard timeout for the container (in real time). The default is three times the value indicated for --time",
+                        type=int, default=0)
+    parser.add_argument('--memory', help="Maximum memory for the container, in Mo. The default is the same as the current container", type=int, default=0)
+    parser.add_argument('--run-as-root', help="Tries to give root access to the student if possible. This feature is in beta and should not be used yet", action='store_true')
+    parser.add_argument('--setup-script', help="Specify, using string format, the commands to run on the student container before giving ssh access to the student. Example: \"python3 student/scripts/setup_script.py my_argument\". "
+                                               "In the case of script files, it is recommended to put them in the student/scripts directory since this specific subdirectory will be isolated from the student", type=str, default="")
+    parser.add_argument('--teardown-script', help="Specify, using string format, the commands to run when the student leaves the ssh connection, just before killing the student container. Example: \"python3 student/scripts/teardown_script.py\". "
+                                                  "In the case of script files, it is recommended to put them in the student/scripts directory since this specific subdirectory will be isolated from the student", type=str, default="")
+
+    args = parser.parse_args()
+
+    sys.exit(ssh_student.ssh_student(setup_script=args.setup_script, container=args.container, time_limit=args.time,
+                                 hard_time_limit=args.hard_time, memory_limit=args.memory,
+                                 run_as_root=args.run_as_root, teardown_script=args.teardown_script))
+
+
+if __name__ == "__main__":
+    main()

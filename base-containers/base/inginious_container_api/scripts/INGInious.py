@@ -1,4 +1,3 @@
-#!/bin/python3
 # -*- coding: utf-8 -*-
 #
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
@@ -24,7 +23,7 @@ import pydevd_pycharm
 
 
 debug_server_unavailable = False
-if os.environ["DEBUGGER"] == "True":
+if os.environ.get("DEBUGGER") == "True":
     print("Starting in debug mode, waiting for pycharm to connect...")
     try:
         pydevd_pycharm.settrace(
@@ -139,7 +138,6 @@ class INGIniousMainRunner:
         self._logger.info("Starting serve")
         stdin_sr, self.stdout = await self.stdio()
         start_as_background_task(self._loop, self.handle_stdin(stdin_sr))
-
 
         self.intern = self._ctx.socket(zmq.ROUTER)
         self.intern.bind("ipc:///sockets/main.sock")
@@ -423,7 +421,7 @@ class INGIniousMainRunner:
                 inginious_container_api.feedback.set_global_feedback('[SSH Debug] Nobody connected to the SSH server.')
             stdout, stderr = b"", b""
 
-        if os.environ["DEBUGGER"] and debug_server_unavailable:
+        if os.environ.get("DEBUGGER") and debug_server_unavailable:
             stderr += b"[DEBUG] WARNING : Debug server was unavailable.\n"
 
         # Produce feedback
@@ -463,4 +461,9 @@ class INGIniousMainRunner:
         context.destroy(1)
 
 
-INGIniousMainRunner.start()
+def main():
+    INGIniousMainRunner.start()
+
+
+if __name__ == "__main__":
+    main()

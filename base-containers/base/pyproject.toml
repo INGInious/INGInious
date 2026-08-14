@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inginious-container-api"
+version = "0.1.0"
+description = "INGInious container API library and CLI scripts"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "msgpack",
+    "pyzmq",
+    "jinja2",
+    "PyYAML",
+    "timeout-decorator",
+    "ipython",
+    "pydevd-pycharm",
+]
+
+[project.scripts]
+INGInious = "inginious_container_api.scripts.INGInious:main"
+_run_student_intern = "inginious_container_api.scripts._run_student_intern:main"
+archive = "inginious_container_api.scripts.archive:main"
+feedback = "inginious_container_api.scripts.feedback:main"
+feedback-custom = "inginious_container_api.scripts.feedback_custom:main"
+feedback-grade = "inginious_container_api.scripts.feedback_grade:main"
+feedback-msg = "inginious_container_api.scripts.feedback_msg:main"
+feedback-msg-tpl = "inginious_container_api.scripts.feedback_msg_tpl:main"
+feedback-result = "inginious_container_api.scripts.feedback_result:main"
+feedback-state = "inginious_container_api.scripts.feedback_state:main"
+getinput = "inginious_container_api.scripts.getinput:main"
+inginious-ipython = "inginious_container_api.scripts.inginious_ipython:main"
+parsetemplate = "inginious_container_api.scripts.parsetemplate:main"
+rst-code = "inginious_container_api.scripts.rst_code:main"
+rst-image = "inginious_container_api.scripts.rst_image:main"
+rst-indent = "inginious_container_api.scripts.rst_indent:main"
+rst-msgblock = "inginious_container_api.scripts.rst_msgblock:main"
+run_student = "inginious_container_api.scripts.run_student:main"
+ssh_student = "inginious_container_api.scripts.ssh_student:main"
+tag = "inginious_container_api.scripts.tag:main"
+tag-set = "inginious_container_api.scripts.tag_set:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["inginious_container_api*", "inginious*"]

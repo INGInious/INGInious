@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import argparse
+from inginious_container_api import feedback
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='Tag a value.\n')
+    parser.add_argument('value', help="the value to tag")
+    args = parser.parse_args()
+
+    value = args.value
+
+    # Doing the real stuff
+    feedback.tag(value)
+
+
+if __name__ == "__main__":
+    main()

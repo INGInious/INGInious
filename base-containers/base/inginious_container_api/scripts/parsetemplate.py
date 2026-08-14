@@ -1,0 +1,36 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+#
+# Tool to import answer from standard input to the template files given in arguments
+
+import sys
+import argparse
+import inginious_container_api.input
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, 
+                                     description='Parse the template file and generate an output file.',
+                                     epilog='Input data must have been passed through INGInious program.')
+    parser.add_argument('-o', '--output', help="output filename", default="")
+    parser.add_argument('input', help="input filename")
+    args = parser.parse_args()
+
+    outfile = args.output
+    infile = args.input
+
+    # Do the real job
+    try:
+        inginious_container_api.input.parse_template(infile, outfile)
+    except IOError:
+        sys.stderr.write("Input file not found")
+        sys.exit(2)
+    except ValueError:
+        sys.stderr.write("Input is not compatible")
+        sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()

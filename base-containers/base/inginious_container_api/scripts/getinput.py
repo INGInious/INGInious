@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+# more information about the licensing of this file.
+
+import sys
+import argparse
+import json
+import inginious_container_api.input
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='Get data associated with an input field.\n')
+    parser.add_argument('problem', help="problem id")
+    args = parser.parse_args()
+
+    problem = args.problem
+
+    # Do the real job
+    try:
+        result = inginious_container_api.input.get_input(problem)
+        if isinstance(result, bytes):
+            sys.stdout.buffer.write(result)
+        elif isinstance(result, (str, int, float)):
+            sys.stdout.buffer.write(str(result).encode("utf-8"))
+        elif isinstance(result, (list, dict)):
+            sys.stdout.buffer.write(json.dumps(result).encode("utf-8"))
+        else:
+            sys.stderr.write("Invalid/unknown input format. Please access it from Python using input.get_input.")
+            sys.exit(2)
+    except IOError:
+        sys.stderr.write("Input file not found")
+        sys.exit(2)
+    except ValueError:
+        sys.stderr.write("Input is not compatible")
+        sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()
