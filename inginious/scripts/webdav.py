@@ -47,9 +47,6 @@ def get_app(configfile=None):
 
     application = inginious.frontend.webdav.get_app(config)
 
-    if 'SERVER_SOFTWARE' in os.environ:  # cgi
-        os.environ['FCGI_FORCE_CGI'] = 'Y'
-
     # Ensure WsgiDAV receive limited streams for PUT requests
     return config, limited_input_middleware(application)
 

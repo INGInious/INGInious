@@ -41,9 +41,6 @@ def get_app(configfile=None):
 
     application, close_app_func = inginious.frontend.app.get_app(config)
 
-    if 'SERVER_SOFTWARE' in os.environ:  # cgi
-        os.environ['FCGI_FORCE_CGI'] = 'Y'
-
     # Add static redirection and request log
     root_path = inginious.get_root_path()
     application = SharedDataMiddleware(application, [
