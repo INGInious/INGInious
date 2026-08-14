@@ -358,8 +358,8 @@
                                         <div class="col-sm-4 col-xs-6" style="text-align: center">
                                             <select type="text" style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" class="form-control input-xs" id="audience_list_{{index+1}}" name="audience_list_{{index+1}}">
                                                 {% for key, audience in audience_list.items() %}
-                                                    {% if not group or audience['_id'] not in group["audiences"] %}
-                                                            <option value="{{ audience['_id'] }}">{{audience['description']}}</option>
+                                                    {% if not group or audience['id'] not in group["audiences"] %}
+                                                            <option value="{{ audience['id'] }}">{{audience['description']}}</option>
                                                     {% endif %}
                                                 {% endfor %}
                                             </select>
@@ -380,7 +380,7 @@
                                             {% else %}
                                                 <li class="list-group-item audience" id="{{audience_id}}">
                                                     <span>{{ audience["description"] }}</span>
-                                                    <input type="hidden" name="audiences" value="{{ audience['_id'] }}">
+                                                    <input type="hidden" name="audiences" value="{{ audience['id'] }}">
                                             {% endif %}
                                             <div class="pull-right"><a href="#" onclick="javascript:group_audience_remove($(this).rparent(2).attr('id'), {{ index+1 }})"><i class="fa fa-trash-o fa-lg"></i></a></div>
                                         </li>
