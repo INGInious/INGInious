@@ -224,18 +224,6 @@ class INGIniousMainRunner:
                                          "ssh": message["ssh"],
                                          "run_as_root": message["run_as_root"]})
                 return False
-            if message["type"] == "run_student_init":  # This message may be sent from run_student to transfer to the student_container via the agent (only when starting a kata student_container)
-                await self.write_stdout({"type": "run_student_init",
-                                         "socket_id": message["socket_id"],
-                                         "student_container_id": message["student_container_id"],
-                                         "command": message["command"],
-                                         "teardown_script": message["teardown_script"],
-                                         "working_dir": message["working_dir"],
-                                         "ssh": message["ssh"],
-                                         "user": message["user"]
-                                         })
-                await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "dummy_message"}, use_bin_type=True)])  # ping pong answer
-                return False
             if message["type"] == "dummy_message":
                 # ignore, just a dummy message
                 return False
@@ -311,9 +299,7 @@ class INGIniousMainRunner:
         # Determining if debug mode or not
         debug = (sys.argv[1:] and sys.argv[1] == '--debug') or data.get("debug", False)
 
-        # Run as root? Shared kernel?
         self.run_as_root = data.get('run_as_root', False)
-        self.shared_kernel = data.get('shared_kernel', False)
 
         # Create input data directory
         if not os.path.exists("/.__input"):
@@ -344,10 +330,6 @@ class INGIniousMainRunner:
         self.set_directory_rights("/task")
         self.set_directory_rights("/.__output")
         self.set_directory_rights("/archive")
-
-        # Set a flag file indicating if the runtime allows run_student to be run
-        if self.shared_kernel:
-            open('/.__input/__shared_kernel', 'w').close()
 
         ok_to_start = True
 

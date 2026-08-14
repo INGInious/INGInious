@@ -123,23 +123,6 @@ def setup_logger():
     return logger
 
 
-def check_runtimes(runtime, parent_runtime):
-    """ Check information about the runtime
-    outputs:
-    shared_kernel: set to True if the current container is not on Kata runtime
-    dual_dockers: set to True if both grading_container and the current student_container are using docker runtime
-    """
-    if runtime != "kata-runtime":
-        shared_kernel = True
-        os.mkdir("/.__input")
-        shared_kernel_file = open("/.__input/__shared_kernel", "w")
-        shared_kernel_file.close()
-    else:
-        shared_kernel = False
-    dual_dockers = shared_kernel and parent_runtime != "kata"
-    return shared_kernel, dual_dockers
-
-
 def recv_fds(sock, msglen, maxfds):
     """ Receive FDs from the unix socket. Copy-pasted from the Python doc.
     Used only if both grading and student containers are using docker runtime"""
@@ -179,70 +162,45 @@ def handle_signals(concerned_subprocess, com_socket):
             sys.exit()
 
 
-def handle_ssh_session(container_id, both_dockers, event_loop, socket_unix, container_stdout, user):
+def handle_ssh_session(container_id, socket_unix, user):
     """ Start the ssh server and send identification information """
     ssh_user, password = start_ssh_server(user)
-    if both_dockers:
-        # Send ssh information to the grading container
-        message = msgpack.dumps({"type": "ssh_student", "ssh_user": ssh_user, "password": password})  # constant size
-        message_size = struct.pack('!I', len(message))
-        socket_unix.send(message_size)
-        socket_unix.send(message)
-    else:
-        # Send ssh information directly to the agent
-        msg = {"type": "ssh_student", "ssh_user": ssh_user, "ssh_key": password,
-               "container_id": container_id}
-        event_loop.run_until_complete(write_stdout(msg, container_stdout))
-    # Wait for user to connect and leave
+    # Send ssh information to the grading container
+    message = msgpack.dumps({"type": "ssh_student", "ssh_user": ssh_user, "password": password})  # constant size
+    message_size = struct.pack('!I', len(message))
+    socket_unix.send(message_size)
+    socket_unix.send(message)
+   # Wait for user to connect and leave
     ssh_retval = ssh_wait(ssh_user)
     return ssh_retval
 
 
-def receive_initial_command(both_dockers, container_stdin, event_loop):
+def receive_initial_command():
     """ Receive the command to run (directly from student-grading socket if both dockers or via the agent otherwise)"""
-    if both_dockers:  # Grading and student containers are both on docker
-        # Connect to the socket
-        my_socket = socket.socket(socket.AF_UNIX)  # , socket.SOCK_CLOEXEC) # for linux only
-        my_socket.connect("/__parent.sock")
-        # Say hello
-        print("Saying hello")
-        my_socket.send(b'H')
-        print("Said hello")
-        # Receive fds
-        print("Receiving fds")
-        msg, fds = recv_fds(my_socket, 1, 3)
-        assert msg == b'S'
-        print("Received fds")
-        # Unpack the start message
-        print("Unpacking start cmd")
-        unpacker = msgpack.Unpacker()
-        start_cmd = None
-        while start_cmd is None:
-            data = my_socket.recv(1)
-            unpacker.feed(data)
-            for msg in unpacker:
-                if msg["type"] == "run_student_command":
-                    return my_socket, fds, msg
-                raise Exception("Received wrong initial message")
-    else:  # Grading or student container is on Kata
-        msg = event_loop.run_until_complete(receive_message(container_stdin))
-        if msg["type"] != "run_student_init":
+    # Connect to the socket
+    my_socket = socket.socket(socket.AF_UNIX)  # , socket.SOCK_CLOEXEC) # for linux only
+    my_socket.connect("/__parent.sock")
+    # Say hello
+    print("Saying hello")
+    my_socket.send(b'H')
+    print("Said hello")
+    # Receive fds
+    print("Receiving fds")
+    msg, fds = recv_fds(my_socket, 1, 3)
+    assert msg == b'S'
+    print("Received fds")
+    # Unpack the start message
+    print("Unpacking start cmd")
+    unpacker = msgpack.Unpacker()
+    start_cmd = None
+    while start_cmd is None:
+        data = my_socket.recv(1)
+        unpacker.feed(data)
+        for msg in unpacker:
+            if msg["type"] == "run_student_command":
+                return my_socket, fds, msg
             raise Exception("Received wrong initial message")
-        return None, None, msg
-
-
-async def handle_stdin(reader: asyncio.StreamReader, proc_input, proc):
-    """ Deamon to handle messages from the agent.
-    Used only when both containers are not on a shared kernel"""
-    try:
-        while not reader.at_eof():
-            message = await receive_message(reader)
-            status = handle_stdin_message(message, proc_input, proc)
-            if status == "pipe_closed":
-                return
-    except:  # This task will raise an exception when the loop stops
-        return
-
+ 
 
 async def receive_message(reader: asyncio.StreamReader):
     """ Get the initial command message from the agent.
@@ -275,17 +233,6 @@ def handle_stdin_message(msg, proc_input, proc):
             return "pipe_closed"
     except:
         return
-
-
-async def stdio():
-    """ Create the stdin and stdout streams to communicate with the agent """
-    my_loop = asyncio.get_event_loop()
-    reader = asyncio.StreamReader()
-    reader_protocol = asyncio.StreamReaderProtocol(reader)
-    writer_transport, writer_protocol = await my_loop.connect_write_pipe(asyncio.streams.FlowControlMixin, os.fdopen(1, 'wb'))
-    writer = asyncio.StreamWriter(writer_transport, writer_protocol, None, my_loop)
-    await my_loop.connect_read_pipe(lambda: reader_protocol, sys.stdin)
-    return reader, writer
 
 
 def handle_outputs_helper(output, socket_id, output_type, lock, event_loop, container_stdout, outputs_loop):
