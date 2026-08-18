@@ -497,10 +497,12 @@ class DockerAgent(Agent):
             environment = self._containers[environment_type][environment_name]["id"]
 
             if run_as_root:
-                runtime_name = {k for k in self._runtimes if self._runtimes[k].run_as_root}.pop()
-                runtime = self._runtimes[runtime_name].runtime
-            else:
-                runtime = self._containers[environment_type][environment_name]["runtime"]
+                self._logger.warning("Running student container as root is not supported yet.")
+                await self._write_to_container_stdin(write_stream, {"type": "run_student_retval", "retval": 254,
+                                                                    "socket_id": socket_id})
+                return
+
+            runtime = self._containers[environment_type][environment_name]["runtime"]
 
             ports_needed = [22] if ssh else []
             ports = {}
