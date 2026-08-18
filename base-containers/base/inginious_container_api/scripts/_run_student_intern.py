@@ -12,7 +12,7 @@ import os
 
 from inginious_container_api.utils import set_limits_user, setup_logger,\
     run_teardown_script, handle_signals, handle_ssh_session, receive_initial_command,\
-    handle_outputs_helper, scripts_isolation
+    scripts_isolation
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
 
     # Check security
     student_container_id = start_cmd["student_container_id"]
-    user = start_cmd["user"]  # Know if you are worker (on docker) or root (on Kata)
+    user = start_cmd["user"]
     if user == "root":
         logger.info("Running as root is not supported yet.")
         sys.exit(251)

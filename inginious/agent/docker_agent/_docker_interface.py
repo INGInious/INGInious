@@ -169,7 +169,7 @@ class DockerInterface(object):  # pragma: no cover
 
     def create_container_student(self, runtime: str, image: str, mem_limit, student_path,
                                  sockets_path, socket_id, systemfiles_path, course_common_student_path,
-                                 parent_runtime: str,fd_limit, share_network_of_container: str=None, ports=None):
+                                 fd_limit, share_network_of_container: str=None, ports=None):
         """
         Creates a student container
         :param fd_limit:Tuple with soft and hard limits per slot for FS
@@ -211,7 +211,7 @@ class DockerInterface(object):  # pragma: no cover
         response = self._docker.containers.create(
             image,
             stdin_open=True,
-            command="_run_student_intern "+runtime + " " + parent_runtime,  # the script takes the runtimes as arguments
+            command="_run_student_intern",
             mem_limit=str(mem_limit) + "M",
             memswap_limit=str(mem_limit) + "M",
             network_mode=net_mode,

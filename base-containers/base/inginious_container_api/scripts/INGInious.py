@@ -227,10 +227,6 @@ class INGIniousMainRunner:
             if message["type"] == "dummy_message":
                 # ignore, just a dummy message
                 return False
-            if message["type"] in ["student_signal", "stdin"]:
-                await self.write_stdout(message)
-                await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "dummy_message"}, use_bin_type=True)])  # ping pong answer
-                return False
             if message["type"] == "done":
                 await self.intern.send_multipart([addr, b'', msgpack.dumps({"type": "ok"}, use_bin_type=True)])
                 return True
