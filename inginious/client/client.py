@@ -150,6 +150,7 @@ class Client(BetterParanoidPirateClient):
         self._queue_update_last_attempt_max = 3
         self._queue_cache = None
         self._queue_job_cache = {} #format is job_id: (nb_tasks_before (can be -1 == running), approx_wait_time_in_seconds)
+        self.agents_capabilities = {}
 
     async def _ask_queue_update(self):
         """ Send a ClientGetQueue message to the backend, if one is not already sent """
@@ -206,6 +207,7 @@ class Client(BetterParanoidPirateClient):
 
     async def _handle_update_environments(self, message: BackendUpdateEnvironments):
         self._available_environments = message.available_environments
+        self.agents_capabilities = message.capabilities
         self._logger.info("Updated environments")
         self._logger.debug("Environments: %s", str(self._available_environments))
 
