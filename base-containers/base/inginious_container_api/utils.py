@@ -202,60 +202,6 @@ def receive_initial_command():
             raise Exception("Received wrong initial message")
  
 
-async def receive_message(reader: asyncio.StreamReader):
-    """ Get the initial command message from the agent.
-     Used only when both containers are not on a shared-kernel """
-    buf = bytearray()
-    while len(buf) != 4 and not reader.at_eof():
-        buf += await reader.read(4 - len(buf))
-    length = struct.unpack('!I', bytes(buf))[0]
-    buf = bytearray()
-    while len(buf) != length and not reader.at_eof():
-        buf += await reader.read(length - len(buf))
-    return msgpack.unpackb(bytes(buf), use_list=False)
-
-
-def handle_stdin_message(msg, proc_input, proc):
-    """ Process a single message from the agent (stdin message for the student code process or signals messages).
-    Used only when both containers are not on a shared kernel """
-    try:
-        if msg["type"] == "stdin":
-            input_content = msg["message"]
-            proc_input.write(input_content)
-            proc_input.flush()
-            return "stdin ok"
-        if msg["type"] == "student_signal":
-            signal = msg["signal_data"]
-            proc.send_signal(int(signal.decode('utf8')))
-            return "signal ok"
-    except IOError as ioerror:
-        if ioerror.errno == errno.EPIPE:
-            return "pipe_closed"
-    except:
-        return
-
-
-def handle_outputs_helper(output, socket_id, output_type, lock, event_loop, container_stdout, outputs_loop):
-    """ Function launched in its own thread using its own asyncio loop to handle outputs and send them to agent.
-    Used only when both containers are not on a shared kernel """
-
-    chunk_size = 512000
-    block = True
-    while block:
-        block = read_block(output, chunk_size)
-        if output_type == "stdout":
-            time.sleep(0.001)  # (arbitrary delay to avoid non-deterministic message order)
-        if block:
-            lock.acquire()
-            message = {"type": output_type, "socket_id": socket_id, "message": block}
-            outputs_loop.run_until_complete(write_stdout(message, container_stdout))
-            lock.release()
-
-    if output_type == "stdout":  # when the handle_output thread finishes, it stop the loop (to stop handle_stin)
-        outputs_loop.close()
-        event_loop.call_soon_threadsafe(event_loop.stop)
-
-
 def read_block(bin_file, chunk_size):
     """ Returns a chunk of size up to chunk_size bytes """
     chunk = bin_file.read(chunk_size)

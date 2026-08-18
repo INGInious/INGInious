@@ -526,7 +526,6 @@ class DockerAgent(Agent):
                                                                            socket_id,
                                                                            parent_info.systemfiles_path,
                                                                            parent_info.course_common_student_path,
-                                                                           parent_info.environment_type,
                                                                            self.__get_fd_limit(),
                                                                            parent_info.container_id if share_network else None,
                                                                            ports)
@@ -650,29 +649,6 @@ class DockerAgent(Agent):
         write_stream.write(msg)
         await write_stream.drain()
 
-    async def _handle_student_container_outputs(self, student_reader_stream, grading_write_stream):
-        """ Receive outputs (stdout and stderr) from student_container and send them to grading_container without decoding """
-        buffer = bytearray()
-        try:
-            while not student_reader_stream.at_eof():
-                buffer = await self.read_stream(student_reader_stream, buffer)
-                while self.buffer_has_data(buffer):
-                    buffer, msg_encoded = self.read_buffer(buffer, decode=False)
-                    try:
-                        grading_write_stream.write(
-                            struct.pack('!I', len(msg_encoded)))  # Transfer the message without decoding it
-                        grading_write_stream.write(msg_encoded)
-                        await grading_write_stream.drain()
-                    except Exception as e:
-                        self._logger.info("Student container closed the stream")
-                        self._logger.info(e)
-                        return
-        except asyncio.IncompleteReadError:
-            self._logger.debug("Container output ended with an IncompleteReadError; It was probably killed.")
-            return
-        except:
-            self._logger.exception("Received incorrect message from student container")
-
     async def handle_running_container(self, info: DockerRunningJob, future_results):
         """ Talk with a container. Sends the initial input. Allows to start student containers """
         sock = await self._docker.attach_to_container(info.container_id)
@@ -696,7 +672,6 @@ class DockerAgent(Agent):
 
         buffer = bytearray()
         try:
-            student_containers_streams = {}
             while not reader_stream.at_eof():
                 buffer = await self.read_stream(reader_stream, buffer)
                 while self.buffer_has_data(buffer):
@@ -725,14 +700,6 @@ class DockerAgent(Agent):
                                     self.create_student_container(info, socket_id, environment, memory_limit,
                                                                   time_limit, hard_time_limit, share_network,
                                                                   write_stream, ssh, run_as_root))
-
-                        elif msg["type"] in ["stdin", "student_signal"]:  # Simply transfer to student_container
-                            if msg["student_container_id"] not in student_containers_streams:
-                                student_containers_streams[
-                                    msg["student_container_id"]] = await self.open_student_stream(
-                                    msg["student_container_id"])
-                            await self._write_to_container_stdin(
-                                student_containers_streams[msg["student_container_id"]][1], msg)
 
                         elif msg["type"] == "ssh_debug":
                             # send the data to the frontend (and client) to reach grading_container
@@ -774,12 +741,6 @@ class DockerAgent(Agent):
 
         if not result:
             self._logger.warning("Container %s has not given any result", info.container_id)
-
-    async def open_student_stream(self, student_container_id):
-        student_sock = await self._docker.attach_to_container(student_container_id)
-        student_reader_stream, student_write_stream = await asyncio.open_connection(sock=student_sock._sock)
-        stream = (student_reader_stream, student_write_stream)
-        return stream
 
     async def handle_student_job_closing(self, container_id, retval):
         """ Handle a closing student container. Do some cleaning, verify memory limits, timeouts, ... and returns data to the associated grading container """
