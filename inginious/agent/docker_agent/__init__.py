@@ -73,8 +73,8 @@ class DockerAgent(Agent):
         :param address_host: hostname/ip/... to which external client should connect to access to the docker
         :param external_ports: iterable containing ports to which the docker instance can bind internal ports
         :param tmp_dir: temp dir that is used by the agent to start new containers
-        :param type: type of the container ("docker" or "kata")
-        :param runtime: runtime used by docker (the defaults are "runc" with docker or "kata-runtime" with kata)
+        :param type: type of the container ("docker")
+        :param runtime: runtime used by docker (the defaults are "runc" with docker)
         :param ssh_allowed: boolean to make this agent accept tasks with ssh or not
         """
         super(DockerAgent, self).__init__(context, backend_addr, friendly_name, concurrency)
@@ -684,11 +684,10 @@ class DockerAgent(Agent):
 
         # Send hello msg
         hello_msg = {"type": "start", "input": info.inputdata, "debug": info.debug,
-                     "envtypes": {x.envtype: x.shared_kernel for x in self._runtimes.values()}}
+                     "envtypes": {x.envtype: True for x in self._runtimes.values()}}
         if info.run_cmd is not None:
             hello_msg["run_cmd"] = info.run_cmd
         hello_msg["run_as_root"] = self._runtimes[info.environment_type].run_as_root
-        hello_msg["shared_kernel"] = self._runtimes[info.environment_type].shared_kernel
 
         await self._write_to_container_stdin(write_stream, hello_msg)
         result = None
@@ -724,30 +723,6 @@ class DockerAgent(Agent):
                                     self.create_student_container(info, socket_id, environment, memory_limit,
                                                                   time_limit, hard_time_limit, share_network,
                                                                   write_stream, ssh, run_as_root))
-
-                        elif msg["type"] == "run_student_init":  # We use non docker-docker communication !
-                            if msg["student_container_id"] not in student_containers_streams:
-                                student_containers_streams[
-                                    msg["student_container_id"]] = await self.open_student_stream(
-                                    msg["student_container_id"])
-                            await self._write_to_container_stdin(
-                                student_containers_streams[msg["student_container_id"]][1],
-                                {"type": "run_student_init",
-                                 "socket_id": msg["socket_id"],
-                                 "command": msg["command"],
-                                 "teardown_script": msg["teardown_script"],
-                                 "student_container_id": msg[
-                                     "student_container_id"],
-                                 "working_dir": msg["working_dir"],
-                                 "ssh": msg["ssh"],
-                                 "user": msg["user"]})
-
-                            if msg["ssh"]:
-                                await self.start_ssh(student_containers_streams[msg["student_container_id"]][0],
-                                                     info)  # If using ssh with kata: wait for ssh info and start ssh
-                            else:  # classical run_student (not ssh_student) with a kata runtime -> handle student_container outputs
-                                self._start_background_task(self._handle_student_container_outputs(
-                                    student_containers_streams[msg["student_container_id"]][0], write_stream))
 
                         elif msg["type"] in ["stdin", "student_signal"]:  # Simply transfer to student_container
                             if msg["student_container_id"] not in student_containers_streams:
@@ -1021,13 +996,11 @@ class DockerAgent(Agent):
     def _detect_runtimes(self) -> Dict[str, DockerRuntime]:
         heuristic = [
             ("runc", lambda x, y: DockerRuntime(runtime=x, run_as_root=False, enables_gpu=False,
-                                                shared_kernel=True, envtype="docker-ssh" if y else "docker")),
+                                                envtype="docker-ssh" if y else "docker")),
             ("crun", lambda x, y: DockerRuntime(runtime=x, run_as_root=False, enables_gpu=False,
-                                                shared_kernel=True, envtype="docker-ssh" if y else "docker")),
-            ("kata", lambda x, y: DockerRuntime(runtime=x, run_as_root=True, enables_gpu=False,
-                                                shared_kernel=False, envtype="kata-ssh" if y else "kata")),
+                                                envtype="docker-ssh" if y else "docker")),
             ("nvidia", lambda x, y: DockerRuntime(runtime=x, run_as_root=False, enables_gpu=True,
-                                                  shared_kernel=True, envtype="nvidia-ssh" if y else "nvidia"))
+                                                  envtype="nvidia-ssh" if y else "nvidia"))
         ]
         retval = {}
 

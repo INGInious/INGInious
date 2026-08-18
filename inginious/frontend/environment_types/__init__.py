@@ -1,7 +1,4 @@
-import abc
-
 from inginious.frontend.environment_types.docker import DockerEnvType
-from inginious.frontend.environment_types.kata import KataEnvType
 from inginious.frontend.environment_types.mcq import MCQEnvType
 from inginious.frontend.environment_types.nvidia import NvidiaEnvType
 
@@ -28,6 +25,4 @@ def register_base_env_types():
     register_env_type(DockerEnvType(ssh_allowed=True))
     register_env_type(NvidiaEnvType())
     register_env_type(NvidiaEnvType(ssh_allowed=True))
-    register_env_type(KataEnvType())
-    register_env_type(KataEnvType(ssh_allowed=True))
     register_env_type(MCQEnvType())

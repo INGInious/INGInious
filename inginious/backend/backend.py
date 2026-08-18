@@ -51,7 +51,7 @@ class Backend(object):
         self._poller.register(self._agent_socket, zmq.POLLIN)
         self._poller.register(self._client_socket, zmq.POLLIN)
 
-        # dict of available environments. Keys are first the type of environement (docker, mcq, kata...) then the
+        # dict of available environments. Keys are first the type of environement (docker, mcq) then the
         # name of the environment.
         self._environments: Dict[str, Dict[str, EnvironmentInfo]] = {}
         self._registered_clients = set()  # addr of registered clients
