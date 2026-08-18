@@ -105,7 +105,7 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
-                <div id="feedback" class="alert alert-danger" role="alert" style="display:none;"></div>
+                <div id="feedback_delete" class="alert alert-danger" role="alert" style="display:none;"></div>
                 <p>{{ _("This will delete {}. Are you sure ?").format('<span class="username"></span>') | safe }}</p>
             </div>
             <div class="modal-footer">
@@ -125,7 +125,7 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
-                <div id="feedback" class="alert alert-danger" role="alert" style="display:none;"></div>
+                <div id="feedback_activate" class="alert alert-danger" role="alert" style="display:none;"></div>
                 <p>{{ _("This will activate {}.").format('<span class="username"></span>') | safe }}</p>
             </div>
             <div class="modal-footer">
@@ -145,7 +145,7 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
-                <p id="feedback" class="alert alert-danger" role="alert" style="display:none;"></p>
+                <p id="feedback_add" class="alert alert-danger" role="alert" style="display:none;"></p>
                 <div class="row">
                     <div class="col-sm-12">
                         <label class="control-label">{{ _("Username (min. 4 alphanumerical characters) :") }} </label>
@@ -200,8 +200,7 @@
       $('.modal-dialog #username').val($(event.relatedTarget).data('username'));
     });
     $('#delete_modal').on('hidden.bs.modal', function () {
-        $('#feedback').empty();
-        $('#feedback').hide();
+        $('#feedback_delete').empty().hide();
     })
     $('#activate_modal').on('show.bs.modal', function (event) {
       $('.modal-dialog .username').each(function (index) {
@@ -210,18 +209,19 @@
       $('.modal-dialog #username').val($(event.relatedTarget).data('username'));
     });
     $('#activate_modal').on('hidden.bs.modal', function () {
-        $('#feedback').empty();
-        $('#feedback').hide();
+        $('#feedback_activate').empty().hide();
     })
     $('#binding_modal').on('show.bs.modal', function (event) {
         $('.modal-dialog #username').val($(event.relatedTarget).data('username'));
         var username=$('#username').val();
         display_bindings(username, get_bindings(username));
     });
+    $('#add_modal').on('hide.bs.modal', function (event) {
+        $('#feedback_add').empty().hide();
+    });
     $('#binding_modal').on('hide.bs.modal', function (event) {
         $("#binding_content").html('');
-        $('#feedback_bindings').empty();
-        $('#feedback_bindings').hide();
+        $('#feedback_bindings').empty().hide();
     });
     $(".delete_user").each(function(index) {
         $(this).tooltip({"placement": "bottom"});

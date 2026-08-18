@@ -72,8 +72,13 @@ function action_handler(action){
         if (!feedback.hasOwnProperty('error')){
             window.location.href = "users";
         }else{
-            $('#feedback').text(feedback['message']);
-            $('#feedback').show();
+            if (action == "add_user"){
+                $('#feedback_add').text(feedback['message']).show();
+            } else if (action == "activate"){
+                $('#feedback_activate').text(feedback['message']).show();
+            } else if (action == "delete"){
+                $('#feedback_delete').text(feedback['message']).show();
+            }
         }
     });
 }
