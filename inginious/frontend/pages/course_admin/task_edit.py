@@ -20,7 +20,7 @@ from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.pages.course_admin.task_edit_file import CourseTaskFiles
 from inginious.frontend.tasks import Task
 from inginious.frontend.plugins import plugin_manager
-from inginious.frontend.environment_types import get_all_env_types
+from inginious.frontend.environment_types import get_env_from_type
 
 
 class CourseEditTask(INGIniousAdminPage):
@@ -40,15 +40,21 @@ class CourseEditTask(INGIniousAdminPage):
         except TaskNotFoundException:
             raise NotFound()
 
-        environment_types = get_all_env_types()
-        environments = self.submission_manager.get_available_environments()
+        environments = {
+            agent_type: {
+              'envs': envs,
+              'capabilities': self.client.agents_capabilities.get(agent_type),
+              'obj': get_env_from_type(agent_type)
+            } for agent_type, envs in
+            self.submission_manager.get_available_environments().items()
+        }
 
         additional_tabs = plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
                                                         task_data=task_data)
 
         return render_template("course_admin/task_edit.html", course=course, taskid=taskid,
                                            problem_types=get_problem_types(), task_data=task_data,
-                                           environment_types=environment_types, environments=environments,
+                                           environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),
                                            file_list=CourseTaskFiles.get_task_filelist(task.get_fs()),
                                            additional_tabs=additional_tabs)
@@ -79,6 +85,8 @@ class CourseEditTask(INGIniousAdminPage):
                     and not key.startswith("environment_id")
                     and not key.startswith("/")
                     and not key == "@action"}
+
+            data["capabilities"] = [c for c in self.client.agents_capabilities.get(environment_type, {}) if environment_parameters.pop(c, False)]
 
             data["environment_id"] = environment_id # we do this after having removed all the environment_id[something] entries
 

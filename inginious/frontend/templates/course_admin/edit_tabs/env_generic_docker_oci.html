@@ -30,7 +30,17 @@
         </label></div>
     </div>
 </div>
-
+{% for capability, doc in capabilities.items() %}
+<div class="form-group row">
+    <label for="{{env_id}}-{{capability}}" class="col-sm-4 control-label">{{ _(doc) }}</label>
+    <div class="col-sm-8">
+        <div class="checkbox"><label>
+            <input type="checkbox" id="{{env_id}}-{{capability}}" name="envparams[{{env_id}}][{{capability}}]"
+                   {{'checked="checked"' if capability in task_capabilities }} />&nbsp;
+        </label></div>
+    </div>
+</div>
+{% endfor %}
 <div class="form-group row">
     <label for="{{env_id}}-run-cmd" class="col-sm-4 control-label">{{ _("Custom command to be run in container <small>(instead of running the run script)</small>") | safe}}</label>
 
