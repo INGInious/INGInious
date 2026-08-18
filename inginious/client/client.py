@@ -280,6 +280,7 @@ class Client(BetterParanoidPirateClient):
                 task: Task,                 Task object related to the submission, optional, can be None
                 environment_type: str,      Type of the environment to run the job (ex : docker, docker_ssh, mcq, ...)
                 environment: str            Name of the environment to run the job in.
+                capabilities: list[str]     The Agent capabilities required to run the job.
             }
         : type job_info: dict
         :param inputdata: input from the student
@@ -329,11 +330,11 @@ class Client(BetterParanoidPirateClient):
 
             msg = ClientNewJob(job_id, priority, course.get_id(), task.get_id(), task.get_problems_dict(), inputdata,
                                job_info["environment_type"], job_info["environment"], task.get_environment_parameters(),
-                               debug, launcher_name)
+                               debug, launcher_name, job_info['capabilities'])
         else:
             msg = ClientNewJob(job_id, priority, None, None, {}, inputdata,
                                job_info["environment_type"], job_info["environment"], {}, debug,
-                               launcher_name)
+                               launcher_name, job_info['capabilities'])
 
         self._loop.call_soon_threadsafe(asyncio.ensure_future,
                                         self._create_transaction(msg, task=task, callback=safe_callback,

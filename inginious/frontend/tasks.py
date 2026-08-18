@@ -61,6 +61,7 @@ def _migrate_from_v_0_10(content):
     # Do not save empty capabilities list. There is a default loader.
     if len(capabilities) > 0:
         content['capabilities'] = capabilities
+    return content
 
 class Task:
     """ A task that stores additional context information, specific to the web app """

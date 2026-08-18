@@ -134,6 +134,7 @@ class Backend:
     async def handle_client_new_job(self, client_addr, message: ClientNewJob):
         """ Handle an ClientNewJob message. Add a job to the queue and triggers an update """
 
+        # Ensure that job is not already registered.
         if message.job_id in self._waiting_jobs or message.job_id in self._job_running:
             self._logger.info("Client %s asked to add a job with id %s to the queue, but it's already inside. "
                               "Duplicate random id, message repeat are possible causes, "
@@ -141,6 +142,30 @@ class Backend:
             await ZMQUtils.send_with_addr(self._client_socket, client_addr,
                                           BackendJobDone(message.job_id, ("crash", "Duplicate job id"),
                                                          0.0, {}, {}, {}, "", None, "", ""))
+            return
+
+         # Ensure that at least one agent supports the requested environment, even if it is busy now.
+        can_serve = [agent for agent in self._registered_agents.values() if agent.type == message.environment_type and message.environment in agent.environments]
+        if not can_serve:
+            self._logger.warning(f"No agent supports the environment {message.environment} requested by job {message.job_id}!")
+            await ZMQUtils.send_with_addr(self._client_socket, client_addr,
+                BackendJobDone(
+                    message.job_id, ("crash", "Requested environment not supported. Contact the INGInious instance administrator."),
+                    0.0, {}, {}, {}, "", None, "", ""
+                )
+            )
+            return
+
+        # Ensure that at least one agent among those that present the requested environment also supports the
+        # requested capabilities, even if they are busy now.
+        if message.capabilities and (c := set(message.capabilities)) and not any(c.issubset(set(agent.capabilities)) for agent in can_serve):
+            self._logger.warning(f"No agent supports the capabilities {message.capabilities} requested by job {message.job_id}!")
+            await ZMQUtils.send_with_addr(self._client_socket, client_addr,
+                BackendJobDone(
+                    message.job_id, ("crash", "Requested capabilities not supported. Contact the INGInious instance administrator."),
+                    0.0, {}, {}, {}, "", None, "", ""
+                )
+            )
             return
 
         self._logger.info("Adding a new job %s %s to the queue", client_addr, message.job_id)
@@ -201,11 +226,13 @@ class Backend:
             if self._waiting_jobs_pq.empty():
                 break  # nothing to do
 
+            seen = []
             try:
                 job = None
                 while job is None:
                     # keep the object, do not unzip it directly! It's sometimes modified when a job is killed.
-                    topics = self._registered_agents[agent_addr].environments
+                    topics = [(self._registered_agents[agent_addr].type, env) for env in self._registered_agents[agent_addr].environments]
+                    agent_caps = set(self._registered_agents[agent_addr].capabilities)
 
                     job = self._waiting_jobs_pq.get(topics)
                     priority, insert_time, client_addr, job_id, job_msg = job
@@ -213,7 +240,18 @@ class Backend:
                     # Ensure the job has not been removed (killed)
                     if job_id not in self._waiting_jobs:
                         job = None  # repeat the while loop. we need a job
+                    elif not set(job_msg.capabilities).issubset(agent_caps):
+                        # Agent does not support the requested capabilities, skip the job.
+                        seen.append(job)
+                        job = None
+
+                for j in seen:
+                    _, _, _, _, jmsg = j
+                    self._waiting_jobs_pq.put((jmsg.environment_type, jmsg.environment), j)
             except queue.Empty:
+                for j in seen:
+                    _, _, _, _, jmsg = j
+                    self._waiting_jobs_pq.put((jmsg.environment_type, jmsg.environment), j)
                 continue  # skip agent, nothing to do!
 
             # We have found a job, let's remove the agent from the available list

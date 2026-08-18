@@ -42,6 +42,8 @@ class ClientNewJob:
     environment_parameters: Dict[str, Any] # parameters for the environment (timeouts, limits, ...)
     debug: Union[str, bool]  # True to enable debug, False to disable it, "ssh" to enable ssh debug
     launcher: str  # the name of the entity that launched this job, for logging purposes
+    """ AgentCapabilities required to run the job. """
+    capabilities: list[str]
 
 
 @dataclass(frozen=True)
