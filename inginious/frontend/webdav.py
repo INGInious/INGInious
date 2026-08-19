@@ -3,6 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
+import importlib
 import os
 
 from wsgidav import util, wsgidav_app
@@ -17,6 +18,10 @@ from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.courses import Course
 
+from inginious.common.tasks_problems import register_problem_types
+from inginious.frontend.task_problems import get_default_displayable_problem_types
+from inginious.frontend.environment_types import register_base_env_types
+from inginious.frontend.task_problems import inspect_displayable_problem_types
 
 def get_dc(user_manager):
 
@@ -199,6 +204,16 @@ def get_app(config):
     """ Init the webdav app """
     connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
+    register_base_env_types()
+    register_problem_types(get_default_displayable_problem_types())
+    
+    for entry in config.get('plugins', []): 
+         module_name = entry["plugin_module"] 
+  
+         """ Load DisplayableProblem sub-classes """ 
+         displayable_pbl_types = inspect_displayable_problem_types(module_name) 
+         register_problem_types(displayable_pbl_types) 
+
     # Create the FS provider
     if "tasks_directory" not in config:
         raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
@@ -206,8 +221,15 @@ def get_app(config):
     init_fs_provider(LocalFSProvider(config["tasks_directory"]))
     user_manager = UserManager(config.get('superadmins', []))
 
+    # Support for webdav server at URL sub-paths, e.g., inginious.org/dav
+    host = config.get('webdav_host', 'localhost/')
+    for prefix in ['https://', 'http://']:
+        if host.startswith(prefix):
+            host = host.lstrip(prefix)
+    root = '/'.join(host.split('/')[1:])
+
     config = dict(wsgidav_app.DEFAULT_CONFIG)
-    config["provider_mapping"] = {"/": INGIniousFilesystemProvider()}
+    config["provider_mapping"] = {f"/{root}": INGIniousFilesystemProvider()}
     config["http_authenticator"]["domain_controller"] = get_dc(user_manager)
     config["verbose"] = 0
 

@@ -24,4 +24,4 @@ class User(Document):
     activate = StringField()
     reset = StringField()
 
-    meta = {"collection": "users", "indexes": ["username"]}
+    meta = {"collection": "users", "indexes": ["username", "email"]}

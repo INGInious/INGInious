@@ -37,6 +37,29 @@ services:
     image: mongo:6.0.2
     volumes:
       - ./db:/data/db:z
+      - ./deploy/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:z
+    environment:
+      MONGO_INITDB_DATABASE: "INGInious"
+
+      # MANDATORY ARGUMENT, INITIALISATION WILL FAIL IF NOT PROVIDED.
+      # Output of 'echo -n "superadmin" | argon2  ASUPERSECURESALT -id -t 3 -m 16 -l 64 -e'.
+      # $ are doubled because of variable expansion in compose env var.
+      INGINIOUS_SUPERADMIN_PASSWORD: '$$argon2id$$v=19$$m=65536,t=3,p=1$$QVNVUEVSU0VDVVJFU0FMVA$$NpeSDEsx+FwrIS277T9o/Q4z4Ypicibs3LiLZrftXsBUmBxFnK8FKa45w5q85ewM+dOlzZPMFdAmxpmDVAmLlQ'
+
+      # Username. Defaults to "superadmin" if not provided.
+      INGINIOUS_SUPERADMIN_USERNAME: "superadmin"
+
+      # Real name. Defaults to "INGInious superadmin" if not provided.
+      INGINIOUS_SUPERADMIN_REALNAME: "INGInious superadmin"
+
+      # Email. Defaults to "superadmin@inginious.org" if not provided.
+      INGINIOUS_SUPERADMIN_EMAIL: "superadmin@inginious.org"
+
+      # Optionnal superadmin language
+      # INGINIOUS_SUPERADMIN_LANG: "en"
+      #
+      # Optionnal superadmin code indentation
+      # INGINIOUS_SUPERADMIN_INDENT: "4"
     networks:
       - inginious
 
@@ -81,7 +104,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:z
       # See https://github.com/INGInious/INGInious/issues/352
       - ./tasks:/inginious/tasks:z
-      - ./backups:/inginious/backups:z
       # See https://github.com/INGInious/INGInious/issues/799
       - /tmp/agent_data:/tmp/agent_data:z
     networks:
@@ -105,7 +127,6 @@ services:
     volumes:
       # See https://github.com/INGInious/INGInious/issues/352
       - ./tasks:/inginious/tasks:z
-      - ./backups:/inginious/backups:z
       # See https://github.com/INGInious/INGInious/issues/799
       - /tmp/agent_data:/tmp/agent_data:z
     networks:
@@ -129,18 +150,48 @@ services:
     volumes:
       - ./configuration.deploy.yaml:/inginious/configuration.yaml:z
       - ./tasks:/inginious/tasks:z
-      - ./backups:/inginious/backups:z
+    networks:
+      - inginious
+
+  webdav:
+    image: ${REGISTRY}/inginious/core-webdav:${VERSION}
+    build:
+      dockerfile: deploy/Containerfile
+      target: webdav
+      args:
+        - VERSION=${VERSION}
+        - REGISTRY=${REGISTRY}
+    environment:
+      - INGINIOUS_WEBDAV_HOST=0.0.0.0
+    depends_on:
+      - db
+    volumes:
+      - ./configuration.deploy.yaml:/inginious/configuration.yaml:z
+      - ./tasks/:/inginious/tasks:z
+    networks:
+      - inginious
+
+  caddy:
+    image: docker.io/library/caddy:2.11.4-alpine
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:z
+    depends_on:
+      - frontend
+      - webdav
     ports:
-      - 9000:8080
+      - 443:443
+    # For illustration purpose, not useful in real deployments.
+    networks:
+      inginious:
+        aliases:
+          - inginious.local
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "curl", "-f", "https://localhost"]
       interval: 1m30s
       timeout: 10s
       retries: 3
       start_period: 40s
       start_interval: 5s
-    networks:
-      - inginious
 
 networks:
   inginious:
