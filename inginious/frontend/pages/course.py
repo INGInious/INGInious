@@ -11,6 +11,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import UserTask
+from werkzeug.exceptions import InternalServerError
 
 
 def handle_course_unavailable(user_manager, course):
@@ -34,8 +35,8 @@ class CoursePage(INGIniousAuthPage):
         """ Return the course """
         try:
             course = Course.get(courseid)
-        except:
-            raise NotFound(description=_("Course not found."))
+        except Exception as e:
+            raise InternalServerError(description=_(e))
 
         return course
 

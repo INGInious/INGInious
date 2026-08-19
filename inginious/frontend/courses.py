@@ -23,6 +23,7 @@ from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.task_dispensers import get_task_dispensers
+from inginious.frontend.task_dispensers.util import InvalidTocException
 from inginious.frontend.tasks import Task
 from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException
 
@@ -79,12 +80,35 @@ class Course(object):
             self._lti_config = self._content.get('lti_config', {})
             self._lti_secrets = self._content.get('lti_secrets', {})
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
-            self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
+
+            tags = self._content.get("tags", {})
+            if not isinstance(tags, dict):
+                raise CourseUnreadableException("Course " + self.get_id() + " has an invalid tags structure " + str(tags))
+            self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in tags.items()}
+
             task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
             # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
             self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", {}), self.get_id())
+
+        except InvalidTocException as e:
+            raise CourseUnreadableException("Course " + self.get_id() + " has an invalid dispenser data: " + str(e))
         except:
-            raise Exception("Course has an invalid YAML spec: " + self.get_id())
+            raise CourseUnreadableException("Course " + self.get_id() + " has an invalid YAML spec")
+
+        # checking types
+        list_fields = {"admins": self._admins, "tutors": self._tutors, "registration_ac_list": self._registration_ac_list}
+        bad_name = next((name for name, value in list_fields.items() if not isinstance(value, list)), None)
+        if bad_name is not None:
+            raise CourseUnreadableException(
+                f"Course {self.get_id()} has an invalid dispenser data: {bad_name} is not a list"
+            )
+
+        dict_fields = {"lti_keys": self._lti_keys, "lti_secrets": self._lti_secrets, "lti_config": self._lti_config}
+        bad_name = next((name for name, value in dict_fields.items() if not isinstance(value, dict)), None)
+        if bad_name is not None:
+            raise CourseUnreadableException(
+                f"Course {self.get_id()} has an invalid dispenser data: {bad_name} is not a dict"
+            )
 
         # Force some parameters if LTI is active
         if self.is_lti():
