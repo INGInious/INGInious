@@ -360,11 +360,11 @@ def parse_tasks_config(task_list, config_items, data):
 
     # Check each config validity
     for taskid, structure in data.items():
-        try:
-            for config_item in config_items:
+        for config_item in config_items:
+            try:
                 config_item.get_value(structure)
-        except Exception as ex:
-            raise InvalidTocException("In taskid {} : {}".format(taskid, str(ex)))
+            except Exception as ex:
+                raise InvalidTocException("In taskid {}, {} : {}".format(taskid, config_item.get_id(), str(ex)))
 
 
 def check_task_config(task_list, config_items, data):
