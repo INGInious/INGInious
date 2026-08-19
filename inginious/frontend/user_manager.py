@@ -138,33 +138,32 @@ class UserManager:
         if user is None:
             return None
 
-        method, db_hash = user["password"].split("-", 1) if "-" in user["password"] else ("sha512", user["password"])
-
-        if self.verify_hash(db_hash, password, method):
+        if self.verify_hash(user["password"], password):
             if do_connect:
                 self.connect_user(user)
             return user
 
-    def verify_hash(cls, db_hash, password, method="sha512"):
+    @classmethod
+    def verify_hash(cls, db_hash, password):
         """
         Verify a hash
-        :param db_hash: The hash to verify
+        :param db_hash: The hash to verify (stored in DB, including the hashing method if not sha512)
         :param password: The password to verify
-        :param method: The hash method
         :return: A boolean if the hash is correct
         """
         available_methods = {"sha512": cls.verify_hash_sha512, "argon2id": cls.verify_hash_argon2id}
+        method, pwd_hash = db_hash.split("-", 1) if "-" in db_hash else ("sha512", db_hash)
 
         if method in available_methods:
-            return available_methods[method](db_hash, password)
+            return available_methods[method](pwd_hash, password)
         else:
             raise AuthInvalidMethodException()
 
-
+    @classmethod
     def verify_hash_sha512(cls, db_hash, password):
         return cls.hash_password_sha512(password) == db_hash
 
-
+    @classmethod
     def verify_hash_argon2id(cls, db_hash, password):
         try:
             ph = PasswordHasher()

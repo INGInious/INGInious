@@ -7,13 +7,16 @@
 
 import base64
 import flask
+import json
+from bson import json_util
 
-from flask import current_app, session
+from flask import current_app, request
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.models.submission import Submission
 
 
-def _get_submissions(submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
+def _get_submissions(username, submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
     """
         Helper for the GET methods of the two following classes
     """
@@ -23,7 +26,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
     except:
         raise APINotFound("Course not found")
 
-    if not user_manager.course_is_open_to_user(course, lti=False):
+    if not user_manager.course_is_open_to_user(course, username, lti=False):
         raise APIForbidden("You are not registered to this course")
 
     try:
@@ -32,10 +35,10 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         raise APINotFound("Task not found")
 
     if submissionid is None:
-        submissions = submission_manager.get_user_submissions(course, task)
+        submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
-            submissions = [submission_manager.get_submission(submissionid)]
+            submissions = [submission_manager.get_submission(submissionid, user_check=False)]
         except:
             raise APINotFound("Submission not found")
         if submissions[0]["taskid"] != task.get_id() or submissions[0]["courseid"] != course.get_id():
@@ -46,7 +49,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, session.username)
+            show_everything=user_manager.has_staff_rights_on_course(course, username)
         )
         data = {
             "id": str(submission["id"]),
@@ -63,10 +66,10 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
                     d["value"] = base64.b64encode(d["value"]).decode("utf8")
 
         if submission["status"] == "done":
-            data["grade"] = submission.get("grade", 0)
-            data["result"] = submission.get("result", "crash")
-            data["feedback"] = submission.get("text", "")
-            data["problems_feedback"] = submission.get("problems", {})
+            data["grade"] = submission.grade
+            data["result"] = submission.result
+            data["feedback"] = submission.text
+            data["problems_feedback"] = submission.problems
 
         output.append(data)
 
@@ -110,8 +113,9 @@ class APISubmissionSingle(APIAuthenticatedPage):
             this dict will contain one entry or the page will return 404 Not Found.
         """
         with_input = "input" in flask.request.args
+        username = flask.g.user.username
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
+        return _get_submissions(username, self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -151,12 +155,14 @@ class APISubmissions(APIAuthenticatedPage):
             this dict will contain one entry or the page will return 404 Not Found.
         """
         with_input = "input" in flask.request.args
+        username = flask.g.user.username
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input)
+        return _get_submissions(username, self.submission_manager, self.user_manager, courseid, taskid, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
             Creates a new submissions. Takes as (POST) input the key of the subproblems, with the value assigned each time.
+            Allow for application/json input or multipart/form-data input. For file input problems, the form-data input is required.
 
             Returns
 
@@ -172,7 +178,7 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        username = session.username
+        username = flask.g.user.username
 
         if not self.user_manager.course_is_open_to_user(course, username, False):
             raise APIForbidden("You are not registered to this course")
@@ -188,20 +194,24 @@ class APISubmissions(APIAuthenticatedPage):
         if not self.user_manager.task_can_user_submit(course, task, username, False):
             raise APIForbidden("You are not allowed to submit for this task")
 
-        user_input = flask.request.form.copy()
-        for problem in task.get_problems():
-            pid = problem.get_id()
-            if problem.input_type() == list:
-                user_input[pid] = flask.request.form.getlist(pid)
-            elif problem.input_type() == dict:
-                user_input[pid] = flask.request.files.get(pid)
-            else:
-                user_input[pid] = flask.request.form.get(pid)
+        if flask.request.is_json:
+            user_input = flask.request.get_json()
+
+        else:
+            user_input = flask.request.form.copy()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    user_input[pid] = flask.request.form.getlist(pid)
+                elif problem.input_type() == dict:
+                    user_input[pid] = flask.request.files.get(pid)
+                else:
+                    user_input[pid] = flask.request.form.get(pid)
 
         user_input = task.adapt_input_for_backend(user_input)
 
-        if not task.input_is_consistent(user_input, current_app.config('ALLOWED_FILE_EXTENSIONS'),
-                                        current_app.config.get('MAX_FILE_SIZE')):
+        if not task.input_is_consistent(user_input, current_app.config['ALLOWED_FILE_EXTENSIONS'],
+                                        current_app.config['MAX_FILE_SIZE']):
             raise APIInvalidArguments()
 
         # Get debug info if the current user is an admin
@@ -210,7 +220,142 @@ class APISubmissions(APIAuthenticatedPage):
 
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug)
+            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), username, debug)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
+
+
+class APISubmissionsCourse(APIAuthenticatedPage):
+
+
+    def API_POST(self, courseid, taskid
+    =None):
+        """
+            List all the submissions from a course that were evaluated (done). Or all submissions for a particular task in case a task id is given.
+            # TODO : have two different docs ?How to display them separately in the documentation ?
+            Only accessible to staff members of the course.
+            Returns a 200 OK if the endpoint is reachable and the user has access to it.
+            Returns 403 Forbidden if the user does not have access to the course/task.
+            Returns 404 Not Found if the course does not exist.
+
+            Returns list of the form :
+            ::
+
+                [
+                    {
+                        "courseid": "submission_id1",
+                        "taskid": "date",
+                        "username" : ["user1", "user2", ...],          #list of users related to that submissions (multiple users in case of a group submission)
+                        "submitted_on": "2026-06-23T15:01:44Z",     #date in the ISO 8601 format
+                        "result" : "success"        #can be success, failure, crash (execution status of the task).
+                        "grade": 0.0,
+                        "stderr": "stderr output of the submission",
+                        "stdout": "stdout output of the submission",
+                        "input": {  #input data from the submission, additional info and input submitted by the student.
+                            "@username" : "user1",
+                            "@email" : "user1@email.com",
+                            "@lang" : "en",
+                            "@time": "2026-06-23 15:01:44.706579+00:00",
+                            "@attempts": "5",
+                            "@random": [],
+                            "@state": "",
+                            ...
+                        },
+                    }
+                ]
+
+            The input field also contains the inputs of the student for all problems of the task. File contents are encoded in base64.
+             The structure depends on the type of the problem :
+
+
+                {
+                    "code_problem": ""print(\"Hello world!\")"",
+                    "file_problem": {
+                        "filename": "file1.zip",
+                        "value": "sDBBQAVcbcAWpn2wFoAQAAYi9maXp6YnV6e......DQAH4NsBagbcAWrg2wFqdXgLAAEE6AMAAAToAwAAUEsFBgAAAAAEAAQAVgEAAEACAAAAAA=="
+                        },
+                    "qcm_problem": {
+                        # number of the selected answer for each question, starting from 0.
+                        "qcm1": "0",
+                        "qcm2": "2",
+                        "qcm3": "1",
+                        ...
+                    }
+
+            This endpoint takes a token in the header (accessible from your account settings) and a JSON body with the following fields :
+            - select: "all" (default), "best", "last" : select all submissions, the best submission per student, or the last submission per student
+            - username: a list of usernames to filter the submissions. If none is provided (or it is empty), the submissions for all users are returned
+
+            example of a call to this endpoint using curl: :
+                curl -X POST "http://localhost:8080/api/v0/token/courses/tutorial/submissions"
+                -H "Authorization: Bearer <token>"
+                -H "Content-Type: application/json"  -d '{ "select": "last", "username" : ["user1"] }'
+
+        """
+
+        username = flask.g.user.username
+
+        try:
+            course = Course.get(courseid)
+        except:
+            raise APINotFound("Course not found")
+        try:
+            _ = course.get_task(taskid) if taskid else None
+        except:
+            raise APINotFound("Task not found")
+
+        if not self.user_manager.has_staff_rights_on_course(course, username, include_superadmins=True):
+            raise APIForbidden("You cannot access this course")
+
+        data = request.get_json(silent=True) or {}
+
+        select = data.get("select", "all")
+        usernames = data.get("username", None)
+
+        if select not in ("all", "best", "last"):
+            raise APIInvalidArguments()
+        if usernames is not None and not isinstance(usernames, list):
+            raise APIInvalidArguments()
+
+        query = {"courseid": courseid, "status": "done"} if taskid is None else {"courseid": courseid, "taskid": taskid, "status": "done"}
+        if usernames:
+            query["username__in"] = usernames
+
+        if select == "best":
+            submissions = Submission.objects(**query) \
+                .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
+                .order_by("-grade", "-submitted_on")
+        else:  # select == "last" or select == "all"
+            submissions = Submission.objects(**query) \
+                .only("courseid", "taskid", "username", "submitted_on", "result", "grade", "stderr", "stdout", "input") \
+                .order_by("-submitted_on")
+
+        if select in ("best", "last"):
+            seen = set()
+            result = []
+            for s in submissions:
+                key = (tuple(sorted(s.username)), s.taskid)
+                if key not in seen:
+                    seen.add(key)
+                    result.append(s)
+            submissions = result
+
+        def serialize(s):
+            return {
+                "courseid": s.courseid,
+                "taskid": s.taskid,
+                "username": s.username,
+                "submitted_on": s.submitted_on.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "result": s.result,
+                "grade": s.grade,
+                "stderr": s.stderr,
+                "stdout": s.stdout,
+                "input": json.loads(json_util.dumps(s.get_input())),
+            }
+
+        submissions_list = [serialize(s) for s in submissions]
+
+        return 200, submissions_list
+
+

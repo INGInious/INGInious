@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 """ Tasks """
-from flask import session
+import flask
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
@@ -62,12 +62,14 @@ class APITasks(APIAuthenticatedPage):
             Found.
         """
 
+        username = flask.g.user.username
+
         try:
             course = Course.get(courseid)
         except:
             raise APINotFound("Course not found")
 
-        if not self.user_manager.course_is_open_to_user(course, lti=False):
+        if not self.user_manager.course_is_open_to_user(course, username, lti=False):
             raise APIForbidden("You are not registered to this course")
 
         if taskid is None:
@@ -80,16 +82,16 @@ class APITasks(APIAuthenticatedPage):
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(session.username, course.get_id(), task.get_id())
+            task_cache = self.user_manager.get_task_cache(username, course.get_id(), task.get_id())
 
             data = {
                 "id": taskid,
-                "name": task.get_name(session.language),
-                "authors": task.get_authors(session.language),
-                "contact_url": task.get_contact_url(session.language),
+                "name": task.get_name(flask.g.user.language),
+                "authors": task.get_authors(flask.g.user.language),
+                "contact_url": task.get_contact_url(flask.g.user.language),
                 "status": "notviewed" if task_cache is None else "notattempted" if task_cache["tried"] == 0 else "succeeded" if task_cache["succeeded"] else "failed",
-                "grade": task_cache.get("grade", 0.0) if task_cache is not None else 0.0,
-                "context": task.get_context(session.language).original_content(),
+                "grade": task_cache.grade if task_cache is not None else 0.0,
+                "context": task.get_context(flask.g.user.language).original_content(),
                 "problems": []
             }
 

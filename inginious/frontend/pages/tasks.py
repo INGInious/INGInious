@@ -124,12 +124,12 @@ class BaseTaskPage(object):
 
             students = [session.username]
             if course.get_task_dispenser().get_group_submission(taskid) and not self.user_manager.has_admin_rights_on_course(course, username):
-                group = Group.objects(courseid=course.get_id(),students=session.username).first()
+                group = Group.objects(courseid=course.get_id(),students=username).first()
                 if group is not None:
                     students = group["students"]
                 # we don't care for the other case, as the student won't be able to submit.
 
-            submissions = self.submission_manager.get_user_submissions(course, task) if session.loggedin else []
+            submissions = self.submission_manager.get_user_submissions(course, task, username) if session.loggedin else []
             user_info = self.user_manager.get_user_info(username)
 
             # Visible tags
@@ -217,7 +217,8 @@ class BaseTaskPage(object):
 
             # Start the submission
             try:
-                submissionid, oldsubids = self.submission_manager.add_job(course, task, task_input, course.get_task_dispenser(), debug)
+                username = session.username
+                submissionid, oldsubids = self.submission_manager.add_job(course, task, task_input, course.get_task_dispenser(), username, debug)
                 return Response(content_type='application/json', response=json.dumps({
                     "status": "ok", "submissionid": str(submissionid), "remove": oldsubids,
                     "text": _("<b>Your submission has been sent...</b>")
