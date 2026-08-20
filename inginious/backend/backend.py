@@ -17,6 +17,7 @@ from inginious.common.asyncio_utils import create_safe_task
 from inginious.common.messages import BackendNewJob, AgentJobStarted, AgentJobDone, AgentJobSSHDebug, \
     BackendJobDone, BackendJobStarted, BackendJobSSHDebug, ClientNewJob, ClientKillJob, BackendKillJob, AgentHello, \
     ClientHello, BackendUpdateEnvironments, Unknown, Ping, Pong, ClientGetQueue, BackendGetQueue, ZMQUtils
+from inginious.common.agents import AgentType, GradingEnvironment, Capabilities
 
 # This will be pushed inside a TopicPriorityQueue that uses natural ordering (smallest element has the highest priority)
 # priority and time_received must thus be the two first element of the tuples.
@@ -25,9 +26,9 @@ WaitingJob = namedtuple('WaitingJob', ['priority', 'time_received', 'client_addr
 
 RunningJob = namedtuple('RunningJob', ['agent_addr', 'client_addr', 'msg', 'time_started'])
 EnvironmentInfo = namedtuple('EnvironmentInfo', ['last_id', 'created_last', 'agents', 'type', 'is_advertised'])
-AgentInfo = namedtuple('AgentInfo', ['name', 'environments'])  # environments is a list of tuple (type, environment)
+AgentInfo = namedtuple('AgentInfo', ['type', 'name', 'environments', 'capabilities'])  # environments is a list of tuple (type, environment)
 
-class Backend(object):
+class Backend:
     """
         Backend. Central point of the architecture, manages communication between clients (frontends) and agents.
         Schedule jobs on agents.
@@ -51,12 +52,16 @@ class Backend(object):
         self._poller.register(self._agent_socket, zmq.POLLIN)
         self._poller.register(self._client_socket, zmq.POLLIN)
 
-        # dict of available environments. Keys are first the type of environement (docker, mcq) then the
-        # name of the environment.
-        self._environments: Dict[str, Dict[str, EnvironmentInfo]] = {}
+        # Available grading environments.
+        # Keys are first the AgentType (oci, mcq) then the name of the environment.
+        self._environments: dict[AgentType, dict[str, EnvironmentInfo]] = {}
+
+        # The capabilities of each AgentType. Each Agent of a same type is expected
+        # to expose the same set of capabilities, even if it supports none of them.
+        self._agent_capabilities: dict[AgentType, dict[str, dict[str, str]]] = {}
         self._registered_clients = set()  # addr of registered clients
 
-        self._registered_agents: Dict[bytes, AgentInfo] = {}  # all registered agents
+        self._registered_agents: dict[bytes, AgentInfo] = {}  # all registered agents
         self._ping_count = {}  # ping count per addr of agents
 
         # addr of available agents. May contain multiple times the same agent, because some agent can
@@ -65,9 +70,9 @@ class Backend(object):
 
         # These two share the same objects! Tuples should never be recreated.
         self._waiting_jobs_pq = TopicPriorityQueue()  # priority queue for waiting jobs
-        self._waiting_jobs: Dict[str, WaitingJob] = {}  # all jobs waiting in queue
+        self._waiting_jobs: dict[str, WaitingJob] = {}  # all jobs waiting in queue
 
-        self._job_running: Dict[str, RunningJob] = {}  # all running jobs
+        self._job_running: dict[str, RunningJob] = {}  # all running jobs
 
     async def handle_agent_message(self, agent_addr, message):
         """Dispatch messages received from agents to the right handlers"""
@@ -112,7 +117,7 @@ class Backend(object):
             env_type: [name for name, env in environments.items() if env.is_advertised]
             for env_type, environments in self._environments.items()
         }
-        msg = BackendUpdateEnvironments(available_environments)
+        msg = BackendUpdateEnvironments(available_environments, self._agent_capabilities)
         for client in client_addrs:
             await ZMQUtils.send_with_addr(self._client_socket, client, msg)
 
@@ -129,6 +134,7 @@ class Backend(object):
     async def handle_client_new_job(self, client_addr, message: ClientNewJob):
         """ Handle an ClientNewJob message. Add a job to the queue and triggers an update """
 
+        # Ensure that job is not already registered.
         if message.job_id in self._waiting_jobs or message.job_id in self._job_running:
             self._logger.info("Client %s asked to add a job with id %s to the queue, but it's already inside. "
                               "Duplicate random id, message repeat are possible causes, "
@@ -136,6 +142,30 @@ class Backend(object):
             await ZMQUtils.send_with_addr(self._client_socket, client_addr,
                                           BackendJobDone(message.job_id, ("crash", "Duplicate job id"),
                                                          0.0, {}, {}, {}, "", None, "", ""))
+            return
+
+         # Ensure that at least one agent supports the requested environment, even if it is busy now.
+        can_serve = [agent for agent in self._registered_agents.values() if agent.type == message.environment_type and message.environment in agent.environments]
+        if not can_serve:
+            self._logger.warning(f"No agent supports the environment {message.environment} requested by job {message.job_id}!")
+            await ZMQUtils.send_with_addr(self._client_socket, client_addr,
+                BackendJobDone(
+                    message.job_id, ("crash", "Requested environment not supported. Contact the INGInious instance administrator."),
+                    0.0, {}, {}, {}, "", None, "", ""
+                )
+            )
+            return
+
+        # Ensure that at least one agent among those that present the requested environment also supports the
+        # requested capabilities, even if they are busy now.
+        if message.capabilities and (c := set(message.capabilities)) and not any(c.issubset(set(agent.capabilities)) for agent in can_serve):
+            self._logger.warning(f"No agent supports the capabilities {message.capabilities} requested by job {message.job_id}!")
+            await ZMQUtils.send_with_addr(self._client_socket, client_addr,
+                BackendJobDone(
+                    message.job_id, ("crash", "Requested capabilities not supported. Contact the INGInious instance administrator."),
+                    0.0, {}, {}, {}, "", None, "", ""
+                )
+            )
             return
 
         self._logger.info("Adding a new job %s %s to the queue", client_addr, message.job_id)
@@ -196,11 +226,13 @@ class Backend(object):
             if self._waiting_jobs_pq.empty():
                 break  # nothing to do
 
+            seen = []
             try:
                 job = None
                 while job is None:
                     # keep the object, do not unzip it directly! It's sometimes modified when a job is killed.
-                    topics = self._registered_agents[agent_addr].environments
+                    topics = [(self._registered_agents[agent_addr].type, env) for env in self._registered_agents[agent_addr].environments]
+                    agent_caps = set(self._registered_agents[agent_addr].capabilities)
 
                     job = self._waiting_jobs_pq.get(topics)
                     priority, insert_time, client_addr, job_id, job_msg = job
@@ -208,7 +240,18 @@ class Backend(object):
                     # Ensure the job has not been removed (killed)
                     if job_id not in self._waiting_jobs:
                         job = None  # repeat the while loop. we need a job
+                    elif not set(job_msg.capabilities).issubset(agent_caps):
+                        # Agent does not support the requested capabilities, skip the job.
+                        seen.append(job)
+                        job = None
+
+                for j in seen:
+                    _, _, _, _, jmsg = j
+                    self._waiting_jobs_pq.put((jmsg.environment_type, jmsg.environment), j)
             except queue.Empty:
+                for j in seen:
+                    _, _, _, _, jmsg = j
+                    self._waiting_jobs_pq.put((jmsg.environment_type, jmsg.environment), j)
                 continue  # skip agent, nothing to do!
 
             # We have found a job, let's remove the agent from the available list
@@ -237,49 +280,55 @@ class Backend(object):
             # Delete previous instance of this agent, if any
             await self._delete_agent(agent_addr)
 
-        self._registered_agents[agent_addr] = AgentInfo(message.friendly_name,
-                                                        [(etype, env) for etype, envs in
-                                                         message.available_environments.items() for env in envs])
-        self._available_agents.extend([agent_addr for _ in range(0, message.available_job_slots)])
+        self._registered_agents[agent_addr] = AgentInfo(
+            message.agent_type,
+            message.friendly_name,
+            message.environments,
+            [c for c, s in message.capabilities.items() if c != 'translations' and s ] if message.capabilities is not None else []
+        )
+        self._available_agents.extend([agent_addr for _ in range(message.available_job_slots)])
         self._ping_count[agent_addr] = 0
 
+        if message.agent_type not in self._environments:
+            self._environments[message.agent_type] = {}
+        env_dict = self._environments[message.agent_type]
+
+        # Save Capabilities of Agent type.
+        capabilities = c.get('translations') if (c := message.capabilities) is not None else c
+        if (c := self._agent_capabilities.get(message.agent_type)) is None:
+            self._agent_capabilities[message.agent_type] = capabilities
+        elif c != capabilities:
+            self._logger.warning(f"Received different capabilities for a same Agent type: known {c}, received {message.capabilities}... Ignoring.")
+
         # update information about available environments
-        for environment_type, environments in message.available_environments.items():
-            if environment_type not in self._environments:
-                self._environments[environment_type] = {}
-            env_dict = self._environments[environment_type]
-            for name, environment_info in environments.items():
-                if name in env_dict:
-                    # check if the id is the same
-                    if env_dict[name].last_id == environment_info["id"]:
-                        # ok, just add the agent to the list of agents that have the environment
-                        self._logger.debug("Registering environment %s/%s for agent %s", environment_type, name, str(agent_addr))
-                        env_dict[name].agents.append(agent_addr)
-                    elif env_dict[name].created_last > environment_info["created"]:
-                        # environments stored have been created after the new one
-                        # add the agent, but emit a warning
-                        self._logger.warning("Environment %s has multiple version: \n"
-                                             "\t Currently registered agents have version %s (%i)\n"
-                                             "\t New agent %s has version %s (%i)",
-                                             name,
-                                             env_dict[name].last_id, env_dict[name].created_last,
-                                             str(agent_addr), environment_info["id"], environment_info["created"])
-                        env_dict[name].agents.append(agent_addr)
-                    else:
-                        # environments stored have been created before the new one
-                        # add the agent, update the infos, and emit a warning
-                        self._logger.warning("Environment %s has multiple version: \n"
-                                             "\t Currently registered agents have version %s (%i)\n"
-                                             "\t New agent %s has version %s (%i)",
-                                             name,
-                                             env_dict[name].last_id, env_dict[name].created_last,
-                                             str(agent_addr), environment_info["id"], environment_info["created"])
-                        env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"],
-                                                         env_dict[name].agents + [agent_addr], environment_type, environment_info["advertised"])
+        for environment, environment_info in message.environments.items():
+            environment_info = GradingEnvironment(**environment_info)
+            override: bool = False
+            if (env := env_dict.get(environment)) is None:
+                # Register new grading environment
+                self._logger.info(f"Registering environment {message.agent_type}/{environment} for agent {agent_addr}")
+                override = True
+            else:
+                # check if the id is the same
+                if env.last_id == environment_info.id:
+                    # ok, just add the agent to the list of agents that have the environment
+                    self._logger.info(f"Registering environment {message.agent_type}/{environment} for agent {agent_addr}")
                 else:
-                    # just add it
-                    self._logger.debug("Registering environment %s/%s for agent %s", environment_type, name, str(agent_addr))
-                    env_dict[name] = EnvironmentInfo(environment_info["id"], environment_info["created"], [agent_addr], environment_type, environment_info["advertised"])
+                    self._logger.warning("Environment %s has multiple version: \n"
+                                         "\t Currently registered agents have version %s (%i)\n"
+                                         "\t New agent %s has version %s (%i)",
+                                         environment,
+                                         env.last_id, env.created_last,
+                                         str(agent_addr), environment_info.id, environment_info.created)
+
+                    # If the environments stored have been created after the new one
+                    # add the agent, but emit a warning, else override the environment data.
+                    override = env.created_last <= environment_info.created
+
+            if override:
+                env_dict[environment] = EnvironmentInfo(environment_info.id, environment_info.created, [agent_addr], message.agent_type, environment_info.advertised)
+            else:
+                env.agents.append(agent_addr)
 
         # update the queue
         await self.update_queue()

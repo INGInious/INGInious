@@ -18,7 +18,7 @@ import asyncio
 
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.entrypoints import get_args_and_filesystem
-from inginious.agent.docker_agent import DockerAgent, DockerRuntime
+from inginious.agent.docker_agent import DockerAgent, DockerAgentCapabilities
 
 
 def check_range(value):
@@ -49,26 +49,6 @@ def check_negative(value):
     return ivalue
 
 
-class RuntimeParser(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        items = getattr(namespace, self.dest, None)
-        if items is None:
-            items = []
-        if len(values) < 2:
-            raise argparse.ArgumentError(self, "Not enough arguments")
-        runtime = values[0]
-        envtype = values[1]
-        root = False
-        flags = set(values[2:])
-        if "root" in flags:
-            flags.remove("root")
-            root = True
-        for f in flags:
-            raise argparse.ArgumentError(self, "Unknown flag {}".format(f))
-        items.append(DockerRuntime(runtime=runtime, envtype=envtype, run_as_root=root))
-        setattr(namespace, self.dest, items)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("backend", help="Address to the backend, in the form protocol://host:port. For example, tcp://127.0.0.1:2000", type=str)
@@ -88,12 +68,8 @@ def main():
     parser.add_argument("--disable-autorestart", help="Disables the auto restart on agent failure.", action="store_true")
     parser.add_argument("--ssh", help="Allow this agent to handle tasks with ssh features", action="store_true",
                         default=False)
-    parser.add_argument("--runtime", nargs='+', action=RuntimeParser,
-                        help="Add a runtime. Expects at least 2 arguments: the name of the runtime (eg runc), "
-                             "the name of the environment type (eg docker). You can then add flags:\n"
-                             "- 'root' indicates that the runtime starts containers as root\n"
-                             "\n"
-                             "Common values are 'runc docker'.")
+    parser.add_argument("--gpu", help="Allow this agent to handle tasks with GPU features", action="store_true",
+                        default=False)
     (args, fsprovider) = get_args_and_filesystem(parser)
     init_fs_provider(fsprovider)
 
@@ -109,6 +85,8 @@ def main():
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
+    capabilities = DockerAgentCapabilities(gpu=args.gpu, run_as_root=False, ssh=args.ssh)
+
     closing = False
     while not closing:
         # start asyncio and zmq
@@ -119,9 +97,7 @@ def main():
         context = Context()
 
         # Create agent
-        agent = DockerAgent(context, args.backend, args.friendly_name, args.concurrency,
-                            address_host=args.debug_host, external_ports=args.debug_ports, debugger=args.debugger, tmp_dir=args.tmpdir,
-                            runtimes=args.runtime, ssh_allowed=args.ssh)
+        agent = DockerAgent(context, args.backend, args.friendly_name, args.concurrency, capabilities, address_host=args.debug_host, external_ports=args.debug_ports, debugger=args.debugger, tmp_dir=args.tmpdir)
 
         # Run!
         try:

@@ -18,9 +18,9 @@ import msgpack
 import psutil
 from inginious.agent.docker_agent._docker_interface import DockerInterface
 
-from inginious.agent import Agent, CannotCreateJobException
-from inginious.agent.docker_agent._docker_runtime import DockerRuntime
+from inginious.agent import Agent, AgentType, CannotCreateJobException
 from inginious.agent.docker_agent._timeout_watcher import TimeoutWatcher
+from inginious.agent.docker_agent.capabilities import DockerAgentCapabilities
 from inginious.common.asyncio_utils import AsyncIteratorWrapper, AsyncProxy
 from inginious.common.base import id_checker, id_checker_tests
 from inginious.common.messages import BackendNewJob, BackendKillJob
@@ -63,27 +63,24 @@ class DockerRunningStudentContainer:
 
 
 class DockerAgent(Agent):
-    def __init__(self, context, backend_addr, friendly_name, concurrency,
-                 address_host=None, external_ports=None, debugger=False, tmp_dir="./agent_tmp", runtimes=None, ssh_allowed=False):
+    def __init__(self, context, backend_addr, friendly_name, concurrency, capabilities: DockerAgentCapabilities, address_host=None, external_ports=None, debugger=False, tmp_dir="./agent_tmp", ):
         """
         :param context: ZeroMQ context for this process
         :param backend_addr: address of the backend (for example, "tcp://127.0.0.1:2222")
         :param friendly_name: a string containing a friendly name to identify agent
         :param concurrency: number of simultaneous jobs that can be run by this agent
+        :param capabilities: the capabilities of the Agent. See DockerAgentCapabolities.
         :param address_host: hostname/ip/... to which external client should connect to access to the docker
         :param external_ports: iterable containing ports to which the docker instance can bind internal ports
         :param tmp_dir: temp dir that is used by the agent to start new containers
-        :param type: type of the container ("docker")
-        :param runtime: runtime used by docker (the defaults are "runc" with docker)
-        :param ssh_allowed: boolean to make this agent accept tasks with ssh or not
         """
-        super(DockerAgent, self).__init__(context, backend_addr, friendly_name, concurrency)
-
-        self._runtimes = {x.envtype: x for x in runtimes} if runtimes is not None else None
+        super().__init__(context, backend_addr, friendly_name, concurrency)
 
         self._logger = logging.getLogger("inginious.agent.docker")
 
         self._concurrency = concurrency
+        self._type = AgentType.OCI
+        self._capabilities = capabilities
 
         self._max_memory_per_slot = int(psutil.virtual_memory().total / concurrency / 1024 / 1024)
 
@@ -100,9 +97,6 @@ class DockerAgent(Agent):
         # Async proxy to os
         self._aos = AsyncProxy(os)
         self._ashutil = AsyncProxy(shutil)
-
-        # Does this agent allow ssh_student ?
-        self._ssh_allowed = ssh_allowed
 
         # Background tasks, stores async tasks we don't really care about but must not be
         # garbage collected before completion.
@@ -132,21 +126,15 @@ class DockerAgent(Agent):
         # Docker
         self._docker = AsyncProxy(DockerInterface())
 
-        if self._runtimes is None:
-            self._runtimes = self._detect_runtimes()
-
         # Auto discover containers
         self._logger.info("Discovering containers")
-        self._containers = await self._docker.get_containers(self._runtimes.values())
+        self._containers = await self._docker.get_containers(self._capabilities)
 
         if self._address_host is None and len(self._containers) != 0:
             self._logger.info("Guessing external host IP")
-            available_bare_container_images = [image for envtype_containers in self._containers.values() for image in
-                                               envtype_containers.values()]
-            if len(available_bare_container_images) != 0:
-                self._address_host = await self._docker.get_host_ip(available_bare_container_images[0]["id"])
-            else:
-                self._logger.error("Cannot find the external IP without at least an installed container.")
+            self._address_host = await self._docker.get_host_ip(list(self._containers.values())[0].id)
+        else:
+            self._logger.error("Cannot find the external IP without at least an installed container.")
 
         if self._address_host is None:
             self._logger.warning("Cannot find external host IP. Please indicate it in the configuration. "
@@ -299,6 +287,7 @@ class DockerAgent(Agent):
         task_id = message.task_id
 
         debug = message.debug
+        # TODO: Ensure that type matches self._type
         environment_type = message.environment_type
         environment_name = message.environment
 
@@ -335,19 +324,18 @@ class DockerAgent(Agent):
             raise CannotCreateJobException(
                 'Not enough memory on agent (available: %dMB). Please contact your course administrator.' % self._max_memory_per_slot)
 
-        if environment_type not in self._containers or environment_name not in self._containers[environment_type]:
+        if environment_name not in self._containers:
             if course_id and task_id:
-                self._logger.warning("Task %s/%s asks for an unknown environment %s/%s", course_id, task_id,
-                                 environment_type, environment_name)
+                self._logger.warning(
+                    f"Task {course_id}/{task_id} asks for an unknown environment {environment_name}."
+                )
             else:
-                self._logger.warning("A job asks for an unknown environment %s/%s", environment_type, environment_name)
+                self._logger.warning(f"A job asks for an unknown environment {environment_name}")
             raise CannotCreateJobException('Unknown container. Please contact your course administrator.')
 
-        environment = self._containers[environment_type][environment_name]["id"]
-        runtime = self._containers[environment_type][environment_name]["runtime"]
+        environment = self._containers[environment_name].id
 
-        ports_needed = list(
-            self._containers[environment_type][environment_name]["ports"])  # copy, as we modify it later!
+        ports_needed = list(self._containers[environment_name].ports)  # copy, as we modify it later!
 
         if debug == "ssh" and 22 not in ports_needed:
             ports_needed.append(22)
@@ -366,9 +354,9 @@ class DockerAgent(Agent):
         try:
             container_path = tempfile.mkdtemp(dir=self._tmp_dir)
         except Exception as e:
-            self._logger.error("Cannot make container temp directory! %s", str(e), exc_info=True)
-            for p in ports:
-                self._external_ports.add(ports[p])
+            self._logger.exception(f"Cannot make container temp directory! {e}",  exc_info=True)
+            for p in ports.values():
+                self._external_ports.add(p)
             raise CannotCreateJobException('Cannot make container temp directory.')
 
         task_path = path_join(container_path, 'task')  # tmp_dir/id/task/
@@ -413,16 +401,16 @@ class DockerAgent(Agent):
 
         # Run the container
         try:
-            container_id = self._docker.sync.create_container(environment, enable_network, self._debugger, mem_limit, task_path,
-                                                              sockets_path, course_common_path,
-                                                              course_common_student_path,
-                                                              self.__get_fd_limit(), runtime,
-                                                              ports)
+            container_id = self._docker.sync.create_container(
+                environment, enable_network, self._debugger, mem_limit, task_path,
+                sockets_path, course_common_path, course_common_student_path,
+                self.__get_fd_limit(), ports
+            )
         except Exception as e:
             self._logger.warning("Cannot create container! %s", str(e), exc_info=True)
             shutil.rmtree(container_path)
-            for p in ports:
-                self._external_ports.add(ports[p])
+            for p in ports.values():
+                self._external_ports.add(p)
             raise CannotCreateJobException('Cannot create container.')
 
         # Store info
@@ -459,8 +447,8 @@ class DockerAgent(Agent):
         except Exception as e:
             self._logger.warning("Cannot start container! %s", str(e), exc_info=True)
             shutil.rmtree(container_path)
-            for p in ports:
-                self._external_ports.add(ports[p])
+            for p in ports.values():
+                self._external_ports.add(p)
 
             raise CannotCreateJobException('Cannot start container')
 
@@ -487,14 +475,13 @@ class DockerAgent(Agent):
             self._logger.debug("Starting new student container... %s/%s %s %s %s", environment_type, environment_name,
                                memory_limit, time_limit, hard_time_limit)
 
-            if environment_type not in self._containers or environment_name not in self._containers[environment_type]:
-                self._logger.warning("Student container asked for an unknown environment %s/%s",
-                                     environment_type, environment_name)
+            if environment_name not in self._containers:
+                self._logger.warning(f"Student container asked for an unknown environment {environment_name}")
                 await self._write_to_container_stdin(write_stream, {"type": "run_student_retval", "retval": 254,
                                                                     "socket_id": socket_id})
                 return
 
-            environment = self._containers[environment_type][environment_name]["id"]
+            environment = self._containers[environment_name].id
 
             if run_as_root:
                 self._logger.warning("Running student container as root is not supported yet.")
@@ -502,16 +489,14 @@ class DockerAgent(Agent):
                                                                     "socket_id": socket_id})
                 return
 
-            runtime = self._containers[environment_type][environment_name]["runtime"]
-
             ports_needed = [22] if ssh else []
             ports = {}
             for p in ports_needed:
                 if not self._external_ports:
                     self._logger.warning("User asked for a port but no one are available")
                     if self._external_ports is not None:
-                        for port_to_free in ports:
-                            self._external_ports.add(ports[port_to_free])
+                        for p in ports.valuesi():
+                            self._external_ports.add(p)
                     self._logger.exception(
                         "Cannot create student container! No ports are available right now. Please retry later.")
                     await self._write_to_container_stdin(write_stream, {"type": "run_student_retval", "retval": 254,
@@ -520,7 +505,7 @@ class DockerAgent(Agent):
                 ports[p] = self._external_ports.pop()
 
             try:
-                container_id = await self._docker.create_container_student(runtime, environment,
+                container_id = await self._docker.create_container_student(environment,
                                                                            memory_limit, parent_info.student_path,
                                                                            parent_info.sockets_path,
                                                                            socket_id,
@@ -661,11 +646,10 @@ class DockerAgent(Agent):
             return None
 
         # Send hello msg
-        hello_msg = {"type": "start", "input": info.inputdata, "debug": info.debug,
-                     "envtypes": {x.envtype: True for x in self._runtimes.values()}}
+        hello_msg = {"type": "start", "input": info.inputdata, "debug": info.debug}
         if info.run_cmd is not None:
             hello_msg["run_cmd"] = info.run_cmd
-        hello_msg["run_as_root"] = self._runtimes[info.environment_type].run_as_root
+        # hello_msg["run_as_root"] = self._containers[info.environment_type].run_as_root
 
         await self._write_to_container_stdin(write_stream, hello_msg)
         result = None
@@ -689,7 +673,7 @@ class DockerAgent(Agent):
                             ssh = msg["ssh"]
                             run_as_root = msg["run_as_root"]
                             assert "/" not in socket_id  # ensure task creator do not try to break the agent :-(
-                            if ssh and not (info.enable_network and "ssh" in info.environment_type and self._ssh_allowed):
+                            if ssh and not (info.enable_network and "ssh" in info.environment_type and self._capabilities.ssh):
                                 self._logger.error(
                                     "Exception: ssh for student requires to allow ssh and internet access in the task %s environment configuration tab",
                                     info.job_id)
@@ -902,8 +886,8 @@ class DockerAgent(Agent):
                 await self._docker.remove_container(container_id)
             except asyncio.CancelledError:
                 raise
-            except:
-                pass
+            except Exception as e:
+                self._logger.warning(e)
 
             # Delete folders
             try:
@@ -955,31 +939,6 @@ class DockerAgent(Agent):
         except:
             await self._end_clean()
             raise
-
-    def _detect_runtimes(self) -> Dict[str, DockerRuntime]:
-        heuristic = [
-            ("runc", lambda x, y: DockerRuntime(runtime=x, run_as_root=False, enables_gpu=False,
-                                                envtype="docker-ssh" if y else "docker")),
-            ("crun", lambda x, y: DockerRuntime(runtime=x, run_as_root=False, enables_gpu=False,
-                                                envtype="docker-ssh" if y else "docker")),
-            ("nvidia", lambda x, y: DockerRuntime(runtime=x, run_as_root=False, enables_gpu=True,
-                                                  envtype="nvidia-ssh" if y else "nvidia"))
-        ]
-        retval = {}
-
-        for runtime in self._docker.sync.list_runtimes().keys():
-            for h_runtime, f in heuristic:
-                if h_runtime in runtime:
-                    for ssh_allowed in {self._ssh_allowed, False}:
-                        v = f(runtime, ssh_allowed)
-                        if v.envtype not in retval:
-                            self._logger.info("Using %s as runtime with parameters %s", runtime, str(v))
-                            retval[v.envtype] = v
-                        else:
-                            self._logger.warning(
-                                "%s was detected as a runtime; it would duplicate another one, so we ignore it. %s",
-                                runtime, str(v))
-        return retval
 
     def _start_background_task(self, *args, **kwargs):
         """ Starts a background task, using self._loop.create_task. This function follows the same signature.

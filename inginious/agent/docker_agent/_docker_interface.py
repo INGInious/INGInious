@@ -15,12 +15,13 @@ import logging
 
 from docker.types import Ulimit
 
-from inginious.agent.docker_agent._docker_runtime import DockerRuntime
+from inginious.agent.docker_agent.capabilities import DockerAgentCapabilities
+from inginious.common.agents import GradingEnvironment
 
 DOCKER_AGENT_VERSION = 4
 
 
-class DockerInterface(object):  # pragma: no cover
+class DockerInterface:  # pragma: no cover
     """
         (not asyncio) Interface to Docker
 
@@ -37,67 +38,86 @@ class DockerInterface(object):  # pragma: no cover
         """
         return self._docker.info().get("CgroupVersion")
     
-    def get_containers(self, runtimes: List[DockerRuntime]) -> Dict[str, Dict[str, Dict[str, str]]]:
+    def get_containers(self, capabilities: DockerAgentCapabilities) -> dict[str, GradingEnvironment]:
         """
-        :param runtimes: a list of DockerRuntime. Each DockerRuntime.envtype must appear only once.
+        :param capabilities: Agent capabilities.
         :return: a dict of available containers in the form
         {
-            "envtype": {                       # the value of DockerRuntime.envtype. Eg "docker".
-                "name": {                      # for example, "default"
-                    "id": "container img id",  # "sha256:715c5cb5575cdb2641956e42af4a53e69edf763ce701006b2c6e0f4f39b68dd3"
-                    "created": 12345678,       # create date
-                    "ports": [22, 434],        # list of ports needed
-                    "runtime": "runtime"       # the value of DockerRuntime.runtime. Eg "runc".
-                }
+            "<env name>": {                # for example, "default"
+                "id": "container img id",  # "sha256:715c5cb5575cdb2641956e42af4a53e69edf763ce701006b2c6e0f4f39b68dd3"
+                "created": 12345678,       # create date
+                "ports": [22, 434],        # list of ports needed
             }
         }
         """
-        assert len(set(x.envtype for x in runtimes)) == len(runtimes)  # no duplicates in the envtypes
-
         logger = logging.getLogger("inginious.agent.docker")
+        environments = {}
 
-        # First, create a dict with {"env": {"id": {"title": "alias", "created": 000, "ports": [0, 1]}}}
-        images = {x.envtype: {} for x in runtimes}
+        def filter_by_capability(label: str, capa: bool, labels: dict) -> bool:
+            """
+                Check whether the grading environment requests the capability <label>,
+                and, if yes, whether the Agent exposes that capability.
 
-        for x in self._docker.images.list(filters={"label": "org.inginious.grading.name"}):
-            title = None
-            try:
-                title = x.labels["org.inginious.grading.name"]
-                created = x.history()[0]['Created']
-                ports = [int(y) for y in x.labels["org.inginious.grading.ports"].split(
-                    ",")] if "org.inginious.grading.ports" in x.labels else []
+                If the capability is not requested, the Agent is able to launch the environment.
+            """
+            if (requested := labels.get(label)) is not None:
+                # Sanity check on the capability input.
+                if not isinstance(requested, int) or requested not in [0, 1]:
+                    logger.warning("Capability value is not 1 or 0. Ignoring.")
+                    return False
+                # The Agent can launch the environement if the capability is requested and it
+                # supports it, or if the capability is not requested.
+                return (requested == 1 and capa) or requested == 0
+            return True
 
-                for docker_runtime in runtimes:
-                    if "org.inginious.grading.need_root" in x.labels and not docker_runtime.run_as_root:
-                        continue
-                    if "org.inginious.grading.need_gpu" in x.labels and not docker_runtime.enables_gpu:
-                        continue
+        def filter_by_capabilities(labels, capabilities: DockerAgentCapabilities) -> bool:
+            run_as_root = filter_by_capability('org.inginious.need_root', capabilities.run_as_root, labels)
+            gpu = filter_by_capability('org.inginious.need_gpu', capabilities.gpu, labels)
+            ssh = filter_by_capability('org.inginious.need_ssh', capabilities.ssh, labels)
+            return run_as_root and gpu and ssh
+            
+        for img in self._docker.images.list(filters={"label": "org.inginious.grading.name"}):
+            if (env := img.labels.get("org.inginious.grading.name")) is None:
+                logger.warning("Failed to load grading environement name. Ignoring.")
+                continue
+            
+            created = img.history()[0]['Created']
+            ports = [
+                int(y) for y in img.labels["org.inginious.grading.ports"].split(",")
+            ] if "org.inginious.grading.ports" in img.labels else []
 
-                    logger.info("Envtype %s (%s) can use container %s", docker_runtime.envtype, docker_runtime.runtime, title)
-                    if x.labels.get("org.inginious.grading.agent_version") != str(DOCKER_AGENT_VERSION):
-                        logger.warning(
-                            "Container %s is made for an old/newer version of the agent (container version is "
-                            "%s, but it should be %i). INGInious will ignore the container.", title,
-                            str(x.labels.get("org.inginious.grading.agent_version")), DOCKER_AGENT_VERSION)
-                        continue
+            # Does the Agent support the grading environment?
+            if not filter_by_capabilities(img.labels, capabilities):
+                continue
+            
+            if (agent_version := img.labels.get("org.inginious.grading.agent_version")) is not None and agent_version != str(DOCKER_AGENT_VERSION):
+                logger.warning(
+                    f"Grading environment {env} is made for an old/newer version of the agent. Requested version is {agent_version}, but current version is {DOCKER_AGENT_VERSION}. Ignoring.")
+                continue
 
-                    images[docker_runtime.envtype][x.attrs['Id']] = {
-                        "title": title,
-                        "created": created,
-                        "ports": ports,
-                        "runtime": docker_runtime.runtime,
-                        "advertised": x.labels.get("org.inginious.grading.advertise", "true") == "true"
-                    }
-            except:
-                logging.getLogger("inginious.agent").exception("Container %s is badly formatted", title or "[cannot load title]")
+            logger.info(f"Agent supports grading environement {env}")
 
+            """
+            environments =
+            { <env>: {
+                <id>: {'created': int, 'ports': list }
+              } 
+            }
+            """
+            if (id := img.attrs.get('Id')) is not None:
+                img_data = {'created': created, 'ports': ports}
+                if (env_data := environments.get(env)):
+                    env_data[id] = img_data
+                else:
+                    environments[env] = {id: img_data}
+
+        # TODO: Filter on release tag.
         # Then, we keep only the last version of each name
         latest = {}
-        for envtype, content in images.items():
-            latest[envtype] = {}
-            for img_id, img_c in content.items():
-                if img_c["title"] not in latest[envtype] or latest[envtype][img_c["title"]]["created"] < img_c["created"]:
-                    latest[envtype][img_c["title"]] = {"id": img_id, **img_c}
+        for env, env_data in environments.items():
+            for id, img_data in env_data.items():
+                if env not in latest or latest[env].created < img_data["created"]:
+                    latest[env] = GradingEnvironment(id, **img_data)
         return latest
 
     def get_host_ip(self, image):
@@ -117,7 +137,7 @@ class DockerInterface(object):  # pragma: no cover
             return None
 
     def create_container(self, image, network_grading, debugger, mem_limit, task_path, sockets_path,
-                         course_common_path, course_common_student_path, fd_limit, runtime: str, ports=None):
+                         course_common_path, course_common_student_path, fd_limit, ports=None):
         """
         Creates a container.
         :param image: env to start (name/id of a docker image)
@@ -128,7 +148,6 @@ class DockerInterface(object):  # pragma: no cover
         :param course_common_path:
         :param course_common_student_path:
         :param fd_limit: Tuple with soft and hard limits per slot for FS
-        :param runtime: name of the docker runtime to use
         :param ports: dictionary in the form {docker_port: external_port}
         :return: the container id
         """
@@ -160,20 +179,18 @@ class DockerInterface(object):  # pragma: no cover
                 course_common_path: {'bind': '/course/common', 'mode': 'ro,Z'},
                 course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro,Z'}
             },
-            runtime=runtime,
             ulimits=[nofile_limit],
             security_opt=self._get_security_opts(sockets_path),
             **cgroups1_params
         )
         return response.id
 
-    def create_container_student(self, runtime: str, image: str, mem_limit, student_path,
+    def create_container_student(self, image: str, mem_limit, student_path,
                                  sockets_path, socket_id, systemfiles_path, course_common_student_path,
                                  fd_limit, share_network_of_container: str=None, ports=None):
         """
         Creates a student container
         :param fd_limit:Tuple with soft and hard limits per slot for FS
-        :param runtime: name of the docker runtime to use
         :param image: env to start (name/id of a docker image)
         :param mem_limit: in MB
         :param student_path: path to the task directory that will be mounted in the container
@@ -223,7 +240,6 @@ class DockerInterface(object):  # pragma: no cover
                 systemfiles_path: {'bind': '/task/systemfiles', 'mode': 'ro,Z'},
                 course_common_student_path: {'bind': '/course/common/student', 'mode': 'ro,Z'}
             },
-            runtime=runtime,
             ulimits=[nofile_limit],
             security_opt=self._get_security_opts(sockets_path),
             **cgroups1_params
@@ -291,12 +307,6 @@ class DockerInterface(object):  # pragma: no cover
         if filters is None:
             filters = {}
         return self._docker.events(decode=True, filters=filters, since=since)
-
-    def list_runtimes(self) -> Dict[str, str]:
-        """
-        :return: dict of runtime: path_to_runtime
-        """
-        return {name: x["path"] for name, x in self._docker.info()["Runtimes"].items()}
 
     def _get_security_opts(self, seed: str) -> str:
         """
