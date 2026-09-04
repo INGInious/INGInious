@@ -252,7 +252,8 @@ class CourseTaskFileUpload(CourseTaskFiles):
         if not id_checker(taskid):
             raise NotFound(description=_("Invalid task id"))
 
-        self.get_course_and_check_rights(courseid, allow_all_staff=False)
+        course, task = self.get_course_and_check_rights(courseid, taskid=taskid, allow_all_staff=False)
+        task_fs = task.get_fs()
 
         user_input = request.form.copy()
         user_input["file"] = request.files.get("file")
@@ -260,6 +261,5 @@ class CourseTaskFileUpload(CourseTaskFiles):
             file = user_input.get('file')
             name = user_input.get('name')
             filename = "/"+name
-            wanted_path = self.verify_path(courseid, taskid, filename, True)
-            self.action_upload(courseid, taskid, wanted_path, file)
+            self.action_upload(task_fs, course, task, filename, file)
             return json.dumps("success")
