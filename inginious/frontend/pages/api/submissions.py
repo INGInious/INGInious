@@ -8,7 +8,7 @@
 import base64
 import flask
 
-from flask import current_app, session
+from flask import current_app
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
