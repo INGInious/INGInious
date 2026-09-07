@@ -60,6 +60,8 @@ def _put_configuration_defaults(config):
                                               [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]),
         "ALLOW_DELETION": config.get("allow_deletion", True),
         "ALLOW_REGISTRATION": config.get("allow_registration", True),
+        "API_JWT_ALGORITHM": "HS256",
+        "API_JWT_SECRET": config.get("api_jwt_secret", "jwt_secret_key"),
         "BACKEND": config.get("backend", "local"),
         "DEBUG": config.get("web_debug", False),
         "DEBUG_ASYNCIO": config.get('debug_asyncio', False),
