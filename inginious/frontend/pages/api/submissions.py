@@ -65,10 +65,10 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
                     d["value"] = base64.b64encode(d["value"]).decode("utf8")
 
         if submission["status"] == "done":
-            data["grade"] = submission.get("grade", 0)
-            data["result"] = submission.get("result", "crash")
-            data["feedback"] = submission.get("text", "")
-            data["problems_feedback"] = submission.get("problems", {})
+            data["grade"] = submission.grade
+            data["result"] = submission.result
+            data["feedback"] = submission.text
+            data["problems_feedback"] = submission.problems
 
         output.append(data)
 
@@ -202,8 +202,8 @@ class APISubmissions(APIAuthenticatedPage):
 
         user_input = task.adapt_input_for_backend(user_input)
 
-        if not task.input_is_consistent(user_input, current_app.config('ALLOWED_FILE_EXTENSIONS'),
-                                        current_app.config.get('MAX_FILE_SIZE')):
+        if not task.input_is_consistent(user_input, current_app.config['ALLOWED_FILE_EXTENSIONS'],
+                                        current_app.config['MAX_FILE_SIZE']):
             raise APIInvalidArguments()
 
         # Get debug info if the current user is an admin

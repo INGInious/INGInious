@@ -1,0 +1,122 @@
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+
+{% extends "layout.html" %}
+{% block title %}{{ _("API Tokens") }}{% endblock %}
+
+{% block column %}
+{% with current='api_token' %}{% include 'preferences/menu.html' %}{% endwith %}
+{% endblock %}
+
+{% block navbar %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('prefredirectpage') }}" title="{{ _('Preferences') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-gears"></i></a>
+            </li>
+            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-user"></i> {{ _("API token") }} <span class="sr-only">{{ _("(current)") }}</span></a></li>
+        </ol>
+    </nav>
+{% endblock %}
+
+{% block content %}
+<h2>{{ _("My API tokens") }}</h2>
+{% for error in errors %}
+    <div class="alert alert-danger alert-dismissable" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        {{ error }}
+    </div>
+{% endfor %}
+
+<div class="col-sm-12">
+    <p>
+        {{ _("Your API tokens allows external applications and scripts to authenticate as you and interact with "
+             "INGInious on your behalf, without needing your password. Keep them secret: anyone who has them can "
+             "access the API using your account permissions. If you believe on of your tokens has been compromised, "
+             "delete it from the list and use another one.") }}
+    </p>
+</div>
+<div>
+    <div class="col-sm-12">
+    {% for token in token_list %}
+        <div class="card mb-3">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="card-title mb-1">{{ token.description }}</h4>
+                    <p class="card-text ">
+                        {% if token.expires < token.expires.now().astimezone() %}
+                            <small class="text-danger ml-1">{{ _("Expired on:") }} {{ show_time(token.expires) }}</small>
+                        {% else %}
+                            <small class="text-muted ml-1">{{ _("Expires on:") }} {{ show_time(token.expires) }}</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+            <p>{{ _("You have no API tokens.") }}</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% if generated_token is not none %}
+<div>
+    <div class="alert alert-success alert-dismissable" role="alert">
+        <h5>
+            {{ _("A new API token has been generated. Please copy it now, as it will not be shown again.") }}
+        </h5>
+
+        <div class="mb-2">
+            <input type="text" class="form-control" value="{{ generated_token }}" readonly/>
+        </div>
+
+        <form method="get" action="{{ url_for('.apitokenpage') }}">
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fa fa-check"></i> {{ _("Close") }}
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
+    <form method="post" action="{{ url_for('.apitokenpage') }}">
+        <div class="col-sm-12"><br />
+            <button type="button" id="show-generate-fields-btn" class="btn btn-primary btn-block"
+                    onclick="document.getElementById('generate-fields').classList.remove('d-none'); this.classList.add('d-none');">
+                <i class="fa fa-plus"></i> {{ _("Generate a new token") }}
+            </button>
+
+            <div id="generate-fields" class="d-none mt-2">
+                <div class="mb-2">
+                    <input type="text" class="form-control" name="description"
+                           placeholder="{{ _('Provide a description for your token.') }}" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="expires_in" class="form-label">{{ _("Expiration") }}</label>
+                    <select id="expires_in" name="expires_in" class="form-control"
+                            onchange="document.getElementById('custom-expiration-field').classList.toggle('d-none', this.value !== 'custom');">
+                        <option value="30">{{ _("30 days") }}</option>
+                        <option value="60">{{ _("60 days") }}</option>
+                        <option value="90">{{ _("90 days") }}</option>
+                        <option value="180">{{ _("6 months") }}</option>
+                        <option value="365">{{ _("1 year") }}</option>
+                        <option value="custom">{{ _("Custom number of days") }}</option>
+                    </select>
+                </div>
+
+                <div id="custom-expiration-field" class="mb-2 d-none">
+                    <label for="custom_days" class="form-label">{{ _("Custom expiration date") }}</label>
+                    <input id="custom_days" type="number" class="form-control" name="custom_days" min="10" max="365"
+                           placeholder="{{ _('Enter the number of days until expiration (10-365).') }}"/>
+                </div>
+
+                <button type="submit" name="save" class="btn btn-primary btn-block">
+                    <i class="fa fa-save"></i> {{ _("Save") }}
+                </button>
+            </div>
+        </div>
+    </form>
+
+{% endif %}
+
+{% endblock %}
