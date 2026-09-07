@@ -6,15 +6,14 @@
 """ API token page """
 from flask import session, request, render_template, current_app
 import datetime
-import zoneinfo
 from datetime import timezone
 import uuid
-import jwt
+from mongoengine import ValidationError
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User, APIToken
 from inginious.frontend.user_manager import UserManager
-from mongoengine import ValidationError
+from inginious.frontend.pages.jwt_utils import encode_jwt
 
 
 class APITokenPage(INGIniousAuthPage):
@@ -52,8 +51,7 @@ class APITokenPage(INGIniousAuthPage):
                 "exp": expiration.timestamp(),
             }
 
-            current_secret = current_app.config["API_JWT_SECRET"]
-            token = jwt.encode(payload, current_secret, algorithm=current_app.config["API_JWT_ALGORITHM"])
+            token = encode_jwt(payload)
 
             try:
                 new_token = APIToken(token=UserManager.hash_password(token), expires=expiration, description=description)
