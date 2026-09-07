@@ -51,6 +51,12 @@
                         {% endif %}
                     </p>
                 </div>
+                <form method="post" action="{{ url_for('.apitokenpage') }}">
+                    <input type="hidden" name="token_id" value="{{ token.token_id }}">
+                    <button type="submit" name="delete" class="btn btn-danger btn-sm">
+                        <i class="fa fa-trash"></i> {{ _("Delete") }}
+                    </button>
+                </form>
             </div>
         </div>
         {% else %}
