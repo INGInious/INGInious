@@ -54,6 +54,13 @@ def _put_configuration_defaults(config):
         print("-------------", file=sys.stderr)
         exit(1)
 
+    api_jwt_secret = config.get("api_jwt_secret", None)
+    api_jwt_old_secrets = config.get("api_jwt_old_secrets", None)
+    if api_jwt_secret is None or api_jwt_old_secrets is None:
+        print("Please define api_jwt_secret and api_jwt_old_secrets in the configuration.", file=sys.stderr)
+        print("Refer to the documentation for more information.", file=sys.stderr)
+        exit(1)
+
     # Populate a sanitized new dict with upper chars for Flask
     new_config = {
         "ALLOWED_FILE_EXTENSIONS": config.get('allowed_file_extensions',

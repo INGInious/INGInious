@@ -175,6 +175,9 @@ class Installer:
         auth_opts = self.configure_authentication()
         options.update(auth_opts)
 
+        api_opts = self.configure_api()
+        options.update(api_opts)
+
         self._display_info("You may want to add additional plugins to the configuration file.")
 
         self._display_header("REMOTE DEBUGGING - IN BROWSER")
@@ -588,6 +591,14 @@ class Installer:
         options["session_parameters"]['secure'] = self._ask_boolean("Do you plan to serve your INGInious instance only"
                                                                     " in HTTPS?", False)
         options["session_parameters"]['secret_key'] = hexlify(os.urandom(32)).decode('utf-8')
+
+        return options
+
+    def configure_api(self):
+        """ Configure the API parameters """
+        options = {}
+        options["api_jwt_secret"] = hexlify(os.urandom(32)).decode('utf-8')
+        options["api_jwt_old_secrets"] = [options["api_jwt_secret"]]
 
         return options
 
