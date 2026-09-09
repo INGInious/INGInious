@@ -101,7 +101,6 @@ class WebAppSubmissionManager:
         :param debug: True, False or "ssh". See add_job.
         :param obj: the new document that will be inserted
         """
-        username = session.username
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
         if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
@@ -119,14 +118,13 @@ class WebAppSubmissionManager:
 
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
-            username = session.username
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
                 group = Group.objects.get(courseid=course.id, students=username)
                 users = User.objects(username__in=group["students"])
                 inputdata["@username"] = ','.join(group["students"])
                 inputdata["@email"] = ','.join([user["email"] for user in users])
 
-    def _after_submission_insertion(self, course, task, inputdata, debug, submission, submissionid, task_dispenser):
+    def _after_submission_insertion(self, course, task, inputdata, debug, submission, submissionid, task_dispenser, username):
         """
                 Called after any new submission is inserted into the database, but before starting the job.  Should be overridden in subclasses.
                 :param task: Task related to the submission
@@ -136,7 +134,7 @@ class WebAppSubmissionManager:
                 :param submissionid: submission id of the submission
                 """
 
-        return self._delete_exceeding_submissions(session.username, course, task, task_dispenser)
+        return self._delete_exceeding_submissions(username, course, task, task_dispenser)
 
     def replay_job(self, course, task, submission, task_dispenser, copy=False, debug=False):
         """
@@ -215,7 +213,7 @@ class WebAppSubmissionManager:
             return None
         return sub
 
-    def add_job(self, course, task, inputdata, task_dispenser, debug=False):
+    def add_job(self, course, task, inputdata, task_dispenser, username, debug=False):
         """
         Add a job in the queue and returns a submission id.
         :param task:  Task instance
@@ -226,15 +224,12 @@ class WebAppSubmissionManager:
         :type debug: bool or string
         :returns: the new submission id and the removed submission id
         """
-        if not session.loggedin:
-            raise Exception("A user must be logged in to submit an object")
-
-        username = session.username
 
         # Prevent student from submitting several submissions together
         waiting_submission = Submission.objects(
             courseid=course.get_id(), taskid=task.get_id(), username=username, status="waiting"
         ).first()
+        user = User.objects.get(username=username)
 
         if waiting_submission:
             raise Exception("A submission is already pending for this task!")
@@ -251,8 +246,8 @@ class WebAppSubmissionManager:
         # Send additional data to the client in inputdata. For now, the username and the language. New fields can be added with the
         # new_submission hook
         inputdata["@username"] = username
-        inputdata["@email"] = session.email
-        inputdata["@lang"] = session.language
+        inputdata["@email"] = user.email
+        inputdata["@lang"] = user.language
         inputdata["@time"] = str(obj["submitted_on"])
 
         my_user_task = UserTask.objects.get(courseid=course.get_id(), taskid=task.get_id(), username=username)
@@ -262,7 +257,7 @@ class WebAppSubmissionManager:
 
         # Send LTI information to the client except "consumer_key"
         # to_dict() to avoid sending mongoengine BaseLists to ZMQ
-        if session.is_lti:
+        if session.is_lti: # TODO ; check correct behavior when no session
             lti_info = session.lti.to_mongo().to_dict()
             for key in lti_info:
                 if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
@@ -274,12 +269,12 @@ class WebAppSubmissionManager:
 
         plugin_manager.call_hook("new_submission", submission=obj, inputdata=inputdata)
 
-        self._before_submission_insertion(course, task, inputdata, debug, obj)
+        self._before_submission_insertion(course, task, inputdata, debug, obj, username)
 
         submission = Submission(**obj)
         submission.set_input(inputdata)
         submissionid = submission.save().id
-        to_remove = self._after_submission_insertion(course, task, inputdata, debug, obj, submissionid, task_dispenser)
+        to_remove = self._after_submission_insertion(course, task, inputdata, debug, obj, submissionid, task_dispenser, username)
 
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
         job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
@@ -293,8 +288,8 @@ class WebAppSubmissionManager:
         # Submission may already have been modified by callback,
         Submission.objects(id=submissionid).update(jobid=jobid)
 
-        self._logger.info("New submission from %s - %s - %s/%s - %s", session.username,
-                          session.email, course.get_id(), task.get_id(), flask.request.remote_addr)
+        self._logger.info("New submission from %s - %s - %s/%s - %s", username,
+                          user.email, course.get_id(), task.get_id(), flask.request.remote_addr)
 
         return submissionid, to_remove
 
