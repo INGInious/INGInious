@@ -25,7 +25,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
     except:
         raise APINotFound("Course not found")
 
-    if not user_manager.course_is_open_to_user(course, lti=False):
+    if not user_manager.course_is_open_to_user(course, username, lti=False):
         raise APIForbidden("You are not registered to this course")
 
     try:

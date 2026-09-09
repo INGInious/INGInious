@@ -15,7 +15,7 @@ from inginious.frontend.models import UserTask
 
 def handle_course_unavailable(user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
-    reason = user_manager.course_is_open_to_user(course, lti=False, return_reason=True)
+    reason = user_manager.course_is_open_to_user(course, session.username, lti=False, return_reason=True)
     if reason == "unregistered_not_previewable":
         user_info = user_manager.get_user_info(session.username)
         if course.is_registration_possible(user_info):
@@ -58,7 +58,7 @@ class CoursePage(INGIniousAuthPage):
     def show_page(self, course):
         """ Prepares and shows the course page """
         username = session.username
-        if not self.user_manager.course_is_open_to_user(course, lti=False):
+        if not self.user_manager.course_is_open_to_user(course, username, lti=False):
             return handle_course_unavailable(self.user_manager, course)
         else:
             tasks = course.get_tasks()
