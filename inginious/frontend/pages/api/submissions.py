@@ -18,6 +18,8 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         Helper for the GET methods of the two following classes
     """
 
+    username = session.username
+
     try:
         course = Course.get(courseid)
     except:
@@ -32,7 +34,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         raise APINotFound("Task not found")
 
     if submissionid is None:
-        submissions = submission_manager.get_user_submissions(course, task)
+        submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
             submissions = [submission_manager.get_submission(submissionid)]

@@ -129,7 +129,7 @@ class BaseTaskPage(object):
                     students = group["students"]
                 # we don't care for the other case, as the student won't be able to submit.
 
-            submissions = self.submission_manager.get_user_submissions(course, task) if session.loggedin else []
+            submissions = self.submission_manager.get_user_submissions(course, task, session.username) if session.loggedin else []
             user_info = self.user_manager.get_user_info(username)
 
             # Visible tags

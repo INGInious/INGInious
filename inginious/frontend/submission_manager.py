@@ -418,13 +418,10 @@ class WebAppSubmissionManager:
 
         return session.username in submission["username"]
 
-    def get_user_submissions(self, course, task):
+    def get_user_submissions(self, course, task, username):
         """ Get all the user's submissions for a given task """
-        if not session.loggedin:
-            raise Exception("A user must be logged in to get his submissions")
-
         cursor = Submission.objects(
-            username=session.username, taskid=task.get_id(), courseid=course.get_id()
+            username=username, taskid=task.get_id(), courseid=course.get_id()
         ).order_by("-submitted_on")
 
         return list(cursor)
