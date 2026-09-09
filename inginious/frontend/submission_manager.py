@@ -263,7 +263,7 @@ class WebAppSubmissionManager:
 
         # Send LTI information to the client except "consumer_key"
         # to_dict() to avoid sending mongoengine BaseLists to ZMQ
-        if session.is_lti:
+        if session.is_lti: # TODO ; check correct behavior when no session
             lti_info = session.lti.to_mongo().to_dict()
             for key in lti_info:
                 if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
