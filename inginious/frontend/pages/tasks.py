@@ -399,7 +399,7 @@ class TaskPageStaticDownload(INGIniousPage):
         """ GET request """
         try:
             course = Course.get(courseid)
-            if not self.user_manager.course_is_open_to_user(course):
+            if not self.user_manager.course_is_open_to_user(course, session.username):
                 return handle_course_unavailable(self.user_manager, course)
 
             path_norm = posixpath.normpath(urllib.parse.unquote(path))
