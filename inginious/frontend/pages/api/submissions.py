@@ -13,13 +13,10 @@ from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
 
-def _get_submissions(submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
+def _get_submissions(submission_manager, user_manager, courseid, taskid, username, with_input, submissionid=None):
     """
         Helper for the GET methods of the two following classes
     """
-
-    username = session.username
-
     try:
         course = Course.get(courseid)
     except:
@@ -48,7 +45,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, session.username)
+            show_everything=user_manager.has_staff_rights_on_course(course, username)
         )
         data = {
             "id": str(submission["id"]),
@@ -113,7 +110,12 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
+        if session.loggedin:
+            username = session.username
+        else:
+            username = flask.g.user.username
+
+        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -154,7 +156,12 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input)
+        if session.loggedin:
+            username = session.username
+        else:
+            username = flask.g.user.username
+
+        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -174,7 +181,10 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        username = session.username
+        if session.loggedin:
+            username = session.username
+        else:
+            username = flask.g.user.username
 
         if not self.user_manager.course_is_open_to_user(course, username, False):
             raise APIForbidden("You are not registered to this course")
@@ -190,15 +200,27 @@ class APISubmissions(APIAuthenticatedPage):
         if not self.user_manager.task_can_user_submit(course, task, username, False):
             raise APIForbidden("You are not allowed to submit for this task")
 
-        user_input = flask.request.form.copy()
-        for problem in task.get_problems():
-            pid = problem.get_id()
-            if problem.input_type() == list:
-                user_input[pid] = flask.request.form.getlist(pid)
-            elif problem.input_type() == dict:
-                user_input[pid] = flask.request.files.get(pid)
-            else:
-                user_input[pid] = flask.request.form.get(pid)
+        # TODO : check here
+        if flask.request.is_json:
+            user_input = flask.request.get_json()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    value = user_input.get(pid, [])
+                    user_input[pid] = value if isinstance(value, list) else [value]
+                elif problem.input_type() == dict:
+                    # File inputs are not supported in JSON requests.
+                    raise APIInvalidArguments()
+        else:
+            user_input = flask.request.form.copy()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    user_input[pid] = flask.request.form.getlist(pid)
+                elif problem.input_type() == dict:
+                    user_input[pid] = flask.request.files.get(pid)
+                else:
+                    user_input[pid] = flask.request.form.get(pid)
 
         user_input = task.adapt_input_for_backend(user_input)
 
