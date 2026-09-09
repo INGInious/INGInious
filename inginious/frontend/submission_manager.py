@@ -206,7 +206,7 @@ class WebAppSubmissionManager:
         """:return a list of available environments """
         return self._client.get_available_environments()
 
-    def get_submission(self, submissionid, username=None, user_check=True):
+    def get_submission(self, submissionid, username, user_check=True):
         """ Get a submission from the database """
         sub = Submission.objects.get(id=submissionid)
         if user_check and not self.user_is_submission_owner(sub, username):
@@ -257,7 +257,7 @@ class WebAppSubmissionManager:
 
         # Send LTI information to the client except "consumer_key"
         # to_dict() to avoid sending mongoengine BaseLists to ZMQ
-        if session.is_lti: # TODO ; check correct behavior when no session
+        if session.is_lti:
             lti_info = session.lti.to_mongo().to_dict()
             for key in lti_info:
                 if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
@@ -292,7 +292,6 @@ class WebAppSubmissionManager:
                           user.email, course.get_id(), task.get_id(), flask.request.remote_addr)
 
         return submissionid, to_remove
-
 
     def _delete_exceeding_submissions(self, username, course, task, task_dispenser):
         """ Deletes exceeding submissions from the database, to keep the database relatively small """
@@ -408,9 +407,6 @@ class WebAppSubmissionManager:
 
     def user_is_submission_owner(self, submission, username):
         """ Returns true if the current user is the owner of this jobid, false else """
-        if username is None:
-            raise Exception("A user must be provided when checking for submission ownership")
-
         return username in submission["username"]
 
     def get_user_submissions(self, course, task, username):
