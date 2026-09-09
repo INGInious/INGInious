@@ -200,7 +200,6 @@ class APISubmissions(APIAuthenticatedPage):
         if not self.user_manager.task_can_user_submit(course, task, username, False):
             raise APIForbidden("You are not allowed to submit for this task")
 
-        # TODO : check here
         if flask.request.is_json:
             user_input = flask.request.get_json()
             for problem in task.get_problems():

@@ -4,11 +4,13 @@
 # more information about the licensing of this file.
 
 """ Tasks """
+import flask
 from flask import session
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
 from inginious.frontend.parsable_text import ParsableText
+from inginious.frontend.models.user import User
 
 
 class APITasks(APIAuthenticatedPage):
@@ -67,7 +69,14 @@ class APITasks(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        if not self.user_manager.course_is_open_to_user(course, session.username, lti=False):
+        if session.loggedin:
+            username = session.username
+        else:
+            username = flask.g.user.username
+
+        user = User.objects(username=username).first()
+
+        if not self.user_manager.course_is_open_to_user(course, username, lti=False):
             raise APIForbidden("You are not registered to this course")
 
         if taskid is None:
@@ -80,16 +89,16 @@ class APITasks(APIAuthenticatedPage):
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(session.username, course.get_id(), task.get_id())
+            task_cache = self.user_manager.get_task_cache(username, course.get_id(), task.get_id())
 
             data = {
                 "id": taskid,
-                "name": task.get_name(session.language),
-                "authors": task.get_authors(session.language),
-                "contact_url": task.get_contact_url(session.language),
-                "status": "notviewed" if task_cache is None else "notattempted" if task_cache["tried"] == 0 else "succeeded" if task_cache["succeeded"] else "failed",
-                "grade": task_cache.get("grade", 0.0) if task_cache is not None else 0.0,
-                "context": task.get_context(session.language).original_content(),
+                "name": task.get_name(user.language),
+                "authors": task.get_authors(user.language),
+                "contact_url": task.get_contact_url(user.language),
+                "status": "notviewed" if task_cache is None else "notattempted" if task_cache.tried == 0 else "succeeded" if task_cache.succeeded else "failed",
+                "grade": task_cache.grade if task_cache is not None else 0.0,
+                "context": task.get_context(user.language).original_content(),
                 "problems": []
             }
 
