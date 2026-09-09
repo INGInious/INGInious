@@ -37,7 +37,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
-            submissions = [submission_manager.get_submission(submissionid)]
+            submissions = [submission_manager.get_submission(submissionid, username)]
         except:
             raise APINotFound("Submission not found")
         if submissions[0]["taskid"] != task.get_id() or submissions[0]["courseid"] != course.get_id():

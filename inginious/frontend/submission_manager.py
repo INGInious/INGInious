@@ -43,10 +43,10 @@ class WebAppSubmissionManager:
         )
 
     def _job_done_callback(self, submissionid, course, task, result, grade, problems, tests, custom, state, archive, stdout,
-                           stderr, task_dispenser,  newsub=True):
+                           stderr, task_dispenser, username, newsub=True):
         """ Callback called by Client when a job is done. Updates the submission in the database with the data returned after the completion of the
         job """
-        submission = self.get_submission(submissionid, False)
+        submission = self.get_submission(submissionid, username, user_check=False)
 
         if archive:
             submission.archive.put(archive)
@@ -91,7 +91,7 @@ class WebAppSubmissionManager:
             if lti_score_publisher:
                 lti_score_publisher.add(submission)
 
-    def _before_submission_insertion(self, course, task, inputdata, debug, obj):
+    def _before_submission_insertion(self, course, task, inputdata, debug, obj, username):
         """
         Called before any new submission is inserted into the database. Allows you to modify obj, the new document that will be inserted into the
         database. Should be overridden in subclasses.
@@ -190,7 +190,7 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(1, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, copy)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, copy)),
                                      "Frontend - {}".format(submission["username"]), debug, ssh_callback)
 
         # Callback may have been received, perform atomic operation
@@ -208,10 +208,10 @@ class WebAppSubmissionManager:
         """:return a list of available environments """
         return self._client.get_available_environments()
 
-    def get_submission(self, submissionid, user_check=True):
+    def get_submission(self, submissionid, username=None, user_check=True):
         """ Get a submission from the database """
         sub = Submission.objects.get(id=submissionid)
-        if user_check and not self.user_is_submission_owner(sub):
+        if user_check and not self.user_is_submission_owner(sub, username):
             return None
         return sub
 
@@ -287,7 +287,7 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(0, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, True)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, True)),
                                      "Frontend - {}".format(username), debug, ssh_callback)
 
         # Submission may already have been modified by callback,
@@ -378,29 +378,29 @@ class WebAppSubmissionManager:
                     )
         return submission
 
-    def is_running(self, submissionid, user_check=True):
+    def is_running(self, submissionid, username, user_check=True):
         """ Tells if a submission is running/in queue """
-        submission = self.get_submission(submissionid, user_check)
+        submission = self.get_submission(submissionid, username, user_check)
         return submission["status"] == "waiting"
 
-    def is_done(self, submissionid_or_submission, user_check=True):
+    def is_done(self, submissionid_or_submission, username, user_check=True):
         """ Tells if a submission is done and its result is available """
         # TODO: not a very nice way to avoid too many database call. Should be refactored.
         if isinstance(submissionid_or_submission, dict):
             submission = submissionid_or_submission
         else:
-            submission = self.get_submission(submissionid_or_submission, False)
-        if user_check and not self.user_is_submission_owner(submission):
+            submission = self.get_submission(submissionid_or_submission, username, user_check=False)
+        if user_check and not self.user_is_submission_owner(submission, username):
             return None
         return submission["status"] == "done" or submission["status"] == "error"
 
-    def kill_running_submission(self, submissionid, user_check=True):
+    def kill_running_submission(self, submissionid, username, user_check=True):
         """ Attempt to kill the remote job associated with this submission id.
         :param submissionid:
         :param user_check: Check if the current user owns this submission
         :return: True if the message asking to kill the job was sent, False if an error occurred
         """
-        submission = self.get_submission(submissionid, user_check)
+        submission = self.get_submission(submissionid, username, user_check)
         if not submission:
             self._logger.warning("Was asked to kill submission with id %s, but it cannot be found in the database", str(submissionid))
             return False
@@ -411,12 +411,12 @@ class WebAppSubmissionManager:
         self._client.kill_job(submission["jobid"])
         return True
 
-    def user_is_submission_owner(self, submission):
+    def user_is_submission_owner(self, submission, username):
         """ Returns true if the current user is the owner of this jobid, false else """
-        if not session.loggedin:
-            raise Exception("A user must be logged in to verify if he owns a jobid")
+        if username is None:
+            raise Exception("A user must be provided when checking for submission ownership")
 
-        return session.username in submission["username"]
+        return username in submission["username"]
 
     def get_user_submissions(self, course, task, username):
         """ Get all the user's submissions for a given task """

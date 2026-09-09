@@ -84,7 +84,7 @@ class BaseTaskPage(object):
         userinput = flask.request.args
         if "submissionid" in userinput and "questionid" in userinput:
             # Download a previously submitted file
-            submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
+            submission = self.submission_manager.get_submission(userinput["submissionid"], username, user_check=not is_staff)
             if submission is None:
                 raise self.cp.app.notfound(message=_("Submission doesn't exist."))
             sinput = self.submission_manager.get_input_from_submission(submission, True)
@@ -228,12 +228,12 @@ class BaseTaskPage(object):
                 }))
 
         elif "@action" in userinput and userinput["@action"] == "check" and "submissionid" in userinput:
-            result = self.submission_manager.get_submission(userinput['submissionid'], user_check=not is_staff)
+            result = self.submission_manager.get_submission(userinput['submissionid'], username, user_check=not is_staff)
             if result is None:
                 return Response(content_type='application/json', response=json.dumps({
                     'status': "error",  "title": _("Error"), "text": _("Internal error")
                 }))
-            elif self.submission_manager.is_done(result.id, user_check=not is_staff):
+            elif self.submission_manager.is_done(result.id, username, user_check=not is_staff):
                 result = self.submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
 
                 # user_task always exists as we called user_saw_task before
@@ -255,7 +255,7 @@ class BaseTaskPage(object):
                 ))
 
         elif "@action" in userinput and userinput["@action"] == "load_submission_input" and "submissionid" in userinput:
-            submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
+            submission = self.submission_manager.get_submission(userinput["submissionid"], username, user_check=not is_staff)
             submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=is_staff)
             if not submission:
                 raise NotFound(description=_("Submission doesn't exist."))
@@ -265,7 +265,7 @@ class BaseTaskPage(object):
             ))
 
         elif "@action" in userinput and userinput["@action"] == "kill" and "submissionid" in userinput:
-            self.submission_manager.kill_running_submission(userinput["submissionid"])  # ignore return value
+            self.submission_manager.kill_running_submission(userinput["submissionid"], username)  # ignore return value
             return Response(content_type='application/json', response=json.dumps({'status': 'done'}))
         else:
             raise NotFound()
