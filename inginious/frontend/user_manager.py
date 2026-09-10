@@ -127,18 +127,18 @@ class UserManager:
 
     def auth_user(self, username, password, do_connect=True):
         """
-        Authenticate the user in database
+        Authenticate the user using database password
         :param username: Username/Login
         :param password: User password
         :param do_connect: indicates if the user must be connected after authentification, True by default
-        :return: Returns a dict representing the user, or None if the authentication was not successful
+        :return: Returns a User model, or None if the authentication was not successful
         """
         user = User.objects(username=username, activate__exists=False).first()
 
-        if user is None:
+        if not user or not user.password:
             return None
 
-        method, db_hash = user["password"].split("-", 1) if "-" in user["password"] else ("sha512", user["password"])
+        method, db_hash = user.password.split("-", 1) if "-" in user.password else ("sha512", user.password)
 
         if self.verify_hash(db_hash, password, method):
             if do_connect:
