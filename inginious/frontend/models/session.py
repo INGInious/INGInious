@@ -52,4 +52,12 @@ class Session(Document):
     username = StringField(default=None)
     timezone = StringField(default=lambda: tzlocal.get_localzone_name())
 
-    meta = {"collection": "sessions", "indexes": ["expiration"]}
+    meta = {
+        "collection": "sessions",
+        "indexes": [
+            {
+                'fields': ['expiration'],
+                'expireAfterSeconds': 0 # use field value
+            }
+        ]
+    }

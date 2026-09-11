@@ -181,6 +181,11 @@ def main():
         )
         db_version = 19
 
+    if db_version < 20:
+        print("Updating database to db_version 20")
+        database.sessions.drop_indexes()
+        db_version = 20
+
     database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
         
     print("Database up to date")
