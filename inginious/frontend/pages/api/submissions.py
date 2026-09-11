@@ -200,8 +200,13 @@ class APISubmissions(APIAuthenticatedPage):
                     value = user_input.get(pid, [])
                     user_input[pid] = value if isinstance(value, list) else [value]
                 elif problem.input_type() == dict:
-                    # File inputs are not supported in JSON requests.
-                    raise APIInvalidArguments()
+                    # File inputs are not supported in JSON requests. Needs to be sent in base64 encoded format
+                    value = user_input.get(pid)
+                    if isinstance(value, dict) and "filename" in value and "value" in value:
+                        user_input[pid] = {
+                            "filename": value["filename"],
+                            "value": base64.b64decode(value["value"])
+                        }
         else:
             user_input = flask.request.form.copy()
             for problem in task.get_problems():
@@ -210,8 +215,6 @@ class APISubmissions(APIAuthenticatedPage):
                     user_input[pid] = flask.request.form.getlist(pid)
                 elif problem.input_type() == dict:
                     user_input[pid] = flask.request.files.get(pid)
-                else:
-                    user_input[pid] = flask.request.form.get(pid)
 
         user_input = task.adapt_input_for_backend(user_input)
 
