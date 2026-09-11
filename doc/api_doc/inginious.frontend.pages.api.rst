@@ -1,3 +1,5 @@
+.. _rest_api_documentation:
+
 inginious.frontend.pages.api package
 ===========================================
 
