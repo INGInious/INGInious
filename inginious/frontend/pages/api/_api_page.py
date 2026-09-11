@@ -7,13 +7,12 @@
 
 import json
 import flask
-from flask import session, Response
+from flask import session, Response, current_app
 import jwt
 import logging
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
-from inginious.frontend.pages.jwt_utils import decode_jwt
 from inginious.frontend.models import User
 
 
@@ -124,7 +123,7 @@ class APIAuthenticatedPage(APIPage):
         if auth_header.startswith("Bearer "):
             token = auth_header.removeprefix("Bearer ").strip()
             try:
-                payload = decode_jwt(token)
+                payload = jwt.decode(token, current_app.config["API_JWT_SECRET"], algorithms=[current_app.config["API_JWT_ALGORITHM"]])
             except jwt.ExpiredSignatureError:
                 raise APIForbidden("Your token has expired, please generate a new one.")
             except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidTokenError) as e:

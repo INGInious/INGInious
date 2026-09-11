@@ -55,9 +55,8 @@ def _put_configuration_defaults(config):
         exit(1)
 
     api_jwt_secret = config.get("api_jwt_secret", None)
-    api_jwt_old_secrets = config.get("api_jwt_old_secrets", None)
-    if api_jwt_secret is None or api_jwt_old_secrets is None:
-        print("Please define api_jwt_secret and api_jwt_old_secrets in the configuration.", file=sys.stderr)
+    if api_jwt_secret is None:
+        print("Please define api_jwt_secret in the configuration.", file=sys.stderr)
         print("Refer to the documentation for more information.", file=sys.stderr)
         exit(1)
 
@@ -69,7 +68,6 @@ def _put_configuration_defaults(config):
         "ALLOW_REGISTRATION": config.get("allow_registration", True),
         "API_JWT_ALGORITHM": "HS256",
         "API_JWT_SECRET": config.get("api_jwt_secret", "jwt_secret_key"),
-        "API_JWT_OLD_SECRETS": config.get("api_jwt_old_secrets", ["jwt_secret_key"]),
         "BACKEND": config.get("backend", "local"),
         "DEBUG": config.get("web_debug", False),
         "DEBUG_ASYNCIO": config.get('debug_asyncio', False),

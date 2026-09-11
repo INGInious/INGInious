@@ -14,6 +14,4 @@ superadmins:
 tasks_directory: /inginious/tasks
 use_minified_js: true
 webdav_host: https://localhost/dav
-api_jwt_old_secrets:
-- c9f5542edfa41190589bce633ae9901ed2cb6c99be367016c8d88fc698836c41
 api_jwt_secret: c9f5542edfa41190589bce633ae9901ed2cb6c99be367016c8d88fc698836c41

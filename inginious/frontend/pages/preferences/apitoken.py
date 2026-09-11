@@ -9,11 +9,11 @@ import datetime
 from datetime import timezone
 import uuid
 from mongoengine import ValidationError
+import jwt
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User, APIToken
 from inginious.frontend.user_manager import UserManager
-from inginious.frontend.pages.jwt_utils import encode_jwt
 
 
 class APITokenPage(INGIniousAuthPage):
@@ -51,7 +51,8 @@ class APITokenPage(INGIniousAuthPage):
                 "exp": expiration.timestamp(),
             }
 
-            token = encode_jwt(payload)
+            token = jwt.encode(payload, current_app.config["API_JWT_SECRET"],
+                               algorithm=current_app.config["API_JWT_ALGORITHM"])
 
             try:
                 new_token = APIToken(token=UserManager.hash_password(token), expires=expiration, description=description)

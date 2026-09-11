@@ -598,7 +598,6 @@ class Installer:
         """ Configure the API parameters """
         options = {}
         options["api_jwt_secret"] = secrets.token_hex(16)
-        options["api_jwt_old_secrets"] = [options["api_jwt_secret"]]
 
         return options
 
