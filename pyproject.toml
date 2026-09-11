@@ -62,7 +62,7 @@ dependencies = [
     "sh==2.2.1",
     "watchdog==6.0.0",
     "Werkzeug==3.0.1",
-    "WsgiDAV==4.3.3",
+    "WsgiDAV==4.3.5",
     "zipstream==1.1.4",
     "pytidylib==0.3.2",
     "argon2-cffi == 23.1.0",
