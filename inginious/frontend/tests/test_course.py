@@ -101,6 +101,24 @@ class TestCourse(object):
         t = c.get_tasks()
         assert t == {}
 
+    def test_empty_tutors_field(self, ressource):
+        """A 'tutors' key present but with no value must behave like an absent one"""
+        c = Course("test", {"name": "Unit test", "admins": ["testadmin1"], "tutors": None})
+        assert c.get_tutors() == []
+        assert sorted(c.get_staff()) == ["testadmin1"]
+
+    def test_empty_admins_field(self, ressource):
+        """An 'admins' key present but with no value must behave like an absent one"""
+        c = Course("test", {"name": "Unit test", "admins": None, "tutors": ["testtutor1"]})
+        assert c.get_admins() == []
+        assert sorted(c.get_staff()) == ["testtutor1"]
+
+    def test_empty_registration_ac_list_field(self, ressource):
+        """A 'registration_ac_list' key present but with no value must behave like an absent one"""
+        c = Course("test", {"name": "Unit test", "admins": ["testadmin1"],
+                            "registration_ac": "username", "registration_ac_list": None})
+        assert c.get_access_control_list() == []
+
 
 class TestCourseWrite(object):
     """ Test the course update function """
