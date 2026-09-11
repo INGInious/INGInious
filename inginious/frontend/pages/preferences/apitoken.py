@@ -26,7 +26,7 @@ class APITokenPage(INGIniousAuthPage):
     def POST_AUTH(self):
         """ POST request, generates a new token for the user """
 
-        user = User.objects(username=session["username"]).first()
+        user = User.objects(username=session.username).get()
 
         if "save" in request.form:
             description = request.form.get("description")
@@ -38,9 +38,9 @@ class APITokenPage(INGIniousAuthPage):
             try:
                 days = int(expires_in)
             except (TypeError, ValueError):
-                return self.show_page(errors=["Please select a valid expiration duration."])
+                return self.show_page(errors=[_("Please select a valid expiration duration.")])
 
-            if days < 10 or days > 365:
+            if not 10 <= days <= 365:
                 return self.show_page(errors=["Expiration duration must be between 10 and 365 days."])
 
             expiration = datetime.datetime.now(tz=timezone.utc) + datetime.timedelta(days=days)
@@ -73,11 +73,11 @@ class APITokenPage(INGIniousAuthPage):
             return self.show_page()
 
     def show_page(self, generated_token=None, errors=None):
-        """ Prepares and shows the course marketplace """
+        """ Prepares and shows the API token page with the list of tokens or errors. """
         if errors is None:
             errors = []
 
-        user = User.objects(username=session["username"]).first()
+        user = User.objects(username=session.username).get()
         # Exclude the token hash from the data sent to the template
         token_list = [
             {"token_id": token_id, "description": token.description, "expires": token.expires}

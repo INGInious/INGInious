@@ -25,7 +25,7 @@ class User(Document):
     ltibindings = MapField(StringField())
     tos_accepted = BooleanField(default=False)
     apikey = StringField(default=None)
-    apitokens = MapField(EmbeddedDocumentField(APIToken), default={})
+    apitokens = MapField(EmbeddedDocumentField(APIToken), default=dict())
     timezone = StringField(default=lambda: tzlocal.get_localzone_name())
     pinned_courses = ListField(StringField(), default=list)
     activate = StringField()
@@ -38,7 +38,7 @@ class User(Document):
         Custom validation for the User model.
         """
         if len(self.apitokens) > 20:
-            raise ValidationError("A user can have at most 20 API tokens.")
+            raise ValidationError(_("A user can have at most 20 API tokens."))
         if len(self.apitokens):
             for token in self.apitokens.values():
                 if len(token.description) > 40:

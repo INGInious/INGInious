@@ -5,7 +5,6 @@
 
 """ Custom installer for the web app """
 
-import hashlib
 import os
 import tarfile
 import tempfile
@@ -17,6 +16,7 @@ from docker.errors import BuildError
 from gridfs import GridFS
 from pymongo import MongoClient
 from mongoengine import connect
+import secrets
 
 
 from inginious import __version__
@@ -597,7 +597,7 @@ class Installer:
     def configure_api(self):
         """ Configure the API parameters """
         options = {}
-        options["api_jwt_secret"] = hexlify(os.urandom(32)).decode('utf-8')
+        options["api_jwt_secret"] = secrets.token_hex(16)
         options["api_jwt_old_secrets"] = [options["api_jwt_secret"]]
 
         return options
