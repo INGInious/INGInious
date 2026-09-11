@@ -10,12 +10,14 @@ import csv
 import io
 from collections import OrderedDict
 from datetime import datetime
+import logging
 
 from flask import  session, redirect, Response, url_for
-from werkzeug.exceptions import Forbidden
+from werkzeug.exceptions import Forbidden, NotFound
 from bson.objectid import ObjectId
 
 from inginious.common.base import id_checker
+from inginious.common.exceptions import CourseUnreadableException, InvalidNameException, CourseNotFoundException
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import UserTask, Audience
@@ -25,6 +27,8 @@ class INGIniousAdminPage(INGIniousAuthPage):
     """
     An improved version of INGIniousAuthPage that checks rights for the administration
     """
+
+    _logger = logging.getLogger("inginious.frontend.course_admin")
 
     def get_course_and_check_rights(self, courseid, taskid=None, allow_all_staff=True):
         """ Returns the course with id ``courseid`` and the task with id ``taskid``, and verify the rights of the user.
@@ -48,8 +52,18 @@ class INGIniousAdminPage(INGIniousAuthPage):
                 return course, None
             else:
                 return course, course.get_task(taskid)
-        except:
-            raise Forbidden(description=_("This course is unreachable"))
+        except CourseUnreadableException as e:
+            self._logger.error(str(e))
+            raise NotFound(description=str(e))
+        except InvalidNameException as e:
+            self._logger.error(str(e))
+            raise NotFound(description=_("Course not found."))
+        except CourseNotFoundException:
+            self._logger.error(f"Course {courseid} not found.")
+            raise NotFound(description=_("Course not found."))
+        except Exception as e:
+            self._logger.error(f"Error while fetching course {courseid}: {str(e)}")
+            raise NotFound(description=_("Course not found."))
 
 
 class INGIniousSubmissionsAdminPage(INGIniousAdminPage):

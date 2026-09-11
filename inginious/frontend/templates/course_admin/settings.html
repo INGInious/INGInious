@@ -83,7 +83,7 @@
             <div class="form-group row">
                 <label for="description" class="col-sm-2 control-label">{{ _("Description") }} </label>
                 <div class="col-sm-10">
-                    <textarea id="description" class="code-editor form-control" name="description" data-x-language="rst" data-x-lines="10">{{ course.get_descriptor().get('description','') }}</textarea>
+                    <textarea id="description" class="code-editor form-control" name="description" data-x-language="rst" data-x-lines="10">{{ course.get_descriptor().description }}</textarea>
                 </div>
             </div>
             <div class="form-group row">
@@ -458,7 +458,7 @@
                     </td>
                 </tr>
 
-                {% for key, tag in course.get_descriptor().get("tags", {}).items() %}
+                {% for key, tag in course.get_descriptor().tags.items() %}
                     {% set name = tag["name"] if "name" in tag else _("Unknown name") %}
                     {% set description = tag["description"] if "description" in tag else "" %}
                     {% set type = tag["type"] if "type" in tag else 0 %}
