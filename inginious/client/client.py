@@ -150,6 +150,7 @@ class Client(BetterParanoidPirateClient):
         self._queue_update_last_attempt_max = 3
         self._queue_cache = None
         self._queue_job_cache = {} #format is job_id: (nb_tasks_before (can be -1 == running), approx_wait_time_in_seconds)
+        self.agents_capabilities = {}
 
     async def _ask_queue_update(self):
         """ Send a ClientGetQueue message to the backend, if one is not already sent """
@@ -206,6 +207,7 @@ class Client(BetterParanoidPirateClient):
 
     async def _handle_update_environments(self, message: BackendUpdateEnvironments):
         self._available_environments = message.available_environments
+        self.agents_capabilities = message.capabilities
         self._logger.info("Updated environments")
         self._logger.debug("Environments: %s", str(self._available_environments))
 
@@ -278,6 +280,7 @@ class Client(BetterParanoidPirateClient):
                 task: Task,                 Task object related to the submission, optional, can be None
                 environment_type: str,      Type of the environment to run the job (ex : docker, docker_ssh, mcq, ...)
                 environment: str            Name of the environment to run the job in.
+                capabilities: list[str]     The Agent capabilities required to run the job.
             }
         : type job_info: dict
         :param inputdata: input from the student
@@ -327,11 +330,11 @@ class Client(BetterParanoidPirateClient):
 
             msg = ClientNewJob(job_id, priority, course.get_id(), task.get_id(), task.get_problems_dict(), inputdata,
                                job_info["environment_type"], job_info["environment"], task.get_environment_parameters(),
-                               debug, launcher_name)
+                               debug, launcher_name, job_info['capabilities'])
         else:
             msg = ClientNewJob(job_id, priority, None, None, {}, inputdata,
                                job_info["environment_type"], job_info["environment"], {}, debug,
-                               launcher_name)
+                               launcher_name, job_info['capabilities'])
 
         self._loop.call_soon_threadsafe(asyncio.ensure_future,
                                         self._create_transaction(msg, task=task, callback=safe_callback,
