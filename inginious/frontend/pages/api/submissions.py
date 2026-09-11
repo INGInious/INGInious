@@ -110,10 +110,8 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        if session.loggedin:
-            username = session.username
-        else:
-            username = flask.g.user.username
+
+        username = flask.g.user.username
 
         return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input, submissionid)
 
@@ -156,10 +154,7 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        if session.loggedin:
-            username = session.username
-        else:
-            username = flask.g.user.username
+        username = flask.g.user.username
 
         return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input)
 
@@ -181,10 +176,7 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        if session.loggedin:
-            username = session.username
-        else:
-            username = flask.g.user.username
+        username = flask.g.user.username
 
         if not self.user_manager.course_is_open_to_user(course, username, False):
             raise APIForbidden("You are not registered to this course")

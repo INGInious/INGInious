@@ -69,14 +69,9 @@ class APITasks(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        if session.loggedin:
-            username = session.username
-        else:
-            username = flask.g.user.username
+        user = flask.g.user
 
-        user = User.objects(username=username).first()
-
-        if not self.user_manager.course_is_open_to_user(course, username, lti=False):
+        if not self.user_manager.course_is_open_to_user(course, user.username, lti=False):
             raise APIForbidden("You are not registered to this course")
 
         if taskid is None:
@@ -89,7 +84,7 @@ class APITasks(APIAuthenticatedPage):
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(username, course.get_id(), task.get_id())
+            task_cache = self.user_manager.get_task_cache(user.username, course.get_id(), task.get_id())
 
             data = {
                 "id": taskid,

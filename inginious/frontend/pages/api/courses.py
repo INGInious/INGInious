@@ -56,25 +56,20 @@ class APICourses(APIAuthenticatedPage):
             except:
                 raise APINotFound("Course not found")
 
-        if session.loggedin:
-            username = session.username
-        else:
-            username = flask.g.user.username
-
-        user = User.objects(username=username).first()
-        user_info = self.user_manager.get_user_info(username)
+        user = flask.g.user
+        user_info = self.user_manager.get_user_info(user.username)
 
         for courseid, course in courses.items():
-            if self.user_manager.course_is_open_to_user(course, username, False) or course.is_registration_possible(user_info):
+            if self.user_manager.course_is_open_to_user(course, user.username, False) or course.is_registration_possible(user_info):
                 data = {
                     "id": courseid,
                     "name": course.get_name(user.language),
                     "require_password": course.is_password_needed_for_registration(),
-                    "is_registered": self.user_manager.course_is_open_to_user(course, username, False)
+                    "is_registered": self.user_manager.course_is_open_to_user(course, user.username, False)
                 }
-                if self.user_manager.course_is_open_to_user(course, username, False):
+                if self.user_manager.course_is_open_to_user(course, user.username, False):
                     data["tasks"] = {taskid: task.get_name(user.language) for taskid, task in course.get_tasks().items()}
-                    data["grade"] = self.user_manager.get_course_cache(username, course)["grade"]
+                    data["grade"] = self.user_manager.get_course_cache(user.username, course)["grade"]
                 output.append(data)
 
         return 200, output
