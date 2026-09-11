@@ -15,7 +15,7 @@ class LTIData(EmbeddedDocument):
     username = StringField(required=True, default="")
     realname = StringField(required=True, default="")
     roles = ListField(StringField())
-    task = ListField(StringField(), required=True, default=['', ''])
+    task = ListField(StringField(), required=True, default=lambda: ['', ''])
     redir_url = StringField(required=True, default="")
 
     context_title = StringField()
@@ -40,9 +40,9 @@ class Session(Document):
     permanent = BooleanField(required=True)
     is_lti = BooleanField(required=True, default=False)
     loggedin = BooleanField(required=True, default=False)
-    auth_storage = MapField(DynamicField(), default={})
+    auth_storage = MapField(DynamicField(), default=dict)
     expiration = DateTimeField()
-    lti = EmbeddedDocumentField(LTIData, default=lambda: None)
+    lti = EmbeddedDocumentField(LTIData, default=None)
     code_indentation = StringField(choices=["2", "3", "4", "tabs"], default="4")
     email = StringField()
     language = StringField(default="") # will be autodetected
