@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import logging
 import hashlib
 
@@ -46,14 +46,15 @@ class MongoLTILaunchDataStorage(LaunchDataStorage):
     _session_cookie_name = None
 
     def can_set_keys_expiration(self) -> bool:
-        return False  # TODO(mp): I think it's reasonable to clean LTI Launch messages further than a week away tho
+        return True
 
     def get_value(self, key: str):
         entry = LaunchData.objects(key=key).first()
         return entry.value if entry else None
 
     def set_value(self, key: str, value, exp) -> None:
-        LaunchData.objects(key=key).update(key=key, value=value, upsert=True)
+        exp_date = datetime.now(timezone.utc) + timedelta(seconds=exp)
+        LaunchData.objects(key=key).update(key=key, value=value, expiration=exp_date, upsert=True)
 
     def check_value(self, key: str) -> bool:
         return bool(LaunchData.objects(key=key).first())
