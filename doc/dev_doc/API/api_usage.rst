@@ -27,6 +27,8 @@ Using the API with the flask session will need the use of the authentication end
 The following example shows how to authenticate with /api/v0/authentication endpoint.
 You can check if the session is valid by sending a GET request to the same endpoint.
 
+Note this method is deprecated and will be removed in a future release. It is recommended to use the token authentication method instead.
+
 ::
 
     curl -c api_cookies.txt -X POST "http://localhost:8080/api/v0/authentication" -d "login=myusername&password=mypassword"

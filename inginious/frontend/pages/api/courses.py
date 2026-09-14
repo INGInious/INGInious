@@ -5,11 +5,9 @@
 
 """ Courses """
 import flask
-from flask import session
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
-from inginious.frontend.models.user import User
 
 
 class APICourses(APIAuthenticatedPage):
