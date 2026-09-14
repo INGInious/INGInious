@@ -432,7 +432,7 @@ class INGIniousMainRunner:
         logger.addHandler(ch)
 
         context = zmq.asyncio.Context()
-        loop = zmq.asyncio.ZMQEventLoop()
+        loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(INGIniousMainRunner(context, loop).serve())
         loop.close()
