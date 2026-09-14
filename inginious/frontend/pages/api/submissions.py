@@ -6,9 +6,10 @@
 """ Submissions """
 
 import base64
+import binascii
 import flask
 
-from flask import current_app, session
+from flask import current_app
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
@@ -203,10 +204,13 @@ class APISubmissions(APIAuthenticatedPage):
                     # File inputs are not supported in JSON requests. Needs to be sent in base64 encoded format
                     value = user_input.get(pid)
                     if isinstance(value, dict) and "filename" in value and "value" in value:
-                        user_input[pid] = {
-                            "filename": value["filename"],
-                            "value": base64.b64decode(value["value"])
-                        }
+                        try:
+                            user_input[pid] = {
+                                "filename": value["filename"],
+                                "value": base64.b64decode(value["value"])
+                            }
+                        except (binascii.Error, TypeError, ValueError):
+                            raise APIInvalidArguments()
         else:
             user_input = flask.request.form.copy()
             for problem in task.get_problems():

@@ -596,10 +596,7 @@ class Installer:
 
     def configure_api(self):
         """ Configure the API parameters """
-        options = {}
-        options["api_jwt_secret"] = secrets.token_hex(16)
-
-        return options
+        return {"api_jwt_secret": secrets.token_hex(16)}
 
     def configuration_filename(self):
         """ Returns the name of the configuration file """

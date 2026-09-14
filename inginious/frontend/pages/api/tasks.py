@@ -5,12 +5,10 @@
 
 """ Tasks """
 import flask
-from flask import session
 
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
 from inginious.frontend.parsable_text import ParsableText
-from inginious.frontend.models.user import User
 
 
 class APITasks(APIAuthenticatedPage):
