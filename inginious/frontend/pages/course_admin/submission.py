@@ -18,7 +18,7 @@ class SubmissionPage(INGIniousAdminPage):
 
     def fetch_submission(self, submissionid):
         try:
-            submission = self.submission_manager.get_submission(submissionid, False)
+            submission = self.submission_manager.get_submission(submissionid, session.username, user_check=False)
             if not submission:
                 raise NotFound(description=_("This submission doesn't exist."))
         except InvalidId as ex:

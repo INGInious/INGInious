@@ -4,10 +4,10 @@
 # more information about the licensing of this file.
 
 """ Tasks """
-from flask import session
+import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
 from inginious.frontend.parsable_text import ParsableText
 
 
@@ -65,10 +65,14 @@ class APITasks(APIAuthenticatedPage):
         try:
             course = Course.get(courseid)
         except:
-            raise APINotFound("Course not found")
+            self._logger.warning(f"Course '{courseid}' not found.")
+            raise APINotFound()
 
-        if not self.user_manager.course_is_open_to_user(course, lti=False):
-            raise APIForbidden("You are not registered to this course")
+        user = flask.g.user
+
+        if not self.user_manager.course_is_open_to_user(course, user.username, lti=False):
+            self._logger.warning(f"Course '{courseid}' not open to user '{user.username}'.")
+            raise APINotFound()
 
         if taskid is None:
             tasks = course.get_tasks()
@@ -76,20 +80,21 @@ class APITasks(APIAuthenticatedPage):
             try:
                 tasks = {taskid: course.get_task(taskid)}
             except:
-                raise APINotFound("Task not found")
+                self._logger.warning(f"Task '{taskid}' not found in course '{courseid}'.")
+                raise APINotFound()
 
         output = []
         for taskid, task in tasks.items():
-            task_cache = self.user_manager.get_task_cache(session.username, course.get_id(), task.get_id())
+            task_cache = self.user_manager.get_task_cache(user.username, course.get_id(), task.get_id())
 
             data = {
                 "id": taskid,
-                "name": task.get_name(session.language),
-                "authors": task.get_authors(session.language),
-                "contact_url": task.get_contact_url(session.language),
-                "status": "notviewed" if task_cache is None else "notattempted" if task_cache["tried"] == 0 else "succeeded" if task_cache["succeeded"] else "failed",
-                "grade": task_cache.get("grade", 0.0) if task_cache is not None else 0.0,
-                "context": task.get_context(session.language).original_content(),
+                "name": task.get_name(user.language),
+                "authors": task.get_authors(user.language),
+                "contact_url": task.get_contact_url(user.language),
+                "status": "notviewed" if task_cache is None else "notattempted" if task_cache.tried == 0 else "succeeded" if task_cache.succeeded else "failed",
+                "grade": task_cache.grade if task_cache is not None else 0.0,
+                "context": task.get_context(user.language).original_content(),
                 "problems": []
             }
 
