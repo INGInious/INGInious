@@ -10,7 +10,7 @@
 import argparse
 import logging
 
-from zmq.asyncio import ZMQEventLoop, Context
+from zmq.asyncio import Context
 import asyncio
 
 from inginious.common.entrypoints import get_args_and_filesystem
@@ -67,7 +67,7 @@ def main():
     closing = False
     while not closing:
         # start asyncio and zmq
-        loop = ZMQEventLoop()
+        loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         if args.debugmode:
             loop.set_debug(True)
