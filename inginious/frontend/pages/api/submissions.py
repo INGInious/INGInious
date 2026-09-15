@@ -211,7 +211,7 @@ class APISubmissions(APIAuthenticatedPage):
                         except (binascii.Error, TypeError, ValueError):
                             raise APIInvalidArguments()
         else:
-            user_input = flask.request.form.copy()
+            user_input = flask.request.form.copy().to_dict()
             for problem in task.get_problems():
                 pid = problem.get_id()
                 if problem.input_type() == list:
