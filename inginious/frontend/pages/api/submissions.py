@@ -8,6 +8,8 @@
 import base64
 import binascii
 import flask
+from werkzeug.datastructures import FileStorage
+from io import BytesIO
 
 from flask import current_app
 from inginious.frontend.courses import Course
@@ -205,10 +207,7 @@ class APISubmissions(APIAuthenticatedPage):
                     value = user_input.get(pid)
                     if isinstance(value, dict) and "filename" in value and "value" in value:
                         try:
-                            user_input[pid] = {
-                                "filename": value["filename"],
-                                "value": base64.b64decode(value["value"])
-                            }
+                            user_input[pid] = FileStorage(BytesIO(base64.b64decode(value["value"])),value["filename"])
                         except (binascii.Error, TypeError, ValueError):
                             raise APIInvalidArguments()
         else:
