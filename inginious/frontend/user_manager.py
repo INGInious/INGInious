@@ -229,6 +229,8 @@ class UserManager:
         retval = {info["username"]: UserInfo(info["realname"], info["email"], info["username"], info["bindings"],
                                              info["language"], info["code_indentation"], "activate" not in info)
                   for info in infos}
+        if usernames is not None and not limit and not skip:
+            retval.update({username: None for username in usernames if username not in retval})
         return retval
 
     def get_user_info(self, username) -> Optional[UserInfo]:
