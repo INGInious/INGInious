@@ -162,17 +162,16 @@ class APIAuthenticatedPageV0(APIPageV0):
                 raise APIForbidden("Your token has expired, please generate a new one.")
             except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidTokenError) as e:
                 # token signature does not match any known secret, token is malformed, or any other token-related error from PyJWT
-                self._logger.warning(f"A user has used an invalid token. {str(e)}")
+                self._logger.warning("A user has used an invalid token. %s", e)
                 raise APIForbidden("Invalid token.")
             except Exception as e:
-                self._logger.exception(f"Unexpected error while decoding JWT: {str(e)}")
+                self._logger.exception("Unexpected error while decoding JWT: %s", e)
                 raise APIForbidden("Invalid token.")
 
             flask.g.user = User.objects(username=payload["sub"]).get()
 
             if payload["jti"] not in flask.g.user.apitokens.keys():
-                self._logger.warning(
-                    f"User {flask.g.user} attempted to use an API token that is not present in the database.")
+                self._logger.warning("User %s attempted to use an API token that is not present in the database.", flask.g.user.username)
                 raise APIForbidden("Invalid token.")
         elif session.loggedin:
             flask.g.user = User.objects(username=session.username).get()
@@ -183,7 +182,7 @@ class APIAuthenticatedPageV0(APIPageV0):
 
 
 class APIError(Exception):
-    """ Standard API Error. Pure data: rendering is done by the API page """
+    """ Standard API Error. """
 
     def __init__(self, status_code, return_value, headers=None):
         super(APIError, self).__init__()
