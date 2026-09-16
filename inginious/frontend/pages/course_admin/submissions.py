@@ -206,10 +206,10 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
         submissions = submissions.order_by(("" if sort_by[1] else "-") + sort_by[0])
 
         if skip is not None and skip < submissions_count:
-            submissions.skip(skip)
+            submissions = submissions.skip(skip)
 
         if limit is not None:
-            submissions.limit(limit)
+            submissions = submissions.limit(limit)
 
         out = list(submissions)
 
