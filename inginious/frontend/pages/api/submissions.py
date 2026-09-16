@@ -89,7 +89,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
 
     def API_GET(self, courseid, taskid, submissionid):  # pylint: disable=arguments-differ
         """
-            List all the submissions that the connected user made. Returns list of the form
+            List a submission that the connected user made. Returns a one element list of the form
 
             ::
 
@@ -108,11 +108,10 @@ class APISubmissionSingle(APIAuthenticatedPage):
                             #...
                         }
                     }
-                    #...
                 ]
 
-            If you use the endpoint /api/v0/courses/the_course_id/tasks/the_task_id/submissions/submissionid,
-            this dict will contain one entry or the page will return 404 Not Found.
+            Returns 404 Not Found if the course, task or submission does not exist.
+            Returns 403 Forbidden if the user is not registered to the course or not allowed to access this submission.
         """
         with_input = "input" in flask.request.args
 
@@ -130,7 +129,7 @@ class APISubmissions(APIAuthenticatedPage):
 
     def API_GET(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
-            List all the submissions that the connected user made. Returns dicts in the form
+            List all the submissions that the connected user made. Returns dicts of the form
 
             ::
 
@@ -152,8 +151,8 @@ class APISubmissions(APIAuthenticatedPage):
                     #...
                 ]
 
-            If you use the endpoint /api/v0/courses/the_course_id/tasks/the_task_id/submissions/submissionid,
-            this dict will contain one entry or the page will return 404 Not Found.
+            Returns 404 Not Found if the course or task does not exist.
+            Returns 403 Forbidden if the user is not registered to the course.
         """
         with_input = "input" in flask.request.args
 
