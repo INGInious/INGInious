@@ -5,7 +5,7 @@
 
 import bson
 
-from mongoengine import Document, StringField, ListField, MapField, FileField, DateTimeField, FloatField, IntField
+from mongoengine import Document, StringField, ListField, MapField, DictField, FileField, DateTimeField, FloatField, IntField
 
 
 class Submission(Document):
@@ -18,7 +18,7 @@ class Submission(Document):
     submitted_on = DateTimeField(required=True)
     response_type = StringField(default='rst') # Deprecated
     grade = FloatField(default=0.0) # TODO: use min_value and max_value and change container API
-    custom = MapField(StringField())
+    custom = DictField()
     problems = MapField(StringField())
     result = StringField(default="crash") # TODO: restrict possible values and change container API
     stderr  = StringField()
