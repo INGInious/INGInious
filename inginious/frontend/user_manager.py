@@ -16,7 +16,7 @@ from werkzeug.exceptions import NotFound
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from natsort import natsorted
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from binascii import hexlify
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -70,10 +70,6 @@ class AuthMethod(object, metaclass=ABCMeta):
         :return: The image link
         """
         return ""
-
-
-UserInfo = namedtuple("UserInfo", ["realname", "email", "username", "bindings", "language", "code_indentation", "activated"])
-
 
 class UserManager:
     def __init__(self, superadmins):
@@ -215,29 +211,23 @@ class UserManager:
 
         session.loggedin = False
 
-    def get_users_info(self, usernames, limit=0, skip=0) -> Dict[str, Optional[UserInfo]]:
+    def get_users_info(self, usernames) -> Dict[str, Optional[User]]:
         """
         :param usernames: a list of usernames
-        :param limit A limit of users requested
-        :param skip A quantity of users to skip
-        :return: a dict, in the form {username: val}, where val is either None if the user cannot be found,
-        or a UserInfo. If the list of usernames is empty, return an empty dict.
+        :return: a dict, in the form {username: val}, where val is either None if the user cannot be found, or a User.
+        If the list of usernames is empty, return an empty dict.
         """
-        query = {"username__in": usernames} if usernames is not None else {}
-        infos = User.objects(**query).skip(skip).limit(limit)
-
-        retval = {info["username"]: UserInfo(info["realname"], info["email"], info["username"], info["bindings"],
-                                             info["language"], info["code_indentation"], "activate" not in info)
-                  for info in infos}
+        retval = {username: None for username in usernames}
+        for info in User.objects(username__in=usernames):
+            retval[info.username] = info
         return retval
 
-    def get_user_info(self, username) -> Optional[UserInfo]:
+    def get_user_info(self, username) -> Optional[User]:
         """
         :param username:
-        :return: a tuple (realname, email) if the user can be found, None else
+        :return: a User object if the user can be found, None else
         """
-        info = self.get_users_info([username])
-        return info[username] if username in info else ""
+        return User.objects(username=username).first()
 
     def get_user_realname(self, username):
         """
