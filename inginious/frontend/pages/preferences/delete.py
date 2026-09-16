@@ -12,21 +12,6 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 class DeletePage(INGIniousAuthPage):
     """ Delete account page for DB-authenticated users"""
 
-    def delete_account(self, data):
-        """ Delete account from DB """
-        error = False
-        msg = ""
-
-        username = session.username
-        result = self.user_manager.delete_user(username, data.get("delete_email", ""))
-
-        if not result:
-            error = True
-            msg = _("The specified email is incorrect.")
-        else:
-            self.user_manager.disconnect_user()
-        return msg, error
-
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
         if not current_app.config.get("ALLOW_DELETION"):
@@ -43,8 +28,13 @@ class DeletePage(INGIniousAuthPage):
         error = False
         data = request.form
         if "delete" in data:
-            msg, error = self.delete_account(data)
-            if not error:
-                return redirect(url_for("indexpage"))
+            if not session.email == data.get("delete_email", "").strip():
+                msg = _("The specified email is incorrect.")
+                error = True
+            else:
+                error, msg = self.user_manager.delete_user(session.username)
+                if not error:
+                    self.user_manager.disconnect_user()
+                    return redirect(url_for("indexpage"))
 
         return render_template("preferences/delete.html", msg=msg, error=error)
