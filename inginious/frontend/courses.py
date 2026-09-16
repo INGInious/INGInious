@@ -19,7 +19,7 @@ from inginious.common.tags import Tag
 from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.parsable_text import ParsableText
-from inginious.frontend.user_manager import UserInfo
+from inginious.frontend.models import User
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.task_dispensers import get_task_dispensers
@@ -146,7 +146,7 @@ class Course(object):
         """ Returns true if the course is accessible by users that are not administrator of this course """
         return self.get_accessibility().is_open()
 
-    def is_registration_possible(self, user_info: UserInfo):
+    def is_registration_possible(self, user_info: User):
         """ Returns true if users can register for this course """
         return self.get_accessibility().is_open() and self._registration.is_open() and self.is_user_accepted_by_access_control(user_info)
 
@@ -229,7 +229,7 @@ class Course(object):
         """ True if the current course should send back grade to the LTI Tool Consumer """
         return self._is_lti and self._lti_send_back_grade
 
-    def is_user_accepted_by_access_control(self, user_info: UserInfo):
+    def is_user_accepted_by_access_control(self, user_info: User):
         """ Returns True if the user is allowed by the ACL """
         if self.get_access_control_method() is None:
             return True
