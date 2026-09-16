@@ -65,13 +65,13 @@ class APITasks(APIAuthenticatedPageV0):
         try:
             course = Course.get(courseid)
         except:
-            self._logger.info("Course '%s' not found.", courseid)
+            self._logger.info("Course %r not found.", courseid)
             raise APINotFound()
 
         user = flask.g.user
 
         if not self.user_manager.course_is_open_to_user(course, user.username, lti=False):
-            self._logger.warning("Course '%s' not open to user '%s'.", courseid, user.username)
+            self._logger.warning("Course %r not open to user %r.", courseid, user.username)
             raise APINotFound()
 
         if taskid is None:
@@ -81,10 +81,10 @@ class APITasks(APIAuthenticatedPageV0):
             try:
                 task = course.get_task(taskid)
             except:
-                self._logger.info("Task '%s' not found in course '%s'.", taskid, courseid)
+                self._logger.info("Task %r not found in course %r.", taskid, courseid)
                 raise APINotFound()
             if not self.user_manager.task_is_visible_by_user(course, task, user.username, lti=False):
-                self._logger.warning("Task '%s' not open to user '%s'.", taskid, user.username)
+                self._logger.warning("Task %r not open to user %r.", taskid, user.username)
                 raise APINotFound()
             tasks = {taskid: task}
 

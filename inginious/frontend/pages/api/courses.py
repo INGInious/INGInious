@@ -52,7 +52,7 @@ class APICourses(APIAuthenticatedPageV0):
             try:
                 courses = {courseid: Course.get(courseid)}
             except:
-                self._logger.info("Course '%s' not found.", courseid)
+                self._logger.info("Course %r not found.", courseid)
                 raise APINotFound()
 
         user = flask.g.user
