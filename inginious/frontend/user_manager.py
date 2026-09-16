@@ -698,7 +698,7 @@ class UserManager:
 
         self._logger.info("User %s unregistered from course %s", username, course_id)
 
-    def course_is_open_to_user(self, course, username=None, lti=None, return_reason=False):
+    def course_is_open_to_user(self, course, username, lti=None, return_reason=False):
         """ Checks if a user is can access a course
 
         :param course: a Course object
@@ -721,8 +721,6 @@ class UserManager:
 
         :return: True if the user can access the course, False (or the reason if return_reason is True) otherwise
         """
-        if username is None:
-            username = session.username
         if lti == "auto":
             lti = session.is_lti
 

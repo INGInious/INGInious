@@ -133,6 +133,10 @@ class DisplayableFileProblem(FileProblem, DisplayableProblem):
         return _("file upload")
 
     def adapt_input_for_backend(self, input_data):
+        # if file is already in the correct format
+        if isinstance(input_data[self.get_id()], dict) and set(input_data[self.get_id()].keys()) == {"filename", "value"}:
+            return input_data
+
         try:
             input_data[self.get_id()] = {"filename": input_data[self.get_id()].filename,
                                                   "value": input_data[self.get_id()].read()}

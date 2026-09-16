@@ -43,10 +43,10 @@ class WebAppSubmissionManager:
         )
 
     def _job_done_callback(self, submissionid, course, task, result, grade, problems, tests, custom, state, archive, stdout,
-                           stderr, task_dispenser,  newsub=True):
+                           stderr, task_dispenser, username, newsub=True):
         """ Callback called by Client when a job is done. Updates the submission in the database with the data returned after the completion of the
         job """
-        submission = self.get_submission(submissionid, False)
+        submission = self.get_submission(submissionid, username, user_check=False)
 
         if archive:
             submission.archive.put(archive)
@@ -91,7 +91,7 @@ class WebAppSubmissionManager:
             if lti_score_publisher:
                 lti_score_publisher.add(submission)
 
-    def _before_submission_insertion(self, course, task, inputdata, debug, obj):
+    def _before_submission_insertion(self, course, task, inputdata, debug, obj, username):
         """
         Called before any new submission is inserted into the database. Allows you to modify obj, the new document that will be inserted into the
         database. Should be overridden in subclasses.
@@ -101,7 +101,6 @@ class WebAppSubmissionManager:
         :param debug: True, False or "ssh". See add_job.
         :param obj: the new document that will be inserted
         """
-        username = session.username
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
         if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
@@ -119,14 +118,13 @@ class WebAppSubmissionManager:
 
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
-            username = session.username
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
                 group = Group.objects.get(courseid=course.id, students=username)
                 users = User.objects(username__in=group["students"])
                 inputdata["@username"] = ','.join(group["students"])
                 inputdata["@email"] = ','.join([user["email"] for user in users])
 
-    def _after_submission_insertion(self, course, task, inputdata, debug, submission, submissionid, task_dispenser):
+    def _after_submission_insertion(self, course, task, inputdata, debug, submission, submissionid, task_dispenser, username):
         """
                 Called after any new submission is inserted into the database, but before starting the job.  Should be overridden in subclasses.
                 :param task: Task related to the submission
@@ -136,7 +134,7 @@ class WebAppSubmissionManager:
                 :param submissionid: submission id of the submission
                 """
 
-        return self._delete_exceeding_submissions(session.username, course, task, task_dispenser)
+        return self._delete_exceeding_submissions(username, course, task, task_dispenser)
 
     def replay_job(self, course, task, submission, task_dispenser, copy=False, debug=False):
         """
@@ -190,7 +188,7 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(1, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, copy)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, copy)),
                                      "Frontend - {}".format(submission["username"]), debug, ssh_callback)
 
         # Callback may have been received, perform atomic operation
@@ -208,14 +206,14 @@ class WebAppSubmissionManager:
         """:return a list of available environments """
         return self._client.get_available_environments()
 
-    def get_submission(self, submissionid, user_check=True):
+    def get_submission(self, submissionid, username, user_check=True):
         """ Get a submission from the database """
         sub = Submission.objects.get(id=submissionid)
-        if user_check and not self.user_is_submission_owner(sub):
+        if user_check and not self.user_is_submission_owner(sub, username):
             return None
         return sub
 
-    def add_job(self, course, task, inputdata, task_dispenser, debug=False):
+    def add_job(self, course, task, inputdata, task_dispenser, username, debug=False):
         """
         Add a job in the queue and returns a submission id.
         :param task:  Task instance
@@ -226,15 +224,12 @@ class WebAppSubmissionManager:
         :type debug: bool or string
         :returns: the new submission id and the removed submission id
         """
-        if not session.loggedin:
-            raise Exception("A user must be logged in to submit an object")
-
-        username = session.username
 
         # Prevent student from submitting several submissions together
         waiting_submission = Submission.objects(
             courseid=course.get_id(), taskid=task.get_id(), username=username, status="waiting"
         ).first()
+        user = User.objects.get(username=username)
 
         if waiting_submission:
             raise Exception("A submission is already pending for this task!")
@@ -251,8 +246,8 @@ class WebAppSubmissionManager:
         # Send additional data to the client in inputdata. For now, the username and the language. New fields can be added with the
         # new_submission hook
         inputdata["@username"] = username
-        inputdata["@email"] = session.email
-        inputdata["@lang"] = session.language
+        inputdata["@email"] = user.email
+        inputdata["@lang"] = user.language
         inputdata["@time"] = str(obj["submitted_on"])
 
         my_user_task = UserTask.objects.get(courseid=course.get_id(), taskid=task.get_id(), username=username)
@@ -274,12 +269,12 @@ class WebAppSubmissionManager:
 
         plugin_manager.call_hook("new_submission", submission=obj, inputdata=inputdata)
 
-        self._before_submission_insertion(course, task, inputdata, debug, obj)
+        self._before_submission_insertion(course, task, inputdata, debug, obj, username)
 
         submission = Submission(**obj)
         submission.set_input(inputdata)
         submissionid = submission.save().id
-        to_remove = self._after_submission_insertion(course, task, inputdata, debug, obj, submissionid, task_dispenser)
+        to_remove = self._after_submission_insertion(course, task, inputdata, debug, obj, submissionid, task_dispenser, username)
 
         ssh_callback = lambda host, port, user, password: self._handle_ssh_callback(submissionid, host, port, user, password)
         job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
@@ -287,17 +282,16 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(0, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, True)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, True)),
                                      "Frontend - {}".format(username), debug, ssh_callback)
 
         # Submission may already have been modified by callback,
         Submission.objects(id=submissionid).update(jobid=jobid)
 
-        self._logger.info("New submission from %s - %s - %s/%s - %s", session.username,
-                          session.email, course.get_id(), task.get_id(), flask.request.remote_addr)
+        self._logger.info("New submission from %s - %s - %s/%s - %s", username,
+                          user.email, course.get_id(), task.get_id(), flask.request.remote_addr)
 
         return submissionid, to_remove
-
 
     def _delete_exceeding_submissions(self, username, course, task, task_dispenser):
         """ Deletes exceeding submissions from the database, to keep the database relatively small """
@@ -378,29 +372,29 @@ class WebAppSubmissionManager:
                     )
         return submission
 
-    def is_running(self, submissionid, user_check=True):
+    def is_running(self, submissionid, username, user_check=True):
         """ Tells if a submission is running/in queue """
-        submission = self.get_submission(submissionid, user_check)
+        submission = self.get_submission(submissionid, username, user_check)
         return submission["status"] == "waiting"
 
-    def is_done(self, submissionid_or_submission, user_check=True):
+    def is_done(self, submissionid_or_submission, username, user_check=True):
         """ Tells if a submission is done and its result is available """
         # TODO: not a very nice way to avoid too many database call. Should be refactored.
         if isinstance(submissionid_or_submission, dict):
             submission = submissionid_or_submission
         else:
-            submission = self.get_submission(submissionid_or_submission, False)
-        if user_check and not self.user_is_submission_owner(submission):
+            submission = self.get_submission(submissionid_or_submission, username, user_check=False)
+        if user_check and not self.user_is_submission_owner(submission, username):
             return None
         return submission["status"] == "done" or submission["status"] == "error"
 
-    def kill_running_submission(self, submissionid, user_check=True):
+    def kill_running_submission(self, submissionid, username, user_check=True):
         """ Attempt to kill the remote job associated with this submission id.
         :param submissionid:
         :param user_check: Check if the current user owns this submission
         :return: True if the message asking to kill the job was sent, False if an error occurred
         """
-        submission = self.get_submission(submissionid, user_check)
+        submission = self.get_submission(submissionid, username, user_check)
         if not submission:
             self._logger.warning("Was asked to kill submission with id %s, but it cannot be found in the database", str(submissionid))
             return False
@@ -411,20 +405,14 @@ class WebAppSubmissionManager:
         self._client.kill_job(submission["jobid"])
         return True
 
-    def user_is_submission_owner(self, submission):
+    def user_is_submission_owner(self, submission, username):
         """ Returns true if the current user is the owner of this jobid, false else """
-        if not session.loggedin:
-            raise Exception("A user must be logged in to verify if he owns a jobid")
+        return username in submission["username"]
 
-        return session.username in submission["username"]
-
-    def get_user_submissions(self, course, task):
+    def get_user_submissions(self, course, task, username):
         """ Get all the user's submissions for a given task """
-        if not session.loggedin:
-            raise Exception("A user must be logged in to get his submissions")
-
         cursor = Submission.objects(
-            username=session.username, taskid=task.get_id(), courseid=course.get_id()
+            username=username, taskid=task.get_id(), courseid=course.get_id()
         ).order_by("-submitted_on")
 
         return list(cursor)
