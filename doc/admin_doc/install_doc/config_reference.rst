@@ -206,6 +206,7 @@ To enable this plugin, add to your configuration file:
     plugins:
         - plugin_module: inginious.frontend.plugins.auth.ldap_auth
           id: <some_id_for_ldap>
+          allow_removal: false
           host: "your.ldap.server.com"
           encryption: "ssl" #can be tls or none
           base_dn: "ou=People,dc=info,dc=ucl,dc=ac,dc=be"
@@ -216,6 +217,9 @@ Most of the parameters are self-explaining, but:
 
 ``id``
     is the authentication method id. It must be alphanumerical and different from other external authentication methods.
+
+``allow_removal``
+    indicates if the authentication method allows users to delete their account themselves. ``true`` by default.
 
 ``request``
     is the request made to the LDAP server to search the user to authentify. "{}" is replaced by the username indicated by the user.
@@ -252,6 +256,7 @@ To enable this plugin, add to your configuration file:
     plugins:
         - plugin_module: inginious.frontend.plugins.auth.saml2_auth
             id: <some_id_for_saml2>
+            allow_removal: false
             strict: true
             sp:
                 entityId: "<your_entity_id>"
@@ -273,7 +278,12 @@ To enable this plugin, add to your configuration file:
                  email: "urn:oid:1.3.6.1.4.1.5923.1.1.1.6"
                  uid: "urn:oid:0.9.2342.19200300.100.1.1"
 
-``id`` is the authentication method id. It must be alphanumerical and different from other external authentication methods.
+``id``
+    is the authentication method id. It must be alphanumerical and different from other external authentication methods.
+
+``allow_removal``
+    indicates if the authentication method allows users to delete their account themselves. ``true`` by default.
+
 Your IdP is required to provide at least attributes corresponding to the username, the complete name and the email address.
 Use the ``attributes`` entry for the mapping. The ``additionalX509certs`` is a plugin-specific entry to specify several
 certificates in case your IdP is able to use more than one.
