@@ -38,7 +38,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
             submissions = [submission_manager.get_submission(submissionid)]
         except:
             raise APINotFound("Submission not found")
-        if submissions[0]["taskid"] != task.get_id() or submissions[0]["courseid"] != course.get_id():
+        if submissions[0].taskid != task.get_id() or submissions[0].courseid != course.get_id():
             raise APINotFound("Submission not found")
 
     output = []
@@ -49,9 +49,9 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
             show_everything=user_manager.has_staff_rights_on_course(course, session.username)
         )
         data = {
-            "id": str(submission["id"]),
-            "submitted_on": submission["submitted_on"].isoformat(),
-            "status": submission["status"]
+            "id": str(submission.id),
+            "submitted_on": submission.submitted_on.isoformat(),
+            "status": submission.status
         }
 
         if with_input:
@@ -63,10 +63,10 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
                     d["value"] = base64.b64encode(d["value"]).decode("utf8")
 
         if submission["status"] == "done":
-            data["grade"] = submission.get("grade", 0)
-            data["result"] = submission.get("result", "crash")
-            data["feedback"] = submission.get("text", "")
-            data["problems_feedback"] = submission.get("problems", {})
+            data["grade"] = submission.grade
+            data["result"] = submission.result
+            data["feedback"] = submission.text
+            data["problems_feedback"] = submission.problems
 
         output.append(data)
 
