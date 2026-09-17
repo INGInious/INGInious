@@ -9,6 +9,7 @@ import pytest
 import os
 import tempfile
 import shutil
+import datetime
 
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
@@ -19,6 +20,7 @@ from inginious.common.tasks_problems import register_problem_types
 from inginious.frontend.task_problems import get_default_displayable_problem_types
 from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
+from inginious.frontend.accessible_time import AccessibleTime
 
 task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.get_id(): CombinatoryTest}
 
@@ -48,21 +50,205 @@ class TestCourse(object):
         print("\033[1m-> common-courses: course loading\033[0m")
         c = Course.get('test')
         assert c.get_id() == 'test'
-        assert c._content['accessible'] == True
-        assert c._content['admins'] == ['testadmin1', 'testadmin2']
-        assert c._content['name'] == 'Unit test 1'
+        assert c._pre_validated_content['accessible'] == True
+        assert c._pre_validated_content['admins'] == ['testadmin1', 'testadmin2']
+        assert c._pre_validated_content['name'] == 'Unit test 1'
 
         c = Course.get('test2')
         assert c.get_id() == 'test2'
-        assert c._content['accessible'] == '1970-01-01/2033-01-01'
-        assert c._content['admins'] == ['testadmin1']
-        assert c._content['name'] == 'Unit test 2'
+        assert c._pre_validated_content['accessible'] == '1970-01-01/2033-01-01'
+        assert c._pre_validated_content['admins'] == ['testadmin1']
+        assert c._pre_validated_content['name'] == 'Unit test 2'
 
         c = Course.get('test3')
         assert c.get_id() == 'test3'
-        assert c._content['accessible'] == '1970-01-01/1970-12-31'
-        assert c._content['admins'] == ['testadmin1', 'testadmin2']
-        assert c._content['name'] == 'Unit test 3'
+        assert c._pre_validated_content['accessible'] == '1970-01-01/1970-12-31'
+        assert c._pre_validated_content['admins'] == ['testadmin1', 'testadmin2']
+        assert c._pre_validated_content['name'] == 'Unit test 3'
+
+    def test_course_defaults(self, ressource):
+        """Tests if a course file loads correctly with default values from the """
+        print("\033[1m-> common-courses: course defaults\033[0m")
+        c = Course.get('test4')
+        assert c.get_id() == 'test4'
+        assert c._content.admins == []
+        assert c._content.tutors == []
+        assert c._content.description == ""
+        assert c._content.accessible is None
+        assert c._content.registration is None
+        assert c._content.registration_password is None
+        assert c._content.registration_ac is None
+        assert c._content.registration_ac_accept is True
+        assert c._content.registration_ac_list == []
+        assert c._content.groups_student_choice is False
+        assert c._content.allow_unregister is True
+        assert c._content.allow_preview is False
+        assert c._content.is_lti is False
+        assert c._content.archived is False
+        assert c._content.archive_date is None
+        assert c._content.lti_url == ""
+        assert c._content.lti_keys == {}
+        assert c._content.lti_config == {}
+        assert c._content.lti_secrets == {}
+        assert c._content.lti_send_back_grade is False
+        assert c._content.tags == {}
+        assert c._content.task_dispenser == "toc"
+        assert c._content.dispenser_data == {}
+        assert c._content.nofrontend is False
+
+    def test_course_missing_fields(self, ressource):
+        """Tests if a ValidationError is raised when a course file is missing required fields"""
+        print("\033[1m-> common-courses: course missing fields\033[0m")
+        try:
+            Course("test5", {"description": "Test course without name"}) # missing required fields
+        except:
+            return
+        assert False
+
+    def test_course_invalid_accessible_time(self, ressource):
+        """Tests validation on AccessibleTime fields (accessible and registration)"""
+        print("\033[1m-> common-courses: course invalid accessible/registration time\033[0m")
+        descriptor = {
+            "name": "Unit test 6",
+            "accessible": "/2026-08-24 16:52:33+02:00",
+            "registration": "/202-08-24 16:52:33+02:00", # invalid date
+        }
+        try:
+            Course("test6", descriptor)
+        except:
+            return
+
+        descriptor = {
+            "name": "Unit test 6",
+            "accessible": "Monday", # invalid date
+            "registration": False,
+        }
+        try:
+            Course("test6", descriptor)
+        except:
+            return
+        assert False
+
+    def test_course_valid_accessible_time(self, ressource):
+        """Tests validation on AccessibleTime fields (accessible and registration)"""
+        print("\033[1m-> common-courses: course invalid accessible/registration time\033[0m")
+        descriptor = {
+            "name": "Unit test 6",
+            "accessible": "/2026-08-24 16:52:33+02:00",
+            "registration": True,
+        }
+        try:
+            Course("test6", descriptor)
+        except:
+            assert False
+        assert True
+
+    def test_course_invalid_task_dispenser(self, ressource):
+        """Tests validation on task_dispenser field"""
+        print("\033[1m-> common-courses: course invalid task_dispenser\033[0m")
+        descriptor = {
+            "name": "Unit test 7",
+            "task_dispenser": "invalid_dispenser", # unavailable task dispenser
+        }
+        try:
+            Course("test7", descriptor)
+        except:
+            return
+        assert False
+
+    def test_course_valid_task_dispenser(self, ressource):
+        """Tests validation on task_dispenser field"""
+        print("\033[1m-> common-courses: course valid task_dispenser\033[0m")
+        descriptor = {
+            "name": "Unit test 8",
+            "task_dispenser": "combinatory_test", # available task dispenser
+        }
+        try:
+            Course("test8", descriptor)
+        except:
+            assert False
+        assert True
+
+    def test_course_lti_update(self, ressource):
+        """Tests if lti fields are updated correctly  """
+        print("\033[1m-> common-courses: course lti update\033[0m")
+        descriptor = {
+            "name": "Unit test 9",
+            "is_lti": True,
+        }
+        c = Course("test9", descriptor)
+        assert c._content.accessible == True
+        assert c._content.registration == False
+        assert c._content.registration_password is None
+        assert c._content.registration_ac is None
+        assert c._content.registration_ac_list == []
+        assert c._content.groups_student_choice == False
+        assert c._content.allow_unregister == False
+
+        descriptor = {
+            "name": "Unit test 9",
+            "is_lti": False,
+        }
+        c = Course("test9", descriptor)
+        assert c._content.lti_keys == {}
+        assert c._content.lti_secrets == {}
+        assert c._content.lti_config == {}
+        assert c._content.lti_url == ""
+        assert c._content.lti_send_back_grade == False
+
+    def test_course_archive_date_validation(self, ressource):
+        """Tests validation on archive_date field, """
+        print("\033[1m-> common-courses: course archive_date validation.\033[0m")
+        descriptor = {
+            "name": "Unit test 10",
+            "archived": True,
+            "archive_date": "2026-08-24 16:52:33+02:00", # valid date
+        }
+
+        c = Course("test10", descriptor)
+        assert c._content.archive_date == datetime.datetime(2026, 8, 24, 16, 52, 33, tzinfo=datetime.timezone(datetime.timedelta(hours=2)))
+
+        descriptor = {
+            "name": "Unit test 11",
+            "archived": True,
+            "archive_date": "invalid-date", # invalid date
+        }
+
+        try:
+            Course("test11", descriptor)
+        except:
+            return
+        assert False
+
+    def test_course_archive_date_none(self,  ressource):
+        """Tests validation on archive_date field not present when archived. """
+        print("\033[1m-> common-courses: course archived/archive_date validation, archived with no date. \033[0m")
+        descriptor = {
+            "name": "Unit test 12",
+            "archived": True,
+            "archive_date": None, # valid date
+        }
+
+        try:
+            Course("test12", descriptor)
+        except:
+            return
+        assert False
+
+    def test_course_archive_date_not_archived(self,  ressource):
+        """Tests validation on archive_date field present when not archived. """
+        print("\033[1m-> common-courses: course archived/archive_date validation, not archived with date.\033[0m")
+        descriptor = {
+            "name": "Unit test 13",
+            "archived": False,
+            "archive_date": "2026-08-24 16:52:33+02:00", # valid date
+        }
+
+        try:
+            Course("test13", descriptor)
+        except:
+            return
+        assert False
 
     def test_invalid_coursename(self, ressource):
         try:
