@@ -187,7 +187,7 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(1, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, copy)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, copy)),
                                      "Frontend - {}".format(submission["username"]), debug, ssh_callback)
 
         # Callback may have been received, perform atomic operation
@@ -287,7 +287,7 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(0, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, True)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, True)),
                                      "Frontend - {}".format(username), debug, ssh_callback)
 
         # Submission may already have been modified by callback,
