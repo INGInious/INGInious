@@ -13,7 +13,7 @@ import time
 import flask
 
 from flask import session
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime, timezone
 from pymongo.errors import DocumentTooLarge
 
@@ -43,10 +43,10 @@ class WebAppSubmissionManager:
         )
 
     def _job_done_callback(self, submissionid, course, task, result, grade, problems, tests, custom, state, archive, stdout,
-                           stderr, task_dispenser,  newsub=True):
+                           stderr, task_dispenser, newsub=True):
         """ Callback called by Client when a job is done. Updates the submission in the database with the data returned after the completion of the
         job """
-        submission = self.get_submission(submissionid, False)
+        submission = self.get_submission(submissionid)
 
         if archive:
             submission.archive.put(archive)
@@ -91,7 +91,7 @@ class WebAppSubmissionManager:
             if lti_score_publisher:
                 lti_score_publisher.add(submission)
 
-    def _before_submission_insertion(self, course, task, inputdata, debug, obj):
+    def _before_submission_insertion(self, course, task, inputdata, debug, obj, username):
         """
         Called before any new submission is inserted into the database. Allows you to modify obj, the new document that will be inserted into the
         database. Should be overridden in subclasses.
@@ -148,8 +148,8 @@ class WebAppSubmissionManager:
         if not session.loggedin:
             raise Exception("A user must be logged in to submit an object")
 
-        # Load input data and add username to dict
         inputdata = submission.get_input()
+        username = session.username
 
         if not copy:
             submissionid = submission.id
@@ -167,7 +167,6 @@ class WebAppSubmissionManager:
             Submission.objects(id=submissionid).update(status="waiting", **unset_query)
 
         else:
-            username = session.username
             submission = Submission(username=[username], courseid=course.get_id(), taskid=task.get_id(),
                                     submitted_on=datetime.now().astimezone(), status="waiting",
                                     user_ip=flask.request.remote_addr)
@@ -208,10 +207,16 @@ class WebAppSubmissionManager:
         """:return a list of available environments """
         return self._client.get_available_environments()
 
-    def get_submission(self, submissionid, user_check=True):
-        """ Get a submission from the database """
+    def get_submission(self, submissionid, as_username: Optional[str] = None) -> Optional[Submission]:
+        """
+        Get a submission from the database.
+        :param submissionid: the submission id
+        :type submissionid: str
+        :param as_username: if not None, check if the user is the owner of the submission or has staff rights on the course
+        :type as_username: str or None
+        """
         sub = Submission.objects.get(id=submissionid)
-        if user_check and not self.user_is_submission_owner(sub):
+        if as_username is not None and not self.user_is_submission_owner(sub, as_username):
             return None
         return sub
 
@@ -298,7 +303,6 @@ class WebAppSubmissionManager:
 
         return submissionid, to_remove
 
-
     def _delete_exceeding_submissions(self, username, course, task, task_dispenser):
         """ Deletes exceeding submissions from the database, to keep the database relatively small """
         max_submissions = task_dispenser.get_no_stored_submissions(task.get_id())
@@ -378,29 +382,13 @@ class WebAppSubmissionManager:
                     )
         return submission
 
-    def is_running(self, submissionid, user_check=True):
-        """ Tells if a submission is running/in queue """
-        submission = self.get_submission(submissionid, user_check)
-        return submission["status"] == "waiting"
-
-    def is_done(self, submissionid_or_submission, user_check=True):
-        """ Tells if a submission is done and its result is available """
-        # TODO: not a very nice way to avoid too many database call. Should be refactored.
-        if isinstance(submissionid_or_submission, dict):
-            submission = submissionid_or_submission
-        else:
-            submission = self.get_submission(submissionid_or_submission, False)
-        if user_check and not self.user_is_submission_owner(submission):
-            return None
-        return submission["status"] == "done" or submission["status"] == "error"
-
-    def kill_running_submission(self, submissionid, user_check=True):
+    def kill_running_submission(self, submissionid, as_username):
         """ Attempt to kill the remote job associated with this submission id.
         :param submissionid:
-        :param user_check: Check if the current user owns this submission
+        :param as_username: username of the user asking to kill the job.
         :return: True if the message asking to kill the job was sent, False if an error occurred
         """
-        submission = self.get_submission(submissionid, user_check)
+        submission = self.get_submission(submissionid, as_username)
         if not submission:
             self._logger.warning("Was asked to kill submission with id %s, but it cannot be found in the database", str(submissionid))
             return False
@@ -411,12 +399,9 @@ class WebAppSubmissionManager:
         self._client.kill_job(submission["jobid"])
         return True
 
-    def user_is_submission_owner(self, submission):
+    def user_is_submission_owner(self, submission, username):
         """ Returns true if the current user is the owner of this jobid, false else """
-        if not session.loggedin:
-            raise Exception("A user must be logged in to verify if he owns a jobid")
-
-        return session.username in submission["username"]
+        return username in submission["username"]
 
     def get_user_submissions(self, course, task, username):
         """ Get all the user's submissions for a given task """
