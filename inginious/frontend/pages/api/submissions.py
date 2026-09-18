@@ -18,12 +18,14 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         Helper for the GET methods of the two following classes
     """
 
+    username = session.username
+
     try:
         course = Course.get(courseid)
     except:
         raise APINotFound("Course not found")
 
-    if not user_manager.course_is_open_to_user(course, lti=False):
+    if not user_manager.course_is_open_to_user(course, username, lti=False):
         raise APIForbidden("You are not registered to this course")
 
     try:
@@ -32,10 +34,10 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         raise APINotFound("Task not found")
 
     if submissionid is None:
-        submissions = submission_manager.get_user_submissions(course, task)
+        submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
-            submissions = [submission_manager.get_submission(submissionid)]
+            submissions = [submission_manager.get_submission(submissionid, as_username=username)]
         except:
             raise APINotFound("Submission not found")
         if submissions[0].taskid != task.get_id() or submissions[0].courseid != course.get_id():
@@ -210,7 +212,7 @@ class APISubmissions(APIAuthenticatedPage):
 
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug)
+            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), username, debug)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
