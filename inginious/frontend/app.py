@@ -54,12 +54,20 @@ def _put_configuration_defaults(config):
         print("-------------", file=sys.stderr)
         exit(1)
 
+    api_jwt_secret = config.get("api_jwt_secret", None)
+    if api_jwt_secret is None:
+        print("Please define api_jwt_secret in the configuration.", file=sys.stderr)
+        print("Refer to the documentation for more information.", file=sys.stderr)
+        exit(1)
+
     # Populate a sanitized new dict with upper chars for Flask
     new_config = {
         "ALLOWED_FILE_EXTENSIONS": config.get('allowed_file_extensions',
                                               [".c", ".cpp", ".java", ".oz", ".zip", ".tar.gz", ".tar.bz2", ".txt"]),
         "ALLOW_DELETION": config.get("allow_deletion", True),
         "ALLOW_REGISTRATION": config.get("allow_registration", True),
+        "API_JWT_ALGORITHM": "HS256",
+        "API_JWT_SECRET": config.get("api_jwt_secret", "jwt_secret_key"),
         "BACKEND": config.get("backend", "local"),
         "DEBUG": config.get("web_debug", False),
         "DEBUG_ASYNCIO": config.get('debug_asyncio', False),

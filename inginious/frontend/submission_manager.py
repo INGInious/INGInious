@@ -21,6 +21,7 @@ from inginious.common import custom_yaml
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.models import UserTask, User, Submission, Group
+from inginious.frontend.courses import Course
 
 
 class WebAppSubmissionManager:
@@ -187,7 +188,7 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(1, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, copy)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, copy)),
                                      "Frontend - {}".format(submission["username"]), debug, ssh_callback)
 
         # Callback may have been received, perform atomic operation
@@ -262,7 +263,7 @@ class WebAppSubmissionManager:
 
         # Send LTI information to the client except "consumer_key"
         # to_dict() to avoid sending mongoengine BaseLists to ZMQ
-        if session.is_lti:
+        if session.is_lti: # TODO ; check correct behavior when no session
             lti_info = session.lti.to_mongo().to_dict()
             for key in lti_info:
                 if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
@@ -287,7 +288,7 @@ class WebAppSubmissionManager:
         jobid = self._client.new_job(0, job_info, inputdata,
                                      (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
                                       self._job_done_callback(submissionid, course, task, result, grade, problems, tests,
-                                                              custom, state, archive, stdout, stderr, task_dispenser, True)),
+                                                              custom, state, archive, stdout, stderr, task_dispenser, username, True)),
                                      "Frontend - {}".format(username), debug, ssh_callback)
 
         # Submission may already have been modified by callback,
