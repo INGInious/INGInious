@@ -21,6 +21,7 @@ from inginious.common import custom_yaml
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.models import UserTask, User, Submission, Group
+from inginious.frontend.courses import Course
 
 
 class WebAppSubmissionManager:
