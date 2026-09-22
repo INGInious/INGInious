@@ -306,9 +306,10 @@ class UserManager:
         if user_profile and not session.loggedin:
             # Sign in
             self.connect_user(user_profile)
-        elif user_profile and session.username == user_profile["username"]:
-            # Logged in, refresh fields if found profile username matches session username
-            User.objects(username=session.username).update(**{"bindings__" + auth_id: [username, additional]})
+        elif user_profile and session.email == user_profile.email:
+            # Logged in, refresh fields if found profile email matches session email
+            user_profile.bindings[auth_id] = [username, additional]
+            user_profile.save()
         elif user_profile:
             # Logged in, but already linked to another account
             self._logger.exception("Tried to bind an already bound account !")
