@@ -7,14 +7,19 @@
 
 import json
 import flask
-from flask import session, Response
+from flask import session, Response, current_app
+import jwt
+import logging
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
+from inginious.frontend.models import User
 
 
 class APIPage(INGIniousPage):
     """ Generic handler for all API pages """
+
+    _logger = logging.getLogger("inginious.frontend.api")
 
     def GET(self, *args, **kwargs):
         """ GET request """
@@ -106,9 +111,38 @@ class APIAuthenticatedPage(APIPage):
         return APIPage._handle_api(self, (lambda *args, **kwargs: self._verify_authentication(handler, args, kwargs)), handler_args, handler_kwargs)
 
     def _verify_authentication(self, handler, args, kwargs):
-        """ Verify that the user is authenticated """
-        if not session.loggedin:
-            raise APIForbidden()
+        """
+        Verify that the user is authenticated.
+        Checks if the client used token authentication, falls back to session if not.
+        Otherwise, raises an APIForbidden exception.
+        """
+
+        auth_header = flask.request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.removeprefix("Bearer ").strip()
+            try:
+                payload = jwt.decode(token, current_app.config["API_JWT_SECRET"], algorithms=["HS256"])
+            except jwt.ExpiredSignatureError:
+                raise APIForbidden("Your token has expired, please generate a new one.")
+            except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidTokenError) as e:
+                # token signature does not match any known secret, token is malformed, or any other token-related error from PyJWT
+                self._logger.warning(f"A user has used an invalid token. {str(e)}")
+                raise APIForbidden("Invalid token.")
+            except Exception as e:
+                self._logger.exception(f"Unexpected error while decoding JWT: {str(e)}")
+                raise APIForbidden("Invalid token.")
+
+            flask.g.user = User.objects(username=payload["username"]).get()
+
+            if payload["id"] not in flask.g.user.apitokens.keys():
+                self._logger.warning(
+                    f"User {flask.g.user} attempted to use an API token that is not present in the database.")
+                raise APIForbidden("Invalid token.")
+        elif session.loggedin:
+            flask.g.user = User.objects(username=session.username).get()
+        else:
+            raise APIForbidden("Not authenticated, missing or malformed Authorization header")
+
         return handler(*args, **kwargs)
 
 
