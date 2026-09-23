@@ -74,8 +74,8 @@
                         {% else %}
                             <ul class="list-group list-group-flush checked-list-box">
                                 {% for audience in audiences %}
-                                    <li class="list-group-item" data-value="{{ audience['_id'] }}" data-name="audiences"
-                                        data-checked="{{ 'true' if str(audience['_id']) in old_params['audiences'] and show_audiences else 'false' }}">
+                                    <li class="list-group-item" data-value="{{ audience.id }}" data-name="audiences"
+                                        data-checked="{{ 'true' if str(audience.id) in old_params['audiences'] and show_audiences else 'false' }}">
                                         {{ audience['description'] }}
                                     </li>
                                 {% endfor %}
