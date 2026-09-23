@@ -7,7 +7,9 @@
 import flask
 from flask import session, redirect, render_template, url_for
 from werkzeug.exceptions import NotFound
+import logging
 
+from inginious.common.exceptions import CourseUnreadableException, InvalidNameException, CourseNotFoundException
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import UserTask
@@ -26,6 +28,8 @@ def handle_course_unavailable(user_manager, course):
 class CoursePage(INGIniousAuthPage):
     """ Course page """
 
+    _logger = logging.getLogger("inginious.frontend.course")
+
     def preview_allowed(self, courseid):
         course = self.get_course(courseid)
         return course.get_accessibility().is_open() and course.allow_preview()
@@ -34,7 +38,17 @@ class CoursePage(INGIniousAuthPage):
         """ Return the course """
         try:
             course = Course.get(courseid)
-        except:
+        except CourseUnreadableException as e:
+            self._logger.error(str(e))
+            raise NotFound(description=str(e))
+        except InvalidNameException as e:
+            self._logger.error(str(e))
+            raise NotFound(description=_("Course not found."))
+        except CourseNotFoundException:
+            self._logger.error(f"Course {courseid} not found.")
+            raise NotFound(description=_("Course not found."))
+        except Exception as e:
+            self._logger.error(f"Error while fetching course {courseid}: {str(e)}")
             raise NotFound(description=_("Course not found."))
 
         return course
