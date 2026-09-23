@@ -57,6 +57,9 @@ class GithubAuthMethod(AuthMethod):
     def get_imlink(self):
         return '<i class="fa fa-github" style="font-size:50px; color:#24292e;"></i>'
 
+    def allow_removal(self):
+        return True
+
 
 def init(plugin_manager, client, conf):
 

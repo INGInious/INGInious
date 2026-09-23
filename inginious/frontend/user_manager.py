@@ -42,6 +42,13 @@ class AuthMethod(object, metaclass=ABCMeta):
         return ""
 
     @abstractmethod
+    def allow_removal(self):
+        """
+        :return: True if the user binding can be removed else False
+        """
+        return True
+
+    @abstractmethod
     def get_auth_link(self, auth_storage):
         """
         :param auth_storage: The session auth method storage dict
@@ -112,14 +119,14 @@ class UserManager:
         """
         self._auth_methods[auth_method.get_id()] = auth_method
 
-    def get_auth_method(self, auth_method_id):
+    def get_auth_method(self, auth_method_id) -> AuthMethod:
         """
         :param the auth method id, as provided by get_auth_methods_inputs()
         :return: AuthMethod if it exists, otherwise None
         """
         return self._auth_methods.get(auth_method_id, None)
 
-    def get_auth_methods(self):
+    def get_auth_methods(self) -> list[AuthMethod]:
         """
         :return: The auth methods dict
         """
@@ -334,17 +341,21 @@ class UserManager:
 
         return True
 
-    def revoke_binding(self, username, binding_id):
+    def revoke_binding(self, username, binding_id) -> (bool, str):
         """
         Revoke a binding method for a user
         :param binding_id: The binding method id
         :param username: username of the user
-        :return: Boolean if error occurred and message if necessary
+        :return a tuple with a boolean indicating if an error occurred and an error message
         """
         user_data = User.objects(username=username).first()
-        if binding_id not in self.get_auth_methods().keys():
+
+        if not (auth_method:= self.get_auth_method(binding_id)):
             error = True
             msg = _("Incorrect authentication binding.")
+        elif not auth_method.allow_removal():
+            error = True
+            msg = _("This binding cannot be removed manually. Please contact the platform administrator.")
         elif user_data is not None and (len(user_data.bindings.keys()) > 1 or "password" in user_data):
             User.objects(username=username).update(**{"unset__bindings__" + binding_id: 1})
             msg = ""
@@ -354,24 +365,31 @@ class UserManager:
             msg = _("You must set a password before removing all bindings.")
         return error, msg
 
-    def delete_user(self, username, confirmation_email=None):
+    def delete_user(self, username) -> (bool, str):
         """
         Delete a user based on username
         :param username: the username of the user
-        :param confirmation_email: An email to confirm suppression. May be None
-        :return a boolean if a user was deleted
+        :return a tuple with a boolean indicating if an error occurred and an error message
         """
-        query = {"username": username, "email": confirmation_email} \
-            if confirmation_email is not None else {"username": username}
-        result = User.objects(**query).modify(remove=True)
-        if not result:
-            return False
-        else:
-            Submission.objects(username=username).delete()
-            UserTask.objects(username=username).delete()
-            user_courses = CourseClass.objects(students=username)
-            for elem in user_courses: self.course_unregister_user(elem.id, username)
-        return True
+        if not (user := User.objects(username=username).first()):
+            return True, _("User couldn't be deleted.")
+
+        # Prevent deletion if an external binding cannot be removed
+        for binding in user.bindings:
+            if (auth_method := self.get_auth_method(binding)) and not auth_method.allow_removal():
+                return True, _("An auth method prevents user deletion. Please contact the platform administrator.")
+
+        # Delete submissions
+        Submission.objects(username=username).delete()
+        # Delete user task caches
+        UserTask.objects(username=username).delete()
+        # Delete course registrations
+        for elem in CourseClass.objects(students=username):
+            self.course_unregister_user(elem.id, username)
+        # Delete user
+        User.objects.get(username=username).delete()
+
+        return False, ""
 
     def create_user(self, values):
         """
