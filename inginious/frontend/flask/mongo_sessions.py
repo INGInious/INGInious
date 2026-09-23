@@ -69,7 +69,8 @@ class MongoDBSessionInterface(SessionInterface):
 
     def save_session(self, app, session, response):
         expires = self.get_expiration_time(app, session)
-        session.expiration = expires
+        # Do not extend LTI sessions lifetime
+        session.expiration = expires if not session.expiration or not session.is_lti else session.expiration
         session.save()
 
         if not session.is_lti:
