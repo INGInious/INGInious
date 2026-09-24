@@ -25,7 +25,9 @@ from inginious.frontend.task_problems import get_default_displayable_problem_typ
 from inginious.frontend.task_problems import inspect_displayable_problem_types
 from inginious.frontend.task_dispensers.combinatory_test import CombinatoryTest
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
+from inginious.frontend.task_dispensers import register_task_dispenser
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.client.client_sync import ClientSync
 from inginious.common.base import load_json_or_yaml
@@ -284,7 +286,8 @@ def main():
 
     """ Initialize course/task factory """
     task_directory = config["tasks_directory"]
-    task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.get_id(): CombinatoryTest}
+    register_task_dispenser(TableOfContents)
+    register_task_dispenser(CombinatoryTest)
 
     """ Set basic problem types available """
     register_problem_types(get_default_displayable_problem_types())
@@ -296,11 +299,11 @@ def main():
             register_problem_types(displayable_pbl_types)
 
     """ Intialize the LocalFileSystemProvider of the instance """
-    local_fsp = LocalFSProvider(task_directory)
+    init_fs_provider(LocalFSProvider(task_directory))
 
     """ Initialize client """
     zmq_context, asyncio_thread = start_asyncio_and_zmq()
-    client = create_arch(config, local_fsp, zmq_context)
+    client = create_arch(config, zmq_context)
     client.start()
 
     """ Get the client synchronous """
@@ -318,7 +321,7 @@ def main():
         print('\x1b[1m.\033[0m', end='', flush=True)
     print()
 
-    course = Course.get(courseid, local_fsp)
+    course = Course.get(courseid)
     course_fs = course.get_fs()
 
     banned = ['.git/', '$common/', '.github/']
