@@ -7,48 +7,63 @@
 
 import base64
 import flask
+import binascii
+from werkzeug.datastructures import FileStorage
+from io import BytesIO
+import logging
 
-from flask import current_app, session
+from flask import current_app
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIInvalidArguments, APIError
 
 
-def _get_submissions(submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
+_logger = logging.getLogger("inginious.frontend.api")
+
+def _get_submissions(submission_manager, user_manager, courseid, taskid, username, with_input, submissionid=None):
     """
         Helper for the GET methods of the two following classes
     """
-
-    username = session.username
-
     try:
         course = Course.get(courseid)
     except:
-        raise APINotFound("Course not found")
+        _logger.warning(f"Course '{courseid}' not found.")
+        raise APINotFound()
 
     if not user_manager.course_is_open_to_user(course, username, lti=False):
-        raise APIForbidden("You are not registered to this course")
+        _logger.warning(f"Course '{courseid}' not open to user '{username}'.")
+        raise APINotFound()
 
     try:
         task = course.get_task(taskid)
     except:
-        raise APINotFound("Task not found")
+        _logger.warning(f"Task '{taskid}' not found in course '{courseid}'.")
+        raise APINotFound()
 
     if submissionid is None:
         submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
-            submissions = [submission_manager.get_submission(submissionid, as_username=username)]
-        except:
-            raise APINotFound("Submission not found")
-        if submissions[0].taskid != task.get_id() or submissions[0].courseid != course.get_id():
-            raise APINotFound("Submission not found")
+            submission = submission_manager.get_submission(submissionid, as_username=username)
+            if submission is None: # if submission does not belong to the user
+                _logger.warning(
+                    f"User '{username}' tried to access submission '{submissionid}' which does not belong to them.")
+                submissions = []
+            else:
+                if submission.taskid != task.get_id() or submission.courseid != course.get_id():
+                    _logger.warning(
+                        f"Submission '{submissionid}' not found for user '{username}', for task '{taskid}' in course '{courseid}'.")
+                    raise APINotFound("Submission not found")
+                submissions = [submission]
+        except: # if submission not found
+            _logger.warning(f"User '{username}' tried accessing a non existing submission : '{submissionid}'.")
+            submissions = []
 
     output = []
 
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, session.username)
+            show_everything=user_manager.has_staff_rights_on_course(course, username)
         )
         data = {
             "id": str(submission.id),
@@ -113,7 +128,10 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
+
+        username = flask.g.user.username
+
+        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -154,7 +172,9 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input)
+        username = flask.g.user.username
+
+        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -163,8 +183,7 @@ class APISubmissions(APIAuthenticatedPage):
             Returns
 
             - an error 400 Bad Request if all the input is not (correctly) given,
-            - an error 403 Forbidden if you are not allowed to create a new submission for this task
-            - an error 404 Not found if the course/task id not found
+            - an error 404 Not found if the course/task id not found, or if you are not allowed to access/submit to it,
             - an error 500 Internal server error if the grader is not available,
             - 200 Ok, with {"submissionid": "the submission id"} as output.
         """
@@ -172,33 +191,51 @@ class APISubmissions(APIAuthenticatedPage):
         try:
             course = Course.get(courseid)
         except:
-            raise APINotFound("Course not found")
+            self._logger.warning(f"Course '{courseid}' not found.")
+            raise APINotFound()
 
-        username = session.username
+        username = flask.g.user.username
 
         if not self.user_manager.course_is_open_to_user(course, username, False):
-            raise APIForbidden("You are not registered to this course")
+            self._logger.warning(f"Course '{courseid}' not open to user '{username}'.")
+            raise APINotFound()
 
         try:
             task = course.get_task(taskid)
         except:
-            raise APINotFound("Task not found")
+            self._logger.warning(f"Task '{taskid}' not found in course '{courseid}'.")
+            raise APINotFound()
 
         self.user_manager.user_saw_task(username, courseid, taskid)
 
         # Verify rights
         if not self.user_manager.task_can_user_submit(course, task, username, False):
-            raise APIForbidden("You are not allowed to submit for this task")
+            self._logger.warning(f"User '{username}' cannot submit to task '{taskid}' in course '{courseid}'.")
+            raise APINotFound()
 
-        user_input = flask.request.form.copy()
-        for problem in task.get_problems():
-            pid = problem.get_id()
-            if problem.input_type() == list:
-                user_input[pid] = flask.request.form.getlist(pid)
-            elif problem.input_type() == dict:
-                user_input[pid] = flask.request.files.get(pid)
-            else:
-                user_input[pid] = flask.request.form.get(pid)
+        if flask.request.is_json:
+            user_input = flask.request.get_json()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    value = user_input.get(pid, [])
+                    user_input[pid] = value if isinstance(value, list) else [value]
+                elif problem.input_type() == dict:
+                    # File inputs are not supported in JSON requests. Needs to be sent in base64 encoded format
+                    value = user_input.get(pid)
+                    if isinstance(value, dict) and "filename" in value and "value" in value:
+                        try:
+                            user_input[pid] = FileStorage(BytesIO(base64.b64decode(value["value"])),value["filename"])
+                        except (binascii.Error, TypeError, ValueError):
+                            raise APIInvalidArguments()
+        else:
+            user_input = flask.request.form.copy().to_dict()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    user_input[pid] = flask.request.form.getlist(pid)
+                elif problem.input_type() == dict:
+                    user_input[pid] = flask.request.files.get(pid)
 
         user_input = task.adapt_input_for_backend(user_input)
 
@@ -215,4 +252,4 @@ class APISubmissions(APIAuthenticatedPage):
             submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), username, debug)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
-            raise APIError(500, str(ex))
+            raise APIError(500, str(ex) if debug else "Internal server error")
