@@ -9,16 +9,12 @@ import codecs
 import csv
 import io
 from collections import OrderedDict
-from datetime import datetime
 
 from flask import  session, redirect, Response, url_for
 from werkzeug.exceptions import Forbidden
-from bson.objectid import ObjectId
 
-from inginious.common.base import id_checker
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.models import UserTask, Audience
 
 
 class INGIniousAdminPage(INGIniousAuthPage):
@@ -138,107 +134,6 @@ class INGIniousSubmissionsAdminPage(INGIniousAdminPage):
                 user_input["limit"] = limit
 
         return user_input
-
-    def _validate_list(self, list_of_ids):
-        """ Prevent MongoDB injections by verifying arrays sent to it """
-        for i in list_of_ids:
-            if not id_checker(i):
-                raise Forbidden(description=_("List not valid."))
-
-    def get_submissions_filter(self, course,
-                               only_tasks=None, only_tasks_with_categories=None,
-                               only_users=None, only_audiences=None,
-                               with_tags=None,
-                               grade_between=None, submit_time_between=None,
-                               keep_only_evaluation_submissions=False,
-                               keep_only_crashes=False):
-        """
-        All the parameters (excluding course, sort_by and keep_only_evaluation_submissions) can be None.
-        If that is the case, they are ignored.
-
-        :param course: the course
-        :param only_tasks: a list of task ids. Only submissions on these tasks will be loaded.
-        :param only_tasks_with_categories: keep only tasks that have a least one category in common with this list
-        :param only_users: a list of usernames. Only submissions from these users will be loaded.
-        :param only_audiences: a list of audience ids. Only submissions from users in these will be loaded
-        :param with_tags: a list of tags in the form [(tagid, present)], where present is a boolean indicating
-               whether the tag MUST be present or MUST NOT be present. If you don't mind if a tag is present or not,
-               just do not put it in the list.
-        :param grade_between: a tuple of two floating point number or None ([0.0, None], [None, 0.0] or [None, None])
-               that indicates bounds on the grade of the retrieved submissions
-        :param submit_time_between: a tuple of two dates or None ([datetime, None], [None, datetime] or [None, None])
-               that indicates bounds on the submission time of the submission. Format: "%Y-%m-%d %H:%M:%S"
-        :param keep_only_evaluation_submissions: True to keep only submissions that are counting for the evaluation
-        :param keep_only_crashes: True to keep only submissions that timed out or crashed
-        :param sort_by: a tuple (sort_column, ascending) where sort_column is in ["submitted_on", "username", "grade", "taskid"]
-               and ascending is either True or False.
-        :param limit: an integer representing the maximum number of submission to list.
-        :return: the filter for the mongoDB search.
-        """
-
-        # Create the filter for the query. base_filter is used to also filter the collection user_tasks.
-        base_filter = {"courseid": course.get_id()}
-        filter = {}
-
-        # Tasks (with categories)
-        if only_tasks and not only_tasks_with_categories:
-            self._validate_list(only_tasks)
-            base_filter["taskid__in"] = only_tasks
-        elif only_tasks_with_categories:
-            only_tasks_with_categories = set(only_tasks_with_categories)
-            more_tasks = {taskid for taskid, task in course.get_tasks().items() if
-                          only_tasks_with_categories.intersection(course.get_task_dispenser().get_categories(taskid))}
-            if only_tasks:
-                self._validate_list(only_tasks)
-                more_tasks.intersection_update(only_tasks)
-            base_filter["taskid__in"] = list(more_tasks)
-
-        # Users/audiences
-        if only_users and not only_audiences:
-            self._validate_list(only_users)
-            base_filter["username__in"] = only_users
-        elif only_audiences:
-            list_audience_id = [ObjectId(o) for o in only_audiences]
-            students = set()
-            for audience in Audience.objects(id__in=list_audience_id):
-                students.update(audience["students"])
-            if only_users:  # do the intersection
-                self._validate_list(only_users)
-                students.intersection_update(only_users)
-            base_filter["username__in"] = list(students)
-
-        # Tags
-        for tag_id, should_be_present in with_tags or []:
-            if id_checker(tag_id):
-                filter["tests." + tag_id + "__in"] = [None, False] if not should_be_present else [True]
-
-        # Grades
-        if grade_between and grade_between[0] is not None:
-            filter["grade__gte"] = float(grade_between[0])
-        if grade_between and grade_between[1] is not None:
-            filter["grade__lte"] = float(grade_between[1])
-
-        # Submit time
-        if submit_time_between and submit_time_between[0] is not None:
-            filter["submitted_on__gte"] = datetime.fromisoformat(submit_time_between[0])
-        if submit_time_between and submit_time_between[1] is not None:
-            filter["submitted_on__lte"] = datetime.fromisoformat(submit_time_between[1])
-
-        # Only crashed or timed-out submissions
-        if keep_only_crashes:
-            filter["result__in"] = ["crash", "timeout"]
-
-        # Only evaluation submissions
-        user_tasks = UserTask.objects(**base_filter)
-        best_submissions_list = {user_task['submissionid'] for user_task in user_tasks if
-                                 user_task['submissionid'] is not None}
-
-        if keep_only_evaluation_submissions is True:
-            filter["id__in"] = list(best_submissions_list)
-
-        filter.update(base_filter)
-
-        return filter, best_submissions_list
 
 
 class UnicodeWriter(object):

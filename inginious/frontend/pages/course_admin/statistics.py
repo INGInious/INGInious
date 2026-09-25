@@ -189,7 +189,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
         users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, params)
 
-        filter, best_submissions_list = self.get_submissions_filter(course, only_tasks=params["tasks"],
+        filter, best_submissions_list = self.submission_manager.get_submissions_mongo_filter(course, only_tasks=params["tasks"],
                                              only_tasks_with_categories=params["org_categories"],
                                              only_users=params["users"],
                                              only_audiences=params["audiences"],
