@@ -723,16 +723,9 @@ function drag_drop_handler() {
 
         var file = e.originalEvent.dataTransfer.files;
         var fd = new FormData();
+        fd.append('action', 'upload');
         fd.append('file', file[0]);
-        fd.append('name',file[0].name);
-        uploadData(fd);
-    });
-
-    // file selected
-    $("#file").change(function(){
-        var fd = new FormData();
-        var files = $('#file')[0].files[0];
-        fd.append('file',files);
+        fd.append('path',file[0].name);
         uploadData(fd);
     });
 }
@@ -740,19 +733,19 @@ function drag_drop_handler() {
 // Sending AJAX request and upload file
 function uploadData(formdata){
     $.ajax({
-        url: window.location.href+'/dd_upload',
         type: 'post',
         data: formdata,
         contentType: false,
         processData: false,
-        dataType: 'json',
-        success: function(response){
-            alert("uploaded!");
-            studio_update_file_tabs(undefined, undefined);
-        },
-        error: function () {
-            console.log("something went wrong");
-        }
+        beforeSend: function()
+                    {
+                        $("#tab_file_list").html('Loading');
+                    },
+        success:    function(data)
+                    {
+                        $("#tab_file_list").replaceWith(data);
+                    },
+        url:        location.pathname + "/files"
     });
 }
 

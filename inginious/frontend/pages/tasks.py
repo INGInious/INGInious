@@ -84,7 +84,7 @@ class BaseTaskPage(object):
         userinput = flask.request.args
         if "submissionid" in userinput and "questionid" in userinput:
             # Download a previously submitted file
-            submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
+            submission = self.submission_manager.get_submission(userinput["submissionid"], as_username=username if not is_staff else None)
             if submission is None:
                 raise self.cp.app.notfound(message=_("Submission doesn't exist."))
             sinput = self.submission_manager.get_input_from_submission(submission, True)
@@ -129,7 +129,7 @@ class BaseTaskPage(object):
                     students = group["students"]
                 # we don't care for the other case, as the student won't be able to submit.
 
-            submissions = self.submission_manager.get_user_submissions(course, task) if session.loggedin else []
+            submissions = self.submission_manager.get_user_submissions(course, task, session.username) if session.loggedin else []
             user_info = self.user_manager.get_user_info(username)
 
             # Visible tags
@@ -217,7 +217,7 @@ class BaseTaskPage(object):
 
             # Start the submission
             try:
-                submissionid, oldsubids = self.submission_manager.add_job(course, task, task_input, course.get_task_dispenser(), debug)
+                submissionid, oldsubids = self.submission_manager.add_job(course, task, task_input, course.get_task_dispenser(), username, debug)
                 return Response(content_type='application/json', response=json.dumps({
                     "status": "ok", "submissionid": str(submissionid), "remove": oldsubids,
                     "text": _("<b>Your submission has been sent...</b>")
@@ -228,12 +228,12 @@ class BaseTaskPage(object):
                 }))
 
         elif "@action" in userinput and userinput["@action"] == "check" and "submissionid" in userinput:
-            result = self.submission_manager.get_submission(userinput['submissionid'], user_check=not is_staff)
+            result = self.submission_manager.get_submission(userinput['submissionid'], as_username=username if not is_staff else None)
             if result is None:
                 return Response(content_type='application/json', response=json.dumps({
                     'status': "error",  "title": _("Error"), "text": _("Internal error")
                 }))
-            elif self.submission_manager.is_done(result.id, user_check=not is_staff):
+            elif result.status in ["done", "error"]:
                 result = self.submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
 
                 # user_task always exists as we called user_saw_task before
@@ -255,7 +255,7 @@ class BaseTaskPage(object):
                 ))
 
         elif "@action" in userinput and userinput["@action"] == "load_submission_input" and "submissionid" in userinput:
-            submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
+            submission = self.submission_manager.get_submission(userinput["submissionid"], as_username=username if not is_staff else None)
             submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=is_staff)
             if not submission:
                 raise NotFound(description=_("Submission doesn't exist."))
@@ -265,7 +265,7 @@ class BaseTaskPage(object):
             ))
 
         elif "@action" in userinput and userinput["@action"] == "kill" and "submissionid" in userinput:
-            self.submission_manager.kill_running_submission(userinput["submissionid"])  # ignore return value
+            self.submission_manager.kill_running_submission(userinput["submissionid"], as_username=username)  # ignore return value
             return Response(content_type='application/json', response=json.dumps({'status': 'done'}))
         else:
             raise NotFound()
@@ -399,7 +399,7 @@ class TaskPageStaticDownload(INGIniousPage):
         """ GET request """
         try:
             course = Course.get(courseid)
-            if not self.user_manager.course_is_open_to_user(course):
+            if not self.user_manager.course_is_open_to_user(course, session.username):
                 return handle_course_unavailable(self.user_manager, course)
 
             path_norm = posixpath.normpath(urllib.parse.unquote(path))

@@ -49,33 +49,32 @@
         </thead>
         <tbody>
         {% for user in all_users %}
-
              <tr>
                 <td>
-                    {{ all_users[user]["realname"] or all_users[user]["username"] }}
+                    {{ user.realname or user.username }}
                 </td>
                 <td>
-                    {{all_users[user]["username"]}}
+                    {{ user.username }}
                 </td>
                 <td>
-                    <a href="mailto:{{all_users[user]['email']}}">{{all_users[user]["email"]}}</a>
+                    <a href="mailto:{{ user.email }}">{{ user.email }}</a>
                 </td>
-                <td id="binding_{{all_users[user]['username']}}"  style="display:none;" data-bindings="{{all_users[user]['bindings']}}">
+                <td id="binding_{{ user.username }}"  style="display:none;" data-bindings="{{ user.bindings }}">
                 </td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" data-username="{{all_users[user]['username']}}"
+                        <button type="button" data-username="{{ user.username }}"
                                     data-type="single" data-toggle="modal"
                                     data-target="#binding_modal"
                                     class="btn btn-secondary binding_user" title="{{ _('Bindings') }}"><i class="fa fa-cloud"></i></button>
-                        {% if all_users[user]["username"] != session.username %}
-                            {% if not all_users[user]["activated"] %}
-                                <button type="button" data-username="{{all_users[user]['username']}}"
+                        {% if user.username != session.username %}
+                            {% if user.activate %}
+                                <button type="button" data-username="{{ user.username }}"
                                     data-type="single" data-toggle="modal"
                                     data-target="#activate_modal"
                                     class="btn btn-success activate_user" title="Activate"><i class="fa fa-thumbs-o-up"></i></button>
                             {% endif %}
-                            <button type="button" data-username="{{all_users[user]['username']}}"
+                            <button type="button" data-username="{{ user.username }}"
                                     data-type="single" data-toggle="modal"
                                     data-target="#delete_modal"
                                     class="btn btn-danger delete_user" title="Delete"><i class="fa fa-trash"></i></button>

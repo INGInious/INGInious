@@ -27,10 +27,9 @@ class AdministrationUsersPage(INGIniousAdministratorPage):
 
         page = int(request.form.get("page")) if request.form.get("page") is not None else 1
         user_per_page = 10  # TODO probably better to let user define user_per_page
-        all_users = self.user_manager.get_users_info(usernames=None, limit=user_per_page, skip=(page-1)*user_per_page)
+        all_users = User.objects.skip((page-1)*user_per_page).limit(user_per_page)
         size_users = User.objects.count()
         pages = size_users // user_per_page + (size_users % user_per_page > 0) if user_per_page > 0 else 1
-
         return render_template("admin/admin_users.html", all_users=all_users,
                                            number_of_pages=pages, page_number=page)
 

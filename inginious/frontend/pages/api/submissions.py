@@ -18,12 +18,14 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         Helper for the GET methods of the two following classes
     """
 
+    username = session.username
+
     try:
         course = Course.get(courseid)
     except:
         raise APINotFound("Course not found")
 
-    if not user_manager.course_is_open_to_user(course, lti=False):
+    if not user_manager.course_is_open_to_user(course, username, lti=False):
         raise APIForbidden("You are not registered to this course")
 
     try:
@@ -32,13 +34,13 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         raise APINotFound("Task not found")
 
     if submissionid is None:
-        submissions = submission_manager.get_user_submissions(course, task)
+        submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
-            submissions = [submission_manager.get_submission(submissionid)]
+            submissions = [submission_manager.get_submission(submissionid, as_username=username)]
         except:
             raise APINotFound("Submission not found")
-        if submissions[0]["taskid"] != task.get_id() or submissions[0]["courseid"] != course.get_id():
+        if submissions[0].taskid != task.get_id() or submissions[0].courseid != course.get_id():
             raise APINotFound("Submission not found")
 
     output = []
@@ -49,9 +51,9 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
             show_everything=user_manager.has_staff_rights_on_course(course, session.username)
         )
         data = {
-            "id": str(submission["id"]),
-            "submitted_on": submission["submitted_on"].isoformat(),
-            "status": submission["status"]
+            "id": str(submission.id),
+            "submitted_on": submission.submitted_on.isoformat(),
+            "status": submission.status
         }
 
         if with_input:
@@ -63,10 +65,10 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
                     d["value"] = base64.b64encode(d["value"]).decode("utf8")
 
         if submission["status"] == "done":
-            data["grade"] = submission.get("grade", 0)
-            data["result"] = submission.get("result", "crash")
-            data["feedback"] = submission.get("text", "")
-            data["problems_feedback"] = submission.get("problems", {})
+            data["grade"] = submission.grade
+            data["result"] = submission.result
+            data["feedback"] = submission.text
+            data["problems_feedback"] = submission.problems
 
         output.append(data)
 
@@ -200,8 +202,8 @@ class APISubmissions(APIAuthenticatedPage):
 
         user_input = task.adapt_input_for_backend(user_input)
 
-        if not task.input_is_consistent(user_input, current_app.config('ALLOWED_FILE_EXTENSIONS'),
-                                        current_app.config.get('MAX_FILE_SIZE')):
+        if not task.input_is_consistent(user_input, current_app.config['ALLOWED_FILE_EXTENSIONS'],
+                                        current_app.config['MAX_FILE_SIZE']):
             raise APIInvalidArguments()
 
         # Get debug info if the current user is an admin
@@ -210,7 +212,7 @@ class APISubmissions(APIAuthenticatedPage):
 
         # Start the submission
         try:
-            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), debug)
+            submissionid, _ = self.submission_manager.add_job(course, task, user_input, course.get_task_dispenser(), username, debug)
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))

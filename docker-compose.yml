@@ -50,6 +50,20 @@ services:
         - REGISTRY=ghcr.io
     command: /bin/true
 
+  env-computer-systemen-architectuur:
+    image: ghcr.io/uantwerpen/inginious/env-computer-systemen-architectuur:latest
+    attach: false
+    depends_on:
+      env-base:
+        condition: service_completed_successfully
+    build:
+      context: uantwerpen/containers/computer-systemen-architectuur/
+      target: env-computer-systemen-architectuur
+      args:
+        - VERSION=latest
+        - REGISTRY=ghcr.io
+    command: /bin/true
+
   db:
     image: mongo:6.0.2
     volumes:
@@ -106,6 +120,8 @@ services:
       env-inleiding-programmeren:
         condition: service_completed_successfully
       env-computer-graphics:
+        condition: service_completed_successfully
+      env-computer-systemen-architectuur:
         condition: service_completed_successfully
     deploy:
       replicas: 1

@@ -138,3 +138,16 @@ jobs:
           build-args: |
             VERSION=${{ env.UPSTREAM_ENV_TAG }}
             REGISTRY=ghcr.io
+
+      - name: Build and push env-computer-systemen-architectuur
+        uses: docker/build-push-action@v7
+        with:
+          context: ./uantwerpen/containers/computer-systemen-architectuur/
+          target: env-computer-systemen-architectuur
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/inginious/env-computer-systemen-architectuur:latest
+            ${{ env.REGISTRY }}/inginious/env-computer-systemen-architectuur:${{ env.VERSION }}
+          build-args: |
+            VERSION=${{ env.UPSTREAM_ENV_TAG }}
+            REGISTRY=ghcr.io
