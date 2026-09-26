@@ -12,8 +12,10 @@ LABEL org.opencontainers.image.source=https://github.com/UAntwerpen/INGInious
 # UNIX shell + standard command line tools (for shell script exercises)
 # -------------------------
 
+# coreutils is left out: the base image ships coreutils-single (same commands),
+# which conflicts with the full coreutils package.
 RUN dnf -y install \
-        bash coreutils findutils grep gawk sed diffutils which less \
+        bash findutils grep gawk sed diffutils which less \
         util-linux shadow-utils hostname tree psmisc vim-minimal \
     && dnf clean all
 
