@@ -363,3 +363,66 @@ class APISubmissionsCourseV1(APIAuthenticatedPageV1):
                 "X-Total-Count": str(submissions.count()),
             },
         )
+
+
+class APISubmissionInputV1(APIAuthenticatedPageV1):
+    """
+        Endpoint
+          ::
+
+            /api/v1/submissions/<submissionid>/input
+
+    """
+
+    def GET(self, submissionid):
+        """
+            Returns the raw input of a submission, formatted as a BSON binary.
+            Accessible to any author of the submission, or to a staff member of the course.
+
+            The input is formatted as follows, with additional metadata and the different problems' input :
+            {
+                "@username" : "user1",
+                "@email" : "user1@email.com",
+                "@lang" : "en",
+                "@time": "2026-06-23 15:01:44.706579+00:00",
+                "@attempts": "5",
+                "@random": [],
+                "@state": "",
+
+                "code_problem": "print(\"Hello world!\")",
+                "file_problem": {
+                    "filename": "file1.zip",
+                    "value": "sDBBQAVcbcAWpn2wFoAQAAYi9maXp6YnV6e......DQAH4NsBagbcAWrg2wFqdXgLAAEE6AMAAAToAwAAUEsFBgAAAAAEAAQAVgEAAEACAAAAAA=="
+                    },
+                "qcm_problem": {
+                    # number of the selected answer for each question, starting from 0.
+                    "qcm1": "0",
+                    "qcm2": "2",
+                    "qcm3": "1",
+                    ...
+            }
+
+            Returns 200 OK with the raw input as a BSON binary if the submission exists and the user is allowed to access it.
+            Returns 404 Not Found if the submission does not exist or if the user is not allowed to access it.
+
+        """
+
+        username = flask.g.user.username
+
+        try:
+            submission = self.submission_manager.get_submission(submissionid)
+        except:
+            self.logger.info("Submission %r not found", submissionid)
+            raise APINotFound()
+
+        course = Course.get(submission.courseid)
+        is_staff = self.user_manager.has_staff_rights_on_course(course, username, include_superadmins=True)
+        is_owner = username in submission.username
+        if not (is_staff or is_owner):
+            self.logger.warning("User %r is nor the owner, nor a staff member for submission %r", username, submissionid)
+            raise APINotFound()
+
+        input = submission.input.read()
+
+        response = flask.Response(input, content_type="application/octet-stream")
+        return response
