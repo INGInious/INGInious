@@ -423,7 +423,17 @@ class APISubmissionInput(APIAuthenticatedPage):
             self.logger.warning(f"User '{username}' is nor the owner, nor a staff member for submission '{submissionid}'")
             raise APINotFound()
 
-        input = submission.input.read()
+        grid_file = submission.input
 
-        response = flask.Response(input, content_type="application/octet-stream")
+        def generate(chunk_size):
+            grid_file.seek(0)
+            while True:
+                chunk = grid_file.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
+        response = flask.Response(generate(chunk_size= 256 * 1024), content_type="application/octet-stream")
+        response.headers["Content-Length"] = str(grid_file.length) # provide length of the file in bytes
+
         return response
