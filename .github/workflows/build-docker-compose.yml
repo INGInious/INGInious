@@ -19,7 +19,8 @@ env:
   REGISTRY: ghcr.io/uantwerpen
   VERSION: ${{ github.sha }}
   # Upstream base env image tag to build our grading containers FROM.
-  UPSTREAM_ENV_TAG: latest
+  # "main" is the Rocky 10 base; "latest" is an outdated Rocky 8 image.
+  UPSTREAM_ENV_TAG: main
 
 jobs:
   build-and-push:

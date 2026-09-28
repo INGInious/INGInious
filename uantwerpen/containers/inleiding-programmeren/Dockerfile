@@ -15,9 +15,8 @@ RUN dnf -y install dnf-utils
 RUN dnf -y install dnf-plugins-core && \
     dnf config-manager --set-enabled crb || true
 
-# Install GCC 13+ (supports C++20), valgrind (used by the C++ grader for leak checks)
-# and pip (system python3 ships without it)
-RUN dnf -y install gcc gcc-c++ make valgrind python3-pip
+# Install GCC 14 (supports C++20) and valgrind (used by the C++ grader for leak checks)
+RUN dnf -y install gcc gcc-c++ make valgrind
 
 # Verify GCC and valgrind
 RUN gcc --version && g++ --version && valgrind --version
@@ -31,5 +30,7 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel \
 # Verification
 # -------------------------
 
-RUN gcc --version && g++ --version && python3 --version
+RUN set -eux; \
+    gcc --version; g++ --version; valgrind --version; python3 --version; \
+    python3 -c 'import inginious_container_api, msgpack, zmq, jinja2, yaml'
 
