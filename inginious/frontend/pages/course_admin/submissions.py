@@ -115,13 +115,14 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
 
         users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, params)
 
-        data, sub_count, pages = self.submissions_from_user_input(course, params, msgs, page, limit)
+        data, sub_count = self.submissions_from_user_input(course, params, msgs, page, limit)
+        number_of_pages = max(sub_count // limit + (sub_count % limit > 0), 1)
 
         return render_template("course_admin/submissions.html", course=course, users=users,
                                            tutored_users=tutored_users, audiences=audiences,
                                            tutored_audiences=tutored_audiences, tasks=tasks, old_params=params,
                                            data=data, displayed_selection=json.dumps(params),
-                                           number_of_pages=pages, page_number=page, msgs=msgs, sub_count = sub_count)
+                                           number_of_pages=number_of_pages, page_number=page, msgs=msgs, sub_count = sub_count)
 
     def submissions_from_user_input(self, course, user_input, msgs, page=None, limit=None, best_only=False):
         """ Returns the list of submissions and corresponding aggragations based on inputs """

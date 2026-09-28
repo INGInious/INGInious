@@ -310,15 +310,14 @@ class WebAppSubmissionManager:
 
         return filter, best_submissions_list
 
-    def get_selected_submissions(self, course,
-                                 only_tasks=None, only_tasks_with_categories=None,
-                                 only_users=None, only_audiences=None,
-                                 with_tags=None,
-                                 grade_between=None, submit_time_between=None,
-                                 keep_only_evaluation_submissions=False,
-                                 keep_only_crashes=False,
-                                 sort_by=("submitted_on", True),
-                                 limit=None, skip=None):
+    def get_selected_submissions_queryset(self, course,
+                                          only_tasks=None, only_tasks_with_categories=None,
+                                          only_users=None, only_audiences=None,
+                                          with_tags=None,
+                                          grade_between=None, submit_time_between=None,
+                                          keep_only_evaluation_submissions=False,
+                                          keep_only_crashes=False,
+                                          sort_by=("submitted_on", True)):
         """
         All the parameters (excluding course, sort_by and keep_only_evaluation_submissions) can be None.
         If that is the case, they are ignored.
@@ -339,8 +338,7 @@ class WebAppSubmissionManager:
         :param keep_only_crashes: True to keep only submissions that timed out or crashed
         :param sort_by: a tuple (sort_column, ascending) where sort_column is in ["submitted_on", "username", "grade", "taskid"]
                and ascending is either True or False.
-        :param limit: an integer representing the maximum number of submission to list.
-        :return: a list of submission filling the criterias above.
+        :return: a tuple (queryset, best_submissions_list), best_submissions_list being a list of submission ids that are the evaluated submissions for each user-task pair.
         """
 
         filter, best_submissions_list = self.get_submissions_mongo_filter(course, only_tasks=only_tasks,
@@ -353,15 +351,50 @@ class WebAppSubmissionManager:
                                                                keep_only_crashes=keep_only_crashes)
 
         submissions = Submission.objects(**filter)
-        submissions_count = Submission.objects(**filter).count()
 
         if sort_by[0] not in ["submitted_on", "username", "grade", "taskid"]:
             sort_by[0] = "submitted_on"
         submissions = submissions.order_by(("" if sort_by[1] else "-") + sort_by[0])
 
+        return submissions, best_submissions_list
+
+    def get_selected_submissions(self, course,
+                                 only_tasks=None, only_tasks_with_categories=None,
+                                 only_users=None, only_audiences=None,
+                                 with_tags=None,
+                                 grade_between=None, submit_time_between=None,
+                                 keep_only_evaluation_submissions=False,
+                                 keep_only_crashes=False,
+                                 sort_by=("submitted_on", True),
+                                 limit=None, skip=None):
+        """
+        Wrapper around get_selected_submissions_queryset that transforms the queryset into a list
+        of dicts and marks best (evaluated) submissions. Also handles limit and skip parameters.
+
+        See get_selected_submissions_queryset for parameter descriptions.
+        :param limit: an integer representing the maximum number of submission to list.
+        :param skip: an integer representing the number of submission to skip.
+
+        :return: a list of submissions (as dicts) filling the criterias given, or a tuple containing that list plus the total
+        number of submissions (ignoring limit and skip) if limit is set.
+        """
+
+        result = self.get_selected_submissions_queryset(
+            course, only_tasks=only_tasks,
+            only_tasks_with_categories=only_tasks_with_categories,
+            only_users=only_users,
+            only_audiences=only_audiences, with_tags=with_tags,
+            grade_between=grade_between,
+            submit_time_between=submit_time_between,
+            keep_only_evaluation_submissions=keep_only_evaluation_submissions,
+            keep_only_crashes=keep_only_crashes,
+            sort_by=sort_by)
+
+        submissions, best_submissions_list = result
+
+        submissions_count = submissions.count()
         if skip is not None and skip < submissions_count:
             submissions = submissions.skip(skip)
-
         if limit is not None:
             submissions = submissions.limit(limit)
 
@@ -370,8 +403,7 @@ class WebAppSubmissionManager:
             s.best = s.id in best_submissions_list
 
         if limit is not None:
-            number_of_pages = max(submissions_count // limit + (submissions_count % limit > 0), 1)
-            return out, submissions_count, number_of_pages
+            return out, submissions_count
         else:
             return out
 
