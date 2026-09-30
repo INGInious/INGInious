@@ -398,7 +398,7 @@ class UserManager:
 
     def get_course_caches(self, usernames : list[str], course):
         """
-        :param usernames: List of username for which we want info. If usernames is None, data from all users will be returned.
+        :param usernames: List of username for which we want info.
         :param course: A Course object
         :return:
             Returns data of the specified users for a specific course. users is a list of username.
@@ -407,85 +407,81 @@ class UserManager:
 
             ::
 
-                {"username": {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "task_grades":{"task_1": 100.0, "task_2": 0.0, ...}}}
+                {"username": {"task_tried": 0, "total_tries": 0, "task_succeeded": 0 }}
 
             Note that only the task already seen at least one time will be present in the dict task_grades.
         """
 
-        match = {"courseid": course.get_id()}
-        if usernames is not None:
-            match["username"] = {"$in": usernames}
+        user_tasks = UserTask.objects(
+            courseid=course.get_id(),
+            username__in=usernames,
+            taskid__in=course.get_readable_tasks()
+        )
 
-        taskids = course.get_readable_tasks()
-        match["taskid"] = {"$in": list(taskids)}
+        retval = {
+            username: {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "grade": 0}
+            for username in usernames
+        }
 
-        user_tasks = UserTask.objects(**match)
         data = user_tasks.aggregate([{
             "$group":
                 {
                     "_id": "$username",
                     "task_tried": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
                     "total_tries": {"$sum": "$tried"},
-                    "task_succeeded": {"$addToSet": {"$cond": ["$succeeded", "$taskid", False]}},
-                    "task_grades": {"$addToSet": {"taskid": "$taskid", "grade": "$grade"}}
+                    "task_succeeded": {"$sum": {"$cond": ["$succeeded", 1, 0]}},
                 }
         }])
 
-        if usernames is None:
-            usernames = self.get_course_registered_users(course=course, with_admins=False)
-
-        retval = {username: {"task_succeeded": 0, "task_grades": [], "grade": 0} for username in usernames}
-
-        users_tasks_list = course.get_task_dispenser().get_user_task_list(usernames)
         users_grade = course.get_task_dispenser().get_course_grades(user_tasks, usernames)
 
         for result in data:
             username = result["_id"]
-            visible_tasks = users_tasks_list.get(username, [])
-            result["task_succeeded"] = len(set(result["task_succeeded"]).intersection(visible_tasks))
-            result["task_grades"] = {dg["taskid"]: dg["grade"] for dg in result["task_grades"] if
-                                     dg["taskid"] in visible_tasks}
-
             result["grade"] = users_grade[username]
             retval[username] = result
 
         return retval
 
-    def get_task_cache(self, username, courseid, taskid):
+    def get_task_cache(self, username, courseid, taskid) -> UserTask:
         """
-        Shorthand for get_task_caches([username], courseid, taskid)[username]
-        """
-        return self.get_task_caches([username], courseid, taskid)[username]
-
-    def get_task_caches(self, usernames, courseid, taskid):
-        """
-        :param usernames: List of username for which we want info. If usernames is None, data from all users will be returned.
+        :param username: username for which we want info.
         :param courseid: the course id
         :param taskid: the task id
-        :return: A dict in the form:
+        """
+        return UserTask.objects(courseid=courseid, taskid=taskid, username=username).first()
 
-            ::
-
+    def get_audience_progress(self, audiences, course) -> dict[str, dict]:
+        """
+        :param audiences: List of audiences for which we want info.
+        :return: A dict mapping audience id to UserTask object
+        """
+        retval = {}
+        for audience in audiences:
+            data = UserTask.objects(
+                courseid=course.get_id(),
+                username__in=audience.students,
+                taskid__in=course.get_readable_tasks()
+            ).aggregate([
                 {
-                    "username": {
-                        "courseid": courseid,
-                        "taskid": taskid,
-                        "tried": 0,
-                        "succeeded": False,
-                        "grade": 0.0
+                    "$group": {
+                        "_id": "$taskid",
+                        "task_tried": { "$max": { "$gt": ["$tried", 0] } },
+                        "task_succeeded": {"$max": "$succeeded" }
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": None,
+                        "tried": {
+                            "$sum": {"$cond": ["$task_tried", 1, 0]}
+                        },
+                        "succeeded": {
+                            "$sum": {"$cond": ["$task_succeeded", 1, 0]}
+                        }
                     }
                 }
-        """
-        match = {"courseid": courseid, "taskid": taskid}
-        if usernames is not None:
-            match["username"] = {"$in": usernames}
-
-        data = UserTask.objects(**match)
-        retval = {username: None for username in usernames}
-        for result in data:
-            username = result["username"]
-            retval[username] = result
-
+            ])
+            retval[audience.id] = next(data, {"tried": 0, "succeeded": 0})
         return retval
 
     def user_saw_task(self, username, courseid, taskid):
@@ -636,6 +632,21 @@ class UserManager:
             username = session.username
 
         return Group.objects(courseid=course.get_id(), students=username).first()
+
+    def get_course_ungrouped_students(self, course) -> list[str]:
+        """ Returns the course students that are not assigned to any group"""
+        usernames = self.get_course_registered_users(course, False)
+        query = Group.objects(courseid=course.get_id()).aggregate([
+            { "$unwind": "$students" },
+            {
+                "$group": {
+                    "_id": None,
+                    "students": {"$addToSet": "$students"}
+                }
+            }
+        ])
+        result = next(query, {"students": []})
+        return list(set(usernames) - set(result["students"]))
 
     def course_register_user(self, course, username=None, password=None, force=False):
         """ Register a user to the course

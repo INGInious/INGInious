@@ -7,12 +7,12 @@ import csv
 import json
 import yaml
 
-from collections import OrderedDict
 from bson import ObjectId
-from flask import session, Response, request, render_template
+from flask import Response, request, render_template
 from io import StringIO
 
-from inginious.frontend.models import Audience, Submission, User, Group,  CourseClass
+from natsort import natsorted
+from inginious.frontend.models import Audience, User, Group, CourseClass
 from inginious.common import custom_yaml
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage
 
@@ -23,8 +23,7 @@ class CourseStudentListPage(INGIniousAdminPage):
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
-        if "preferred_field" in request.args and request.args["preferred_field"] in \
-                ['username', 'email']:
+        if "preferred_field" in request.args and request.args["preferred_field"] in ['username', 'email']:
             preferred_field = request.args["preferred_field"]
             audiences = []
             si = StringIO()
@@ -78,73 +77,47 @@ class CourseStudentListPage(INGIniousAdminPage):
         if msg is None:
             msg = {}
 
-        split_audiences, audiences = self.get_audiences_params(course)
-        user_data = self.get_student_list_params(course)
+        # Course user infos
+        student_list = self.user_manager.get_course_registered_users(course, False)
+        staff_list = course.get_staff()
+        users_info = self.user_manager.get_users_info(student_list + staff_list)
+
+        # User progress
+        user_progress = self.user_manager.get_course_caches(student_list + staff_list, course)
+
+        # Audiences and audience progress
+        audiences = self.user_manager.get_course_audiences(course)
+        audience_progress = self.user_manager.get_audience_progress(audiences, course)
+
+        # Groups and student groups
         groups = self.user_manager.get_course_groups(course)
-        student_list, audience_list, other_students, users_info = self.get_user_lists(course)
+        ungrouped_students = self.user_manager.get_course_ungrouped_students(course)
 
         if "csv_audiences" in request.args:
-            return make_csv(audiences)
+            retval = {audience.id: audience.to_mongo() for audience in audiences}
+            for audience_id in retval:
+                retval[audience_id].update(audience_progress[audience_id])
+            return make_csv(retval)
+
         if "csv_student" in request.args:
-            return make_csv(user_data)
+            for username in user_progress:
+                user_progress[username]["username"] = username
+                user_progress[username]["realname"] = users_info[username].realname
+                user_progress[username]["email"] = users_info[username].email
+            return make_csv(user_progress)
+
+        sorted_staff_list = natsorted(staff_list, lambda x: users_info[x].realname)
+        sorted_student_list = natsorted(student_list, lambda x: users_info[x].realname)
 
         return render_template("course_admin/student_list.html", course=course,
-                                           user_data=list(user_data.values()), audiences=split_audiences,
-                                           active_tab=active_tab, student_list=student_list,
-                                           audience_list=audience_list,
-                                           other_students=other_students, users_info=users_info, groups=groups,
-                                           error=error, msg=msg)
+                               student_list=sorted_student_list, staff_list=sorted_staff_list, users_info=users_info,
+                               user_progress=user_progress,
+                               audiences={audience.id: audience for audience in audiences},
+                               audience_progress=audience_progress,
+                               groups=groups, ungrouped_students=ungrouped_students,
+                               active_tab=active_tab, error=error, msg=msg)
 
-    def get_student_list_params(self, course):
-        users = sorted(list(
-            self.user_manager.get_users_info(self.user_manager.get_course_registered_users(course, False)).items()),
-            key=lambda k: k[1].realname if k[1] is not None else "")
 
-        users = OrderedDict(sorted(list(self.user_manager.get_users_info(course.get_staff()).items()),
-                                   key=lambda k: k[1].realname if k[1] is not None else "") + users)
-
-        user_data = OrderedDict([(username, {
-            "username": username, "realname": user.realname if user is not None else "",
-            "email": user.email if user is not None else "", "total_tasks": 0,
-            "task_grades": {"answer": 0, "match": 0}, "task_succeeded": 0, "task_tried": 0, "total_tries": 0,
-            "grade": 0}) for username, user in users.items()])
-
-        for username, data in self.user_manager.get_course_caches(list(users.keys()), course).items():
-            user_data[username].update(data if data is not None else {})
-
-        return user_data
-
-    def get_audiences_params(self, course):
-        audiences = OrderedDict()
-        taskids = list(course.get_tasks().keys())
-
-        for audience in self.user_manager.get_course_audiences(course):
-            audiences[audience.id] = dict(list(audience.to_mongo().to_dict().items()) + [("tried", 0), ("done", 0) ])
-
-            submissions = Submission.objects(
-                courseid=course.get_id(), taskid__in= taskids, username__in=audience["students"]
-            )
-
-            data = submissions.aggregate([{
-                "$group": {
-                    "_id": "$taskid",
-                    "tried": {"$sum": 1},
-                    "done": {"$sum": {"$cond": [{"$eq": ["$result", "success"]}, 1, 0]}}
-                }
-            }])
-
-            for c in data:
-                audiences[audience.id]["tried"] += 1 if c["tried"] else 0
-                audiences[audience.id]["done"] += 1 if c["done"] else 0
-
-        my_audiences, other_audiences = [], []
-        for audience in audiences.values():
-            if session.username in audience["tutors"]:
-                my_audiences.append(audience)
-            else:
-                other_audiences.append(audience)
-
-        return [my_audiences, other_audiences], audiences
 
     def post_student_list(self, course, data):
         if "remove_student" in data:
@@ -194,7 +167,7 @@ class CourseStudentListPage(INGIniousAdminPage):
                         msg["audiences"] = _("File wrongly formatted.")
                         error["audiences"] = True
                 if "audiences" not in error or not error["audiences"]:
-                    stud_list, aud_li, oth_stu, u_info = self.get_user_lists(course)
+                    stud_list = self.user_manager.get_course_registered_users(course, False)
                     courseid = course.get_id()
                     # Fully remove previous audiences.
                     Audience.objects(courseid=courseid).delete()
@@ -324,26 +297,6 @@ class CourseStudentListPage(INGIniousAdminPage):
                 error["groups"] = True
             active_tab = "tab_groups"
         return active_tab
-
-    def get_user_lists(self, course):
-        """ Get the available student list for group edition"""
-        audience_list = self.user_manager.get_course_audiences(course)
-        audience_list = {audience.id: audience for audience in audience_list}
-
-        student_list = self.user_manager.get_course_registered_users(course, False)
-        users_info = self.user_manager.get_users_info(student_list)
-
-        groups_list = list(Group.objects(courseid=course.get_id()).aggregate([
-            {"$unwind": "$students"},
-            {"$project": {"group": "$_id", "students": 1}}
-        ]))
-        groups_list = {d["students"]: d["group"] for d in groups_list}
-
-        other_students = [entry for entry in student_list if entry not in groups_list]
-        other_students = sorted(other_students,
-                                key=lambda val: (("0" + users_info[val].realname) if users_info[val] else ("1" + val)))
-
-        return student_list, audience_list, other_students, users_info
 
     def update_group(self, course, groupid, new_data, audience_students):
         """ Update group and returns a list of errored students"""

@@ -34,7 +34,9 @@
                 </tr>
             </thead>
             <tbody>
-            {% for user in user_data %}
+            {% for username in usernames %}
+                {% set user = users_info[username] %}
+                {% set progress = user_progress[username] %}
                  <tr>
                     <td>
                         {{ user["realname"] or user["username"] }}
@@ -45,12 +47,12 @@
                     <td>
                         <a href="mailto:{{user['email']}}">{{user["email"]}}</a>
                     </td>
-                    <td>{{user["task_tried"]}}</td>
-                    <td>{{user["task_succeeded"]}}</td>
+                    <td>{{progress["task_tried"]}}</td>
+                    <td>{{progress["task_succeeded"]}}</td>
                     <td>
                         <div class="progress">
-                            <div class="progress-bar bg-success" role="progressbar" aria-valuenow="{{ user['grade'] | int }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ user['grade'] | int }}%">
-                                <span>{{ user["grade"] }}%</span>
+                            <div class="progress-bar bg-success" role="progressbar" aria-valuenow="{{ progress['grade'] | int }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress['grade'] | int }}%">
+                                <span>{{ progress["grade"] }}%</span>
                             </div>
                         </div>
                     </td>
