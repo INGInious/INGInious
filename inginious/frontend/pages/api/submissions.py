@@ -7,19 +7,21 @@
 
 import base64
 import flask
+import binascii
+from werkzeug.datastructures import FileStorage
+from io import BytesIO
+import json
 
-from flask import current_app, session
+from flask import current_app
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.pages.course_admin.utils import get_selected_submissions_queryset
 
 
-def _get_submissions(submission_manager, user_manager, courseid, taskid, with_input, submissionid=None):
+def _get_submissions(submission_manager, user_manager, courseid, taskid, username, with_input, submissionid=None):
     """
         Helper for the GET methods of the two following classes
     """
-
-    username = session.username
-
     try:
         course = Course.get(courseid)
     except:
@@ -37,18 +39,22 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, with_in
         submissions = submission_manager.get_user_submissions(course, task, username)
     else:
         try:
-            submissions = [submission_manager.get_submission(submissionid, as_username=username)]
-        except:
-            raise APINotFound("Submission not found")
-        if submissions[0].taskid != task.get_id() or submissions[0].courseid != course.get_id():
-            raise APINotFound("Submission not found")
+            submission = submission_manager.get_submission(submissionid, as_username=username)
+            if submission is None: # if submission does not belong to the user
+                submissions = []
+            else:
+                if submission.taskid != task.get_id() or submission.courseid != course.get_id():
+                    raise APINotFound("Submission not found")
+                submissions = [submission]
+        except: # if submission not found
+            submissions = []
 
     output = []
 
     for submission in submissions:
         submission = submission_manager.get_feedback_from_submission(
             submission,
-            show_everything=user_manager.has_staff_rights_on_course(course, session.username)
+            show_everything=user_manager.has_staff_rights_on_course(course, username)
         )
         data = {
             "id": str(submission.id),
@@ -113,7 +119,10 @@ class APISubmissionSingle(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input, submissionid)
+
+        username = flask.g.user.username
+
+        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input, submissionid)
 
 
 class APISubmissions(APIAuthenticatedPage):
@@ -154,7 +163,9 @@ class APISubmissions(APIAuthenticatedPage):
         """
         with_input = "input" in flask.request.args
 
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, with_input)
+        username = flask.g.user.username
+
+        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, username, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -174,7 +185,7 @@ class APISubmissions(APIAuthenticatedPage):
         except:
             raise APINotFound("Course not found")
 
-        username = session.username
+        username = flask.g.user.username
 
         if not self.user_manager.course_is_open_to_user(course, username, False):
             raise APIForbidden("You are not registered to this course")
@@ -190,15 +201,29 @@ class APISubmissions(APIAuthenticatedPage):
         if not self.user_manager.task_can_user_submit(course, task, username, False):
             raise APIForbidden("You are not allowed to submit for this task")
 
-        user_input = flask.request.form.copy()
-        for problem in task.get_problems():
-            pid = problem.get_id()
-            if problem.input_type() == list:
-                user_input[pid] = flask.request.form.getlist(pid)
-            elif problem.input_type() == dict:
-                user_input[pid] = flask.request.files.get(pid)
-            else:
-                user_input[pid] = flask.request.form.get(pid)
+        if flask.request.is_json:
+            user_input = flask.request.get_json()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    value = user_input.get(pid, [])
+                    user_input[pid] = value if isinstance(value, list) else [value]
+                elif problem.input_type() == dict:
+                    # File inputs are not supported in JSON requests. Needs to be sent in base64 encoded format
+                    value = user_input.get(pid)
+                    if isinstance(value, dict) and "filename" in value and "value" in value:
+                        try:
+                            user_input[pid] = FileStorage(BytesIO(base64.b64decode(value["value"])),value["filename"])
+                        except (binascii.Error, TypeError, ValueError):
+                            raise APIInvalidArguments()
+        else:
+            user_input = flask.request.form.copy().to_dict()
+            for problem in task.get_problems():
+                pid = problem.get_id()
+                if problem.input_type() == list:
+                    user_input[pid] = flask.request.form.getlist(pid)
+                elif problem.input_type() == dict:
+                    user_input[pid] = flask.request.files.get(pid)
 
         user_input = task.adapt_input_for_backend(user_input)
 
@@ -216,3 +241,199 @@ class APISubmissions(APIAuthenticatedPage):
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
+
+
+class APISubmissionsCourse(APIAuthenticatedPage):
+    """
+        Endpoints
+            ::
+
+                /api/v0/courses/[a-zA-Z_\-\.0-9]+/submissions
+
+                /api/v0/courses/[a-zA-Z_\-\.0-9]+/[a-zA-Z_\-\.0-9]+/submissions
+    """
+
+    def POST(self, courseid, taskid=None):
+        """
+            List all the submissions from a course (or particular task if a taskid is given) that are evaluation submissions.
+            That is, the ones that will be used for the final grade. Depending on the task those can be the last or best submissions.
+            Only accessible to staff members of the course.
+            Returns a 200 OK if the endpoint is reachable and the user has access to it.
+            Returns 400 Bad Request if the request body is not valid JSON or does not respect the expected format.
+            Returns 403 Forbidden if the user does not have access to the course/task.
+
+            Returns list of the form :
+            ::
+
+                [
+                    {
+                        "id": "submission_id1",
+                        "courseid": "submission_id1",
+                        "taskid": "date",
+                        "username" : ["user1", "user2", ...],          #list of users related to that submissions (multiple users in case of a group submission)
+                        "submitted_on": "2026-06-23T15:01:44Z",     #date in the ISO 8601 format
+                        "result" : "success"        #can be success, failure, crash (execution status of the task).
+                        "grade": 0.0,
+                        "stderr": "stderr output of the submission",
+                        "stdout": "stdout output of the submission",
+                    },
+                    ...
+                ]
+
+            When the number of submissions is too large (more than 500), the response will be streamed as
+            newline-delimited JSON (NDJSON) instead of a single JSON array. Allowing you to process the submissions one
+            by one as they arrive.
+
+            The raw input submitted by the student (file contents, code, QCM answers, etc.) is not included in this
+            list. Use the dedicated endpoint for retrieving inputs (accessible to staff members or to the authors) to
+            download the raw input of one particular submission.
+
+            This endpoint takes a JSON body with the mandatory field "username", a list of usernames to filter the submissions. Only submissions from those users will be returned.
+        """
+
+        try:
+            return self._verify_authentication(self._get_input, (courseid, taskid), {})
+        except APIError as error:
+            return error.send()
+
+    def _get_input(self, courseid, taskid):
+
+        username = flask.g.user.username
+
+        try:
+            course = Course.get(courseid)
+        except:
+            self._logger.warning(f"Course '{courseid}' not found")
+            raise APINotFound()
+
+        if not self.user_manager.has_staff_rights_on_course(course, username, include_superadmins=True):
+            self._logger(f"User '{username}' tried accessing course '{courseid}', which they are not staff of")
+            raise APINotFound()
+
+        try:
+            _ = course.get_task(taskid) if taskid else None
+        except:
+            self._logger.warning(f"Task '{taskid}' not found")
+            raise APINotFound()
+
+        data = flask.request.get_json(silent=True)
+        if data is None:
+            raise APIInvalidArguments()
+
+        usernames = data.get("usernames")
+        if not isinstance(usernames, list):
+            raise APIInvalidArguments()
+
+        tasks = [taskid] if taskid else None
+
+        def serialize(s):
+            return {
+                "id": str(s.id),
+                "courseid": s.courseid,
+                "taskid": s.taskid,
+                "username": s.username,
+                "submitted_on": s.submitted_on.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "result": s.result,
+                "grade": s.grade,
+                "stderr": s.stderr,
+                "stdout": s.stdout,
+            }
+
+        stream_threshold = 500
+        submissions, _ = get_selected_submissions_queryset(
+            course, only_tasks=tasks, only_users=usernames,
+            keep_only_evaluation_submissions=True
+        )
+        submissions_count = submissions.count()
+
+        # Small enough result set: return a plain JSON array.
+        if submissions_count <= stream_threshold:
+            submissions = json.dumps([serialize(s) for s in submissions])
+            response = flask.Response(submissions, content_type="application/json")
+            return response
+
+        # Large result set: stream the response as newline-delimited JSON (NDJSON) instead
+        def generate():
+            for s in submissions:
+                yield json.dumps(serialize(s)) + "\n"
+
+        response = flask.Response(generate(), content_type="application/x-ndjson")
+        return response
+
+
+class APISubmissionInput(APIAuthenticatedPage):
+    r"""
+        Endpoint
+          ::
+
+            /api/v1/submissions/<submissionid>/input
+
+    """
+
+    def GET(self, submissionid):
+        """
+            Returns the raw input of a submission, formatted as a BSON binary.
+            Accessible to any author of the submission, or to a staff member of the course.
+
+            The input is formatted as follows, with additional metadata and the different problems' input :
+            {
+                "@username" : "user1",
+                "@email" : "user1@email.com",
+                "@lang" : "en",
+                "@time": "2026-06-23 15:01:44.706579+00:00",
+                "@attempts": "5",
+                "@random": [],
+                "@state": "",
+
+                "code_problem": "print(\"Hello world!\")",
+                "file_problem": {
+                    "filename": "file1.zip",
+                    "value": "sDBBQAVcbcAWpn2wFoAQAAYi9maXp6YnV6e......DQAH4NsBagbcAWrg2wFqdXgLAAEE6AMAAAToAwAAUEsFBgAAAAAEAAQAVgEAAEACAAAAAA=="
+                    },
+                "qcm_problem": {
+                    # number of the selected answer for each question, starting from 0.
+                    "qcm1": "0",
+                    "qcm2": "2",
+                    "qcm3": "1",
+                    ...
+            }
+
+            Returns 200 OK with the raw input as a BSON binary if the submission exists and the user is allowed to access it.
+            Returns 404 Not Found if the submission does not exist or if the user is not allowed to access it.
+
+        """
+        try:
+            return self._verify_authentication(self._get_input, (submissionid,), {})
+        except APIError as error:
+            return error.send()
+
+    def _get_input(self, submissionid):
+        username = flask.g.user.username
+
+        try:
+            submission = self.submission_manager.get_submission(submissionid)
+        except:
+            self.logger.warning(f"Submission '{submissionid}' not found")
+            raise APINotFound()
+
+        course = Course.get(submission.courseid)
+        is_staff = self.user_manager.has_staff_rights_on_course(course, username, include_superadmins=True)
+        is_owner = username in submission.username
+        if not (is_staff or is_owner):
+            self.logger.warning(f"User '{username}' is nor the owner, nor a staff member for submission '{submissionid}'")
+            raise APINotFound()
+
+        grid_file = submission.input
+
+        def generate(chunk_size):
+            grid_file.seek(0)
+            while True:
+                chunk = grid_file.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
+        response = flask.Response(generate(chunk_size= 256 * 1024), content_type="application/octet-stream")
+        response.headers["Content-Length"] = str(grid_file.length) # provide length of the file in bytes
+
+        return response

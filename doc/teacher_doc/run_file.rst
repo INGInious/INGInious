@@ -93,6 +93,8 @@ into the global namespace, so you don't have to.
 If you want to use the INGInious IPython interpreter in another script, the interpreter is
 located at `/bin/inginious-ipython`.
 
+.. _run_file_api:
+
 Check the API documentation
 ---------------------------
 

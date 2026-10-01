@@ -10,7 +10,7 @@ import zoneinfo
 from flask import session, request, render_template
 
 from inginious.frontend.models import Submission, UserTask
-from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
+from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage, get_submissions_filter
 from datetime import datetime, date, timedelta
 
 
@@ -189,7 +189,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
         users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, params)
 
-        filter, best_submissions_list = self.get_submissions_filter(course, only_tasks=params["tasks"],
+        filter, best_submissions_list = get_submissions_filter(course, only_tasks=params["tasks"],
                                              only_tasks_with_categories=params["org_categories"],
                                              only_users=params["users"],
                                              only_audiences=params["audiences"],
