@@ -594,7 +594,7 @@ class UserManager:
         # Check for group
         is_group_task = course.get_task_dispenser().get_group_submission(task.get_id())
         group = Group.objects(courseid=course.get_id(), students=session.username).first()
-        group_filter = 'groups' in checks and group if is_group_task else True
+        group_filter = group is not None if 'groups' in checks and is_group_task else True
 
         # Check for tokens
         students = group["students"] if (group is not None and is_group_task) else [session.username]
