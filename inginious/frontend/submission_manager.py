@@ -104,7 +104,7 @@ class WebAppSubmissionManager:
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
         if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
-            group = Group.objects.get(courseid=course.id, students=username)
+            group = Group.objects.get(courseid=course.get_id(), students=username)
             obj.update({"username": group["students"]})
         else:
             obj.update({"username": [username]})
@@ -119,7 +119,7 @@ class WebAppSubmissionManager:
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
-                group = Group.objects.get(courseid=course.id, students=username)
+                group = Group.objects.get(courseid=course.get_id(), students=username)
                 users = User.objects(username__in=group["students"])
                 inputdata["@username"] = ','.join(group["students"])
                 inputdata["@email"] = ','.join([user["email"] for user in users])
