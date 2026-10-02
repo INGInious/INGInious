@@ -6,8 +6,10 @@
 """ Pages that allow editing of tasks """
 import json
 import logging
+import gettext
 
 import flask
+from flask import session
 from collections import OrderedDict
 from flask import render_template
 from werkzeug.exceptions import NotFound
@@ -20,7 +22,7 @@ from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.pages.course_admin.task_edit_file import CourseTaskFiles
 from inginious.frontend.tasks import Task
 from inginious.frontend.plugins import plugin_manager
-from inginious.frontend.environment_types import get_all_env_types
+from inginious.frontend.environment_types import get_env_from_type
 
 
 class CourseEditTask(INGIniousAdminPage):
@@ -40,15 +42,22 @@ class CourseEditTask(INGIniousAdminPage):
         except TaskNotFoundException:
             raise NotFound()
 
-        environment_types = get_all_env_types()
-        environments = self.submission_manager.get_available_environments()
+        environments = {
+            agent_type: {
+              'envs': envs,
+              'capabilities':
+                  caps.get(session.language, caps.get('en', {})) if (caps := self.client.agents_capabilities.get(agent_type, {})) is not None else {},
+              'obj': get_env_from_type(agent_type)
+            } for agent_type, envs in
+            self.submission_manager.get_available_environments().items()
+        }
 
         additional_tabs = plugin_manager.call_hook('task_editor_tab', course=course, taskid=taskid,
                                                         task_data=task_data)
 
         return render_template("course_admin/task_edit.html", course=course, taskid=taskid,
                                            problem_types=get_problem_types(), task_data=task_data,
-                                           environment_types=environment_types, environments=environments,
+                                           environments=environments,
                                            problemdata=json.dumps(task_data.get('problems', {})),
                                            file_list=CourseTaskFiles.get_task_filelist(task.get_fs()),
                                            additional_tabs=additional_tabs)
@@ -72,15 +81,18 @@ class CourseEditTask(INGIniousAdminPage):
             environment_type = data.get("environment_type", "")
             environment_parameters = dict_from_prefix("envparams", data).get(environment_type, {})
             environment_id = dict_from_prefix("environment_id", data).get(environment_type, "")
+            capabilities = list(c.keys()) if (c := dict_from_prefix("capabilities", data)) is not None else []
 
             data = {key: val for key, val in data.items() if
                     not key.startswith("problem")
                     and not key.startswith("envparams")
                     and not key.startswith("environment_id")
+                    and not key.startswith("capabilities")
                     and not key.startswith("/")
                     and not key == "@action"}
 
             data["environment_id"] = environment_id # we do this after having removed all the environment_id[something] entries
+            data['capabilities'] = capabilities
 
             # Parse and order the problems (also deletes @order from the result)
             if problems is None:
