@@ -90,8 +90,9 @@ class LTI13OIDCLoginPage(INGIniousPage):
         if not target_link_uri:
             raise Exception('Missing "target_link_uri" param')
 
-        launch_data_storage = MongoLTILaunchDataStorage()
-        oidc_login = FlaskOIDCLogin(flask_request, lti_tool(lti_config, current_app.config.get("LTI_CONFIG")), launch_data_storage=launch_data_storage)
+        oidc_login = FlaskOIDCLogin(flask_request, lti_tool(lti_config, current_app.config.get("LTI_CONFIG")))
+        oidc_login.set_launch_data_storage(MongoLTILaunchDataStorage())
+        oidc_login.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
         return oidc_login.enable_check_cookies().redirect(target_link_uri)
 
     def GET(self, courseid):
@@ -112,9 +113,10 @@ class LTI13LaunchPage(INGIniousPage):
             raise NotFound(description=_(str(ex)))
 
         tool_conf = lti_tool(lti_config, current_app.config.get("LTI_CONFIG"))
-        launch_data_storage = MongoLTILaunchDataStorage()
         flask_request = FlaskRequest()
-        message_launch = FlaskMessageLaunch(flask_request, tool_conf, launch_data_storage=launch_data_storage)
+        message_launch = FlaskMessageLaunch(flask_request, tool_conf)
+        message_launch.set_launch_data_storage(MongoLTILaunchDataStorage())
+        message_launch.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
 
         launch_id = message_launch.get_launch_id()
         launch_data = message_launch.get_launch_data()
@@ -253,8 +255,9 @@ class LTI13DeepLinkPage(INGIniousPage):
 
         # Ftech launch message from database
         tool_config = lti_tool(course.lti_config(), current_app.config.get("LTI_CONFIG"))
-        message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=tool_config,
-                                                       launch_data_storage=MongoLTILaunchDataStorage())
+        message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=tool_config)
+        message_launch.set_launch_data_storage(MongoLTILaunchDataStorage())
+        message_launch.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
 
         # Generate deep link response
         deep_link = message_launch.get_deep_link()
