@@ -70,8 +70,9 @@ class TableOfContents(TaskDispenser):
 
     def get_accessibilities(self, taskids, usernames):
         """  Get the accessible time of this task """
-        return {username: {taskid: Accessibility.get_value(self._task_config.get(taskid, {}))
-                           for taskid in taskids } for username in usernames}
+        # Same values for all users here
+        retval = {taskid: Accessibility.get_value(self._task_config.get(taskid, {})) for taskid in taskids }
+        return {username: retval for username in usernames}
 
     def get_categories(self, taskid):
         """Returns the categories specified for the taskid by the administrator"""
@@ -87,22 +88,25 @@ class TableOfContents(TaskDispenser):
         taskids = list(self._task_list_func().keys())
         task_list = self.get_accessibilities(taskids, usernames)
 
-        tasks_weight = {taskid: self.get_weight(taskid) for taskid in taskids}
-        tasks_scores = {username: [0.0, 0.0] for username in usernames}
+        tasks_weight = {
+            username:  {
+                taskid: self.get_weight(taskid) if accessibility.after_start() else 0
+                for taskid, accessibility in task_list[username].items()
+            } for username in usernames
+        }
 
-        for username in usernames:
-            for taskid in taskids:
-                if task_list[username][taskid].after_start():
-                    tasks_scores[username][1] += tasks_weight[taskid]
+        numerators = {username: 0.0 for username in usernames}
+        denominators = {username: sum(tasks_weight[username].values()) for username in usernames}
 
-        for user_task in user_tasks:
-            username = user_task["username"]
-            if task_list[username][user_task["taskid"]].after_start():
-                weighted_score = user_task["grade"] * tasks_weight[user_task["taskid"]]
-                tasks_scores[username][0] += weighted_score
+        # For performance, do not build mongoengine documents here
+        for user_task in user_tasks.filter(grade__gt=0).only("username", "taskid", "grade").as_pymongo():
+            username = user_task['username']
+            taskid = user_task['taskid']
+            weighted_score = user_task['grade'] * tasks_weight[username][taskid]
+            numerators[username] += weighted_score
 
-        return {username: round(tasks_scores[username][0]/tasks_scores[username][1])
-                if tasks_scores[username][1] > 0 else 0 for username in usernames}
+        return {username: round(numerators[username]/denominators[username])
+                if denominators[username] > 0 else 0 for username in usernames}
 
     def get_dispenser_data(self):
         """ Returns the task dispenser data structure """
