@@ -49,9 +49,14 @@ class GenericDockerOCIRuntime(FrontendEnvType):
 
         return out
 
-    def studio_env_template(self, task):
-        return render_template("course_admin/edit_tabs/env_generic_docker_oci.html",
-                               env_params=task.get("environment_parameters", {}), env_id=self.id)
+    def studio_env_template(self, task, capabilities):
+        return render_template(
+            "course_admin/edit_tabs/env_generic_docker_oci.html",
+            env_params=task.get("environment_parameters", {}),
+            env_id=self.id,
+            capabilities=capabilities,
+            task_capabilities=task.get("capabilities", [])
+         )
 
     def __init__(self, ssh_allowed=False):
         self._ssh_allowed = ssh_allowed
