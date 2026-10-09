@@ -96,7 +96,7 @@ For example, the INGInious tutorial course is installed with the following comma
 
 *This can happen when the tasks directory is created by docker-compose.*
 
-Note that the ``configuration.deploy.yaml`` file provided is a sample configuration, the secret key **must** be changed by administrators in production deployments.
+Note that the ``configuration.deploy.yaml`` file provided is a sample configuration, the secret key in session parameters and the api secret key **must** be changed by administrators in production deployments.
 
 .. _env-base: https://github.com/INGInious/INGInious/tree/main/base-containers/base
 .. _env-default: https://github.com/INGInious/INGInious/tree/main/base-containers/default
