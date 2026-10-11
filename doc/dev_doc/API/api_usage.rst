@@ -18,8 +18,13 @@ The current API allows :
 - Listing courses, and their informations, available to the authenticated client
 - Listing tasks, and their informations, available to the authenticated client
 - Listing all the submissions that the authenticated client made for a specific course or task
+- Listing all the submissions related to the authenticated client's courses (the courses he is admin of)
+- Retrieving the input of a particular submission
 
 For more information about the available endpoints, please refer to the :ref:`API documentation.<rest_api_documentation>`.
+Some endpoints present streaming capabilities. Depending on how you have deployed INGInious, the tools you have used might
+hinder those capabilities (through caching, buffering, etc.). Please check the related documentations to see if you need
+to make some adjustments to your deployment.
 
 Authentication through cookie
 ```````````````````````````````
