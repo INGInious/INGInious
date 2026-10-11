@@ -84,7 +84,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
         Endpoint
           ::
 
-            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions/[a-zA-Z_\-\.0-9]+
+            /api/v[0-1]/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions/[a-zA-Z_\-\.0-9]+
 
     """
 
@@ -124,7 +124,7 @@ class APISubmissions(APIAuthenticatedPage):
         Endpoint
           ::
 
-            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions
+            /api/v[0-1]/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions
 
     """
 
@@ -240,9 +240,9 @@ class APISubmissionsCourse(APIAuthenticatedPage):
         Endpoints
             ::
 
-                /api/v0/courses/[a-zA-Z_\-\.0-9]+/submissions
+                /api/v[0-1]/courses/[a-zA-Z_\-\.0-9]+/submissions
 
-                /api/v0/courses/[a-zA-Z_\-\.0-9]+/[a-zA-Z_\-\.0-9]+/submissions
+                /api/v[0-1]/courses/[a-zA-Z_\-\.0-9]+/[a-zA-Z_\-\.0-9]+/submissions
     """
 
     def POST(self, courseid, taskid=None):
@@ -357,7 +357,7 @@ class APISubmissionInput(APIAuthenticatedPage):
         Endpoint
           ::
 
-            /api/v1/submissions/<submissionid>/input
+            /api/v[0-1]/submissions/<submissionid>/input
 
     """
 

@@ -16,7 +16,7 @@ class APITasks(APIAuthenticatedPage):
         Endpoint
           ::
 
-            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks(/[a-zA-Z_\-\.0-9]+)?
+            /api/v[0-1]/courses/[a-zA-Z_\-\.0-9]+/tasks(/[a-zA-Z_\-\.0-9]+)?
 
     """
 
