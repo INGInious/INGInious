@@ -451,3 +451,74 @@ class APISubmissionInputV1(APIAuthenticatedPageV1):
         response.headers["Content-Length"] = str(grid_file.length)
 
         return response
+
+
+class APISubmissionsFeedbackV1(APIAuthenticatedPageV1):
+    """
+        Endpoint
+          ::
+
+            /api/v1/submissions/<submissionid>/feedback
+
+    """
+
+    def API_POST(self, submissionid):
+        """
+            Changes the general feedback of a submission and the feedback of individual problems. Only accessible to staff members of the course.
+            The request body must be a JSON object with the following fields:
+
+            ::
+
+                {
+                    "feedback": "The feedback text",
+                    "problems_feedback": {
+                        "problem_id_1": "Feedback for problem 1",
+                        "problem_id_2": "Feedback for problem 2",
+                        ...
+                    }
+                }
+
+            The problems_feedback field is optional and can be omitted if there is no feedback for particular problems.
+
+            Returns 200 OK if the feedback was successfully changed.
+            Returns 400 Bad Request if the request body is not valid JSON or does not respect the expected format.
+            Returns 403 Forbidden if the user is not allowed to change the feedback of the submission.
+            Returns 404 Not Found if the submission does not exist.
+        """
+
+        try:
+            submission = self.submission_manager.get_submission(submissionid)
+        except:
+            self.logger.warning("Submission %r not found", submissionid)
+            raise APINotFound()
+
+        course = Course.get(submission.courseid)
+        if not self.user_manager.has_staff_rights_on_course(course, flask.g.user.username , include_superadmins=True):
+            self.logger.warning("User %r is not a staff member for submission %r", flask.g.user.username, submissionid)
+            raise APINotFound()
+
+        data = flask.request.get_json(silent=True)
+        if data is None:
+            raise APIInvalidArguments()
+
+        feedback = data.get("feedback")
+        if not isinstance(feedback, str):
+            raise APIInvalidArguments()
+
+        submission.text = feedback
+
+        problems_feedback = data.get("problems_feedback")
+        if problems_feedback is not None:
+            if not isinstance(problems_feedback, dict):
+                raise APIInvalidArguments()
+
+            task_problems = {problem.get_id() for problem in course.get_task(submission.taskid).get_problems()}
+
+            for pid, text in problems_feedback.items():
+                if not isinstance(pid, str) or not isinstance(text, str) or pid not in task_problems:
+                    raise APIInvalidArguments()
+                submission.problems[pid] = text
+
+        submission.save()
+
+        return flask.Response(status=200, response={"submission_id": str(submission.id)})
