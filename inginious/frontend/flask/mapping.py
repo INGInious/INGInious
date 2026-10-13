@@ -152,9 +152,12 @@ def init_flask_mapping(flask_app):
     flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>',
                            view_func=APITasks.as_view('apitasks'))
     flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions',
-                           view_func=APISubmissions.as_view('apisubmissions.alias'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
-                           view_func=APISubmissionSingle.as_view('apisubmissions'))
+                           view_func=APISubmissions.as_view('apisubmissions'))
+    apisubmissionsingle_view = APISubmissionSingle.as_view('apisubmissionSingle')
+    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submission/<submissionid>',
+                           view_func=apisubmissionsingle_view)
+    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submission/create',
+                           view_func=apisubmissionsingle_view)
     flask_app.add_url_rule('/administrator/users',
                            view_func=AdministrationUsersPage.as_view('administrationuserspage'))
     flask_app.add_url_rule('/administrator/user_action',

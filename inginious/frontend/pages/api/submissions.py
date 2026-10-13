@@ -86,6 +86,8 @@ class APISubmissionSingle(APIAuthenticatedPage):
 
             /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions/[a-zA-Z_\-\.0-9]+
 
+            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submission/create
+
     """
 
     def API_GET(self, courseid, taskid, submissionid):  # pylint: disable=arguments-differ
@@ -118,46 +120,6 @@ class APISubmissionSingle(APIAuthenticatedPage):
 
         return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, flask.g.user.username, with_input, submissionid)
 
-
-class APISubmissions(APIAuthenticatedPage):
-    r"""
-        Endpoint
-          ::
-
-            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions
-
-    """
-
-    def API_GET(self, courseid, taskid):  # pylint: disable=arguments-differ
-        """
-            List all the submissions that the connected user made. Returns dicts of the form
-
-            ::
-
-                [
-                    {
-                        "id": "submission_id1",
-                        "submitted_on": "date",
-                        "status" : "done",          #can be "done", "waiting", "error" (execution status of the task).
-                        "grade": 0.0,
-                        "input": {},                #the input data. File are base64 encoded.
-                        "result" : "success"        #only if status=done. Result of the execution.
-                        "feedback": ""              #only if status=done. the HTML global feedback for the task
-                        "problems_feedback":        #only if status=done. HTML feedback per problem. Some pid may be absent.
-                        {
-                            "pid1": "feedback1",
-                            #...
-                        }
-                    }
-                    #...
-                ]
-
-            Returns 404 Not Found if the course or task does not exist.
-            Returns 403 Forbidden if the user is not registered to the course.
-        """
-        with_input = "input" in flask.request.args
-
-        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, flask.g.user.username, with_input)
 
     def API_POST(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -233,3 +195,45 @@ class APISubmissions(APIAuthenticatedPage):
             return 200, {"submissionid": str(submissionid)}
         except Exception as ex:
             raise APIError(500, str(ex))
+
+
+class APISubmissions(APIAuthenticatedPage):
+    r"""
+        Endpoint
+          ::
+
+            /api/v0/courses/[a-zA-Z_\-\.0-9]+/tasks/[a-zA-Z_\-\.0-9]+/submissions
+
+    """
+
+    def API_GET(self, courseid, taskid):  # pylint: disable=arguments-differ
+        """
+            List all the submissions that the connected user made. Returns dicts of the form
+
+            ::
+
+                [
+                    {
+                        "id": "submission_id1",
+                        "submitted_on": "date",
+                        "status" : "done",          #can be "done", "waiting", "error" (execution status of the task).
+                        "grade": 0.0,
+                        "input": {},                #the input data. File are base64 encoded.
+                        "result" : "success"        #only if status=done. Result of the execution.
+                        "feedback": ""              #only if status=done. the HTML global feedback for the task
+                        "problems_feedback":        #only if status=done. HTML feedback per problem. Some pid may be absent.
+                        {
+                            "pid1": "feedback1",
+                            #...
+                        }
+                    }
+                    #...
+                ]
+
+            Returns 404 Not Found if the course or task does not exist.
+            Returns 403 Forbidden if the user is not registered to the course.
+        """
+        with_input = "input" in flask.request.args
+
+        return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, flask.g.user.username, with_input)
+
