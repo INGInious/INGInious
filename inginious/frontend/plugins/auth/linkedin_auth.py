@@ -61,6 +61,9 @@ class LinkedInAuthMethod(AuthMethod):
     def get_imlink(self):
         return '<i class="fa fa-linkedin-square" style="font-size:50px; color:#008CC9;"></i>'
 
+    def allow_removal(self):
+        return True
+
 
 def init(plugin_manager, client, conf):
 

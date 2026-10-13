@@ -66,6 +66,9 @@ class GoogleAuthMethod(AuthMethod):
                'style="-moz-user-select: none; -webkit-user-select: none;' \
                'user-select: none; width: 50px; height:50px;" >'
 
+    def allow_removal(self):
+        return True
+
 
 def init(plugin_manager, client, conf):
     if conf.get("debug", False):

@@ -44,9 +44,11 @@
                 {{ auth_method.get_name() }}
                 <div class="pull-right">
                     <a href="{{ url_for('authenticationpage', auth_id=auth_method.get_id()) }}" data-toggle="tooltip" data-placement="bottom" title="{{ _('Refresh fields') }}"><i class="fa fa-refresh fa-fw"></i></a>
-                    <a href="#" onclick="$('#revoke_auth_binding').val('{{auth_method.get_id()}}'); $('#revoke').submit()" data-toggle="tooltip" data-placement="bottom" title="{{ _('Revoke access') }}">
-                        <i style="color:red;" class="fa fa-trash-o fa-fw"></i>
-                    </a>
+                    {% if auth_method.allow_removal() %}
+                        <a href="#" onclick="$('#revoke_auth_binding').val('{{auth_method.get_id()}}'); $('#revoke').submit()" data-toggle="tooltip" data-placement="bottom" title="{{ _('Revoke access') }}">
+                            <i style="color:red;" class="fa fa-trash-o fa-fw"></i>
+                        </a>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-body">
