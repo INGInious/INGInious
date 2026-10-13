@@ -19,6 +19,7 @@ from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.plugins import plugin_manager
 from inginious.common.exceptions import InvalidNameException, TaskNotFoundException, TaskUnreadableException
+from inginious.common.agents import AgentType
 
 
 def _load_task(task_fs : FileSystemProvider, courseid : str, taskid : str):
@@ -47,8 +48,22 @@ def _migrate_from_v_0_6(content):
 
     return content
 
+def _migrate_from_v_0_10(content):
+    """ Migrate a v0.10 task description to a v0.11+ task description, if needed. """
+    capabilities = []
+    if (env := content.get('environment_type')):
+        if "nvidia" in env:
+            capabilities.append('gpu')
+        if 'ssh' in env:
+            capabilities.append('ssh')
+        if env != AgentType.MCQ:
+            content['environment_type'] = AgentType.OCI
+    # Do not save empty capabilities list. There is a default loader.
+    if len(capabilities) > 0:
+        content['capabilities'] = capabilities
+    return content
 
-class Task(object):
+class Task:
     """ A task that stores additional context information, specific to the web app """
 
     def __init__(self, courseid : str, taskid : str, content : dict[str, Any]):
@@ -56,6 +71,7 @@ class Task(object):
             raise Exception(f"Task with invalid id: {courseid}/{taskid}")
 
         content = _migrate_from_v_0_6(content)
+        content = _migrate_from_v_0_10(content)
 
         self._taskid = taskid
         self._data = content
@@ -79,6 +95,7 @@ class Task(object):
         self._environment_id = self._data.get('environment_id', 'default')
         self._environment_type = self._data.get('environment_type', 'unknown')
         self._environment_parameters = self._data.get("environment_parameters", {})
+        self._capabilities = self._data.get('capabilities', [])
 
         env_type_obj = get_env_type(self._environment_type)
         if env_type_obj is None:
@@ -134,6 +151,10 @@ class Task(object):
     def get_environment_type(self):
         """ Returns the environment type in which the agent have to launch this task"""
         return self._environment_type
+
+    def get_capabilities(self):
+        """ Returns the capabilities an Agent must support to launch this task. """
+        return self._capabilities
 
     def get_id(self):
         """ Get the id of this task """
