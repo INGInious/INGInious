@@ -52,10 +52,10 @@
     </div>
     <div class="tab-content">
         <div role="tabpanel" class="card-body tab-pane active" id="tab_students">
-            {% set len_all_users = user_data|length %}
+            {% set len_all_users = users_info|length %}
             {% set len_staff = course.get_staff()|length %}
-            {% with user_data=user_data[len_staff:len_all_users], is_staff=False %}
-                <p>{{ _("Number of students") }} : {{ user_data | length }}</p>
+            {% with usernames=student_list, is_staff=False %}
+                <p>{{ _("Number of students") }} : {{ student_list | length }}</p>
                 {% include "course_admin/student_list_table.html" %}
             {% endwith %}
             {% if user_manager.has_admin_rights_on_course(course) %}
@@ -72,7 +72,7 @@
             {% endif %}
         </div>
         <div role="tabpanel" class="card-body tab-pane" id="tab_staff">
-            {% with user_data=user_data[0:(course.get_staff()|length)], is_staff=True %}
+            {% with usernames=staff_list, is_staff=True %}
                 {% include "course_admin/student_list_table.html" %}
             {% endwith %}
         </div>
@@ -151,6 +151,7 @@
                 <table class="table">
                     <thead class="table-borderless">
                         <tr>
+                            <th></th>
                             <th>{{_("audience")}}</th>
                             <th>{{_("# students")}}</th>
                             <th>{{_("# task tried")}}</th>
@@ -159,7 +160,7 @@
                                 <div class="btn-group btn-group-sm" role="group">
                                     <a href="{{url_for('coursestudentlistpage', courseid=course.get_id(), csv_audiences='')}}" class="btn btn-info btn-xs"
                                        title="{{ _('Download CSV') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-table"></i></a>
-                                    {% set audience_str = audience_list | map('string') | join(',') %}
+                                    {% set audience_str = audiences | map('string') | join(',') %}
                                     <a href="{{url_for('coursesubmissionspage', courseid=course.get_id(), audiences=audience_str)}}" class="btn btn-secondary btn-xs"
                                        title="{{ _('View all submissions') }}" data-toggle="tooltip" data-placement="bottom"><i class="fa fa-files-o"></i></a>
                                 </div>
@@ -167,32 +168,26 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% set text = [_("My audience(s)"), _("Other audience(s)")] %}
-                    {% for ind in range(0,2) %}
-                        {% if audiences[ind] | length > 0 %}
-                            {% if audiences[0]|length > 0 and audiences[1]|length > 0 %}
-                                <tr>
-                                    <th colspan="5">{{ text[ind] }}</th>
-                                </tr>
-                            {% endif %}
-                            {%for audience in audiences[ind] %}
-                                <tr>
-                                    <td>{{ audience["description"]}}</td>
-                                    <td>{{ audience["students"] | length}}</td>
-                                    <td>{{ audience["tried"] }}</td>
-                                    <td>{{ audience["done"] }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ url_for('courseditaudience', courseid=course.get_id(), audienceid=str(audience['_id'])) }}" class="btn btn-primary" title="{{ _('Edit audience') }}" data-toggle="tooltip"
-                                               data-placement="bottom"><i class="fa fa-edit"></i></a>
-                                            <a href="{{url_for('coursesubmissionspage', courseid=course.get_id(), audiences=str(audience['_id']))}}" class="btn btn-secondary" title="{{ _('View submissions') }}" data-toggle="tooltip"
-                                                data-placement="bottom"><i class="fa fa-file-code-o fa-fw"></i></a>
-
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% endif %}
+                    {% for audience in audiences.values() %}
+                        <tr>
+                            <td>
+                                {% if session.username in audience.tutors %}
+                                    <i class="fa fa-star" title="{{ _('You are a tutor of this audience.') }}" data-toggle="tooltip" data-placement="bottom"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ audience.description}} </td>
+                            <td>{{ audience.students | length}}</td>
+                            <td>{{ audience_progress[audience.id]["tried"] }}</td>
+                            <td>{{ audience_progress[audience.id]["succeeded"] }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('courseditaudience', courseid=course.get_id(), audienceid=str(audience.id)) }}" class="btn btn-primary" title="{{ _('Edit audience') }}" data-toggle="tooltip"
+                                       data-placement="bottom"><i class="fa fa-edit"></i></a>
+                                    <a href="{{url_for('coursesubmissionspage', courseid=course.get_id(), audiences=str(audience.id))}}" class="btn btn-secondary" title="{{ _('View submissions') }}" data-toggle="tooltip"
+                                        data-placement="bottom"><i class="fa fa-file-code-o fa-fw"></i></a>
+                                </div>
+                            </td>
+                        </tr>
                     {% endfor %}
                     </tbody>
                 </table>
@@ -293,21 +288,21 @@
                             </div>
                             <input id="size" type="hidden" class="form-control" value="0">
                             <ul id="group_0" class="students list-group list-group-flush">
-                                {% for username in other_students %}
-                                        <li data-username="{{username}}" class="list-group-item group-entry">
-                                            {% if users_info[username] is not none %}
-                                                <span id="{{username}}"><i class="fa fa-arrows"></i> {{ users_info[username].realname }} ({{ username }})</span>
-                                            {% else %}
-                                                <span id="{{username}}"><i class="fa fa-arrows"></i> {{ username }}</span>
-                                            {% endif %}
-                                        </li>
+                                {% for username in ungrouped_students %}
+                                    <li data-username="{{username}}" class="list-group-item group-entry">
+                                        {% if users_info[username] is not none %}
+                                            <span id="{{username}}"><i class="fa fa-arrows"></i> {{ users_info[username].realname }} ({{ username }})</span>
+                                        {% else %}
+                                            <span id="{{username}}"><i class="fa fa-arrows"></i> {{ username }}</span>
+                                        {% endif %}
+                                    </li>
                                 {% endfor %}
                             </ul>
                         </div>
 
                         {% for group in (groups + [None]) %}
                             {% set index = loop.index - 1 %}
-                                {% if group is none: %}
+                                {% if group is none %}
                                     <div id="{{index+1}}" style="display:none;" class="card mb-3 group-card">
                                         <div class="card-header clearfix" role="tab">
                                             <div class="row">
@@ -333,13 +328,13 @@
                                         <div class="card-header clearfix" role="tab">
                                             <div class="row">
                                                 <div class="col-sm-6 col-xs-12">
-                                                    <input type="text" style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" class="form-control" id="description" name="description" placeholder="{{ _('Group description') }}" value="{{ group['description'] }}">
+                                                    <input type="text" style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" class="form-control" id="description" name="description" placeholder="{{ _('Group description') }}" value="{{ group.description }}">
                                                 </div>
                                                 <div class="col-sm-2 col-xs-3" style="text-align: right;">
                                                     <label>{{ _("Max group size :") }}</label>
                                                 </div>
                                                 <div class="col-sm-3 col-xs-7">
-                                                    <input style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" id="size" type="number" class="form-control" value="{{group['size']}}">
+                                                    <input style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" id="size" type="number" class="form-control" value="{{group.size}}">
                                                 </div>
                                                 <div class="col-sm-1 col-xs-2">
                                                     <a class="pull-right" id="group_delete" href="#" onclick="javascript:group_delete($(this).rparent(4).attr('id'))" data-toggle="tooltip" title="{{ _('Delete group') }}">
@@ -357,9 +352,9 @@
                                         </div>
                                         <div class="col-sm-4 col-xs-6" style="text-align: center">
                                             <select type="text" style="height: 22px; padding: 2px 5px; font-size: 12px; line-height: 1.5;" class="form-control input-xs" id="audience_list_{{index+1}}" name="audience_list_{{index+1}}">
-                                                {% for key, audience in audience_list.items() %}
-                                                    {% if not group or audience['id'] not in group["audiences"] %}
-                                                            <option value="{{ audience['id'] }}">{{audience['description']}}</option>
+                                                {% for key, audience in audiences.items() %}
+                                                    {% if not group or audience.id not in group.audiences %}
+                                                            <option value="{{ audience.id }}">{{audience.description}}</option>
                                                     {% endif %}
                                                 {% endfor %}
                                             </select>
@@ -373,14 +368,14 @@
                                 {% if group %}
                                     <ul class="list-group list-group-flush" id="group_{{index+1}}">
                                     {% for audience_id in (group["audiences"] + [None]) %}
-                                            {% set audience = audience_list.get(audience_id, None) %}
+                                            {% set audience = audiences.get(audience_id, None) %}
                                             {% if audience is none %}
                                                 <li class="list-group-item" style="display:none;">
                                                     <span></span>
                                             {% else %}
                                                 <li class="list-group-item audience" id="{{audience_id}}">
                                                     <span>{{ audience["description"] }}</span>
-                                                    <input type="hidden" name="audiences" value="{{ audience['id'] }}">
+                                                    <input type="hidden" name="audiences" value="{{ audience.id }}">
                                             {% endif %}
                                             <div class="pull-right"><a href="#" onclick="javascript:group_audience_remove($(this).rparent(2).attr('id'), {{ index+1 }})"><i class="fa fa-trash-o fa-lg"></i></a></div>
                                         </li>
@@ -401,7 +396,7 @@
 
                                 {% if group %}
                                     <ul id="students" class="list-group list-group-flush students">
-                                        {% for student in group["students"] %}
+                                        {% for student in group.students %}
                                             <li data-username="{{student}}" class="list-group-item group-entry">
                                                 {% if users_info[student] is not none %}
                                                     <span id="{{student}}"><i class="fa fa-arrows"></i> {{ users_info[student].realname }} ({{ student }})</span>
