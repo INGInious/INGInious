@@ -159,8 +159,11 @@ def init_flask_mapping(flask_app):
                            view_func=APITasksV0.as_view('apitasks.alias'), defaults={'taskid': None})
     flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>',
                            view_func=APITasksV0.as_view('apitasks'))
+    # split same url for GET and POST to keep backward compatibility and keep submission creation to the same url
     flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions',
-                           view_func=APISubmissionsV0.as_view('apisubmissions.alias'))
+                           view_func=APISubmissionsV0.as_view('apisubmissions.alias'), methods=['GET'])
+    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions',
+                           view_func=APISubmissionSingleV0.as_view('apisubmissionscreate'), methods=['POST'])
     flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
                            view_func=APISubmissionSingleV0.as_view('apisubmissions'))
 
@@ -177,6 +180,8 @@ def init_flask_mapping(flask_app):
                            view_func=APISubmissionsV1.as_view('apisubmissionsv1.alias'))
     flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
                            view_func=APISubmissionSingleV1.as_view('apisubmissionsv1'))
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks/<taskid>/submission/create',
+                           view_func=APISubmissionSingleV1.as_view('apisubmissionsinglev1'))
     flask_app.add_url_rule('/api/v1/courses/<courseid>/submissions',
                            view_func=APISubmissionsCourseV1.as_view('apisubmissionscoursev1'))
     flask_app.add_url_rule('/api/v1/courses/<courseid>/<taskid>/submissions',
