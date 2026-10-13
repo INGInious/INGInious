@@ -346,13 +346,7 @@
     </div>
 {% endif %}
 
-{% if session.is_lti %}
-    {% set path = url_for("ltitaskpage") %}
-{% else %}
-    {% set path = url_for("taskpage", courseid=course.get_id(), taskid=task.get_id()) %}
-{% endif %}
-
-<form id="task" action="{{ path }}" method="post" enctype="multipart/form-data"
+<form id="task" action="{{ url_for("taskpage", courseid=course.get_id(), taskid=task.get_id()) }}" method="post" enctype="multipart/form-data"
     {% for submission in submissions if submission["status"] == "waiting" %}
         data-wait-submission="{{submission.id}}"
     {% endfor %}

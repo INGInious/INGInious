@@ -15,7 +15,7 @@ import time
 import flask
 
 from flask import current_app, session, redirect, Response, render_template
-from werkzeug.exceptions import NotFound, HTTPException
+from werkzeug.exceptions import NotFound, HTTPException, Forbidden
 
 from inginious.frontend.models import Submission
 from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundException
@@ -26,13 +26,11 @@ from inginious.frontend.courses import Course
 from inginious.frontend.models import UserTask, Group
 
 
-class BaseTaskPage(object):
+class TaskPage(INGIniousAuthPage):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
 
-    def __init__(self, calling_page):
-        self.cp = calling_page
-        self.submission_manager = self.cp.submission_manager
-        self.user_manager = self.cp.user_manager
+    def is_lti_page(self):
+        return session.is_lti
 
     def preview_allowed(self, courseid, taskid):
         try:
@@ -41,9 +39,12 @@ class BaseTaskPage(object):
             raise NotFound(description=str(ex))
         return course.get_accessibility().is_open() and course.allow_preview()
 
-    def GET(self, courseid, taskid, is_LTI):
+    def GET(self, courseid, taskid):
         """ GET request """
         username = session.username
+
+        if is_LTI := session.is_lti and not [courseid, taskid] == session.lti.task:
+            raise Forbidden(description=_("No LTI data available."))
 
         # Fetch the course
         try:
@@ -149,9 +150,12 @@ class BaseTaskPage(object):
                                    input_random_list=random_input_list, visible_tags=visible_tags,
                                    pdict=pdict, is_input_list=is_input_list)
 
-    def POST(self, courseid, taskid, isLTI):
+    def POST(self, courseid, taskid):
         """ POST a new submission """
         username = session.username
+
+        if isLTI := session.is_lti and not [courseid, taskid] == session.lti.task:
+            raise Forbidden(description=_("No LTI data available."))
 
         course = Course.get(courseid)
         if not self.user_manager.course_is_open_to_user(course, username, isLTI):
@@ -427,14 +431,3 @@ class TaskPageStaticDownload(INGIniousPage):
             raise NotFound()
         except HTTPException as error_or_redirect:
             raise error_or_redirect
-
-
-class TaskPage(INGIniousAuthPage):
-    def GET_AUTH(self, courseid, taskid):
-        return BaseTaskPage(self).GET(courseid, taskid, False)
-
-    def POST_AUTH(self, courseid, taskid):
-        return BaseTaskPage(self).POST(courseid, taskid, False)
-
-    def preview_allowed(self, courseid, taskid):
-        return BaseTaskPage(self).preview_allowed(courseid, taskid)
