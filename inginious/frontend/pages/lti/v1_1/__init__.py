@@ -16,7 +16,6 @@ from lti import ToolProvider
 
 from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.pages.tasks import BaseTaskPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
 
@@ -87,23 +86,6 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
     def get_client_secret(self, client_key, request):
         return self._keys[client_key] if client_key in self._keys else None
 
-
-class LTI11TaskPage(INGIniousAuthPage):
-    def is_lti_page(self):
-        return True
-
-    def fetch_lti_data(self):
-        if (data := session.lti) is None:
-            raise Forbidden(description=_("No LTI data available."))
-        return data['task']
-
-    def GET_AUTH(self):
-        courseid, taskid = self.fetch_lti_data()
-        return BaseTaskPage(self).GET(courseid, taskid, True)
-
-    def POST_AUTH(self):
-        courseid, taskid = self.fetch_lti_data()
-        return BaseTaskPage(self).POST(courseid, taskid, True)
 
 class LTI11LaunchPage(INGIniousPage):
     """
@@ -177,7 +159,7 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_description=tool_desc,
                 tool_name=tool_name,
                 tool_url=tool_url,
-                redir_url=url_for("ltitaskpage")
+                redir_url=url_for("taskpage", courseid=courseid, taskid=taskid)
             )
 
             return redirect(url_for("ltiloginpage"))

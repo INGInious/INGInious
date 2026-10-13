@@ -152,7 +152,7 @@ class _CustomHTMLWriter(html4css1.Writer, object):
         def rewrite_lti_url(url):
             if urlparse(url).netloc: # If URL is absolute, don't do anything
                 return url
-            return 'asset/' + url + '?session_id=' + flask.request.args['session_id']
+            return url + '?session_id=' + flask.request.args['session_id']
 
         def visit_table(self, node):
             """ Remove needless borders """

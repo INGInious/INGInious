@@ -14,41 +14,11 @@ from pylti1p3.deep_link_resource import DeepLinkResource
 
 from inginious.common.exceptions import CourseNotFoundException
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.pages.tasks import BaseTaskPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.lti.v1_3 import MongoLTILaunchDataStorage, lti_tool, lti_keyset_hash
 from inginious.frontend.courses import Course
 
 from inginious.frontend.models import LTIData
-
-class LTI13TaskPage(INGIniousAuthPage):
-    def is_lti_page(self):
-        return True
-
-    def check_access(self):
-        data = session.lti
-        if data is None:
-            raise Forbidden(description=_("No LTI data available."))
-
-        courseid, taskid = data['task']
-
-        try:
-            course = Course.get(courseid)
-        except CourseNotFoundException as ex:
-            raise NotFound(description=str(ex))
-
-        if not course.lti_secrets().get(data["platform_instance_id"]) == data["course_secret"]:
-            raise Forbidden(description=_("Invalid LTI secret"))
-
-        return courseid, taskid
-
-    def GET_AUTH(self):
-        courseid, taskid= self.check_access()
-        return BaseTaskPage(self).GET(courseid, taskid, True)
-
-    def POST_AUTH(self):
-        courseid, taskid = self.check_access()
-        return BaseTaskPage(self).POST(courseid, taskid, True)
 
 class LTI13JWKSPage(INGIniousPage):
     endpoint = 'ltijwkspage'
@@ -139,12 +109,14 @@ class LTI13LaunchPage(INGIniousPage):
             custom_data = launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"]
             courseid = courseid or custom_data.get('courseid')
             taskid = taskid or custom_data.get('taskid')
-            secret = custom_data.get('secret', '')
-            redir_url = url_for("lti1.3taskpage")
+            # Check course secret
+            if not Course.get(courseid).lti_secrets().get(platform_instance_id) == custom_data.get('secret', ''):
+                raise Forbidden(description=_("Invalid LTI secret"))
+
+            redir_url = url_for("taskpage", courseid=courseid, taskid=taskid)
         elif message_launch.is_deep_link_launch():
             courseid = ""
             taskid = ""
-            secret = ""
             redir_url = url_for("lti1.3deeplinkpage")
 
         if not session.is_lti:
@@ -159,7 +131,6 @@ class LTI13LaunchPage(INGIniousPage):
             roles = roles,
             task = (courseid, taskid),
             platform_instance_id = platform_instance_id,
-            course_secret=secret,
             message_launch_id = launch_id,
             context_title = context_title,
             context_label = context_label,
