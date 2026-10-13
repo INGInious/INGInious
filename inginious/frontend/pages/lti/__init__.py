@@ -11,18 +11,6 @@ from werkzeug.exceptions import Forbidden
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.models import User, Session
 
-class LTIAssetPage(INGIniousAuthPage):
-    def is_lti_page(self):
-        return True
-
-    def GET_AUTH(self, asset_url):
-        data = session.lti
-        if data is None:
-            raise Forbidden(description=_("No LTI data available."))
-        (courseid, taskid) = data['task']
-        return redirect(url_for("taskpagestaticdownload", courseid=courseid, taskid=taskid, path=asset_url))
-
-
 class LTIBindPage(INGIniousAuthPage):
     _lti_version = ""
     _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")

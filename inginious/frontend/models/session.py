@@ -32,7 +32,6 @@ class LTIData(EmbeddedDocument):
     # LTI1.3
     message_launch_id = StringField()
     platform_instance_id = StringField()
-    course_secret = StringField()
 
 
 class Session(Document):
