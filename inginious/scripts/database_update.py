@@ -13,6 +13,7 @@ import logging
 import argparse
 import base64
 import tzlocal
+import datetime
 
 from pymongo import MongoClient
 from gridfs import GridFS
@@ -185,6 +186,15 @@ def main():
         print("Updating database to db_version 20")
         database.sessions.drop_indexes()
         db_version = 20
+
+    if db_version < 21:
+        print("Updating database to db_version 21")
+        # Remove any older context key
+        database.lti_launch.update_many({"context": {"$exists": True}}, {"$unset": {"context": True}})
+        # Set a default expiration date for existing documents
+        exp_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=86400)
+        database.lti_launch.update_many({"expiration": {"$exists": False}}, {"$set": {"expiration": exp_date}})
+        db_version = 21
 
     database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
         

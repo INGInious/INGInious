@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from mongoengine import Document, StringField, ListField, DynamicField, IntField
+from mongoengine import Document, StringField, ListField, DynamicField, IntField, DateTimeField
 
 
 class LTIGrade(Document):
@@ -18,7 +18,15 @@ class LTIGrade(Document):
 
 class LaunchData(Document):
     key = StringField(required=True)
-    context = ListField(required=True)
     value = DynamicField(required=True)
+    expiration = DateTimeField(required=True)
 
-    meta = {'collection': 'lti_launch'}
+    meta = {
+        'collection': 'lti_launch',
+        'indexes': [
+            {
+                'fields': ['expiration'],
+                'expireAfterSeconds': 0  # use field value
+            }
+        ]
+    }
