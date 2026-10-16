@@ -159,7 +159,7 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_description=tool_desc,
                 tool_name=tool_name,
                 tool_url=tool_url,
-                redir_url=url_for("taskpage", courseid=courseid, taskid=taskid)
+                redir_url=url_for("taskpage.lti", courseid=courseid, taskid=taskid)
             )
 
             return redirect(url_for("ltiloginpage"))
