@@ -66,7 +66,7 @@ def main():
     parser.add_argument("--config",
                         help="Path to configuration file. By default: configuration.yaml or configuration.json", default=os.environ.get("INGINIOUS_WEBAPP_CONFIG", ""))
     parser.add_argument("--host", help="Host to bind to. Default is localhost.", default=os.environ.get("INGINIOUS_WEBAPP_HOST", "localhost"))
-    parser.add_argument("--port", help="Port to listen to. Default is 8080.", type=int, default=os.environ.get("INGINIOUS_WEBAPP_PORT", "8080"))
+    parser.add_argument("--port", help="Port to listen to. Default is 8443.", type=int, default=os.environ.get("INGINIOUS_WEBAPP_PORT", "8443"))
     args = parser.parse_args()
 
     host = args.host
@@ -74,7 +74,7 @@ def main():
     configfile = args.config
 
     config, application = get_app(configfile)
-    logging.getLogger("inginious.webapp").info("http://%s:%d/" % (host, int(port)))
+    logging.getLogger("inginious.webapp").info("https://%s:%d/" % (host, int(port)))
 
     # Fix Reverse Proxy
     reverse_proxy_config = config.get('reverse-proxy-config', {})
@@ -86,7 +86,7 @@ def main():
         application = ProxyFix(application, x_for=x_for, x_host=x_host)
 
     # Launch the app
-    run_simple(host, port, application, use_debugger=config.get("web_debug", False), threaded=True)
+    run_simple(host, port, application, use_debugger=config.get("web_debug", False), threaded=True, ssl_context="adhoc")
 
 
 if __name__ == "__main__":
