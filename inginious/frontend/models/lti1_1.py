@@ -22,14 +22,23 @@ class Nonce(Document):
         ]
     }
 
+class LISLaunch(Document):
+    """ LTI 1.1 launch message information needed to send grades back to the TC """
+    consumer_key = StringField(required=True)
+    outcome_service_url = StringField(required=True)
+    outcome_result_id = StringField(required=True)
+
+    meta = {
+        'collection': 'lis_launch',
+        'indexes': [('consumer_key', 'outcome_service_url', 'outcome_result_id')]
+    }
+
 class LISOutcome(Document):
     courseid = StringField()
     taskid = StringField()
     username = StringField()
     nb_attempt = IntField()
 
-    outcome_consumer_key = StringField()
-    outcome_result_id = StringField()
-    outcome_service_url = StringField()
+    message_launch_id = StringField()
 
     meta = {'collection': 'lis_outcome_queue'}

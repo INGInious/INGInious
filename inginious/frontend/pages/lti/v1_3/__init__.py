@@ -172,12 +172,10 @@ class LTI13LaunchPage(INGIniousPage):
 
 class LTI13BindPage(LTIBindPage):
     _lti_version = "1.3"
-    _mongo_field = lambda cls, data: data["platform_instance_id"].replace(".", "").replace("$", "")
 
 
 class LTI13LoginPage(LTILoginPage):
     _lti_version = "1.3"
-    _mongo_field = lambda cls, data: data["platform_instance_id"].replace(".", "").replace("$", "")
 
 
 class LTI13DeepLinkPage(INGIniousPage):

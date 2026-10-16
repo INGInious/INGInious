@@ -8,8 +8,6 @@ from inginious.frontend.models import UserTask,  User,  Submission
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
-    _field = "consumer_key"
-
     def is_lti_page(self):
         return True
 
@@ -21,7 +19,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         courseid, taskid = data["task"]
 
         # get the INGInious username from the ToolConsumer-provided username
-        user_profile = User.objects(**{"ltibindings__" + courseid + "__" + data[self._field]: data["username"]}).first()
+        user_profile = User.objects(**{"ltibindings__" + data["platform_instance_id"].replace(".", "").replace("$", ""): data["username"]}).first()
         if not user_profile:
             return json_util.dumps({"status": "error", "message": "user not bound with lti"})
 
@@ -76,7 +74,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
 
 
 class LTI13BestSubmissionPage(LTI11BestSubmissionPage):
-    _field = "platform_instance_id"
+    pass
 
 
 def init(plugin_manager, *args, **kwargs):

@@ -19,7 +19,7 @@ from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models import Nonce, LTIData
+from inginious.frontend.models import Nonce, LTIData, LISLaunch
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -125,14 +125,18 @@ class LTI11LaunchPage(INGIniousPage):
             outcome_result_id = post_input.get("lis_result_sourcedid", None)
             consumer_key = post_input["oauth_consumer_key"]
 
+            message_launch_id = None
             if course.lti_send_back_grade():
                 if lis_outcome_service_url is None or outcome_result_id is None:
                     self.logger.info('Error: lis_outcome_service_url is None but lti_send_back_grade is True')
                     raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
                                         "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
-            else:
-                lis_outcome_service_url = None
-                outcome_result_id = None
+
+                # Store the launch message outcome information, reusing it if the same launch was already stored
+                launch_info = {"consumer_key": consumer_key, "outcome_service_url": lis_outcome_service_url,
+                               "outcome_result_id": outcome_result_id}
+                launch = LISLaunch.objects(**launch_info).modify(upsert=True, new=True, **launch_info)
+                message_launch_id = str(launch.id)
 
             tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
             tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
@@ -151,9 +155,8 @@ class LTI11LaunchPage(INGIniousPage):
                 realname=realname,
                 roles=roles,
                 task=(courseid, taskid),
-                outcome_service_url=lis_outcome_service_url,
-                outcome_result_id=outcome_result_id,
-                consumer_key=consumer_key,
+                platform_instance_id=courseid + "/" + consumer_key,
+                message_launch_id=message_launch_id,
                 context_title=context_title,
                 context_label=context_label,
                 tool_description=tool_desc,
