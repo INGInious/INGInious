@@ -91,7 +91,7 @@ class LTI11LaunchPage(INGIniousPage):
     """
     Page called by the TC to start an LTI session on a given task
     """
-    endpoint = 'ltilaunchpage'
+    endpoint = 'lti.launchpage'
 
     def GET(self, courseid, taskid):
         raise MethodNotAllowed()
@@ -159,10 +159,10 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_description=tool_desc,
                 tool_name=tool_name,
                 tool_url=tool_url,
-                redir_url=url_for("taskpage.lti", courseid=courseid, taskid=taskid)
+                redir_url=url_for("lti.taskpage", courseid=courseid, taskid=taskid)
             )
 
-            return redirect(url_for("ltiloginpage"))
+            return redirect(url_for("lti.loginpage"))
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))
