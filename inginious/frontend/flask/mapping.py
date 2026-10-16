@@ -87,6 +87,11 @@ def init_flask_mapping(flask_app):
     flask_app.add_url_rule('/lti/bind', view_func=LTI11BindPage.as_view('ltibindpage'))
     flask_app.add_url_rule('/lti/login', view_func=LTI11LoginPage.as_view('ltiloginpage'))
 
+
+    flask_app.add_url_rule('/lti/task/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage.lti'))
+    flask_app.add_url_rule('/lti/task/<courseid>/<taskid>/<path:path>',
+                           view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload.lti'))
+
     lti13oidcloginpage_view = LTI13OIDCLoginPage.as_view('lti1.3oidcloginpage')
     flask_app.add_url_rule('/lti1.3/oidc_login', view_func=lti13oidcloginpage_view, defaults={'courseid': None})
     flask_app.add_url_rule('/lti1.3/oidc_login/<courseid>', view_func=lti13oidcloginpage_view)
@@ -107,6 +112,10 @@ def init_flask_mapping(flask_app):
     flask_app.add_url_rule('/lti1.3/bind', view_func=LTI13BindPage.as_view('lti1.3bindpage'))
     flask_app.add_url_rule('/lti1.3/login', view_func=LTI13LoginPage.as_view('lti1.3loginpage'))
     flask_app.add_url_rule('/lti1.3/deeplink', view_func=LTI13DeepLinkPage.as_view('lti1.3deeplinkpage'))
+
+    flask_app.add_url_rule('/lti1.3/task/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage.lti1.3'))
+    flask_app.add_url_rule('/lti1.3/task/<courseid>/<taskid>/<path:path>',
+                           view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload.lti1.3'))
 
     flask_app.add_url_rule('/admin/<courseid>',
                            view_func=CourseRedirectPage.as_view('courseredirect'))
