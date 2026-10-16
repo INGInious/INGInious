@@ -24,14 +24,10 @@ class LTIData(EmbeddedDocument):
     tool_name = StringField()
     tool_url = StringField()
 
-    # LTI1.1
-    consumer_key = StringField()
-    outcome_service_url = StringField()
-    outcome_result_id = StringField()
-
-    # LTI1.3
-    message_launch_id = StringField()
+    # LTI1.1: consumer key, LTI1.3: issuer/client_id/deployment_id
     platform_instance_id = StringField()
+    # LTI1.1: LISLaunch id, LTI1.3: launch data storage key
+    message_launch_id = StringField()
 
 
 class Session(Document):

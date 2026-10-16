@@ -9,7 +9,7 @@ from inginious import DB_VERSION
 from inginious.frontend.models.audience import Audience
 from inginious.frontend.models.course_class import CourseClass
 from inginious.frontend.models.group import Group
-from inginious.frontend.models.lti1_1 import LISOutcome, Nonce
+from inginious.frontend.models.lti1_1 import LISLaunch, LISOutcome, Nonce
 from inginious.frontend.models.lti1_3 import LTIGrade, LaunchData
 from inginious.frontend.models.session import Session, LTIData
 from inginious.frontend.models.submission import Submission

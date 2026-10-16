@@ -13,7 +13,7 @@ from inginious.frontend.models import User, Session
 
 class LTIBindPage(INGIniousAuthPage):
     _lti_version = ""
-    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
+    _mongo_field = lambda self, data: data["platform_instance_id"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
         return False
@@ -59,7 +59,7 @@ class LTIBindPage(INGIniousAuthPage):
 
 class LTILoginPage(INGIniousPage):
     _lti_version = ""
-    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
+    _mongo_field = lambda self, data: data["platform_instance_id"].replace(".", "").replace("$", "")
 
     def is_lti_page(self):
         return True
