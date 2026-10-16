@@ -21,7 +21,7 @@ from inginious.frontend.courses import Course
 from inginious.frontend.models import LTIData
 
 class LTI13JWKSPage(INGIniousPage):
-    endpoint = 'ltijwkspage'
+    endpoint = 'lti13.jwkspage'
 
     def GET(self, courseid, keyset_hash):
         try:
@@ -46,7 +46,7 @@ class LTI13JWKSPage(INGIniousPage):
 
 
 class LTI13OIDCLoginPage(INGIniousPage):
-    endpoint = 'lti13oidcloginpage'
+    endpoint = 'lti13.oidcloginpage'
 
     def _handle_oidc_login_request(self, courseid):
         """ Initiates the LTI 1.3 OIDC login. """
@@ -73,7 +73,7 @@ class LTI13OIDCLoginPage(INGIniousPage):
 
 
 class LTI13LaunchPage(INGIniousPage):
-    endpoint = 'lti1.3launchpage'
+    endpoint = 'lti13.launchpage'
 
     def _handle_message_launch(self, courseid, taskid):
         """ Decrypt and process the LTI Launch message. """
@@ -113,11 +113,11 @@ class LTI13LaunchPage(INGIniousPage):
             if not Course.get(courseid).lti_secrets().get(platform_instance_id) == custom_data.get('secret', ''):
                 raise Forbidden(description=_("Invalid LTI secret"))
 
-            redir_url = url_for("taskpage.lti1.3", courseid=courseid, taskid=taskid)
+            redir_url = url_for("lti13.taskpage", courseid=courseid, taskid=taskid)
         elif message_launch.is_deep_link_launch():
             courseid = ""
             taskid = ""
-            redir_url = url_for("lti1.3deeplinkpage")
+            redir_url = url_for("lti13.deeplinkpage")
 
         if not session.is_lti:
             raise Exception("Not an LTI session")
@@ -140,7 +140,7 @@ class LTI13LaunchPage(INGIniousPage):
             redir_url=redir_url
         )
 
-        return redirect(url_for("lti1.3loginpage"))
+        return redirect(url_for("lti13.loginpage"))
 
     def GET(self, courseid, taskid):
         return self._handle_message_launch(courseid, taskid)
@@ -233,7 +233,7 @@ class LTI13DeepLinkPage(INGIniousPage):
         # Generate deep link response
         deep_link = message_launch.get_deep_link()
         resource = DeepLinkResource()
-        resource.set_url(url_for("lti1.3launchpage", _external=True).split("?")[0]) \
+        resource.set_url(url_for("lti13.launchpage", _external=True).split("?")[0]) \
             .set_custom_params({'courseid': courseid, "taskid": taskid, "secret": lti_secrets[platform_instance_id]}) \
             .set_title(task.get_name(session.language))
 

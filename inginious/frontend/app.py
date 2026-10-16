@@ -201,7 +201,7 @@ def get_app(config):
     @flask_app.url_defaults
     def add_lti_session_id(endpoint, values):
         if flask.session.is_lti:
-            key = "lti_session_id" if endpoint in ["ltibindpage", "lti1.3bindpage"] else "session_id"
+            key = "lti_session_id" if endpoint in ["lti.bindpage", "lti13.bindpage"] else "session_id"
             values.setdefault(key, flask.session.id)
 
     # Not found page

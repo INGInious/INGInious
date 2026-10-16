@@ -3,6 +3,9 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
+from flask import Blueprint
+from werkzeug.routing import BaseConverter
+
 from inginious.frontend.pages.admin.admin import AdministrationUsersPage, \
     AdministrationUserActionPage
 from inginious.frontend.pages.maintenance import MaintenancePage
@@ -47,6 +50,45 @@ from inginious.frontend.pages.course_admin.statistics import CourseStatisticsPag
 from inginious.frontend.pages.course_admin.search_user import CourseAdminSearchUserPage
 
 
+def init_lti11_blueprint():
+    lti11 = Blueprint('lti', __name__, url_prefix='/lti')
+    lti11.add_url_rule('/<courseid>/<taskid>', view_func=LTI11LaunchPage.as_view('launchpage'))
+    lti11.add_url_rule('/bind', view_func=LTI11BindPage.as_view('bindpage'))
+    lti11.add_url_rule('/login', view_func=LTI11LoginPage.as_view('loginpage'))
+
+    lti11.add_url_rule('/task/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage'))
+    lti11.add_url_rule('/task/<courseid>/<taskid>/<path:path>',
+                       view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload'))
+    return lti11
+
+
+def init_lti13_blueprint():
+    lti13 = Blueprint('lti13', __name__, url_prefix='/lti1.3')
+    lti13oidcloginpage_view = LTI13OIDCLoginPage.as_view('oidcloginpage')
+    lti13.add_url_rule('/oidc_login', view_func=lti13oidcloginpage_view, defaults={'courseid': None})
+    lti13.add_url_rule('/oidc_login/<courseid>', view_func=lti13oidcloginpage_view)
+
+    lti13launchpage_view = LTI13LaunchPage.as_view('launchpage')
+    lti13.add_url_rule('/launch', view_func=lti13launchpage_view, defaults={'courseid': None, 'taskid': None})
+    lti13.add_url_rule('/launch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': None})
+    lti13.add_url_rule('/launch/<courseid>/<taskid>', view_func=lti13launchpage_view)
+    # Aliases to support platforms that require another link for deep linking launches
+    lti13.add_url_rule('/deeplaunch', view_func=lti13launchpage_view, defaults={'courseid': None, 'taskid': None})
+    lti13.add_url_rule('/deeplaunch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': None})
+
+    lti13jwkspage_view = LTI13JWKSPage.as_view('jwkspage')
+    lti13.add_url_rule('/jwks/<keyset_hash>', view_func=lti13jwkspage_view, defaults={'courseid': None})
+    lti13.add_url_rule('/jwks/<courseid>/<keyset_hash>', view_func=lti13jwkspage_view)
+    lti13.add_url_rule('/bind', view_func=LTI13BindPage.as_view('bindpage'))
+    lti13.add_url_rule('/login', view_func=LTI13LoginPage.as_view('loginpage'))
+    lti13.add_url_rule('/deeplink', view_func=LTI13DeepLinkPage.as_view('deeplinkpage'))
+
+    lti13.add_url_rule('/task/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage'))
+    lti13.add_url_rule('/task/<courseid>/<taskid>/<path:path>',
+                       view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload'))
+    return lti13
+
+
 def init_flask_maintenance_mapping(flask_app):
     flask_app.add_url_rule('/', view_func=MaintenancePage.as_view('maintenancepage.alias'))
     flask_app.add_url_rule('/<path:path>', view_func=MaintenancePage.as_view('maintenancepage'))
@@ -82,40 +124,9 @@ def init_flask_mapping(flask_app):
     flask_app.add_url_rule('/preferences/delete', view_func=DeletePage.as_view('deletepage'))
     flask_app.add_url_rule('/preferences/profile', view_func=ProfilePage.as_view('profilepage'))
     flask_app.add_url_rule('/preferences/apitoken', view_func=APITokenPage.as_view('apitokenpage'))
-    flask_app.add_url_rule('/lti/<courseid>/<taskid>',
-                           view_func=LTI11LaunchPage.as_view('ltilaunchpage'))
-    flask_app.add_url_rule('/lti/bind', view_func=LTI11BindPage.as_view('ltibindpage'))
-    flask_app.add_url_rule('/lti/login', view_func=LTI11LoginPage.as_view('ltiloginpage'))
 
-
-    flask_app.add_url_rule('/lti/task/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage.lti'))
-    flask_app.add_url_rule('/lti/task/<courseid>/<taskid>/<path:path>',
-                           view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload.lti'))
-
-    lti13oidcloginpage_view = LTI13OIDCLoginPage.as_view('lti1.3oidcloginpage')
-    flask_app.add_url_rule('/lti1.3/oidc_login', view_func=lti13oidcloginpage_view, defaults={'courseid': None})
-    flask_app.add_url_rule('/lti1.3/oidc_login/<courseid>', view_func=lti13oidcloginpage_view)
-
-    lti13launchpage_view = LTI13LaunchPage.as_view('lti1.3launchpage')
-    flask_app.add_url_rule('/lti1.3/launch', view_func=lti13launchpage_view,
-                           defaults={'courseid': None, 'taskid': None})
-    flask_app.add_url_rule('/lti1.3/launch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': None})
-    flask_app.add_url_rule('/lti1.3/launch/<courseid>/<taskid>', view_func=lti13launchpage_view)
-    # Aliases to support platforms that require another link for deep linking launches
-    flask_app.add_url_rule('/lti1.3/deeplaunch', view_func=lti13launchpage_view,
-                           defaults={'courseid': None, 'taskid': None})
-    flask_app.add_url_rule('/lti1.3/deeplaunch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': None})
-
-    lti13jwkspage_view = LTI13JWKSPage.as_view('lti1.3jwkspage')
-    flask_app.add_url_rule('/lti1.3/jwks/<keyset_hash>', view_func=lti13jwkspage_view, defaults={'courseid': None})
-    flask_app.add_url_rule('/lti1.3/jwks/<courseid>/<keyset_hash>', view_func=lti13jwkspage_view)
-    flask_app.add_url_rule('/lti1.3/bind', view_func=LTI13BindPage.as_view('lti1.3bindpage'))
-    flask_app.add_url_rule('/lti1.3/login', view_func=LTI13LoginPage.as_view('lti1.3loginpage'))
-    flask_app.add_url_rule('/lti1.3/deeplink', view_func=LTI13DeepLinkPage.as_view('lti1.3deeplinkpage'))
-
-    flask_app.add_url_rule('/lti1.3/task/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage.lti1.3'))
-    flask_app.add_url_rule('/lti1.3/task/<courseid>/<taskid>/<path:path>',
-                           view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload.lti1.3'))
+    flask_app.register_blueprint(init_lti11_blueprint())
+    flask_app.register_blueprint(init_lti13_blueprint())
 
     flask_app.add_url_rule('/admin/<courseid>',
                            view_func=CourseRedirectPage.as_view('courseredirect'))
