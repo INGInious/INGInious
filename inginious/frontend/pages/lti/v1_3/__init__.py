@@ -113,7 +113,7 @@ class LTI13LaunchPage(INGIniousPage):
             if not Course.get(courseid).lti_secrets().get(platform_instance_id) == custom_data.get('secret', ''):
                 raise Forbidden(description=_("Invalid LTI secret"))
 
-            redir_url = url_for("lti13.taskpage", courseid=courseid, taskid=taskid)
+            redir_url = url_for("lti13.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
         elif message_launch.is_deep_link_launch():
             courseid = ""
             taskid = ""

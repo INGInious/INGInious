@@ -101,7 +101,7 @@ class WebAppSubmissionManager:
             if lti_score_publisher:
                 lti_score_publisher.add(submission)
 
-    def _before_submission_insertion(self, course, task, inputdata, debug, obj, username):
+    def _before_submission_insertion(self, course, task, inputdata, debug, obj, username, lti_info=None):
         """
         Called before any new submission is inserted into the database. Allows you to modify obj, the new document that will be inserted into the
         database. Should be overridden in subclasses.
@@ -110,6 +110,7 @@ class WebAppSubmissionManager:
         :param inputdata: input of the student
         :param debug: True, False or "ssh". See add_job.
         :param obj: the new document that will be inserted
+        :param lti_info: dict with the LTI "version" and "message_launch_id" of the submission, or None
         """
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
@@ -119,7 +120,6 @@ class WebAppSubmissionManager:
         else:
             obj.update({"username": [username]})
 
-        lti_info = session.lti
         if lti_info is not None and course.lti_send_back_grade():
             lti_score_publisher = self._lti_score_publishers.get(lti_info["version"], None)
             if lti_score_publisher:
@@ -421,7 +421,7 @@ class WebAppSubmissionManager:
             return None
         return sub
 
-    def add_job(self, course, task, inputdata, task_dispenser, username, debug=False):
+    def add_job(self, course, task, inputdata, task_dispenser, username, debug=False, lti_info=None):
         """
         Add a job in the queue and returns a submission id.
         :param task:  Task instance
@@ -430,6 +430,7 @@ class WebAppSubmissionManager:
         :type inputdata: dict
         :param debug: If debug is true, more debug data will be saved
         :type debug: bool or string
+        :param lti_info: dict with the LTI "version" and "message_launch_id" used to tag the submission, or None
         :returns: the new submission id and the removed submission id
         """
 
@@ -465,7 +466,7 @@ class WebAppSubmissionManager:
 
         plugin_manager.call_hook("new_submission", submission=obj, inputdata=inputdata)
 
-        self._before_submission_insertion(course, task, inputdata, debug, obj, username)
+        self._before_submission_insertion(course, task, inputdata, debug, obj, username, lti_info)
 
         submission = Submission(**obj)
         submission.set_input(inputdata)
