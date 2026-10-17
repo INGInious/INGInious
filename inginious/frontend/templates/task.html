@@ -346,7 +346,7 @@
     </div>
 {% endif %}
 
-<form id="task" action="{{ url_for("taskpage", courseid=course.get_id(), taskid=task.get_id()) }}" method="post" enctype="multipart/form-data"
+<form id="task" action="{{ url_for(".taskpage", courseid=course.get_id(), taskid=task.get_id()) }}" method="post" enctype="multipart/form-data"
     {% for submission in submissions if submission["status"] == "waiting" %}
         data-wait-submission="{{submission.id}}"
     {% endfor %}

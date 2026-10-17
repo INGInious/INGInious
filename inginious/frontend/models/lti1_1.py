@@ -23,10 +23,10 @@ class Nonce(Document):
     }
 
 class LISLaunch(Document):
-    """ LTI 1.1 launch message information needed to send grades back to the TC """
+    """ LTI 1.1 launch message information, outcome fields are needed to send grades back to the TC """
     consumer_key = StringField(required=True)
-    outcome_service_url = StringField(required=True)
-    outcome_result_id = StringField(required=True)
+    outcome_service_url = StringField()
+    outcome_result_id = StringField()
 
     meta = {
         'collection': 'lis_launch',

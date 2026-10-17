@@ -28,23 +28,33 @@ from inginious.frontend.models import UserTask, Group
 
 class TaskPage(INGIniousAuthPage):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
+    _lti_versions = {"lti": "1.1", "lti13": "1.3"}
 
     def is_lti_page(self):
         return session.is_lti
 
-    def preview_allowed(self, courseid, taskid):
+    def preview_allowed(self, courseid, taskid, launch_id=None):
         try:
             course = Course.get(courseid)
         except CourseNotFoundException as ex:
             raise NotFound(description=str(ex))
         return course.get_accessibility().is_open() and course.allow_preview()
 
-    def GET(self, courseid, taskid):
+    def check_lti_launch(self, courseid, taskid, launch_id):
+        """ Ensures the LTI session was launched for this task and returns the LTI info needed to tag submissions """
+        if not session.is_lti:
+            return None
+        version = self._lti_versions.get(flask.request.blueprint)
+        if [courseid, taskid] != session.lti.task or version != session.lti.version or \
+                launch_id is None or launch_id != session.lti.message_launch_id:
+            raise Forbidden(description=_("No LTI data available."))
+        return {"version": version, "message_launch_id": launch_id}
+
+    def GET(self, courseid, taskid, launch_id=None):
         """ GET request """
         username = session.username
 
-        if is_LTI := session.is_lti and not [courseid, taskid] == session.lti.task:
-            raise Forbidden(description=_("No LTI data available."))
+        is_LTI = self.check_lti_launch(courseid, taskid, launch_id) is not None
 
         # Fetch the course
         try:
@@ -150,12 +160,12 @@ class TaskPage(INGIniousAuthPage):
                                    input_random_list=random_input_list, visible_tags=visible_tags,
                                    pdict=pdict, is_input_list=is_input_list)
 
-    def POST(self, courseid, taskid):
+    def POST(self, courseid, taskid, launch_id=None):
         """ POST a new submission """
         username = session.username
 
-        if isLTI := session.is_lti and not [courseid, taskid] == session.lti.task:
-            raise Forbidden(description=_("No LTI data available."))
+        lti_info = self.check_lti_launch(courseid, taskid, launch_id)
+        isLTI = lti_info is not None
 
         course = Course.get(courseid)
         if not self.user_manager.course_is_open_to_user(course, username, isLTI):
@@ -221,7 +231,7 @@ class TaskPage(INGIniousAuthPage):
 
             # Start the submission
             try:
-                submissionid, oldsubids = self.submission_manager.add_job(course, task, task_input, course.get_task_dispenser(), username, debug)
+                submissionid, oldsubids = self.submission_manager.add_job(course, task, task_input, course.get_task_dispenser(), username, debug, lti_info)
                 return Response(content_type='application/json', response=json.dumps({
                     "status": "ok", "submissionid": str(submissionid), "remove": oldsubids,
                     "text": _("<b>Your submission has been sent...</b>")
@@ -401,7 +411,7 @@ class TaskPageStaticDownload(INGIniousPage):
         # authorize LTI sessions to download static files
         return True
 
-    def GET(self, courseid, taskid, path):  # pylint: disable=arguments-differ
+    def GET(self, courseid, taskid, path, launch_id=None):  # pylint: disable=arguments-differ
         """ GET request """
         try:
             course = Course.get(courseid)

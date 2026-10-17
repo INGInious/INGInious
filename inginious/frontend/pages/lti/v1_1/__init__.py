@@ -125,18 +125,16 @@ class LTI11LaunchPage(INGIniousPage):
             outcome_result_id = post_input.get("lis_result_sourcedid", None)
             consumer_key = post_input["oauth_consumer_key"]
 
-            message_launch_id = None
-            if course.lti_send_back_grade():
-                if lis_outcome_service_url is None or outcome_result_id is None:
-                    self.logger.info('Error: lis_outcome_service_url is None but lti_send_back_grade is True')
-                    raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
-                                        "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
+            if course.lti_send_back_grade() and (lis_outcome_service_url is None or outcome_result_id is None):
+                self.logger.info('Error: lis_outcome_service_url is None but lti_send_back_grade is True')
+                raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
+                                    "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
 
-                # Store the launch message outcome information, reusing it if the same launch was already stored
-                launch_info = {"consumer_key": consumer_key, "outcome_service_url": lis_outcome_service_url,
-                               "outcome_result_id": outcome_result_id}
-                launch = LISLaunch.objects(**launch_info).modify(upsert=True, new=True, **launch_info)
-                message_launch_id = str(launch.id)
+            # Store the launch message outcome information, reusing it if the same launch was already stored
+            launch_info = {"consumer_key": consumer_key, "outcome_service_url": lis_outcome_service_url,
+                           "outcome_result_id": outcome_result_id}
+            launch = LISLaunch.objects(**launch_info).modify(upsert=True, new=True, **launch_info)
+            message_launch_id = str(launch.id)
 
             tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
             tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
@@ -162,7 +160,7 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_description=tool_desc,
                 tool_name=tool_name,
                 tool_url=tool_url,
-                redir_url=url_for("lti.taskpage", courseid=courseid, taskid=taskid)
+                redir_url=url_for("lti.taskpage", launch_id=message_launch_id, courseid=courseid, taskid=taskid)
             )
 
             return redirect(url_for("lti.loginpage"))
