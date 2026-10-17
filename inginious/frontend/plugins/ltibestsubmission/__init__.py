@@ -1,23 +1,21 @@
 from bson import ObjectId, json_util
 from flask import session
 from werkzeug.exceptions import NotFound
+
+from frontend.models import LISLaunch, LaunchData
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.pages.lti import get_session_launch
 from inginious.frontend.courses import Course
 from inginious.frontend.models import UserTask, Submission
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
     _lti_version = "1.1"
-
-    def is_lti_page(self):
-        return True
+    _lti_model = LISLaunch
 
     def GET_AUTH(self, launch_id):
-        # the launch LTI user must be bound to the current INGInious user
-        launch = get_session_launch(self._lti_version, launch_id)
-        if launch is None:
+        # the launch must belong to the current INGInious session
+        if not (launch := self._lti_model.objects(session_id=session.id, launch_id=launch_id, lti__valid=True).first()):
             raise NotFound()
 
         courseid, taskid = launch.lti.task
@@ -73,6 +71,7 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
 
 class LTI13BestSubmissionPage(LTI11BestSubmissionPage):
     _lti_version = "1.3"
+    _lti_model = LaunchData
 
 
 def init(plugin_manager, *args, **kwargs):

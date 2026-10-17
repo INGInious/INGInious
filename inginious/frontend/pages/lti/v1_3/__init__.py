@@ -13,12 +13,25 @@ from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequ
 from pylti1p3.deep_link_resource import DeepLinkResource
 
 from inginious.common.exceptions import CourseNotFoundException
+from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage, get_session_launch
+from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.lti.v1_3 import MongoLTILaunchDataStorage, lti_tool, lti_keyset_hash
 from inginious.frontend.courses import Course
 
 from inginious.frontend.models import LTIData, LaunchData
+
+
+class LTI13TaskPage(TaskPage):
+    _is_lti = True
+    _lti_version = "1.3"
+    _launch_model = LaunchData
+
+class LTI13TaskPageStaticDownload(TaskPageStaticDownload):
+    _is_lti = True
+    _lti_version = "1.3"
+    _launch_model = LaunchData
+
 
 class LTI13JWKSPage(INGIniousPage):
     endpoint = 'lti13.jwkspage'
@@ -58,10 +71,10 @@ class LTI13OIDCLoginPage(INGIniousPage):
         flask_request = FlaskRequest()
         target_link_uri = flask_request.get_param('target_link_uri')
         if not target_link_uri:
-            raise Exception('Missing "target_link_uri" param')
+            raise Forbidden(description='Missing "target_link_uri" param')
 
         oidc_login = FlaskOIDCLogin(flask_request, lti_tool(lti_config, current_app.config.get("LTI_CONFIG")))
-        oidc_login.set_launch_data_storage(MongoLTILaunchDataStorage())
+        oidc_login.set_launch_data_storage(MongoLTILaunchDataStorage(session.id))
         oidc_login.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
         return oidc_login.enable_check_cookies().redirect(target_link_uri)
 
@@ -82,10 +95,9 @@ class LTI13LaunchPage(INGIniousPage):
         except CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
-        tool_conf = lti_tool(lti_config, current_app.config.get("LTI_CONFIG"))
         flask_request = FlaskRequest()
-        message_launch = FlaskMessageLaunch(flask_request, tool_conf)
-        message_launch.set_launch_data_storage(MongoLTILaunchDataStorage())
+        message_launch = FlaskMessageLaunch(flask_request, lti_tool(lti_config, current_app.config.get("LTI_CONFIG")))
+        message_launch.set_launch_data_storage(MongoLTILaunchDataStorage(session.id))
         message_launch.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
 
         launch_id = message_launch.get_launch_id()
@@ -119,9 +131,6 @@ class LTI13LaunchPage(INGIniousPage):
             taskid = ""
             redir_url = url_for("lti13.deeplinkpage", launch_id=launch_id)
 
-        if not session.is_lti:
-            raise Exception("Not an LTI session")
-
         lti_data = LTIData(
             version = "1.3",
             email =email,
@@ -137,9 +146,7 @@ class LTI13LaunchPage(INGIniousPage):
             tool_url = tool_url,
             redir_url=redir_url
         )
-        LaunchData.objects(key=launch_id).update(set__lti=lti_data)
-
-        session.loggedin = False
+        LaunchData.objects(session_id=session.id, launch_id=launch_id).update(set__lti=lti_data)
 
         return redirect(url_for("lti13.loginpage", launch_id=launch_id))
 
@@ -173,16 +180,18 @@ class LTI13LaunchPage(INGIniousPage):
 
 class LTI13BindPage(LTIBindPage):
     _lti_version = "1.3"
+    _launch_model = LaunchData
 
 
 class LTI13LoginPage(LTILoginPage):
     _lti_version = "1.3"
+    _launch_model = LaunchData
 
 
-class LTI13DeepLinkPage(INGIniousPage):
+class LTI13DeepLinkPage(INGIniousAuthPage):
 
     def GET(self, launch_id):
-        if get_session_launch("1.3", launch_id, "", "") is None:
+        if not LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__valid=True).first():
             raise Forbidden(description=_("No LTI data available."))
 
         lti_courses = {
@@ -200,8 +209,7 @@ class LTI13DeepLinkPage(INGIniousPage):
         return render_template("lti/deeplink.html", courses=lti_courses)
 
     def POST(self, launch_id):
-        launch = get_session_launch("1.3", launch_id, "", "")
-        if launch is None:
+        if not (launch := LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__valid=True).first()):
             raise Forbidden(description=_("No LTI data available."))
 
         courseid = request.form.get("courseid")
@@ -223,16 +231,15 @@ class LTI13DeepLinkPage(INGIniousPage):
             course.set_descriptor_element("lti_secrets", lti_secrets)
             course.save()
 
-        # Ftech launch message from database
+        # Fetch launch message from database
         tool_config = lti_tool(course.lti_config(), current_app.config.get("LTI_CONFIG"))
-        message_launch = FlaskMessageLaunch.from_cache(launch_id, request=None, tool_config=tool_config)
-        message_launch.set_launch_data_storage(MongoLTILaunchDataStorage())
-        message_launch.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
+        message_launch = FlaskMessageLaunch.from_cache(launch_id, request=None, tool_config=tool_config,
+                                                       launch_data_storage=MongoLTILaunchDataStorage(session.id))
 
         # Generate deep link response
         deep_link = message_launch.get_deep_link()
         resource = DeepLinkResource()
-        resource.set_url(url_for("lti13.launchpage", _external=True).split("?")[0]) \
+        resource.set_url(url_for("lti13.launchpage", _external=True)) \
             .set_custom_params({'courseid': courseid, "taskid": taskid, "secret": lti_secrets[platform_instance_id]}) \
             .set_title(task.get_name(session.language))
 

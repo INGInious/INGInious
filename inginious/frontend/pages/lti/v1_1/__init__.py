@@ -7,19 +7,21 @@
 
 import flask
 import datetime
+import secrets
 
-from flask import redirect, session, url_for, current_app
+from flask import redirect, url_for, current_app
 from oauthlib.oauth1 import RequestValidator
 from mongoengine.errors import NotUniqueError
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
 from lti import ToolProvider
 
+from frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.common import exceptions
-from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
+from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models import Nonce, LTIData, LISLaunch
+from inginious.frontend.models import Nonce, LTIData, LISLaunch, User
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -87,9 +89,21 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
         return self._keys[client_key] if client_key in self._keys else None
 
 
+class LTI11TaskPage(TaskPage):
+    _is_lti = True
+    _lti_version = "1.1"
+    _launch_model = LISLaunch
+
+
+class LTI11TaskPageStaticDownload(TaskPageStaticDownload):
+    _is_lti = True
+    _lti_version = "1.1"
+    _launch_model = LISLaunch
+
+
 class LTI11LaunchPage(INGIniousPage):
     """
-    Page called by the TC to start an LTI session on a given task
+    Page called by the TC to start an LTI launch on a given task
     """
     endpoint = 'lti.launchpage'
 
@@ -132,17 +146,16 @@ class LTI11LaunchPage(INGIniousPage):
 
             # Store the launch message information
             expiration = datetime.datetime.now(datetime.timezone.utc) + current_app.permanent_session_lifetime
-            launch = LISLaunch(consumer_key=consumer_key, outcome_service_url=lis_outcome_service_url,
-                               outcome_result_id=outcome_result_id, expiration=expiration)
+            launch_id = secrets.token_urlsafe(32)  # unguessable launch id
+            launch = LISLaunch(session_id=flask.session.id, launch_id=launch_id, consumer_key=consumer_key,
+                               outcome_service_url=lis_outcome_service_url, outcome_result_id=outcome_result_id,
+                               expiration=expiration)
 
             tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
             tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
             tool_url = post_input.get('tool_consumer_instance_url', 'N/A')
             context_title = post_input.get('context_title', 'N/A')
             context_label = post_input.get('context_label', 'N/A')
-
-            if not session.is_lti:
-                raise Exception("Not an LTI session")
 
             launch.lti = LTIData(
                 version="1.1",
@@ -157,13 +170,11 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_description=tool_desc,
                 tool_name=tool_name,
                 tool_url=tool_url,
-                redir_url=url_for("lti.taskpage", launch_id=launch.key, courseid=courseid, taskid=taskid)
+                redir_url=url_for("lti.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
             )
             launch.save()
 
-            session.loggedin = False
-
-            return redirect(url_for("lti.loginpage", launch_id=launch.key))
+            return redirect(url_for("lti.loginpage", launch_id=launch_id))
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))

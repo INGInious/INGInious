@@ -12,7 +12,6 @@ from mongoengine import DateTimeField, DynamicField, MapField, ObjectIdField
 class Session(Document):
     id = ObjectIdField(primary_key=True, default=lambda: ObjectId()) # id should be available at creation time
     permanent = BooleanField(required=True)
-    is_lti = BooleanField(required=True, default=False)
     loggedin = BooleanField(required=True, default=False)
     auth_storage = MapField(DynamicField(), default=dict)
     expiration = DateTimeField()

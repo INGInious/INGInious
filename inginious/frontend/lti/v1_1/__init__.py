@@ -13,7 +13,6 @@ from inginious.frontend.courses import Course
 from inginious.frontend.models import LISLaunch, LISOutcome
 
 class LTIOutcomeManager(LTIScorePublisher):
-    _submission_tags = {"message_launch_id": "message_launch_id"}
 
     def __init__(self, user_manager):
         self._logger = logging.getLogger("inginious.webapp.lti1_1.outcome_manager")
@@ -25,7 +24,7 @@ class LTIOutcomeManager(LTIScorePublisher):
             grade = clip(grade / 100.0, 0.0, 1.0)
 
             course = Course.get(outcome.courseid)
-            launch = LISLaunch.objects.get(key=outcome.message_launch_id)
+            launch = LISLaunch.objects.get(id=outcome.message_launch_id)
             consumer_secret = course.lti_keys()[launch.consumer_key]
             outcome_response = OutcomeRequest({
                 "consumer_key": launch.consumer_key,

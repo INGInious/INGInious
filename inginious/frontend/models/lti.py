@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from mongoengine import StringField, ListField, EmbeddedDocument
+from mongoengine import StringField, ListField, BooleanField, EmbeddedDocument
 
 
 class LTIData(EmbeddedDocument):
@@ -15,6 +15,9 @@ class LTIData(EmbeddedDocument):
     roles = ListField(StringField())
     task = ListField(StringField(), required=True, default=lambda: ['', ''])
     redir_url = StringField(required=True, default="")
+
+    # Set once the user has been connected via the LTI login page
+    valid = BooleanField(required=True, default=False)
 
     # LTI1.1: courseid/consumer key, LTI1.3: issuer/client_id/deployment_id
     platform_instance_id = StringField(required=True)
