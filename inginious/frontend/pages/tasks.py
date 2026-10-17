@@ -20,6 +20,7 @@ from werkzeug.exceptions import NotFound, HTTPException, Forbidden
 from inginious.frontend.models import Submission
 from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundException
 from inginious.frontend.pages.course import handle_course_unavailable
+from inginious.frontend.pages.lti import get_session_launch
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.courses import Course
@@ -45,8 +46,7 @@ class TaskPage(INGIniousAuthPage):
         if not session.is_lti:
             return None
         version = self._lti_versions.get(flask.request.blueprint)
-        if [courseid, taskid] != session.lti.task or version != session.lti.version or \
-                launch_id is None or launch_id != session.lti.message_launch_id:
+        if get_session_launch(version, launch_id, courseid, taskid) is None:
             raise Forbidden(description=_("No LTI data available."))
         return {"version": version, "message_launch_id": launch_id}
 
