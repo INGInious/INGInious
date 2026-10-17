@@ -189,9 +189,9 @@ def get_app(config):
 
     @flask_app.url_defaults
     def add_lti_session_id(endpoint, values):
-        if flask.session.is_lti:
-            key = "lti_session_id" if endpoint in ["lti.bindpage", "lti13.bindpage"] else "session_id"
-            values.setdefault(key, flask.session.id)
+        # Binding pages are opened outside the LTI session and only rely on the launch id
+        if flask.session.is_lti and endpoint not in ["lti.bindpage", "lti13.bindpage"]:
+            values.setdefault("session_id", flask.session.id)
 
     # Not found page
     def flask_not_found(e):

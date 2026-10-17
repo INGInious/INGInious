@@ -14,11 +14,11 @@ from pylti1p3.deep_link_resource import DeepLinkResource
 
 from inginious.common.exceptions import CourseNotFoundException
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
+from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage, get_session_launch
 from inginious.frontend.lti.v1_3 import MongoLTILaunchDataStorage, lti_tool, lti_keyset_hash
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models import LTIData
+from inginious.frontend.models import LTIData, LaunchData
 
 class LTI13JWKSPage(INGIniousPage):
     endpoint = 'lti13.jwkspage'
@@ -117,13 +117,12 @@ class LTI13LaunchPage(INGIniousPage):
         elif message_launch.is_deep_link_launch():
             courseid = ""
             taskid = ""
-            redir_url = url_for("lti13.deeplinkpage")
+            redir_url = url_for("lti13.deeplinkpage", launch_id=launch_id)
 
         if not session.is_lti:
             raise Exception("Not an LTI session")
 
-        session.loggedin = False
-        session.lti = LTIData(
+        lti_data = LTIData(
             version = "1.3",
             email =email,
             username = user_id,
@@ -131,7 +130,6 @@ class LTI13LaunchPage(INGIniousPage):
             roles = roles,
             task = (courseid, taskid),
             platform_instance_id = platform_instance_id,
-            message_launch_id = launch_id,
             context_title = context_title,
             context_label = context_label,
             tool_description = tool_desc,
@@ -139,8 +137,11 @@ class LTI13LaunchPage(INGIniousPage):
             tool_url = tool_url,
             redir_url=redir_url
         )
+        LaunchData.objects(key=launch_id).update(set__lti=lti_data)
 
-        return redirect(url_for("lti13.loginpage"))
+        session.loggedin = False
+
+        return redirect(url_for("lti13.loginpage", launch_id=launch_id))
 
     def GET(self, courseid, taskid):
         return self._handle_message_launch(courseid, taskid)
@@ -180,9 +181,9 @@ class LTI13LoginPage(LTILoginPage):
 
 class LTI13DeepLinkPage(INGIniousPage):
 
-    def GET(self):
-        if not session.is_lti:
-            raise Exception("Not an LTI session")
+    def GET(self, launch_id):
+        if get_session_launch("1.3", launch_id, "", "") is None:
+            raise Forbidden(description=_("No LTI data available."))
 
         lti_courses = {
             courseid: course for courseid, course in Course.get_all().items()
@@ -198,9 +199,10 @@ class LTI13DeepLinkPage(INGIniousPage):
 
         return render_template("lti/deeplink.html", courses=lti_courses)
 
-    def POST(self):
-        if not session.is_lti:
-            raise Exception("Not an LTI session")
+    def POST(self, launch_id):
+        launch = get_session_launch("1.3", launch_id, "", "")
+        if launch is None:
+            raise Forbidden(description=_("No LTI data available."))
 
         courseid = request.form.get("courseid")
         taskid = request.form.get("taskid")
@@ -211,9 +213,8 @@ class LTI13DeepLinkPage(INGIniousPage):
         except CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
 
-        # Ftech LTI session info
-        message_launch_id = session.lti["message_launch_id"]
-        platform_instance_id = session.lti["platform_instance_id"]
+        # Fetch LTI launch info
+        platform_instance_id = launch.lti.platform_instance_id
 
         # Fetch or generate the LTI1.3 course secret
         lti_secrets = course.lti_secrets()
@@ -224,7 +225,7 @@ class LTI13DeepLinkPage(INGIniousPage):
 
         # Ftech launch message from database
         tool_config = lti_tool(course.lti_config(), current_app.config.get("LTI_CONFIG"))
-        message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=tool_config)
+        message_launch = FlaskMessageLaunch.from_cache(launch_id, request=None, tool_config=tool_config)
         message_launch.set_launch_data_storage(MongoLTILaunchDataStorage())
         message_launch.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
 

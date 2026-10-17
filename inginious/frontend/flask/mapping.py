@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from flask import Blueprint, request, has_request_context
+from flask import Blueprint, request, has_request_context, current_app
 from werkzeug.routing import BaseConverter
 
 from inginious.frontend.pages.admin.admin import AdministrationUsersPage, \
@@ -51,8 +51,8 @@ from inginious.frontend.pages.course_admin.search_user import CourseAdminSearchU
 
 
 def add_lti_launch_id(endpoint, values):
-    """ Keep the LTI launch id from the current request when building task page urls """
-    if not endpoint.endswith((".taskpage", ".taskpagestaticdownload")) or not has_request_context():
+    """ Keep the LTI launch id from the current request when building urls expecting one """
+    if not has_request_context() or not current_app.url_map.is_endpoint_expecting(endpoint, "launch_id"):
         return
     if request.view_args and "launch_id" in request.view_args:
         values.setdefault("launch_id", request.view_args["launch_id"])
@@ -61,8 +61,8 @@ def add_lti_launch_id(endpoint, values):
 def init_lti11_blueprint():
     lti11 = Blueprint('lti', __name__, url_prefix='/lti')
     lti11.add_url_rule('/<courseid>/<taskid>', view_func=LTI11LaunchPage.as_view('launchpage'))
-    lti11.add_url_rule('/bind', view_func=LTI11BindPage.as_view('bindpage'))
-    lti11.add_url_rule('/login', view_func=LTI11LoginPage.as_view('loginpage'))
+    lti11.add_url_rule('/bind/<launch_id>', view_func=LTI11BindPage.as_view('bindpage'))
+    lti11.add_url_rule('/login/<launch_id>', view_func=LTI11LoginPage.as_view('loginpage'))
 
     lti11.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage'))
     lti11.add_url_rule('/task/<launch_id>/<courseid>/<taskid>/<path:path>',
@@ -88,9 +88,9 @@ def init_lti13_blueprint():
     lti13jwkspage_view = LTI13JWKSPage.as_view('jwkspage')
     lti13.add_url_rule('/jwks/<keyset_hash>', view_func=lti13jwkspage_view, defaults={'courseid': None})
     lti13.add_url_rule('/jwks/<courseid>/<keyset_hash>', view_func=lti13jwkspage_view)
-    lti13.add_url_rule('/bind', view_func=LTI13BindPage.as_view('bindpage'))
-    lti13.add_url_rule('/login', view_func=LTI13LoginPage.as_view('loginpage'))
-    lti13.add_url_rule('/deeplink', view_func=LTI13DeepLinkPage.as_view('deeplinkpage'))
+    lti13.add_url_rule('/bind/<launch_id>', view_func=LTI13BindPage.as_view('bindpage'))
+    lti13.add_url_rule('/login/<launch_id>', view_func=LTI13LoginPage.as_view('loginpage'))
+    lti13.add_url_rule('/deeplink/<launch_id>', view_func=LTI13DeepLinkPage.as_view('deeplinkpage'))
 
     lti13.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage'))
     lti13.add_url_rule('/task/<launch_id>/<courseid>/<taskid>/<path:path>',

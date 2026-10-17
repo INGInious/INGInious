@@ -8,7 +8,7 @@
 import flask
 import datetime
 
-from flask import redirect, session, url_for
+from flask import redirect, session, url_for, current_app
 from oauthlib.oauth1 import RequestValidator
 from mongoengine.errors import NotUniqueError
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
@@ -130,11 +130,10 @@ class LTI11LaunchPage(INGIniousPage):
                 raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
                                     "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
 
-            # Store the launch message outcome information, reusing it if the same launch was already stored
-            launch_info = {"consumer_key": consumer_key, "outcome_service_url": lis_outcome_service_url,
-                           "outcome_result_id": outcome_result_id}
-            launch = LISLaunch.objects(**launch_info).modify(upsert=True, new=True, **launch_info)
-            message_launch_id = str(launch.id)
+            # Store the launch message information
+            expiration = datetime.datetime.now(datetime.timezone.utc) + current_app.permanent_session_lifetime
+            launch = LISLaunch(consumer_key=consumer_key, outcome_service_url=lis_outcome_service_url,
+                               outcome_result_id=outcome_result_id, expiration=expiration)
 
             tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
             tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
@@ -145,8 +144,7 @@ class LTI11LaunchPage(INGIniousPage):
             if not session.is_lti:
                 raise Exception("Not an LTI session")
 
-            session.loggedin = False
-            session.lti = LTIData(
+            launch.lti = LTIData(
                 version="1.1",
                 email=email,
                 username=user_id,
@@ -154,16 +152,18 @@ class LTI11LaunchPage(INGIniousPage):
                 roles=roles,
                 task=(courseid, taskid),
                 platform_instance_id=courseid + "/" + consumer_key,
-                message_launch_id=message_launch_id,
                 context_title=context_title,
                 context_label=context_label,
                 tool_description=tool_desc,
                 tool_name=tool_name,
                 tool_url=tool_url,
-                redir_url=url_for("lti.taskpage", launch_id=message_launch_id, courseid=courseid, taskid=taskid)
+                redir_url=url_for("lti.taskpage", launch_id=launch.key, courseid=courseid, taskid=taskid)
             )
+            launch.save()
 
-            return redirect(url_for("lti.loginpage"))
+            session.loggedin = False
+
+            return redirect(url_for("lti.loginpage", launch_id=launch.key))
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))
@@ -191,8 +191,8 @@ class LTI11LaunchPage(INGIniousPage):
 
 
 class LTI11BindPage(LTIBindPage):
-    pass
+    _lti_version = "1.1"
 
 
 class LTI11LoginPage(LTILoginPage):
-    pass
+    _lti_version = "1.1"

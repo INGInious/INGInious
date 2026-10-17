@@ -3,7 +3,11 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from mongoengine import Document, StringField, DateTimeField, IntField
+import secrets
+
+from mongoengine import Document, StringField, DateTimeField, IntField, EmbeddedDocumentField
+
+from inginious.frontend.models.lti import LTIData
 
 
 class Nonce(Document):
@@ -24,14 +28,27 @@ class Nonce(Document):
 
 class LISLaunch(Document):
     """ LTI 1.1 launch message information, outcome fields are needed to send grades back to the TC """
+    key = StringField(required=True, unique=True, sparse=True, default=lambda: secrets.token_urlsafe(32))  # unguessable launch id
     consumer_key = StringField(required=True)
     outcome_service_url = StringField()
     outcome_result_id = StringField()
+    lti = EmbeddedDocumentField(LTIData, required=True)
+    expiration = DateTimeField(required=True)
 
     meta = {
         'collection': 'lis_launch',
-        'indexes': [('consumer_key', 'outcome_service_url', 'outcome_result_id')]
+        'indexes': [
+            {
+                'fields': ['expiration'],
+                'expireAfterSeconds': 0  # use field value
+            }
+        ]
     }
+
+    @classmethod
+    def get_launch(cls, launch_id):
+        """ Returns the launch identified by launch_id, or None """
+        return cls.objects(key=launch_id).first()
 
 class LISOutcome(Document):
     courseid = StringField()
