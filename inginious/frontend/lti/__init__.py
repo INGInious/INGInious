@@ -15,7 +15,7 @@ from mongoengine import Document
 
 
 class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
-    _submission_tags = {}
+    _submission_tags = {"message_launch_id": "message_launch_id"}
 
     def __init__(self, mongo_document : Type[Document], user_manager):
         super(LTIScorePublisher, self).__init__()

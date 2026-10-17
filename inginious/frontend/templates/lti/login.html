@@ -24,9 +24,9 @@
 <div class="row justify-content-center">
     <div class="col-md-4 p-0">
         <div class="card card-body bg-light">
-            {% set path = url_for('.bindpage') %}
+            {% set path = url_for('.bindpage', launch_id=launch_id) %}
             <p class="mb-2"><a onclick="window.open('{{ path }}');" href="#">{{ _("Bind your INGInious account") }}</a></p>
-            <p class="m-0"><a href="{{ url_for('.loginpage') }}">{{ _("Refresh") }}</a></p>
+            <p class="m-0"><a href="{{ url_for('.loginpage', launch_id=launch_id) }}">{{ _("Refresh") }}</a></p>
         </div>
     </div>
 </div>

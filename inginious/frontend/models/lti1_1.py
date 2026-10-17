@@ -3,9 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-import secrets
-
-from mongoengine import Document, StringField, DateTimeField, IntField, EmbeddedDocumentField
+from mongoengine import Document, StringField, DateTimeField, IntField, EmbeddedDocumentField, ObjectIdField
 
 from inginious.frontend.models.lti import LTIData
 
@@ -28,7 +26,8 @@ class Nonce(Document):
 
 class LISLaunch(Document):
     """ LTI 1.1 launch message information, outcome fields are needed to send grades back to the TC """
-    key = StringField(required=True, unique=True, sparse=True, default=lambda: secrets.token_urlsafe(32))  # unguessable launch id
+    session_id = ObjectIdField(required=True)  # a launch is only usable from its session, as done by pylti1p3 for LTI1.3
+    launch_id = StringField(required=True)
     consumer_key = StringField(required=True)
     outcome_service_url = StringField()
     outcome_result_id = StringField()
@@ -38,6 +37,7 @@ class LISLaunch(Document):
     meta = {
         'collection': 'lis_launch',
         'indexes': [
+            {'fields': ['session_id', 'launch_id'], 'unique': True},
             {
                 'fields': ['expiration'],
                 'expireAfterSeconds': 0  # use field value
@@ -45,10 +45,6 @@ class LISLaunch(Document):
         ]
     }
 
-    @classmethod
-    def get_launch(cls, launch_id):
-        """ Returns the launch identified by launch_id, or None """
-        return cls.objects(key=launch_id).first()
 
 class LISOutcome(Document):
     courseid = StringField()

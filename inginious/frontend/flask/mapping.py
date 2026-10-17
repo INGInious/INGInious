@@ -25,8 +25,8 @@ from inginious.frontend.pages.social import AuthenticationPage, CallbackPage
 from inginious.frontend.pages.course_register import CourseRegisterPage
 from inginious.frontend.pages.course import CoursePage
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
-from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage, LTI11BindPage, LTI11LoginPage
-from inginious.frontend.pages.lti.v1_3 import LTI13LaunchPage, LTI13BindPage, LTI13LoginPage, LTI13OIDCLoginPage, LTI13JWKSPage, LTI13DeepLinkPage
+from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage, LTI11BindPage, LTI11LoginPage, LTI11TaskPage, LTI11TaskPageStaticDownload
+from inginious.frontend.pages.lti.v1_3 import LTI13LaunchPage, LTI13BindPage, LTI13LoginPage, LTI13OIDCLoginPage, LTI13JWKSPage, LTI13DeepLinkPage, LTI13TaskPage, LTI13TaskPageStaticDownload
 from inginious.frontend.pages.group import GroupPage
 from inginious.frontend.pages.marketplace import MarketplacePage
 from inginious.frontend.pages.marketplace_course import MarketplaceCoursePage
@@ -50,24 +50,15 @@ from inginious.frontend.pages.course_admin.statistics import CourseStatisticsPag
 from inginious.frontend.pages.course_admin.search_user import CourseAdminSearchUserPage
 
 
-def add_lti_launch_id(endpoint, values):
-    """ Keep the LTI launch id from the current request when building urls expecting one """
-    if not has_request_context() or not current_app.url_map.is_endpoint_expecting(endpoint, "launch_id"):
-        return
-    if request.view_args and "launch_id" in request.view_args:
-        values.setdefault("launch_id", request.view_args["launch_id"])
-
-
 def init_lti11_blueprint():
     lti11 = Blueprint('lti', __name__, url_prefix='/lti')
     lti11.add_url_rule('/<courseid>/<taskid>', view_func=LTI11LaunchPage.as_view('launchpage'))
     lti11.add_url_rule('/bind/<launch_id>', view_func=LTI11BindPage.as_view('bindpage'))
     lti11.add_url_rule('/login/<launch_id>', view_func=LTI11LoginPage.as_view('loginpage'))
 
-    lti11.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage'))
+    lti11.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=LTI11TaskPage.as_view('taskpage'))
     lti11.add_url_rule('/task/<launch_id>/<courseid>/<taskid>/<path:path>',
-                       view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload'))
-    lti11.url_defaults(add_lti_launch_id)
+                       view_func=LTI11TaskPageStaticDownload.as_view('taskpagestaticdownload'))
     return lti11
 
 
@@ -92,10 +83,9 @@ def init_lti13_blueprint():
     lti13.add_url_rule('/login/<launch_id>', view_func=LTI13LoginPage.as_view('loginpage'))
     lti13.add_url_rule('/deeplink/<launch_id>', view_func=LTI13DeepLinkPage.as_view('deeplinkpage'))
 
-    lti13.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=TaskPage.as_view('taskpage'))
+    lti13.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=LTI13TaskPage.as_view('taskpage'))
     lti13.add_url_rule('/task/<launch_id>/<courseid>/<taskid>/<path:path>',
-                       view_func=TaskPageStaticDownload.as_view('taskpagestaticdownload'))
-    lti13.url_defaults(add_lti_launch_id)
+                       view_func=LTI13TaskPageStaticDownload.as_view('taskpagestaticdownload'))
     return lti13
 
 

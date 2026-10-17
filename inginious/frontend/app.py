@@ -193,16 +193,11 @@ def get_app(config):
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
     flask_app.jinja_env.globals["pkg_version"] = __version__
     flask_app.jinja_env.globals["user_manager"] = user_manager
+    flask_app.jinja_env.globals["is_lti_request"] = lambda: flask.request.blueprint in ["lti", "lti13"]
 
     @flask_app.context_processor
     def context_processor():
         return dict(plugin_manager.call_hook("template_helper"))
-
-    @flask_app.url_defaults
-    def add_lti_session_id(endpoint, values):
-        # Binding pages are opened outside the LTI session and only rely on the launch id
-        if flask.session.is_lti and endpoint not in ["lti.bindpage", "lti13.bindpage"]:
-            values.setdefault("session_id", flask.session.id)
 
     # Not found page
     def flask_not_found(e):

@@ -165,6 +165,9 @@ The different entries are :
 
     Most value are as defined in standard HTTP cookies. The ``secret_key`` should be a long sequence of random characters.
 
+    LTI sessions rely on the session cookie. As INGInious is then embedded in the platform (in an iframe, from another
+    site), LTI requires ``samesite: "None"`` and ``secure: True``, and therefore INGInious to be served over HTTPS.
+
 ``reverse-proxy-config``
     A dictionary for reverse proxy configuration.
 

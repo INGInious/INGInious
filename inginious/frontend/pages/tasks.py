@@ -20,41 +20,40 @@ from werkzeug.exceptions import NotFound, HTTPException, Forbidden
 from inginious.frontend.models import Submission
 from inginious.common.exceptions import TaskNotFoundException, CourseNotFoundException
 from inginious.frontend.pages.course import handle_course_unavailable
-from inginious.frontend.pages.lti import get_session_launch
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.courses import Course
 from inginious.frontend.models import UserTask, Group
 
 
+def _get_lti_launch(model, courseid, taskid, launch_id):
+    """ Returns the LTI launch if it is still valid and was issued for this task, None otherwise """
+    if not (launch := model.objects(session_id=session.id, launch_id=launch_id, lti__valid=True).first()):
+        return None
+
+    same_courseid = launch.lti.task[0] == courseid
+    same_taskid =  launch.lti.task[1] == taskid if taskid != "$common" else True
+    return launch if same_courseid and same_taskid else None
+
+
 class TaskPage(INGIniousAuthPage):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
-    _lti_versions = {"lti": "1.1", "lti13": "1.3"}
+    _is_lti = False
+    _launch_model = None
 
-    def is_lti_page(self):
-        return session.is_lti
-
-    def preview_allowed(self, courseid, taskid, launch_id=None):
+    def preview_allowed(self, courseid, taskid):
         try:
             course = Course.get(courseid)
         except CourseNotFoundException as ex:
             raise NotFound(description=str(ex))
         return course.get_accessibility().is_open() and course.allow_preview()
 
-    def check_lti_launch(self, courseid, taskid, launch_id):
-        """ Ensures the LTI session was launched for this task and returns the LTI info needed to tag submissions """
-        if not session.is_lti:
-            return None
-        version = self._lti_versions.get(flask.request.blueprint)
-        if get_session_launch(version, launch_id, courseid, taskid) is None:
-            raise Forbidden(description=_("No LTI data available."))
-        return {"version": version, "message_launch_id": launch_id}
-
     def GET(self, courseid, taskid, launch_id=None):
         """ GET request """
         username = session.username
 
-        is_LTI = self.check_lti_launch(courseid, taskid, launch_id) is not None
+        if self._is_lti and not _get_lti_launch(self._launch_model, courseid, taskid, launch_id):
+            raise Forbidden(description=_("No LTI data available."))
 
         # Fetch the course
         try:
@@ -62,15 +61,15 @@ class TaskPage(INGIniousAuthPage):
         except CourseNotFoundException as ex:
             raise NotFound(description=str(ex))
 
-        if is_LTI and not self.user_manager.course_is_user_registered(course):
+        if self._is_lti and not self.user_manager.course_is_user_registered(course):
             self.user_manager.course_register_user(course, force=True)
 
-        if not self.user_manager.course_is_open_to_user(course, username, is_LTI):
+        if not self.user_manager.course_is_open_to_user(course, username, self._is_lti):
             return handle_course_unavailable(self.user_manager, course)
 
         try:
             task = course.get_task(taskid)
-            if not self.user_manager.task_is_visible_by_user(course, task, username, is_LTI):
+            if not self.user_manager.task_is_visible_by_user(course, task, username, self._is_lti):
                 return render_template("task_unavailable.html")
         except TaskNotFoundException:
             raise NotFound()
@@ -97,7 +96,7 @@ class TaskPage(INGIniousAuthPage):
             # Download a previously submitted file
             submission = self.submission_manager.get_submission(userinput["submissionid"], as_username=username if not is_staff else None)
             if submission is None:
-                raise self.cp.app.notfound(message=_("Submission doesn't exist."))
+                raise current_app.notfound(message=_("Submission doesn't exist."))
             sinput = self.submission_manager.get_input_from_submission(submission, True)
             if userinput["questionid"] not in sinput:
                 raise NotFound()
@@ -164,18 +163,26 @@ class TaskPage(INGIniousAuthPage):
         """ POST a new submission """
         username = session.username
 
-        lti_info = self.check_lti_launch(courseid, taskid, launch_id)
-        isLTI = lti_info is not None
+        lti_info = None
+        if self._is_lti:
+            if not (launch := _get_lti_launch(self._launch_model, courseid, taskid, launch_id)):
+                # the launch may have expired from the database while the page was open
+                return Response(content_type='application/json', response=json.dumps({
+                    "status": "error", "title": _("Error"),
+                    "text": _("Your LTI session has expired. Please relaunch this task from your learning platform.")
+                }))
+            # tag with the database id: grades are sent back outside of the session
+            lti_info = {"version": self._lti_version, "message_launch_id": str(launch.id)}
 
         course = Course.get(courseid)
-        if not self.user_manager.course_is_open_to_user(course, username, isLTI):
+        if not self.user_manager.course_is_open_to_user(course, username, self._is_lti):
             return handle_course_unavailable(self.user_manager, course)
 
         is_staff = self.user_manager.has_staff_rights_on_course(course, username)
         is_admin = self.user_manager.has_admin_rights_on_course(course, username)
 
         task = course.get_task(taskid)
-        if not self.user_manager.task_is_visible_by_user(course, task, username, isLTI):
+        if not self.user_manager.task_is_visible_by_user(course, task, username, self._is_lti):
             return render_template("task_unavailable.html")
 
         self.user_manager.user_saw_task(username, courseid, taskid)
@@ -183,7 +190,7 @@ class TaskPage(INGIniousAuthPage):
         userinput = flask.request.form
         if "@action" in userinput and userinput["@action"] == "submit":
             # Verify rights
-            if not self.user_manager.task_can_user_submit(course, task, username, lti=isLTI):
+            if not self.user_manager.task_can_user_submit(course, task, username, lti=self._is_lti):
                 return json.dumps({"status": "error", "title": _("Error"), "text": _("You are not allowed to submit for this task.")})
 
             # Retrieve input random and check still valid
@@ -406,14 +413,16 @@ class TaskPage(INGIniousAuthPage):
 
 class TaskPageStaticDownload(INGIniousPage):
     """ Allow to download files stored in the task folder """
-
-    def is_lti_page(self):
-        # authorize LTI sessions to download static files
-        return True
+    _is_lti = False
+    _launch_model = None
 
     def GET(self, courseid, taskid, path, launch_id=None):  # pylint: disable=arguments-differ
         """ GET request """
         try:
+
+            if self._is_lti and not _get_lti_launch(self._launch_model, courseid, taskid, launch_id):
+                    raise Forbidden(description=_("No LTI data available."))
+
             course = Course.get(courseid)
             if not self.user_manager.course_is_open_to_user(course, session.username):
                 return handle_course_unavailable(self.user_manager, course)

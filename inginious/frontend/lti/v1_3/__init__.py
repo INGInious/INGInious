@@ -43,25 +43,30 @@ class MongoLTILaunchDataStorage(LaunchDataStorage):
     Stores LTI Launch messages in database during the handshake process and
     to submit grades later using the LTIGradeManager.
     """
-    _session_cookie_name = None
+    _session_cookie_name = None  # the INGInious session id is used instead of a pylti1p3 cookie
+
+    def __init__(self, session_id=None):
+        """ Keys are prefixed by session_id if given, otherwise they must be passed already prefixed """
+        self.set_session_id(str(session_id) if session_id else None)
 
     def can_set_keys_expiration(self) -> bool:
         return True
 
     def get_value(self, key: str):
-        entry = LaunchData.objects(key=key).first()
+        entry = LaunchData.objects(key=self._prepare_key(key)).first()
         return entry.value if entry else None
 
     def set_value(self, key: str, value, exp) -> None:
+        prepared_key = self._prepare_key(key)
         exp_date = datetime.now(timezone.utc) + timedelta(seconds=exp)
-        LaunchData.objects(key=key).update(key=key, value=value, expiration=exp_date, upsert=True)
+        LaunchData.objects(key=prepared_key).update(key=prepared_key, session_id=self._session_id, launch_id=key,
+                                                    value=value, expiration=exp_date, upsert=True)
 
     def check_value(self, key: str) -> bool:
-        return bool(LaunchData.objects(key=key).first())
+        return bool(LaunchData.objects(key=self._prepare_key(key)).first())
 
 
 class LTIGradeManager(LTIScorePublisher):
-    _submission_tags = {"message_launch_id": "message_launch_id"}
 
     def __init__(self, user_manager, global_config):
         self._logger = logging.getLogger("inginious.webapp.lti1_3.grade_manager")
@@ -74,7 +79,8 @@ class LTIGradeManager(LTIScorePublisher):
         try:
             course = Course.get(courseid)
             tool_config = lti_tool(course.lti_config(), self._global_config)
-            message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=tool_config, launch_data_storage=MongoLTILaunchDataStorage())
+            launch_key = LaunchData.objects.get(id=message_launch_id).key
+            message_launch = FlaskMessageLaunch.from_cache(launch_key, request=None, tool_config=tool_config, launch_data_storage=MongoLTILaunchDataStorage())
             launch_data = message_launch.get_launch_data()
             ags = message_launch.get_ags()
 

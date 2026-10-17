@@ -21,8 +21,6 @@ class AuthenticationPage(INGIniousPage):
         return redirect(auth_link)
 
     def GET(self, auth_id):
-        if session.is_lti:
-            return redirect(url_for("authenticationpage",auth_id=auth_id))
         return self.process_signin(auth_id)
 
     def POST(self, auth_id):
@@ -45,8 +43,6 @@ class CallbackPage(INGIniousPage):
         return redirect(auth_storage.get("redir_url", "/"))
 
     def GET(self, auth_id):
-        if session.is_lti:
-            return redirect(url_for("authenticationpage", auth_id=auth_id))
         return self.process_callback(auth_id)
 
     def POST(self, auth_id):
