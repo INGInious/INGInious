@@ -37,3 +37,12 @@ Internals
    dev_doc/internals_doc/frontend
    dev_doc/internals_doc/groups_audiences
    dev_doc/internals_doc/exercises
+
+INGInious API
+---------------
+
+.. toctree::
+   :maxdepth: 2
+
+   dev_doc/API/api_usage
+   doc/api_doc/inginious.frontend.pages.api

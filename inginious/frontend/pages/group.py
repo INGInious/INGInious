@@ -42,7 +42,13 @@ class GroupPage(INGIniousAuthPage):
 
                 # Add student in the audience and unique group if group is not full
                 new_group = Group.objects(
-                    id=data["register_group"], __raw__={"$where": "this.students.length<this.size"}
+                    id=data["register_group"],
+                    __raw__={ "$expr": {
+                        "$lt": [
+                            { "$size": { "$ifNull": ["$students", []] } },
+                            "$size"
+                        ]
+                    }}
                 ).modify(push__students=username, new=True)
 
                 if new_group is None:

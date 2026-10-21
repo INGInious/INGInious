@@ -5,7 +5,6 @@
 
 """ Custom installer for the web app """
 
-import hashlib
 import os
 import tarfile
 import tempfile
@@ -17,6 +16,7 @@ from docker.errors import BuildError
 from gridfs import GridFS
 from pymongo import MongoClient
 from mongoengine import connect
+import secrets
 
 
 from inginious import __version__
@@ -174,6 +174,9 @@ class Installer:
         self._display_header("AUTHENTIFICATION")
         auth_opts = self.configure_authentication()
         options.update(auth_opts)
+
+        api_opts = self.configure_api()
+        options.update(api_opts)
 
         self._display_info("You may want to add additional plugins to the configuration file.")
 
@@ -590,6 +593,10 @@ class Installer:
         options["session_parameters"]['secret_key'] = hexlify(os.urandom(32)).decode('utf-8')
 
         return options
+
+    def configure_api(self):
+        """ Configure the API parameters """
+        return {"api_jwt_secret": secrets.token_hex(16)}
 
     def configuration_filename(self):
         """ Returns the name of the configuration file """

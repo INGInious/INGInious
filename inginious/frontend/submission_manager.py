@@ -16,11 +16,21 @@ from flask import session
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 from pymongo.errors import DocumentTooLarge
+from werkzeug.exceptions import Forbidden
+from bson.objectid import ObjectId
 
 from inginious.common import custom_yaml
+from inginious.common.base import id_checker
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.plugins import plugin_manager
-from inginious.frontend.models import UserTask, User, Submission, Group
+from inginious.frontend.models import UserTask, User, Submission, Group, Audience
+
+
+def _validate_list(list_of_ids):
+    """ Prevent MongoDB injections by verifying arrays sent to it """
+    for i in list_of_ids:
+        if not id_checker(i):
+            raise Forbidden(description=_("List not valid."))
 
 
 class WebAppSubmissionManager:
@@ -104,7 +114,7 @@ class WebAppSubmissionManager:
         is_group_task =course.get_task_dispenser().get_group_submission(task.get_id())
 
         if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
-            group = Group.objects.get(courseid=course.id, students=username)
+            group = Group.objects.get(courseid=course.get_id(), students=username)
             obj.update({"username": group["students"]})
         else:
             obj.update({"username": [username]})
@@ -119,7 +129,7 @@ class WebAppSubmissionManager:
         # If we are submitting for a group, send the group (user list joined with ",") as username
         if "group" not in [p.get_id() for p in task.get_problems()]:  # do not overwrite
             if is_group_task and not self._user_manager.has_staff_rights_on_course(course, username):
-                group = Group.objects.get(courseid=course.id, students=username)
+                group = Group.objects.get(courseid=course.get_id(), students=username)
                 users = User.objects(username__in=group["students"])
                 inputdata["@username"] = ','.join(group["students"])
                 inputdata["@email"] = ','.join([user["email"] for user in users])
@@ -153,16 +163,17 @@ class WebAppSubmissionManager:
             submissionid = submission.id
 
             # Clean the submission document in db
-            if submission.archive is not None:
-                submission.archive.delete()
-                submission.save()
-
             unset_query = {
                 "unset__result": True, "unset__grade": True, "unset__text": True, "unset__tests": True,
                 "unset__problems": True, "unset__archive": True, "unset__state": True, "unset__custom": True
             }
 
             Submission.objects(id=submissionid).update(status="waiting", **unset_query)
+
+            # Delete the archive file only once it is no longer referenced. The update above only modifies the
+            # database: the in-memory submission.archive still holds the GridFS id of the file to delete.
+            if submission.archive:
+                submission.archive.delete()
 
         else:
             submission = Submission(username=[username], courseid=course.get_id(), taskid=task.get_id(),
@@ -204,6 +215,198 @@ class WebAppSubmissionManager:
     def get_available_environments(self) -> Dict[str, List[str]]:
         """:return a list of available environments """
         return self._client.get_available_environments()
+
+    def get_submissions_mongo_filter(self, course,
+                               only_tasks=None, only_tasks_with_categories=None,
+                               only_users=None, only_audiences=None,
+                               with_tags=None,
+                               grade_between=None, submit_time_between=None,
+                               keep_only_evaluation_submissions=False,
+                               keep_only_crashes=False):
+        """
+        All the parameters (excluding course, sort_by and keep_only_evaluation_submissions) can be None.
+        If that is the case, they are ignored.
+
+        :param course: the course
+        :param only_tasks: a list of task ids. Only submissions on these tasks will be loaded.
+        :param only_tasks_with_categories: keep only tasks that have a least one category in common with this list
+        :param only_users: a list of usernames. Only submissions from these users will be loaded.
+        :param only_audiences: a list of audience ids. Only submissions from users in these will be loaded
+        :param with_tags: a list of tags in the form [(tagid, present)], where present is a boolean indicating
+               whether the tag MUST be present or MUST NOT be present. If you don't mind if a tag is present or not,
+               just do not put it in the list.
+        :param grade_between: a tuple of two floating point number or None ([0.0, None], [None, 0.0] or [None, None])
+               that indicates bounds on the grade of the retrieved submissions
+        :param submit_time_between: a tuple of two dates or None ([datetime, None], [None, datetime] or [None, None])
+               that indicates bounds on the submission time of the submission. Format: "%Y-%m-%d %H:%M:%S"
+        :param keep_only_evaluation_submissions: True to keep only submissions that are counting for the evaluation
+        :param keep_only_crashes: True to keep only submissions that timed out or crashed
+        :param sort_by: a tuple (sort_column, ascending) where sort_column is in ["submitted_on", "username", "grade", "taskid"]
+               and ascending is either True or False.
+        :param limit: an integer representing the maximum number of submission to list.
+        :return: the filter for the mongoDB search.
+        """
+
+        # Create the filter for the query. base_filter is used to also filter the collection user_tasks.
+        base_filter = {"courseid": course.get_id()}
+        filter = {}
+
+        # Tasks (with categories)
+        if only_tasks and not only_tasks_with_categories:
+            _validate_list(only_tasks)
+            base_filter["taskid__in"] = only_tasks
+        elif only_tasks_with_categories:
+            only_tasks_with_categories = set(only_tasks_with_categories)
+            more_tasks = {taskid for taskid, task in course.get_tasks().items() if
+                          only_tasks_with_categories.intersection(course.get_task_dispenser().get_categories(taskid))}
+            if only_tasks:
+                _validate_list(only_tasks)
+                more_tasks.intersection_update(only_tasks)
+            base_filter["taskid__in"] = list(more_tasks)
+
+        # Users/audiences
+        if only_users and not only_audiences:
+            _validate_list(only_users)
+            base_filter["username__in"] = only_users
+        elif only_audiences:
+            list_audience_id = [ObjectId(o) for o in only_audiences]
+            students = set()
+            for audience in Audience.objects(id__in=list_audience_id):
+                students.update(audience["students"])
+            if only_users:  # do the intersection
+                _validate_list(only_users)
+                students.intersection_update(only_users)
+            base_filter["username__in"] = list(students)
+
+        # Tags
+        for tag_id, should_be_present in with_tags or []:
+            if id_checker(tag_id):
+                filter["tests." + tag_id + "__in"] = [None, False] if not should_be_present else [True]
+
+        # Grades
+        if grade_between and grade_between[0] is not None:
+            filter["grade__gte"] = float(grade_between[0])
+        if grade_between and grade_between[1] is not None:
+            filter["grade__lte"] = float(grade_between[1])
+
+        # Submit time
+        if submit_time_between and submit_time_between[0] is not None:
+            filter["submitted_on__gte"] = datetime.fromisoformat(submit_time_between[0])
+        if submit_time_between and submit_time_between[1] is not None:
+            filter["submitted_on__lte"] = datetime.fromisoformat(submit_time_between[1])
+
+        # Only crashed or timed-out submissions
+        if keep_only_crashes:
+            filter["result__in"] = ["crash", "timeout"]
+
+        # Only evaluation submissions
+        user_tasks = UserTask.objects(**base_filter)
+        best_submissions_list = {user_task.submissionid for user_task in user_tasks if
+                                 user_task.submissionid is not None}
+
+        if keep_only_evaluation_submissions:
+            filter["id__in"] = list(best_submissions_list)
+
+        filter.update(base_filter)
+
+        return filter, best_submissions_list
+
+    def get_selected_submissions_queryset(self, course,
+                                          only_tasks=None, only_tasks_with_categories=None,
+                                          only_users=None, only_audiences=None,
+                                          with_tags=None,
+                                          grade_between=None, submit_time_between=None,
+                                          keep_only_evaluation_submissions=False,
+                                          keep_only_crashes=False,
+                                          sort_by=("submitted_on", True)):
+        """
+        All the parameters (excluding course, sort_by and keep_only_evaluation_submissions) can be None.
+        If that is the case, they are ignored.
+
+        :param course: the course
+        :param only_tasks: a list of task ids. Only submissions on these tasks will be loaded.
+        :param only_tasks_with_categories: keep only tasks that have a least one category in common with this list
+        :param only_users: a list of usernames. Only submissions from these users will be loaded.
+        :param only_audiences: a list of audience ids. Only submissions from users in these will be loaded
+        :param with_tags: a list of tags in the form [(tagid, present)], where present is a boolean indicating
+               whether the tag MUST be present or MUST NOT be present. If you don't mind if a tag is present or not,
+               just do not put it in the list.
+        :param grade_between: a tuple of two floating point number or None ([0.0, None], [None, 0.0] or [None, None])
+               that indicates bounds on the grade of the retrieved submissions
+        :param submit_time_between: a tuple of two dates or None ([datetime, None], [None, datetime] or [None, None])
+               that indicates bounds on the submission time of the submission. Format: "%Y-%m-%d %H:%M:%S"
+        :param keep_only_evaluation_submissions: True to keep only submissions that are counting for the evaluation
+        :param keep_only_crashes: True to keep only submissions that timed out or crashed
+        :param sort_by: a tuple (sort_column, ascending) where sort_column is in ["submitted_on", "username", "grade", "taskid"]
+               and ascending is either True or False.
+        :return: a tuple (queryset, best_submissions_list), best_submissions_list being a list of submission ids that are the evaluated submissions for each user-task pair.
+        """
+
+        filter, best_submissions_list = self.get_submissions_mongo_filter(course, only_tasks=only_tasks,
+                                                               only_tasks_with_categories=only_tasks_with_categories,
+                                                               only_users=only_users,
+                                                               only_audiences=only_audiences, with_tags=with_tags,
+                                                               grade_between=grade_between,
+                                                               submit_time_between=submit_time_between,
+                                                               keep_only_evaluation_submissions=keep_only_evaluation_submissions,
+                                                               keep_only_crashes=keep_only_crashes)
+
+        submissions = Submission.objects(**filter)
+
+        if sort_by[0] not in ["submitted_on", "username", "grade", "taskid"]:
+            sort_by[0] = "submitted_on"
+        submissions = submissions.order_by(("" if sort_by[1] else "-") + sort_by[0])
+
+        return submissions, best_submissions_list
+
+    def get_selected_submissions(self, course,
+                                 only_tasks=None, only_tasks_with_categories=None,
+                                 only_users=None, only_audiences=None,
+                                 with_tags=None,
+                                 grade_between=None, submit_time_between=None,
+                                 keep_only_evaluation_submissions=False,
+                                 keep_only_crashes=False,
+                                 sort_by=("submitted_on", True),
+                                 limit=None, skip=None):
+        """
+        Wrapper around get_selected_submissions_queryset that transforms the queryset into a list
+        of dicts and marks best (evaluated) submissions. Also handles limit and skip parameters.
+
+        See get_selected_submissions_queryset for parameter descriptions.
+        :param limit: an integer representing the maximum number of submission to list.
+        :param skip: an integer representing the number of submission to skip.
+
+        :return: a list of submissions (as dicts) filling the criterias given, or a tuple containing that list plus the total
+        number of submissions (ignoring limit and skip) if limit is set.
+        """
+
+        result = self.get_selected_submissions_queryset(
+            course, only_tasks=only_tasks,
+            only_tasks_with_categories=only_tasks_with_categories,
+            only_users=only_users,
+            only_audiences=only_audiences, with_tags=with_tags,
+            grade_between=grade_between,
+            submit_time_between=submit_time_between,
+            keep_only_evaluation_submissions=keep_only_evaluation_submissions,
+            keep_only_crashes=keep_only_crashes,
+            sort_by=sort_by)
+
+        submissions, best_submissions_list = result
+
+        submissions_count = submissions.count()
+        if skip is not None and skip < submissions_count:
+            submissions = submissions.skip(skip)
+        if limit is not None:
+            submissions = submissions.limit(limit)
+
+        out = list(submissions)
+        for s in out:
+            s.best = s.id in best_submissions_list
+
+        if limit is not None:
+            return out, submissions_count
+        else:
+            return out
 
     def get_submission(self, submissionid, as_username: Optional[str] = None) -> Optional[Submission]:
         """
@@ -259,18 +462,6 @@ class WebAppSubmissionManager:
         inputdata["@attempts"] = str(my_user_task.tried + 1)
         inputdata["@random"] = list(my_user_task.random)
         inputdata["@state"] = my_user_task.state
-
-        # Send LTI information to the client except "consumer_key"
-        # to_dict() to avoid sending mongoengine BaseLists to ZMQ
-        if session.is_lti:
-            lti_info = session.lti.to_mongo().to_dict()
-            for key in lti_info:
-                if key == "consumer_key" or key.startswith("outcome"): # Skip "consumer_key" and "outcome*"
-                    continue
-                self._logger.debug("LTI data : %s, %s",key, lti_info[key])
-                # Add @lti_ prefix
-                key_str = "@lti_" + key
-                inputdata[key_str] = lti_info[key]
 
         plugin_manager.call_hook("new_submission", submission=obj, inputdata=inputdata)
 
@@ -524,7 +715,9 @@ class WebAppSubmissionManager:
         # each time. Not sure optimizing this is necessary.
         for base_path, submission in file_to_put.items():
             try:
-                submission_yaml = io.BytesIO(custom_yaml.dump(submission.to_mongo().to_dict()).encode('utf-8'))
+                submission_dict = submission.to_mongo().to_dict()
+                submission_dict["input"] = self.get_input_from_submission(submission, only_input=True)
+                submission_yaml = io.BytesIO(custom_yaml.dump(submission_dict).encode('utf-8'))
                 submission_yaml_fname = base_path + '/submission.test'
 
                 # Avoid putting two times the same submission on the same place

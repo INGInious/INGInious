@@ -237,7 +237,9 @@ class BaseTaskPage(object):
                 result = self.submission_manager.get_feedback_from_submission(result, show_everything=is_staff)
 
                 # user_task always exists as we called user_saw_task before
-                user_task = UserTask.objects.get(courseid=course.get_id(), taskid=task.get_id(), username__in=result["username"])
+                # TODO : group submissions are linked to multiple user_tasks
+                #        refactor submission_to_json to avoid this code
+                user_task = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username__in=result["username"]).first()
 
                 default_submissionid = user_task.submissionid
                 if default_submissionid is None:
