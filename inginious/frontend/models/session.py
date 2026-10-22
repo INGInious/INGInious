@@ -33,3 +33,11 @@ class Session(Document):
             }
         ]
     }
+
+    def regenerate(self):
+        """ Deletes this session from the database and resets it to a blank one with a new id """
+        Session.objects(id=self.id).delete()
+        blank = Session(permanent=self.permanent, language=self.language)
+        for name in self._fields:
+            setattr(self, name, getattr(blank, name))
+        self._created = True  # make the next save() insert the document instead of updating it
