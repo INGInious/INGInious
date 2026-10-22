@@ -209,7 +209,8 @@ class UserManager:
             self._logger.info("User %s disconnected - %s - %s - %s", session.username, session.realname,
                               session.email, ip)
 
-        session.loggedin = False
+        # Forge a new session to prevent any reuse of the previous session id (and data bound to it, like LTI launches)
+        session.regenerate()
 
     def get_users_info(self, usernames) -> Dict[str, Optional[User]]:
         """
