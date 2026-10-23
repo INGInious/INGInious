@@ -3,7 +3,8 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from mongoengine import StringField, ListField, BooleanField, EmbeddedDocument
+from mongoengine import Document, StringField, ListField, BooleanField, EmbeddedDocument, EmbeddedDocumentField, \
+    DynamicField, DateTimeField, ObjectIdField
 
 
 class LTIData(EmbeddedDocument):
@@ -27,3 +28,25 @@ class LTIData(EmbeddedDocument):
     tool_description = StringField()
     tool_name = StringField()
     tool_url = StringField()
+
+
+class LaunchData(Document):
+    """ LTI launch messages and nonces, launch ids being prefixed by the LTI version (lti1p1- or lti1p3-) """
+    session_id = ObjectIdField()
+    launch_id = StringField(required=True)  # pylti1p3 key
+    value = DynamicField(required=True)
+    expiration = DateTimeField(required=True)
+
+    # Set by INGInious once the launch message is validated
+    lti = EmbeddedDocumentField(LTIData)
+
+    meta = {
+        'collection': 'lti_launch',
+        'indexes': [
+            {'fields': ['session_id', 'launch_id'], 'unique': True},
+            {
+                'fields': ['expiration'],
+                'expireAfterSeconds': 0  # use field value
+            }
+        ]
+    }
