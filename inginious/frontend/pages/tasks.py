@@ -23,12 +23,13 @@ from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.courses import Course
-from inginious.frontend.models import UserTask, Group
+from inginious.frontend.models import UserTask, Group, LaunchData
 
 
-def _get_lti_launch(model, courseid, taskid, launch_id):
+def _get_lti_launch(lti_version, courseid, taskid, launch_id):
     """ Returns the LTI launch if it is still valid and was issued for this task, None otherwise """
-    if not (launch := model.objects(session_id=session.id, launch_id=launch_id, lti__valid=True).first()):
+    if not (launch := LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=lti_version,
+                                         lti__valid=True).first()):
         return None
 
     same_courseid = launch.lti.task[0] == courseid
@@ -39,7 +40,6 @@ def _get_lti_launch(model, courseid, taskid, launch_id):
 class TaskPage(INGIniousAuthPage):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
     _is_lti = False
-    _launch_model = None
 
     def preview_allowed(self, courseid, taskid):
         try:
@@ -52,7 +52,7 @@ class TaskPage(INGIniousAuthPage):
         """ GET request """
         username = session.username
 
-        if self._is_lti and not _get_lti_launch(self._launch_model, courseid, taskid, launch_id):
+        if self._is_lti and not _get_lti_launch(self._lti_version, courseid, taskid, launch_id):
             raise Forbidden(description=_("No LTI data available."))
 
         # Fetch the course
@@ -165,7 +165,7 @@ class TaskPage(INGIniousAuthPage):
 
         lti_info = None
         if self._is_lti:
-            if not (launch := _get_lti_launch(self._launch_model, courseid, taskid, launch_id)):
+            if not (launch := _get_lti_launch(self._lti_version, courseid, taskid, launch_id)):
                 # the launch may have expired from the database while the page was open
                 return Response(content_type='application/json', response=json.dumps({
                     "status": "error", "title": _("Error"),
@@ -414,13 +414,12 @@ class TaskPage(INGIniousAuthPage):
 class TaskPageStaticDownload(INGIniousPage):
     """ Allow to download files stored in the task folder """
     _is_lti = False
-    _launch_model = None
 
     def GET(self, courseid, taskid, path, launch_id=None):  # pylint: disable=arguments-differ
         """ GET request """
         try:
 
-            if self._is_lti and not _get_lti_launch(self._launch_model, courseid, taskid, launch_id):
+            if self._is_lti and not _get_lti_launch(self._lti_version, courseid, taskid, launch_id):
                     raise Forbidden(description=_("No LTI data available."))
 
             course = Course.get(courseid)

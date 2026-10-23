@@ -3,47 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from mongoengine import Document, StringField, DateTimeField, IntField, EmbeddedDocumentField, ObjectIdField
-
-from inginious.frontend.models.lti import LTIData
-
-
-class Nonce(Document):
-    timestamp = DateTimeField()
-    nonce = StringField()
-    expiration = DateTimeField()
-
-    meta = {
-        'collection': 'nonce',
-        'indexes': [
-            ('timestamp', 'nonce'),
-            {
-                'fields': ['expiration'],
-                'expireAfterSeconds': 0 # use field value
-            }
-        ]
-    }
-
-class LISLaunch(Document):
-    """ LTI 1.1 launch message information, outcome fields are needed to send grades back to the TC """
-    session_id = ObjectIdField(required=True)  # a launch is only usable from its session, as done by pylti1p3 for LTI1.3
-    launch_id = StringField(required=True)
-    consumer_key = StringField(required=True)
-    outcome_service_url = StringField()
-    outcome_result_id = StringField()
-    lti = EmbeddedDocumentField(LTIData, required=True)
-    expiration = DateTimeField(required=True)
-
-    meta = {
-        'collection': 'lis_launch',
-        'indexes': [
-            {'fields': ['session_id', 'launch_id'], 'unique': True},
-            {
-                'fields': ['expiration'],
-                'expireAfterSeconds': 0  # use field value
-            }
-        ]
-    }
+from mongoengine import Document, StringField, IntField
 
 
 class LISOutcome(Document):

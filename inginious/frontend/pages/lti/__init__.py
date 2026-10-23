@@ -9,15 +9,14 @@ from flask import  redirect, render_template, session
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.models import User, LISLaunch
+from inginious.frontend.models import User, LaunchData
 
 
 class LTIBindPage(INGIniousAuthPage):
     _lti_version = ""
-    _launch_model = LISLaunch
 
     def _get_lti_data(self, launch_id):
-        launch = self._launch_model.objects(session_id=session.id, launch_id=launch_id, lti__exists=True).first()
+        launch = LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=self._lti_version).first()
         if launch is None:
             return None, render_template("lti/bind.html", success=False,
                                                      data=None, error=_("Invalid LTI launch id"))
@@ -57,14 +56,13 @@ class LTIBindPage(INGIniousAuthPage):
 
 class LTILoginPage(INGIniousPage):
     _lti_version = ""
-    _launch_model = LISLaunch
 
     def GET(self, launch_id):
         """
             Checks if user is authenticated and valides the pending LTI launch.
             Otherwise, returns the login templates that invites to bind account.
         """
-        launch = self._launch_model.objects(session_id=session.id, launch_id=launch_id, lti__exists=True).first()
+        launch = LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=self._lti_version).first()
         if launch is None:
             raise Forbidden(description=_("No LTI data available."))
 

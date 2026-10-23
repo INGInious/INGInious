@@ -11,17 +11,17 @@ import secrets
 
 from flask import redirect, url_for, current_app
 from oauthlib.oauth1 import RequestValidator
-from mongoengine.errors import NotUniqueError
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
 from lti import ToolProvider
 
-from frontend.pages.tasks import TaskPage, TaskPageStaticDownload
+from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
+from inginious.frontend.lti.v1_1 import MongoLTI11LaunchDataStorage
 
-from inginious.frontend.models import Nonce, LTIData, LISLaunch, User
+from inginious.frontend.models import LTIData, LaunchData
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -77,13 +77,12 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
 
     def validate_timestamp_and_nonce(self, client_key, timestamp, nonce, request, request_token=None, access_token=None):
         try:
-            date = datetime.datetime.fromtimestamp(int(timestamp)).astimezone()
-            Nonce(timestamp=date, nonce=nonce, expiration=date + self._nonce_validity).save()
-            return True
+            timestamp = int(timestamp)
         except ValueError: # invalid timestamp
             return False
-        except NotUniqueError:
-            return False
+        # Nonces are not bound to a session, they must be unique across all launches
+        return MongoLTI11LaunchDataStorage().add_value("lti1p1-nonce-{}-{}".format(timestamp, nonce), True,
+                                                       self._nonce_validity.total_seconds())
 
     def get_client_secret(self, client_key, request):
         return self._keys[client_key] if client_key in self._keys else None
@@ -92,13 +91,11 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
 class LTI11TaskPage(TaskPage):
     _is_lti = True
     _lti_version = "1.1"
-    _launch_model = LISLaunch
 
 
 class LTI11TaskPageStaticDownload(TaskPageStaticDownload):
     _is_lti = True
     _lti_version = "1.1"
-    _launch_model = LISLaunch
 
 
 class LTI11LaunchPage(INGIniousPage):
@@ -144,12 +141,13 @@ class LTI11LaunchPage(INGIniousPage):
                 raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
                                     "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
 
-            # Store the launch message information
-            expiration = datetime.datetime.now(datetime.timezone.utc) + current_app.permanent_session_lifetime
-            launch_id = secrets.token_urlsafe(32)  # unguessable launch id
-            launch = LISLaunch(session_id=flask.session.id, launch_id=launch_id, consumer_key=consumer_key,
-                               outcome_service_url=lis_outcome_service_url, outcome_result_id=outcome_result_id,
-                               expiration=expiration)
+            # Store the launch message information, as done by pylti1p3 for LTI1.3
+            launch_id = "lti1p1-launch-" + secrets.token_urlsafe(32)  # unguessable launch id
+            MongoLTI11LaunchDataStorage(flask.session.id).set_value(launch_id, {
+                "consumer_key": consumer_key,
+                "outcome_service_url": lis_outcome_service_url,
+                "outcome_result_id": outcome_result_id
+            }, current_app.permanent_session_lifetime.total_seconds())
 
             tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
             tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
@@ -157,7 +155,7 @@ class LTI11LaunchPage(INGIniousPage):
             context_title = post_input.get('context_title', 'N/A')
             context_label = post_input.get('context_label', 'N/A')
 
-            launch.lti = LTIData(
+            lti_data = LTIData(
                 version="1.1",
                 email=email,
                 username=user_id,
@@ -172,7 +170,7 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_url=tool_url,
                 redir_url=url_for("lti.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
             )
-            launch.save()
+            LaunchData.objects(session_id=flask.session.id, launch_id=launch_id).update(set__lti=lti_data)
 
             return redirect(url_for("lti.loginpage", launch_id=launch_id))
         else:
