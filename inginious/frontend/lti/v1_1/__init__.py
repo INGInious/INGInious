@@ -13,7 +13,7 @@ from mongoengine.errors import NotUniqueError
 from inginious.frontend.lti import LTIScorePublisher
 from inginious.frontend.courses import Course
 
-from inginious.frontend.models import LISOutcome, LaunchData
+from inginious.frontend.models import LTIGrade, LaunchData
 
 
 class MongoLTI11LaunchDataStorage:
@@ -46,9 +46,9 @@ class LTIOutcomeManager(LTIScorePublisher):
 
     def __init__(self, user_manager):
         self._logger = logging.getLogger("inginious.webapp.lti1_1.outcome_manager")
-        super(LTIOutcomeManager, self).__init__(LISOutcome, user_manager)
+        super(LTIOutcomeManager, self).__init__("1.1", user_manager)
 
-    def process(self, outcome : LISOutcome, grade):
+    def process(self, outcome : LTIGrade, grade):
         try:
             clip = lambda n, minn, maxn: min(max(n, minn), maxn)
             grade = clip(grade / 100.0, 0.0, 1.0)
