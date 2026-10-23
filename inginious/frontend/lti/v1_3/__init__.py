@@ -70,7 +70,7 @@ class LTIGradeManager(LTIScorePublisher):
     def __init__(self, user_manager, global_config):
         self._logger = logging.getLogger("inginious.webapp.lti1_3.grade_manager")
         self._global_config = global_config
-        super(LTIGradeManager, self).__init__(LTIGrade, user_manager)
+        super(LTIGradeManager, self).__init__("1.3", user_manager)
 
     def process(self, mongo_entry : LTIGrade, grade):
         courseid, taskid, message_launch_id = (mongo_entry.courseid, mongo_entry.taskid, mongo_entry.message_launch_id)

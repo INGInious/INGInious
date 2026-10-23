@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 from mongoengine import Document, StringField, ListField, BooleanField, EmbeddedDocument, EmbeddedDocumentField, \
-    DynamicField, DateTimeField, ObjectIdField
+    DynamicField, DateTimeField, ObjectIdField, IntField
 
 
 class LTIData(EmbeddedDocument):
@@ -50,3 +50,16 @@ class LaunchData(Document):
             }
         ]
     }
+
+
+class LTIGrade(Document):
+    """ Grades waiting to be sent back to the LTI platform, for both LTI versions """
+    lti_version = StringField(required=True)  # "1.1" or "1.3"
+    courseid = StringField()
+    taskid = StringField()
+    username = StringField()
+    nb_attempt = IntField()
+
+    message_launch_id = StringField()
+
+    meta = {'collection': 'lti_grade_queue'}
