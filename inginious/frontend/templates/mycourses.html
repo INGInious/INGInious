@@ -174,13 +174,14 @@
                 {% elif success == False %}
                     <div class="alert alert-danger alert-dismissable" role="alert">
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                        {{ _("Failed to create the course.") }}
+                        {{ error }}
                     </div>
                 {% endif %}
                 <form class="form row" role="form" method="post">
                     <div class="form-group col-sm-8">
                         <label class="sr-only" for="new_courseid">{{ _("Course") }}</label>
-                        <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder="{{ _('New course id') }}">
+                        <input name="new_courseid" type="text" class="form-control" id="new_courseid" required maxlength="50"
+                               pattern="[a-zA-Z0-9\-\._]+" placeholder="{{ _('New course id') }}">
                     </div>
                     <div class="form-group col-sm-4">
                         <button type="submit" class="btn btn-block btn-primary">{{ _("Create new course") }}</button>
