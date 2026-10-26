@@ -13,7 +13,6 @@ import logging
 import argparse
 import base64
 import tzlocal
-import datetime
 
 from pymongo import MongoClient
 from gridfs import GridFS
@@ -189,11 +188,20 @@ def main():
 
     if db_version < 21:
         print("Updating database to db_version 21")
-        # Remove any older context key
-        database.lti_launch.update_many({"context": {"$exists": True}}, {"$unset": {"context": True}})
-        # Set a default expiration date for existing documents
-        exp_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=86400)
-        database.lti_launch.update_many({"expiration": {"$exists": False}}, {"$set": {"expiration": exp_date}})
+        # LTI grade queues are merged in a single collection with a new format, refuse to lose pending grades
+        for collection in ["lis_outcome_queue", "lti_grade_queue"]:
+            if database[collection].count_documents({}):
+                print("Collection {} is not empty: some LTI grades have not been sent yet. Please run your current "
+                      "INGInious version until it is empty before updating.".format(collection))
+                # Save current DB version (older migrations)
+                database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
+                exit(1)
+        # LTI launch storage is merged in a single collection with a new format, launches are short-lived anyway
+        for collection in ["nonce", "lis_launch", "lti_launch"]:
+            database[collection].drop()
+        # LTI data is no longer stored in sessions: cookieless LTI sessions are useless without their launch data
+        database.sessions.delete_many({"is_lti": True})
+        database.sessions.update_many({}, {"$unset": {"is_lti": True, "lti": True}})
         db_version = 21
 
     database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
