@@ -139,6 +139,12 @@
         let grouped = $(this).hasClass("date_picker_grouped");
         let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
 
+        // select the "custom" radio button
+        let customRadio = $(this).closest(".accessibility").find("input[type='radio'][value='custom']");
+        if (!customRadio.prop("checked")) {
+            customRadio.prop("checked", true).trigger("change");
+        }
+
         tasks.each(function () {
             let taskid = $(this).data("taskid");
             let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
