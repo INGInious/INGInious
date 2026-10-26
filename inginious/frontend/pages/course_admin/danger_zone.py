@@ -33,12 +33,13 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         self._logger.info("Course %s wiped.", courseid)
 
-    def dump_course(self, course):
+    def dump_course(self, course, keep_staff=False):
         """
             Creates a new course (Archive course), gives it a course id resulting of the concatenation of the original id
             and the archiving date. This archive course is marked as archived and given an archive date in its YAML descriptor.
-            The original course keeps their course id and all related submissions, user_tasks, audiences, courses and
-            groups are updated to point to the archive course.
+            The original course keeps its course id. Submissions and user tasks are moved to the archive course,
+            except for staff members' records when keep_staff is True. Audiences, groups, and the course class are
+            moved to the archive course.
         """
 
         courseid = course.get_id()
@@ -60,8 +61,10 @@ class CourseDangerZonePage(INGIniousAdminPage):
         Course(archive_course_id, archive_course_content).save()
 
         # Update course id in DB
-        Submission.objects(courseid=courseid).update(set__courseid=archive_course_id)
-        UserTask.objects(courseid=courseid).update(set__courseid=archive_course_id)
+        staff = course.get_staff() if keep_staff else []
+        Submission.objects(courseid=courseid, username__nin=staff).update(set__courseid=archive_course_id)
+        UserTask.objects(courseid=courseid, username__nin=staff).update(set__courseid=archive_course_id)
+
         Group.objects(courseid=courseid).update(set__courseid=archive_course_id)
         Audience.objects(courseid=courseid).update(set__courseid=archive_course_id)
         old_course_class = CourseClass.objects(id=courseid).modify(remove=True)
@@ -104,7 +107,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
                 error = True
             else:
                 try:
-                    courseid, archive_course_id = self.dump_course(course)
+                    courseid, archive_course_id = self.dump_course(course, keep_staff="keep_staff" in data)
                     msg = _("Course archived as : ") + archive_course_id
                 except Exception as ex:
                     msg = _("An error occurred while dumping course from database: {}").format(repr(ex))
