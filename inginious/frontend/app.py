@@ -49,7 +49,7 @@ def _put_configuration_defaults(config):
         print("-------------", file=sys.stderr)
         print("session_parameters:", file=sys.stderr)
         print('\ttimeout: 86400  # 24 * 60 * 60, # 24 hours in seconds', file=sys.stderr)
-        print('\tsecure: False # change this to True if you only use https', file=sys.stderr)
+        print('\tsecure: True # change this to False if you do not use https (disables LTI)', file=sys.stderr)
         print('\tsecret_key: "{}"'.format(hexlify(os.urandom(32)).decode('utf-8')), file=sys.stderr)
         print("-------------", file=sys.stderr)
         exit(1)
@@ -88,10 +88,14 @@ def _put_configuration_defaults(config):
         "SESSION_COOKIE_NAME": session_parameters.get("cookie_name", "inginious_session_id"),
         "SESSION_COOKIE_DOMAIN": session_parameters.get("cookie_domain", None),
         "SESSION_COOKIE_PATH": session_parameters.get("cookie_path", None),
-        "SESSION_COOKIE_SAMESITE": session_parameters.get("samesite", "Lax"),
+        "SESSION_COOKIE_SAMESITE": session_parameters.get("samesite", "None"),
         "SESSION_COOKIE_HTTPONLY": session_parameters.get("httponly", True),
-        "SESSION_COOKIE_SECURE": session_parameters.get("secure", False)
+        "SESSION_COOKIE_SECURE": session_parameters.get("secure", True)
     }
+
+    if new_config["SESSION_COOKIE_SAMESITE"] != "None" or not new_config["SESSION_COOKIE_SECURE"]:
+        print("Warning: LTI will not work unless session_parameters has samesite: \"None\" and secure: True, "
+              "as the session cookie must be sent from within the LMS iframe (requires https).", file=sys.stderr)
 
     # SMTP config
     smtp_conf = config.get('smtp', None)

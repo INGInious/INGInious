@@ -47,6 +47,15 @@ plugins:
 superadmins:
   - test
 
+# Session cookie parameters
+# LTI requires samesite: None and secure: true, and therefore INGInious to be served over HTTPS.
+# If you serve INGInious over plain HTTP, use samesite: Lax and secure: false (LTI will not be available).
+session_parameters:
+    secret_key: "change_this_to_a_long_random_string"
+    timeout: 86400  # 24 hours in seconds
+    samesite: None
+    secure: true
+
 # Disable INGInious?
 maintenance: false
 
