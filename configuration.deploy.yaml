@@ -7,7 +7,8 @@ mongo_opt:
 plugins: []
 session_parameters:
     secret_key:  # must be set: the frontend prints a random value to use at first launch
-    secure: false
+    samesite: None
+    secure: true
     timeout: 86400
 superadmins:
 - superadmin
