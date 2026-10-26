@@ -88,7 +88,7 @@
         let accessibility = dispenser_config[taskid]["accessibility"] ?? {{ config_item.default | tojson }};
         let value = 'custom';
 
-        $(this).find(".accessibility input[type='text']").val(""); // reset inner date fields
+        $(this).find(".date_picker").datetimepicker("clear"); // reset picker state of shared modal for non-grouped editing
         if (accessibility === true) {
             value = 'true';
         } else if (accessibility === false) {
@@ -102,6 +102,13 @@
 
         $(this).find(".accessibility input[value=" + value + "]").prop("checked", true);
     });
+
+    // Empty the grouped accessibility values when the grouped modal is closed
+    $("#grouped-actions-edit").on("hidden.bs.modal", function () {
+        $(this).find("input.accessibility_grouped").prop("checked", false);
+        $(this).find(".date_picker_grouped").datetimepicker("clear"); // reset picker state of modal for grouped editing
+    });
+
 
     // Catch modals changes
     $(".accessibility input").change(function () {
@@ -124,6 +131,7 @@
                 } else {
                     $("#task_" + taskid + " .accessibility-custom").show();
                     dispenser_update_task_accessibility(grouped, taskid);
+                    dispenser_refresh_task_accessibility_dates(grouped, taskid);
                 }
             } else
                 $(this).parent().trigger("change.datetimepicker");
@@ -131,21 +139,29 @@
     });
 
     // Catch time picker changes
-    $('.date_picker').on("change.datetimepicker", function () {
-        let targetInput = $(this).data('target-input');
-        let targetSpan = $(this).data('target-span');
-        let val = $(targetInput).val();
-
+    $('.date_picker').on("focusin click", function () {
         let grouped = $(this).hasClass("date_picker_grouped");
         let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
 
         tasks.each(function () {
             let taskid = $(this).data("taskid");
-            let time = $("<time/>").attr("datetime", val).text(dtf.format(new Date(val)));
-            $("#task_" + $(this).data("taskid") + " ." + targetSpan).empty().append(time);
             dispenser_update_task_accessibility(grouped, taskid);
+            dispenser_refresh_task_accessibility_dates(grouped, taskid);
         });
     });
+
+    function dispenser_refresh_task_accessibility_dates(grouped, taskid) {
+        let suffix = grouped ? "_grouped" : "";
+        $('.date_picker' + suffix).each(function() {
+            let targetInput = $(this).data('target-input');
+            let targetSpan = $(this).data('target-span');
+            let val = $(targetInput).val();
+            let target = $("#task_" + taskid + " ." + targetSpan).empty();
+            if (val) {
+                target.append($("<time/>").attr("datetime", val).text(dtf.format(new Date(val))));
+            }
+        });
+    }
 
     function dispenser_update_task_accessibility(grouped, taskid) {
         let start = $("#accessibility_start" + (grouped ? "_grouped" : "")).val();
