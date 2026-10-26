@@ -8,6 +8,7 @@ from collections import OrderedDict
 from flask import session, request, render_template, url_for
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.common.exceptions import InvalidNameException, CourseAlreadyExistsException
 
 
 class MyCoursesPage(INGIniousAuthPage):
@@ -22,14 +23,23 @@ class MyCoursesPage(INGIniousAuthPage):
 
         user_input = request.form
         success = None
+        error = None
 
         if "new_courseid" in user_input and self.user_manager.user_is_superadmin():
+            courseid = user_input["new_courseid"].strip()
             try:
-                courseid = user_input["new_courseid"]
-                Course(courseid, {"name": courseid, "accessible": False}).save()
+                Course(courseid, {"name": courseid, "accessible": False}).create()
                 success = True
-            except:
+            except InvalidNameException:
                 success = False
+                error = _("Course ID is not valid")
+            except CourseAlreadyExistsException:
+                success = False
+                error = _("Course ID already exists")
+            except Exception as e:
+                self.logger.exception("Error while creating course: %s", str(e))
+                success = False
+                error = _("Course could not be created")
         elif "pinning_courseid" in user_input:
             pinned_courses = self.user_manager.get_user_pinned_courses(session.username)
             pinned_courses = [course for course in pinned_courses if course in Course.get_all()]
@@ -55,9 +65,9 @@ class MyCoursesPage(INGIniousAuthPage):
                 self.user_manager.unpin_course(session.username, courseid)
                 return {"courseid": courseid}
 
-        return self.show_page(success)
+        return self.show_page(success, error)
 
-    def show_page(self, success):
+    def show_page(self, success, error=None):
         """  Display main course list page """
         username = session.username
         user_info = self.user_manager.get_user_info(username)
@@ -93,4 +103,4 @@ class MyCoursesPage(INGIniousAuthPage):
                                            pinned_courses=pinned_courses,
                                            registrable_courses=registerable_courses,
                                            submissions=except_free_last_submissions,
-                                           success=success)
+                                           success=success, error=error)

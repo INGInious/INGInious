@@ -16,7 +16,7 @@ from collections import OrderedDict
 
 def id_checker(id_to_test):
     """Checks if a id is correct"""
-    return bool(re.match(r'[a-z0-9\-\._]+$', id_to_test, re.IGNORECASE))
+    return bool(re.fullmatch(r'^[a-z0-9][a-z0-9\-\._]*$', id_to_test, re.IGNORECASE))
 
 
 def id_checker_tests(id_to_test):
