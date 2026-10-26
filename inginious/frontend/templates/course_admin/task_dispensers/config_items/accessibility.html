@@ -81,6 +81,8 @@
 
 {% if not grouped %}
 <script>
+    var dispenser_resetting = false;
+
     // Feed modal
     $("#edit_task_modal").on('show.bs.modal', function (event) {
         let button = $(event.relatedTarget);
@@ -88,7 +90,9 @@
         let accessibility = dispenser_config[taskid]["accessibility"] ?? {{ config_item.default | tojson }};
         let value = 'custom';
 
-        $(this).find(".accessibility input[type='text']").val(""); // reset inner date fields
+        dispenser_resetting = true;
+        $(this).find(".date_picker").datetimepicker("clear"); // reset picker state of shared modal for non-grouped editing
+        dispenser_resetting = false;
         if (accessibility === true) {
             value = 'true';
         } else if (accessibility === false) {
@@ -106,8 +110,10 @@
 
     // Empty the grouped accessibility values when the grouped modal is closed
     $("#grouped-actions-edit").on("hidden.bs.modal", function () {
+        dispenser_resetting = true;
         $(this).find("input.accessibility_grouped").prop("checked", false);
-        $(this).find(".date_picker_grouped input[type='text']").val("");
+        $(this).find(".date_picker_grouped").datetimepicker("clear"); // reset picker state of modal for grouped editing
+        dispenser_resetting = false;
     });
 
 
@@ -141,6 +147,9 @@
 
     // Catch time picker changes
     $('.date_picker').on("change.datetimepicker", function () {
+
+        // if the change was triggered by a datetimepicker reset, ignore it
+        if (dispenser_resetting) return;
 
         let grouped = $(this).hasClass("date_picker_grouped");
         let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
