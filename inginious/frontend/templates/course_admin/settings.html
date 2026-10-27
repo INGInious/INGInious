@@ -483,7 +483,7 @@
         </div>
     </div>
     <button class="btn btn-primary btn-block mt-3" type="submit"><i class="fa fa-download"></i> {{ _("Save changes") }}</button>
-    
+
 </form>
 
 <script type="text/javascript">
@@ -515,5 +515,19 @@
         hideAcType();
         $("[name='registration_ac']").change(hideAcType);
     })
+
+
+
+    function selectCustomOnPickerChange(pickers, radioName) {
+        $(pickers).on('change.datetimepicker', function() {
+            var customRadio = $("input[type='radio'][name='" + radioName + "'][value='custom']");
+            if (!customRadio.prop("checked")) {
+                customRadio.prop("checked", true).trigger("change");
+            }
+        });
+    }
+    selectCustomOnPickerChange('#accessible_start_picker, #accessible_end_picker', 'accessible');
+    selectCustomOnPickerChange('#registration_start_picker, #registration_end_picker', 'registration');
+
 </script>
 {% endblock %}
