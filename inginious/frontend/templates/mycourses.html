@@ -174,13 +174,17 @@
                 {% elif success == False %}
                     <div class="alert alert-danger alert-dismissable" role="alert">
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                        {{ _("Failed to create the course.") }}
+                        {{ error }}<br>
                     </div>
                 {% endif %}
-                <form class="form row" role="form" method="post">
+                <form class="form row" role="form" method="post" id="new_course_form">
                     <div class="form-group col-sm-8">
                         <label class="sr-only" for="new_courseid">{{ _("Course") }}</label>
-                        <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder="{{ _('New course id') }}">
+                        <input name="new_courseid" type="text" class="form-control" id="new_courseid"
+                               placeholder="{{ _('New course id') }}">
+                        <div class="invalid-feedback" id="new_courseid_feedback">
+                            {{ _("The course id is required, must have a maximum length of 50 and may only contain letters, digits, '_' and '-'.") }}
+                        </div>
                     </div>
                     <div class="form-group col-sm-4">
                         <button type="submit" class="btn btn-block btn-primary">{{ _("Create new course") }}</button>
@@ -190,6 +194,18 @@
 
 
     <script>
+
+        $("#new_course_form").on("submit", function(event) {
+            var input = $("#new_courseid");
+            var value = input.val().trim();
+            input.val(value);
+            if (!/^[A-Za-z0-9_\-]+$/.test(value) || value.length > 50) {
+                event.preventDefault();
+                input.addClass("is-invalid");
+                $("#new_courseid_feedback").show();
+            }
+        });
+
         $(document).on("click", ".course_filter", function() {
             change_button_color.call(this);
         });
