@@ -231,8 +231,11 @@ class DockerAgent(Agent):
                 async for i in source:
                     since = i.get('time', since)  # update time if available.
 
-                    if i["Type"] == "container" and i["status"] == "die":
-                        container_id = i["id"]
+                    # Docker Engine v29 renamed the event fields: "status" -> "Action",
+                    # and removed the top-level "id" (now at Actor.ID). Support both layouts.
+                    event_action = i.get("status") or i.get("Action")
+                    container_id = i.get("id") or i.get("Actor", {}).get("ID")
+                    if i["Type"] == "container" and event_action == "die":
                         try:
                             retval = int(i["Actor"]["Attributes"]["exitCode"])
 
@@ -246,8 +249,7 @@ class DockerAgent(Agent):
                             self._create_safe_task(self.handle_job_closing(container_id, retval))
                         elif container_id in self._student_containers_running:
                             self._create_safe_task(self.handle_student_job_closing(container_id, retval))
-                    elif i["Type"] == "container" and i["status"] == "oom":
-                        container_id = i["id"]
+                    elif i["Type"] == "container" and event_action == "oom":
                         if container_id in self._containers_running or container_id in self._student_containers_running:
                             self._logger.info("Container %s did OOM, killing it", container_id)
                             self._containers_killed[container_id] = "overflow"
