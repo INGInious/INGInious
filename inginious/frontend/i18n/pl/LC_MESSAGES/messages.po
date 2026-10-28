@@ -1,0 +1,3864 @@
+# Polish translations for .
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the  project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  INGInious\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-04-17 09:59+0200\n"
+"PO-Revision-Date: 2026-10-28 18:30+0100\n"
+"Last-Translator: Błażej Gruszka\n"
+"Language: pl\n"
+"Language-Team: Polish\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && "
+"(n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: inginious/frontend/courses.py:31
+msgid "List of exercises"
+msgstr "Lista ćwiczeń"
+
+#: inginious/frontend/parsable_text.py:37
+msgid "[no content]"
+msgstr "[brak treści]"
+
+#: inginious/frontend/parsable_text.py:81
+#, python-brace-format
+msgid "The feedback below will be hidden to the students until {}."
+msgstr "Poniższa informacja zwrotna będzie ukryta dla studentów do {}."
+
+#: inginious/frontend/parsable_text.py:97
+#, python-brace-format
+msgid ""
+"A part of this feedback is hidden until {}. Please come back later and "
+"reload the submission to see the full feedback."
+msgstr ""
+"Część tej informacji zwrotnej jest ukryta do {}. Prosimy wrócić później i"
+" odświeżyć zgłoszenie, aby zobaczyć pełną informację zwrotną."
+
+#: inginious/frontend/parsable_text.py:271
+#, python-brace-format
+msgid "<b>Parsing failed</b>: <pre>{}</pre>"
+msgstr "<b>Błąd przetwarzania</b>: <pre>{}</pre>"
+
+#: inginious/frontend/submission_manager.py:91
+msgid ""
+"Maximum submission size exceeded. Check feedback, stdout, stderr and "
+"state."
+msgstr ""
+"Przekroczono maksymalny rozmiar zgłoszenia. Sprawdź informację zwrotną, "
+"stdout, stderr i stan."
+
+#: inginious/frontend/submission_manager.py:417
+msgid "Feedback is badly formatted."
+msgstr "Informacja zwrotna jest niepoprawnie sformatowana."
+
+#: inginious/frontend/task_problems.py:76
+msgid "code"
+msgstr "kod"
+
+#: inginious/frontend/task_problems.py:109
+msgid "single-line code"
+msgstr "kod jednolinijkowy"
+
+#: inginious/frontend/task_problems.py:135
+msgid "file upload"
+msgstr "wysyłanie pliku"
+
+#: inginious/frontend/task_problems.py:169
+msgid "multiple choice"
+msgstr "test wyboru"
+
+#: inginious/frontend/task_problems.py:239
+msgid "match"
+msgstr "dopasowanie"
+
+#: inginious/frontend/tasks.py:91
+#, python-brace-format
+msgid "Environment type {0} is unknown"
+msgstr "Nieznany typ środowiska {0}"
+
+#: inginious/frontend/user_manager.py:504
+msgid "Auth method not found."
+msgstr "Nie znaleziono metody uwierzytelniania."
+
+#: inginious/frontend/pages/preferences/bindings.py:42
+#: inginious/frontend/user_manager.py:559
+msgid "Incorrect authentication binding."
+msgstr "Niepoprawne powiązanie uwierzytelniania."
+
+#: inginious/frontend/user_manager.py:569
+msgid "You must set a password before removing all bindings."
+msgstr "Przed usunięciem wszystkich powiązań musisz ustawić hasło."
+
+#: inginious/frontend/user_manager.py:600
+msgid "User could not be created."
+msgstr "Nie można utworzyć użytkownika."
+
+#: inginious/frontend/environment_types/docker.py:12
+msgid "Standard container + SSH"
+msgstr "Standardowy kontener + SSH"
+
+#: inginious/frontend/environment_types/docker.py:12
+msgid "Standard container"
+msgstr "Standardowy kontener"
+
+#: inginious/frontend/environment_types/kata.py:11
+msgid "Container running as root (Kata) + SSH"
+msgstr "Kontener działający jako root (Kata) + SSH"
+
+#: inginious/frontend/environment_types/kata.py:11
+msgid "Container running as root (Kata)"
+msgstr "Kontener działający jako root (Kata)"
+
+#: inginious/frontend/environment_types/mcq.py:11
+msgid "Multiple Choice Question solver"
+msgstr "Rozwiązywanie pytań jednokrotnego wyboru"
+
+#: inginious/frontend/environment_types/nvidia.py:11
+msgid "Container with GPUs (NVIDIA) + SSH"
+msgstr "Kontener z kartami GPU (NVIDIA) + SSH"
+
+#: inginious/frontend/environment_types/nvidia.py:11
+msgid "Container with GPUs (NVIDIA)"
+msgstr "Kontener z kartami GPU (NVIDIA)"
+
+#: inginious/frontend/pages/course.py:37
+msgid "Course not found."
+msgstr "Nie znaleziono kursu."
+
+#: inginious/frontend/pages/course_register.py:23
+msgid "This course doesn't exist."
+msgstr "Ten kurs nie istnieje."
+
+#: inginious/frontend/pages/group.py:32
+msgid "You can't access this page as a member of the staff."
+msgstr "Osoba z kadry dydaktycznej nie ma dostępu do tej strony."
+
+#: inginious/frontend/pages/group.py:53
+msgid "Couldn't register to the specified group."
+msgstr "Nie można zapisać się do wybranej grupy."
+
+#: inginious/frontend/pages/group.py:58 inginious/frontend/pages/group.py:70
+msgid "You are not allowed to change group."
+msgstr "Nie możesz zmienić grupy."
+
+#: inginious/frontend/pages/group.py:67
+msgid "You're not registered in a group."
+msgstr "Nie jesteś zapisany/a do grupy."
+
+#: inginious/frontend/pages/marketplace.py:32
+msgid "You don't have superadmin rights on this course."
+msgstr "Nie masz uprawnień superadministratora tego kursu."
+
+#: inginious/frontend/pages/marketplace.py:39
+#: inginious/frontend/pages/marketplace_course.py:33
+#: inginious/frontend/pages/marketplace_course.py:42
+msgid "You're not allowed to do that"
+msgstr "Nie masz uprawnień do tej operacji"
+
+#: inginious/frontend/pages/course_admin/student_list.py:204
+#: inginious/frontend/pages/marketplace.py:51
+msgid "User returned an invalid form."
+msgstr "Przeglądarka zwróciła niepoprawny formularz."
+
+#: inginious/frontend/pages/marketplace.py:75
+msgid "Couldn't clone course into your instance"
+msgstr "Nie można sklonować kursu do Twojej instancji"
+
+#: inginious/frontend/pages/marketplace.py:96
+msgid "An error occur while editing the course description"
+msgstr "Wystąpił błąd podczas edycji opisu kursu"
+
+#: inginious/frontend/pages/marketplace_course.py:25
+msgid "Course unavailable."
+msgstr "Kurs niedostępny."
+
+#: inginious/frontend/pages/register.py:30
+#: inginious/frontend/pages/register.py:199
+msgid "You're not allow to register."
+msgstr "Nie możesz się zarejestrować."
+
+#: inginious/frontend/pages/register.py:39
+msgid "Invalid activation hash."
+msgstr "Niepoprawny hash aktywacji."
+
+#: inginious/frontend/pages/register.py:39
+msgid "User successfully activated."
+msgstr "Konto użytkownika zostało pomyślnie aktywowane."
+
+#: inginious/frontend/pages/preferences/profile.py:31
+#: inginious/frontend/pages/register.py:70
+msgid "Invalid username format."
+msgstr "Niepoprawny format nazwy użytkownika."
+
+#: inginious/frontend/pages/register.py:73
+#: inginious/frontend/pages/register.py:139
+msgid "Invalid email format."
+msgstr "Niepoprawny format adresu e-mail."
+
+#: inginious/frontend/pages/preferences/profile.py:53
+#: inginious/frontend/pages/register.py:76
+#: inginious/frontend/pages/register.py:178
+msgid "Password too short."
+msgstr "Hasło jest zbyt krótkie."
+
+#: inginious/frontend/pages/preferences/profile.py:57
+#: inginious/frontend/pages/register.py:79
+#: inginious/frontend/pages/register.py:181
+msgid "Passwords don't match !"
+msgstr "Hasła nie są identyczne!"
+
+#: inginious/frontend/pages/register.py:82
+#: inginious/frontend/templates/preferences/profile.html:47
+msgid "Please accept the Terms of Service and Data Privacy"
+msgstr "Zaakceptuj regulamin serwisu i politykę prywatności"
+
+#: inginious/frontend/pages/register.py:90
+msgid "This username is already taken !"
+msgstr "Ta nazwa użytkownika jest już zajęta!"
+
+#: inginious/frontend/pages/register.py:92
+msgid "This email address is already in use !"
+msgstr "Ten adres e-mail jest już używany!"
+
+#: inginious/frontend/pages/register.py:107
+msgid "Welcome on INGInious"
+msgstr "Witaj w INGInious"
+
+#: inginious/frontend/pages/register.py:108
+msgid ""
+"Welcome on INGInious !\n"
+"\n"
+"To activate your account, please click on the following link :\n"
+msgstr ""
+"Witaj w INGInious !\n"
+"\n"
+"Aby aktywować swoje konto, kliknij poniższy link :\n"
+
+#: inginious/frontend/pages/register.py:117
+msgid ""
+"You are succesfully registered. An email has been sent to you for "
+"activation."
+msgstr "Rejestracja zakończona pomyślnie. Wysłaliśmy do Ciebie e-mail aktywacyjny."
+
+#: inginious/frontend/pages/register.py:122
+msgid ""
+"Something went wrong while sending you activation email. Please contact "
+"the administrator."
+msgstr ""
+"Wystąpił problem podczas wysyłania e-maila aktywacyjnego. Skontaktuj się "
+"z administratorem."
+
+#: inginious/frontend/pages/register.py:147
+msgid "This email address was not found in database."
+msgstr "Nie znaleziono tego adresu e-mail w bazie danych."
+
+#: inginious/frontend/pages/register.py:150
+msgid "INGInious password recovery"
+msgstr "Odzyskiwanie hasła INGInious"
+
+#: inginious/frontend/pages/register.py:152
+#, python-brace-format
+msgid ""
+"Dear {realname},\n"
+"\n"
+"Someone (probably you) asked to reset your INGInious password. If this "
+"was you, please click on the following link :\n"
+msgstr ""
+"Witaj, {realname},\n"
+"\n"
+"Ktoś (prawdopodobnie Ty) poprosił o zresetowanie hasła w INGInious. Jeśli"
+" to byłeś Ty, kliknij poniższy link :\n"
+
+#: inginious/frontend/pages/register.py:162
+msgid "An email has been sent to you to reset your password."
+msgstr "Wysłaliśmy do Ciebie e-mail do zresetowania hasła."
+
+#: inginious/frontend/pages/register.py:165
+msgid ""
+"Something went wrong while sending you reset email. Please contact the "
+"administrator."
+msgstr ""
+"Wystąpił problem podczas wysyłania e-maila do resetu hasła. Skontaktuj "
+"się z administratorem."
+
+#: inginious/frontend/pages/register.py:190
+msgid "Invalid reset hash."
+msgstr "Niepoprawny hash resetu hasła."
+
+#: inginious/frontend/pages/register.py:192
+msgid "Your password has been successfully changed."
+msgstr "Twoje hasło zostało pomyślnie zmienione."
+
+#: inginious/frontend/pages/social.py:18
+msgid "Auth method doesn't exist"
+msgstr "Metoda uwierzytelniania nie istnieje"
+
+#: inginious/frontend/pages/social.py:38
+msgid "Auth method doesn't exist."
+msgstr "Metoda uwierzytelniania nie istnieje."
+
+#: inginious/frontend/pages/tasks.py:96 inginious/frontend/pages/tasks.py:274
+msgid "Submission doesn't exist."
+msgstr "Zgłoszenie nie istnieje."
+
+#: inginious/frontend/pages/tasks.py:188 inginious/frontend/pages/tasks.py:196
+#: inginious/frontend/pages/tasks.py:214 inginious/frontend/pages/tasks.py:234
+#: inginious/frontend/pages/tasks.py:241 inginious/frontend/pages/tasks.py:258
+msgid "Error"
+msgstr "Błąd"
+
+#: inginious/frontend/pages/tasks.py:188
+msgid "You are not allowed to submit for this task."
+msgstr "Nie możesz przesyłać rozwiązań tego zadania."
+
+#: inginious/frontend/pages/tasks.py:196
+msgid "Your task has been regenerated. This current task is outdated."
+msgstr "Zadanie zostało wygenerowane ponownie. Ta wersja zadania jest nieaktualna."
+
+#: inginious/frontend/pages/tasks.py:215
+msgid ""
+"Please answer to all the questions and verify the extensions of the files"
+" you want to upload. Your responses were not tested."
+msgstr ""
+"Odpowiedz na wszystkie pytania i sprawdź rozszerzenia plików, które "
+"chcesz wysłać. Twoje odpowiedzi nie zostały sprawdzone."
+
+#: inginious/frontend/pages/tasks.py:230 inginious/frontend/pages/tasks.py:339
+msgid "<b>Your submission has been sent...</b>"
+msgstr "<b>Twoje zgłoszenie zostało wysłane...</b>"
+
+#: inginious/frontend/pages/course_admin/task_edit_file.py:204
+#: inginious/frontend/pages/course_admin/task_edit_file.py:225
+#: inginious/frontend/pages/course_admin/task_edit_file.py:229
+#: inginious/frontend/pages/tasks.py:241 inginious/frontend/pages/tasks.py:258
+#: inginious/frontend/templates/internalerror.html:5
+#: inginious/frontend/templates/task.html:325
+msgid "Internal error"
+msgstr "Błąd wewnętrzny"
+
+#: inginious/frontend/pages/tasks.py:308
+msgid "<b>INGInious is currently grading your answers.</b> (almost done)"
+msgstr "<b>INGInious właśnie sprawdza Twoje odpowiedzi.</b> (prawie gotowe)"
+
+#: inginious/frontend/pages/tasks.py:310
+#, python-brace-format
+msgid ""
+"<b>INGInious is currently grading your answers.</b> (Approx. wait time: "
+"{} seconds)"
+msgstr ""
+"<b>INGInious właśnie sprawdza Twoje odpowiedzi.</b> (Szacowany czas "
+"oczekiwania: {} s)"
+
+#: inginious/frontend/pages/tasks.py:313
+msgid "<b>You are next in the waiting queue!</b>"
+msgstr "<b>Jesteś następny w kolejce!</b>"
+
+#: inginious/frontend/pages/tasks.py:315
+msgid "<b>There is one task in front of you in the waiting queue.</b>"
+msgstr "<b>W kolejce czeka przed Tobą jedno zadanie.</b>"
+
+#: inginious/frontend/pages/tasks.py:317
+#, python-brace-format
+msgid "<b>There are {} tasks in front of you in the waiting queue.</b>"
+msgstr "<b>W kolejce czekają przed Tobą {} zadania/zadań.</b>"
+
+#: inginious/frontend/pages/tasks.py:341
+#, python-brace-format
+msgid "There are some errors in your answer. Your score is {score}%."
+msgstr "Twoja odpowiedź zawiera błędy. Twój wynik to {score}%."
+
+#: inginious/frontend/pages/tasks.py:343
+#, python-brace-format
+msgid "Your answer passed the tests! Your score is {score}%."
+msgstr "Twoja odpowiedź przeszła testy! Twój wynik to {score}%."
+
+#: inginious/frontend/pages/tasks.py:345
+#, python-brace-format
+msgid "Your submission timed out. Your score is {score}%."
+msgstr "Przekroczono limit czasu Twojego zgłoszenia. Twój wynik to {score}%."
+
+#: inginious/frontend/pages/tasks.py:347
+#, python-brace-format
+msgid "Your submission made an overflow. Your score is {score}%."
+msgstr "Twoje zgłoszenie przekroczyło limit pamięci. Twój wynik to {score}%."
+
+#: inginious/frontend/pages/tasks.py:349
+msgid "Your submission was killed."
+msgstr "Twoje zgłoszenie zostało przerwane."
+
+#: inginious/frontend/pages/tasks.py:351
+msgid ""
+"An internal error occurred. Please retry later. If the error persists, "
+"send an email to the course administrator."
+msgstr ""
+"Wystąpił błąd wewnętrzny. Spróbuj ponownie później. Jeśli błąd będzie się"
+" powtarzał, wyślij e-mail do administratora kursu."
+
+#: inginious/frontend/pages/tasks.py:354
+#, python-brace-format
+msgid "[Submission #{submissionid} (<b>{submissionDate}</b>)]"
+msgstr "[Zgłoszenie #{submissionid} (<b>{submissionDate}</b>)]"
+
+#: inginious/frontend/pages/tasks.py:389 inginious/frontend/pages/tasks.py:391
+msgid " <truncated>"
+msgstr " <ucięte>"
+
+#: inginious/frontend/pages/utils.py:194
+msgid ""
+"An account using this email already exists and is not bound with this "
+"service. For security reasons, please log in via another method and bind "
+"your account in your profile."
+msgstr ""
+"Konto z tym adresem e-mail już istnieje i nie jest powiązane z tą usługą."
+" Ze względów bezpieczeństwa zaloguj się inną metodą i powiąż konto w "
+"swoim profilu."
+
+#: inginious/frontend/pages/utils.py:197
+msgid ""
+"Couldn't fetch the required information from the service. Please check "
+"the provided permissions (name, email) and contact your INGInious "
+"administrator if the error persists."
+msgstr ""
+"Nie można pobrać wymaganych informacji z usługi. Sprawdź przyznane "
+"uprawnienia (imię i nazwisko, e-mail), a jeśli błąd będzie się powtarzał,"
+" skontaktuj się z administratorem INGInious."
+
+#: inginious/frontend/pages/utils.py:223
+msgid "Invalid login/password"
+msgstr "Niepoprawny login lub hasło"
+
+#: inginious/frontend/pages/utils.py:251
+#: inginious/frontend/templates/forbidden.html:5
+#: inginious/frontend/templates/forbidden.html:9
+msgid "Forbidden"
+msgstr "Dostęp zabroniony"
+
+#: inginious/frontend/pages/utils.py:265
+msgid "You have not sufficient right to see this part."
+msgstr "Nie masz wystarczających uprawnień, aby zobaczyć tę część."
+
+#: inginious/frontend/pages/utils.py:314
+msgid "File doesn't exist."
+msgstr "Plik nie istnieje."
+
+#: inginious/frontend/pages/admin/admin.py:47
+msgid "User not found"
+msgstr "Nie znaleziono użytkownika"
+
+#: inginious/frontend/pages/admin/admin.py:50
+msgid "Impossible to delete this user"
+msgstr "Nie można usunąć tego użytkownika"
+
+#: inginious/frontend/pages/admin/admin.py:70
+msgid "Unknown action."
+msgstr "Nieznana akcja."
+
+#: inginious/frontend/pages/course_admin/audience_edit.py:49
+msgid "This audience doesn't exist."
+msgstr "Ta grupa odbiorców nie istnieje."
+
+#: inginious/frontend/pages/course_admin/audience_edit.py:79
+#, python-brace-format
+msgid "Audience with id {} not found."
+msgstr "Nie znaleziono grupy odbiorców o identyfikatorze {}."
+
+#: inginious/frontend/pages/course_admin/audience_edit.py:88
+#: inginious/frontend/pages/course_admin/audience_edit.py:110
+#: inginious/frontend/pages/course_admin/student_list.py:333
+msgid "Audience updated."
+msgstr "Grupa odbiorców zaktualizowana."
+
+#: inginious/frontend/pages/course_admin/audience_edit.py:98
+#, python-brace-format
+msgid "User not found : {}"
+msgstr "Nie znaleziono użytkownika : {}"
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:146
+msgid "This file doesn't exist."
+msgstr "Ten plik nie istnieje."
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:164
+msgid "Operation aborted due to invalid token."
+msgstr "Operacja przerwana z powodu niepoprawnego tokenu."
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:168
+#: inginious/frontend/pages/course_admin/danger_zone.py:191
+msgid "Wrong course id."
+msgstr "Niepoprawny identyfikator kursu."
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:173
+msgid "All course data have been deleted."
+msgstr "Wszystkie dane kursu zostały usunięte."
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:175
+#, python-brace-format
+msgid "An error occurred while dumping course from database: {}"
+msgstr "Wystąpił błąd podczas zrzutu danych kursu z bazy: {}"
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:185
+#, python-brace-format
+msgid "Course restored to date : {}."
+msgstr "Kurs przywrócono do stanu z : {}."
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:187
+#, python-brace-format
+msgid "An error occurred while restoring backup: {}"
+msgstr "Wystąpił błąd podczas przywracania kopii zapasowej: {}"
+
+#: inginious/frontend/pages/course_admin/danger_zone.py:198
+#, python-brace-format
+msgid "An error occurred while deleting the course data: {}"
+msgstr "Wystąpił błąd podczas usuwania danych kursu: {}"
+
+#: inginious/frontend/pages/course_admin/settings.py:37
+msgid "Invalid name"
+msgstr "Niepoprawna nazwa"
+
+#: inginious/frontend/pages/course_admin/settings.py:41
+msgid "You cannot remove yourself from the administrators of this course"
+msgstr "Nie możesz usunąć siebie z listy administratorów tego kursu"
+
+#: inginious/frontend/pages/course_admin/settings.py:58
+msgid "Invalid accessibility dates"
+msgstr "Niepoprawne daty dostępności"
+
+#: inginious/frontend/pages/course_admin/settings.py:73
+msgid "Invalid registration dates"
+msgstr "Niepoprawne daty rejestracji"
+
+#: inginious/frontend/pages/course_admin/settings.py:81
+msgid "Invalid ACL value"
+msgstr "Niepoprawna wartość ACL"
+
+#: inginious/frontend/pages/course_admin/settings.py:95
+msgid "LTI keys must be alphanumerical."
+msgstr "Klucze LTI muszą być alfanumeryczne."
+
+#: inginious/frontend/pages/course_admin/settings.py:126
+msgid "LTI config couldn't parse as JSON"
+msgstr "Konfiguracja LTI nie jest poprawnym formatem JSON"
+
+#: inginious/frontend/pages/course_admin/settings.py:128
+#: inginious/frontend/pages/course_admin/settings.py:130
+msgid "LTI config is incorrect"
+msgstr "Konfiguracja LTI jest niepoprawna"
+
+#: inginious/frontend/pages/course_admin/settings.py:163
+msgid "Some tag fields were missing."
+msgstr "Niektóre pola znaczników zostały pominięte."
+
+#: inginious/frontend/pages/course_admin/settings.py:166
+#, python-brace-format
+msgid "Invalid tag id: {}"
+msgstr "Niepoprawny identyfikator znacznika: {}"
+
+#: inginious/frontend/pages/course_admin/settings.py:182
+msgid "Some datas have the same id! The id must be unique."
+msgstr "Niektóre dane mają ten sam identyfikator! Identyfikator musi być unikalny."
+
+#: inginious/frontend/pages/course_admin/statistics.py:192
+#: inginious/frontend/pages/course_admin/submissions.py:138
+msgid "Invalid dates"
+msgstr "Niepoprawne daty"
+
+#: inginious/frontend/pages/course_admin/statistics.py:299
+msgid "Number of submissions"
+msgstr "Liczba zgłoszeń"
+
+#: inginious/frontend/pages/course_admin/statistics.py:300
+msgid "Evaluation submissions (Total)"
+msgstr "Zgłoszenia oceniane (łącznie)"
+
+#: inginious/frontend/pages/course_admin/statistics.py:301
+msgid "Evaluation submissions (Succeeded)"
+msgstr "Zgłoszenia oceniane (zaliczone)"
+
+#: inginious/frontend/pages/course_admin/statistics.py:302
+msgid "Evaluation submissions (Failed)"
+msgstr "Zgłoszenia oceniane (niezaliczone)"
+
+#: inginious/frontend/pages/course_admin/student_list.py:200
+msgid "New audience created."
+msgstr "Utworzono nową grupę odbiorców."
+
+#: inginious/frontend/pages/course_admin/student_list.py:224
+msgid "File wrongly formatted."
+msgstr "Plik ma niepoprawny format."
+
+#: inginious/frontend/pages/course_admin/student_list.py:239
+msgid "Field was not recognized: "
+msgstr "Nierozpoznane pole: "
+
+#: inginious/frontend/pages/course_admin/student_list.py:243
+msgid "Unknown role: "
+msgstr "Nieznana rola: "
+
+#: inginious/frontend/pages/course_admin/student_list.py:250
+msgid "User was not found: "
+msgstr "Nie znaleziono użytkownika: "
+
+#: inginious/frontend/pages/course_admin/student_list.py:293
+#: inginious/frontend/pages/course_admin/student_list.py:362
+msgid "An error occurred while parsing the data."
+msgstr "Wystąpił błąd podczas przetwarzania danych."
+
+#: inginious/frontend/pages/course_admin/student_list.py:353
+msgid "Changes couldn't be applied for following students :"
+msgstr "Nie udało się zastosować zmian dla następujących studentów :"
+
+#: inginious/frontend/pages/course_admin/student_list.py:360
+msgid "Groups updated."
+msgstr "Grupy zaktualizowane."
+
+#: inginious/frontend/pages/course_admin/submission.py:24
+#: inginious/frontend/pages/course_admin/submissions.py:35
+msgid "This submission doesn't exist."
+msgstr "To zgłoszenie nie istnieje."
+
+#: inginious/frontend/pages/course_admin/submission.py:27
+msgid "Invalid ObjectId."
+msgstr "Niepoprawny ObjectId."
+
+#: inginious/frontend/pages/course_admin/submissions.py:62
+#, python-brace-format
+msgid "The following submission could not be prepared for download: {}"
+msgstr "Nie można przygotować następującego zgłoszenia do pobrania: {}"
+
+#: inginious/frontend/pages/course_admin/submissions.py:67
+#: inginious/frontend/pages/course_admin/utils.py:43
+msgid "You don't have admin rights on this course."
+msgstr "Nie masz uprawnień administratora tego kursu."
+
+#: inginious/frontend/pages/course_admin/submissions.py:72
+#, python-brace-format
+msgid "{0} selected submissions were set for replay."
+msgstr "{0} wybranych zgłoszeń ustawiono do ponownego sprawdzenia."
+
+#: inginious/frontend/pages/course_admin/submissions.py:101
+msgid "The submission doesn't exist."
+msgstr "To zgłoszenie nie istnieje."
+
+#: inginious/frontend/pages/course_admin/task_edit.py:34
+#: inginious/frontend/pages/course_admin/task_edit_file.py:24
+#: inginious/frontend/pages/course_admin/task_edit_file.py:45
+#: inginious/frontend/pages/course_admin/task_edit_file.py:259
+msgid "Invalid task id"
+msgstr "Niepoprawny identyfikator zadania"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:87
+msgid "Invalid course/task id"
+msgstr "Niepoprawny identyfikator kursu/zadania"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:117
+#, python-brace-format
+msgid "Invalid file type: {}"
+msgstr "Niepoprawny typ pliku: {}"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:135
+msgid "The number of random inputs must be an integer!"
+msgstr "Liczba losowych danych wejściowych musi być liczbą całkowitą!"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:137
+msgid "The number of random inputs must be positive!"
+msgstr "Liczba losowych danych wejściowych musi być dodatnia!"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:148
+#, python-brace-format
+msgid "Your browser returned an invalid form ({})"
+msgstr "Przeglądarka zwróciła niepoprawny formularz ({})"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:154
+msgid "Error while reading course's informations"
+msgstr "Błąd podczas odczytu informacji kursu"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:178
+#, python-brace-format
+msgid "Invalid data: {}"
+msgstr "Niepoprawne dane: {}"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:184
+msgid "Cannot read zip file. Files were not modified"
+msgstr "Nie można odczytać pliku ZIP. Pliki nie zostały zmienione"
+
+#: inginious/frontend/pages/course_admin/task_edit.py:191
+msgid ""
+"There was a problem while extracting the zip archive. Some files may have"
+" been modified"
+msgstr ""
+"Wystąpił problem podczas rozpakowywania archiwum ZIP. Niektóre pliki "
+"mogły zostać zmodyfikowane"
+
+#: inginious/frontend/pages/course_admin/task_edit_file.py:163
+#: inginious/frontend/pages/course_admin/task_edit_file.py:183
+#: inginious/frontend/pages/course_admin/task_edit_file.py:208
+msgid "Invalid new path"
+msgstr "Niepoprawna nowa ścieżka"
+
+#: inginious/frontend/pages/course_admin/task_edit_file.py:169
+msgid "An error occurred while writing the file"
+msgstr "Wystąpił błąd podczas zapisu pliku"
+
+#: inginious/frontend/pages/course_admin/task_edit_file.py:214
+msgid "An error occurred while moving the files"
+msgstr "Wystąpił błąd podczas przenoszenia plików"
+
+#: inginious/frontend/pages/course_admin/task_edit_file.py:235
+msgid "An error occurred while deleting the files"
+msgstr "Wystąpił błąd podczas usuwania plików"
+
+#: inginious/frontend/pages/course_admin/task_edit_file.py:242
+msgid "This path doesn't exist."
+msgstr "Ta ścieżka nie istnieje."
+
+#: inginious/frontend/pages/course_admin/task_list.py:36
+msgid "Invalid task dispenser"
+msgstr "Niepoprawny organizator zadań"
+
+#: inginious/frontend/pages/course_admin/task_list.py:44
+#: inginious/frontend/pages/course_admin/task_list.py:49
+msgid "Something wrong happened: "
+msgstr "Wystąpił problem: "
+
+#: inginious/frontend/pages/course_admin/task_list.py:56
+#, python-brace-format
+msgid "Couldn't create task {} : "
+msgstr "Nie można utworzyć zadania {} : "
+
+#: inginious/frontend/pages/course_admin/task_list.py:61
+#, python-brace-format
+msgid "Couldn't delete task {} : "
+msgstr "Nie można usunąć zadania {} : "
+
+#: inginious/frontend/pages/course_admin/task_list.py:66
+#, python-brace-format
+msgid "Couldn't wipe task {} : "
+msgstr "Nie można wyczyścić zadania {} : "
+
+#: inginious/frontend/pages/course_admin/task_list.py:81
+msgid "Invalid course structure: "
+msgstr "Niepoprawna struktura kursu: "
+
+#: inginious/frontend/pages/course_admin/utils.py:40
+msgid "You don't have staff rights on this course."
+msgstr "Nie masz uprawnień kadry dydaktycznej tego kursu."
+
+#: inginious/frontend/pages/course_admin/utils.py:50
+msgid "This course is unreachable"
+msgstr "Ten kurs jest niedostępny"
+
+#: inginious/frontend/pages/course_admin/utils.py:144
+msgid "List not valid."
+msgstr "Lista jest niepoprawna."
+
+#: inginious/frontend/pages/course_admin/utils.py:343
+#: inginious/frontend/templates/course_admin/settings.html:18
+#: inginious/frontend/templates/course_admin/settings.html:25
+msgid "Course settings"
+msgstr "Ustawienia kursu"
+
+#: inginious/frontend/pages/course_admin/utils.py:345
+#: inginious/frontend/templates/course_admin/stats.html:27
+#: inginious/frontend/templates/course_admin/stats.html:35
+#: inginious/frontend/templates/course_admin/submissions_query.html:211
+msgid "Statistics"
+msgstr "Statystyki"
+
+#: inginious/frontend/pages/course_admin/utils.py:346
+#: inginious/frontend/templates/course_admin/student_list.html:20
+#: inginious/frontend/templates/course_admin/student_list.html:28
+msgid "User management"
+msgstr "Zarządzanie użytkownikami"
+
+#: inginious/frontend/pages/course_admin/utils.py:349
+#: inginious/frontend/templates/course_admin/stats.html:49
+#: inginious/frontend/templates/course_admin/stats.html:248
+#: inginious/frontend/templates/course_admin/task_edit.html:19
+#: inginious/frontend/templates/course_admin/task_list.html:19
+#: inginious/frontend/templates/course_admin/task_list.html:25
+msgid "Tasks"
+msgstr "Zadania"
+
+#: inginious/frontend/pages/course_admin/utils.py:351
+#: inginious/frontend/templates/course_admin/stats.html:43
+#: inginious/frontend/templates/course_admin/stats.html:168
+#: inginious/frontend/templates/course_admin/submissions.html:6
+#: inginious/frontend/templates/course_admin/submissions.html:18
+#: inginious/frontend/templates/course_admin/submissions.html:26
+msgid "Submissions"
+msgstr "Zgłoszenia"
+
+#: inginious/frontend/pages/course_admin/utils.py:354
+#: inginious/frontend/templates/course_admin/danger_zone.html:6
+#: inginious/frontend/templates/course_admin/danger_zone.html:18
+#: inginious/frontend/templates/course_admin/danger_zone.html:24
+msgid "Danger zone"
+msgstr "Strefa ryzyka"
+
+#: inginious/frontend/pages/lti/__init__.py:22
+#: inginious/frontend/pages/lti/__init__.py:30
+#: inginious/frontend/pages/lti/__init__.py:43
+#: inginious/frontend/pages/lti/__init__.py:123
+msgid "No LTI data available."
+msgstr "Brak danych LTI."
+
+#: inginious/frontend/pages/lti/__init__.py:59
+msgid "Missing LTI session id"
+msgstr "Brak identyfikatora sesji LTI"
+
+#: inginious/frontend/pages/lti/__init__.py:64
+msgid "Invalid LTI session id"
+msgstr "Niepoprawny identyfikator sesji LTI"
+
+#: inginious/frontend/pages/lti/__init__.py:83
+msgid "Invalid LTI data"
+msgstr "Niepoprawne dane LTI"
+
+#: inginious/frontend/pages/lti/__init__.py:103
+msgid "Your account is already bound with this context."
+msgstr "Twoje konto jest już powiązane z tym kontekstem."
+
+#: inginious/frontend/pages/lti/v1_1/__init__.py:125
+msgid "Error while parsing the LTI request"
+msgstr "Błąd podczas przetwarzania żądania LTI"
+
+#: inginious/frontend/pages/lti/v1_1/__init__.py:140
+msgid ""
+"In order to send grade back to the TC, INGInious needs the parameters "
+"lis_outcome_service_url and lis_outcome_result_id in the LTI basic-"
+"launch-request. Please contact your administrator."
+msgstr ""
+"Aby odesłać wynik do TC, INGInious wymaga parametrów "
+"lis_outcome_service_url i lis_outcome_result_id w żądaniu basic-launch-"
+"request LTI. Skontaktuj się z administratorem."
+
+#: inginious/frontend/pages/lti/v1_1/__init__.py:176
+msgid "Couldn't validate LTI request"
+msgstr "Nie można zweryfikować żądania LTI"
+
+#: inginious/frontend/pages/lti/v1_3/__init__.py:35
+msgid "Keyset not found"
+msgstr "Nie znaleziono zestawu kluczy"
+
+#: inginious/frontend/pages/preferences/bindings.py:32
+msgid "User doesn't exist."
+msgstr "Użytkownik nie istnieje."
+
+#: inginious/frontend/pages/preferences/delete.py:27
+msgid "The specified email is incorrect."
+msgstr "Podany adres e-mail jest niepoprawny."
+
+#: inginious/frontend/pages/preferences/delete.py:37
+msgid "User unavailable or deletion is forbidden."
+msgstr "Użytkownik niedostępny lub usuwanie zabronione."
+
+#: inginious/frontend/pages/preferences/delete.py:46
+msgid "User unavailable or deletion forbidden."
+msgstr "Użytkownik niedostępny lub usuwanie zabronione."
+
+#: inginious/frontend/pages/preferences/profile.py:35
+msgid "Username already taken"
+msgstr "Nazwa użytkownika już zajęta"
+
+#: inginious/frontend/pages/preferences/profile.py:43
+msgid "Incorrect email."
+msgstr "Niepoprawny adres e-mail."
+
+#: inginious/frontend/pages/preferences/profile.py:68
+msgid "Incorrect old password."
+msgstr "Niepoprawne stare hasło."
+
+#: inginious/frontend/pages/preferences/profile.py:90
+msgid "Name is too short."
+msgstr "Nazwa jest zbyt krótka."
+
+#: inginious/frontend/pages/preferences/profile.py:100
+msgid "Incorrect username."
+msgstr "Niepoprawna nazwa użytkownika."
+
+#: inginious/frontend/pages/preferences/profile.py:111
+msgid "Profile updated."
+msgstr "Profil zaktualizowany."
+
+#: inginious/frontend/pages/preferences/profile.py:125
+#: inginious/frontend/pages/preferences/profile.py:135
+msgid "User unavailable."
+msgstr "Użytkownik niedostępny."
+
+#: inginious/frontend/pages/preferences/utils.py:15
+#: inginious/frontend/templates/preferences/profile.html:5
+#: inginious/frontend/templates/preferences/profile.html:17
+#: inginious/frontend/templates/preferences/profile.html:23
+msgid "My profile"
+msgstr "Mój profil"
+
+#: inginious/frontend/pages/preferences/utils.py:16
+#: inginious/frontend/templates/preferences/bindings.html:5
+#: inginious/frontend/templates/preferences/bindings.html:17
+#: inginious/frontend/templates/preferences/bindings.html:23
+msgid "Authentication bindings"
+msgstr "Powiązania uwierzytelniania"
+
+#: inginious/frontend/pages/preferences/utils.py:19
+#: inginious/frontend/templates/preferences/delete.html:6
+#: inginious/frontend/templates/preferences/delete.html:18
+#: inginious/frontend/templates/preferences/delete.html:24
+#: inginious/frontend/templates/preferences/delete.html:45
+#: inginious/frontend/templates/preferences/delete.html:52
+#: inginious/frontend/templates/preferences/delete.html:60
+msgid "Delete my account"
+msgstr "Usuń moje konto"
+
+#: inginious/frontend/plugins/auth/custom_auth_form.html:6
+msgid "Login"
+msgstr "Login"
+
+#: inginious/frontend/plugins/auth/custom_auth_form.html:25
+#: inginious/frontend/templates/course_admin/edit_tabs/file_modals.html:26
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:67
+#: inginious/frontend/templates/course_admin/task_dispensers/util_task_edit_modal.html:22
+msgid "Close"
+msgstr "Zamknij"
+
+#: inginious/frontend/plugins/auth/custom_auth_form.html:26
+msgid "Authentication failed"
+msgstr "Uwierzytelnianie nie powiodło się"
+
+#: inginious/frontend/plugins/auth/custom_auth_form.html:31
+#: inginious/frontend/templates/auth.html:21
+#: inginious/frontend/templates/course_admin/task_list.html:78
+msgid "Username"
+msgstr "Nazwa użytkownika"
+
+#: inginious/frontend/plugins/auth/custom_auth_form.html:34
+#: inginious/frontend/templates/auth.html:24
+#: inginious/frontend/templates/course_admin/task_list.html:79
+#: inginious/frontend/templates/course_register.html:29
+msgid "Password"
+msgstr "Hasło"
+
+#: inginious/frontend/plugins/auth/custom_auth_form.html:36
+#: inginious/frontend/templates/auth.html:26
+#: inginious/frontend/templates/layout.html:179
+#: inginious/frontend/templates/signin_button.html:4
+#: inginious/frontend/templates/signin_button.html:11
+msgid "Sign in"
+msgstr "Zaloguj się"
+
+#: inginious/frontend/plugins/auth/ldap_auth.py:72
+msgid "Empty password"
+msgstr "Puste hasło"
+
+#: inginious/frontend/plugins/auth/ldap_auth.py:90
+msgid "Cannot contact host"
+msgstr "Nie można połączyć się z serwerem"
+
+#: inginious/frontend/plugins/auth/ldap_auth.py:102
+msgid "Unknown user"
+msgstr "Nieznany użytkownik"
+
+#: inginious/frontend/plugins/auth/ldap_auth.py:118
+#, python-brace-format
+msgid "Can't get field {} from your LDAP server"
+msgstr "Nie można pobrać pola {} z Twojego serwera LDAP"
+
+#: inginious/frontend/plugins/auth/ldap_auth.py:122
+msgid "Can't get some user fields"
+msgstr "Nie można pobrać niektórych pól użytkownika"
+
+#: inginious/frontend/plugins/auth/ldap_auth.py:135
+msgid "Incorrect password"
+msgstr "Niepoprawne hasło"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:5
+msgid "Urgent tasks"
+msgstr "Pilne zadania"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:10
+#: inginious/frontend/plugins/upcoming_tasks/templates/main_menu.html:2
+msgid "Upcoming Tasks"
+msgstr "Nadchodzące zadania"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:11
+#: inginious/frontend/templates/admin/admin_users.html:13
+#: inginious/frontend/templates/course.html:96
+#: inginious/frontend/templates/course_admin/audience_edit.html:20
+#: inginious/frontend/templates/course_admin/danger_zone.html:18
+#: inginious/frontend/templates/course_admin/settings.html:18
+#: inginious/frontend/templates/course_admin/stats.html:27
+#: inginious/frontend/templates/course_admin/student_info.html:23
+#: inginious/frontend/templates/course_admin/student_list.html:20
+#: inginious/frontend/templates/course_admin/submission.html:32
+#: inginious/frontend/templates/course_admin/submissions.html:18
+#: inginious/frontend/templates/course_admin/task_edit.html:21
+#: inginious/frontend/templates/course_admin/task_list.html:19
+#: inginious/frontend/templates/course_register.html:10
+#: inginious/frontend/templates/courselist.html:27
+#: inginious/frontend/templates/group.html:61
+#: inginious/frontend/templates/marketplace.html:26
+#: inginious/frontend/templates/marketplace_course.html:47
+#: inginious/frontend/templates/mycourses.html:11
+#: inginious/frontend/templates/preferences/bindings.html:17
+#: inginious/frontend/templates/preferences/delete.html:18
+#: inginious/frontend/templates/preferences/profile.html:17
+#: inginious/frontend/templates/queue.html:11
+#: inginious/frontend/templates/task.html:266
+msgid "(current)"
+msgstr "(bieżąca)"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:18
+msgid "Upcoming tasks"
+msgstr "Nadchodzące zadania"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:20
+msgid ""
+"This page lists the coming tasks ordered on deadlines for courses you are"
+" registered in."
+msgstr ""
+"Ta strona zawiera nadchodzące zadania posortowane według terminów dla "
+"kursów, do których jesteś zapisany/a."
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:25
+#: inginious/frontend/templates/course.html:94
+#: inginious/frontend/templates/course_register.html:9
+#: inginious/frontend/templates/course_unavailable.html:9
+#: inginious/frontend/templates/courselist.html:5
+#: inginious/frontend/templates/courselist.html:26
+#: inginious/frontend/templates/courselist.html:33
+#: inginious/frontend/templates/layout.html:149
+#: inginious/frontend/templates/layout.html:170
+#: inginious/frontend/templates/task.html:263
+msgid "Course list"
+msgstr "Lista kursów"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:29
+#: inginious/frontend/templates/course.html:21
+#: inginious/frontend/templates/group.html:19
+#: inginious/frontend/templates/mycourses.html:23
+msgid "Last tried exercises"
+msgstr "Ostatnio rozwiązywane ćwiczenia"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:51
+#: inginious/frontend/templates/course.html:40
+#: inginious/frontend/templates/group.html:39
+#: inginious/frontend/templates/mycourses.html:45
+msgid "No submissions"
+msgstr "Brak zgłoszeń"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:59
+msgid "My Upcoming Tasks"
+msgstr "Moje nadchodzące zadania"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:63
+msgid "Switch time planner"
+msgstr "Przełącz planowanie czasu"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:74
+msgid "Modify time planner"
+msgstr "Zmień planowanie czasu"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:80
+msgid ""
+"This allows to display only the tasks whose deadline is in a certain "
+"temporal proximity."
+msgstr ""
+"Umożliwia wyświetlanie wyłącznie zadań, których termin przypada w "
+"określonym horyzoncie czasowym."
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:81
+msgid "Number of days:"
+msgstr "Liczba dni:"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:89
+#: inginious/frontend/templates/admin/admin_users.html:111
+#: inginious/frontend/templates/admin/admin_users.html:131
+#: inginious/frontend/templates/admin/admin_users.html:167
+#: inginious/frontend/templates/admin/admin_users.html:187
+#: inginious/frontend/templates/course_admin/audience_edit.html:62
+#: inginious/frontend/templates/course_admin/danger_zone.html:85
+#: inginious/frontend/templates/course_admin/danger_zone.html:166
+#: inginious/frontend/templates/course_admin/student_info.html:106
+#: inginious/frontend/templates/course_admin/student_list.html:276
+#: inginious/frontend/templates/course_admin/student_list_table.html:86
+#: inginious/frontend/templates/course_admin/submissions.html:251
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:29
+#: inginious/frontend/templates/course_admin/task_dispensers/util_move_modal.html:17
+#: inginious/frontend/templates/course_admin/task_list.html:56
+#: inginious/frontend/templates/course_admin/task_list.html:122
+#: inginious/frontend/templates/lti/bind.html:32
+#: inginious/frontend/templates/preferences/delete.html:59
+#: inginious/frontend/templates/queue.html:112
+#: inginious/frontend/templates/unregister_modal.html:19
+msgid "Cancel"
+msgstr "Anuluj"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:90
+#: inginious/frontend/templates/course_admin/settings.html:455
+#: inginious/frontend/templates/course_admin/task_edit.html:10
+#: inginious/frontend/templates/course_admin/task_edit.html:31
+#: inginious/frontend/templates/course_admin/task_edit.html:97
+#: inginious/frontend/templates/course_admin/task_list.html:57
+#: inginious/frontend/templates/course_admin/task_list.html:127
+msgid "Save changes"
+msgstr "Zapisz zmiany"
+
+#: inginious/frontend/plugins/upcoming_tasks/templates/coming_tasks.html:105
+msgid "You have no upcoming tasks"
+msgstr "Nie masz nadchodzących zadań"
+
+#: inginious/frontend/task_dispensers/combinatory_test.py:23
+msgid "Combinatory test"
+msgstr "Test kombinatoryczny"
+
+#: inginious/frontend/task_dispensers/combinatory_test.py:46
+msgid "Amount of tasks to be displayed"
+msgstr "Liczba wyświetlanych zadań"
+
+#: inginious/frontend/task_dispensers/toc.py:49
+msgid "Table of contents"
+msgstr "Spis treści"
+
+#: inginious/frontend/task_dispensers/toc.py:112
+msgid "Closed by default"
+msgstr "Domyślnie zwinięte"
+
+#: inginious/frontend/task_dispensers/toc.py:113
+msgid "Hidden if empty"
+msgstr "Ukryte, jeśli puste"
+
+#: inginious/frontend/task_dispensers/util.py:49
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/groups.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/groups.html:10
+msgid "Submission mode"
+msgstr "Tryb zgłoszeń"
+
+#: inginious/frontend/task_dispensers/util.py:72
+msgid "Weight"
+msgstr "Waga"
+
+#: inginious/frontend/task_dispensers/util.py:97
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:12
+msgid "Submission storage"
+msgstr "Przechowywanie zgłoszeń"
+
+#: inginious/frontend/task_dispensers/util.py:122
+msgid "Evaluation mode"
+msgstr "Tryb oceniania"
+
+#: inginious/frontend/task_dispensers/util.py:145
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/categories.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/categories.html:9
+msgid "Categories"
+msgstr "Kategorie"
+
+#: inginious/frontend/task_dispensers/util.py:168
+#: inginious/frontend/templates/task.html:82
+msgid "Submission limit"
+msgstr "Limit zgłoszeń"
+
+#: inginious/frontend/task_dispensers/util.py:193
+#: inginious/frontend/templates/course_admin/settings.html:43
+#: inginious/frontend/templates/course_admin/settings.html:137
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:15
+msgid "Accessibility"
+msgstr "Dostępność"
+
+#: inginious/frontend/task_dispensers/util.py:219
+msgid "One section don't contain a sections list nor a tasks list"
+msgstr "Jedna z sekcji nie zawiera ani listy sekcji, ani listy zadań"
+
+#: inginious/frontend/task_dispensers/util.py:251
+msgid "No title for one section"
+msgstr "Brak tytułu jednej z sekcji"
+
+#: inginious/frontend/task_dispensers/util.py:304
+msgid "One task id contains non alphanumerical characters"
+msgstr "Identyfikator jednego z zadań zawiera znaki niealfanumeryczne"
+
+#: inginious/frontend/templates/auth.html:5
+msgid "Welcome"
+msgstr "Witaj"
+
+#: inginious/frontend/templates/auth.html:24
+msgid "Lost password?"
+msgstr "Nie pamiętasz hasła?"
+
+#: inginious/frontend/templates/auth.html:39
+msgid "Sign in with"
+msgstr "Zaloguj się przez"
+
+#: inginious/frontend/templates/course.html:14
+#: inginious/frontend/templates/group.html:11
+msgid "Current grade"
+msgstr "Aktualny wynik"
+
+#: inginious/frontend/templates/course.html:47
+msgid ""
+"This course is currently invisible for students. You can change this by "
+"modifying the \"accessibility\" option in the configuration of the "
+"course."
+msgstr ""
+"Ten kurs jest obecnie niewidoczny dla studentów. Możesz to zmienić, "
+"modyfikując opcję \"accessibility\" w konfiguracji kursu."
+
+#: inginious/frontend/templates/course.html:52
+msgid "Course administration"
+msgstr "Administracja kursem"
+
+#: inginious/frontend/templates/course.html:61
+#: inginious/frontend/templates/task.html:166
+#, python-brace-format
+msgid "Group : {}"
+msgstr "Grupa : {}"
+
+#: inginious/frontend/templates/course.html:63
+#: inginious/frontend/templates/task.html:168
+msgid "Group management"
+msgstr "Zarządzanie grupami"
+
+#: inginious/frontend/templates/course.html:68
+#: inginious/frontend/templates/group.html:45
+msgid "Unregister from this course"
+msgstr "Wypisz się z tego kursu"
+
+#: inginious/frontend/templates/course.html:75
+#: inginious/frontend/templates/course.html:82
+#: inginious/frontend/templates/course_register.html:33
+#: inginious/frontend/templates/task.html:243
+#: inginious/frontend/templates/task.html:250
+msgid "Enroll in the course"
+msgstr "Zapisz się na kurs"
+
+#: inginious/frontend/templates/course.html:78
+#: inginious/frontend/templates/task.html:246
+msgid "Please enroll in the course to be able to submit answers to problems."
+msgstr "Zapisz się na kurs, aby móc przesyłać odpowiedzi do zadań."
+
+#: inginious/frontend/templates/course.html:92
+#: inginious/frontend/templates/courselist.html:17
+#: inginious/frontend/templates/layout.html:154
+#: inginious/frontend/templates/marketplace.html:17
+#: inginious/frontend/templates/mycourses.html:5
+#: inginious/frontend/templates/mycourses.html:10
+#: inginious/frontend/templates/mycourses.html:18
+#: inginious/frontend/templates/mycourses.html:52
+#: inginious/frontend/templates/task.html:261
+msgid "My courses"
+msgstr "Moje kursy"
+
+#: inginious/frontend/templates/course.html:110
+msgid "Filter tasks by category"
+msgstr "Filtruj zadania według kategorii"
+
+#: inginious/frontend/templates/course.html:124
+msgid "About this course"
+msgstr "O tym kursie"
+
+#: inginious/frontend/templates/course_register.html:5
+#, python-brace-format
+msgid "Register to course '{}'"
+msgstr "Zapisz się na kurs \"{}\""
+
+#: inginious/frontend/templates/course_register.html:11
+#: inginious/frontend/templates/layout.html:175
+#: inginious/frontend/templates/register.html:5
+msgid "Register"
+msgstr "Zarejestruj się"
+
+#: inginious/frontend/templates/course_register.html:19
+#, python-brace-format
+msgid "Enroll in the course '{}'"
+msgstr "Zapisz się na kurs \"{}\""
+
+#: inginious/frontend/templates/course_register.html:20
+#, python-brace-format
+msgid "This will enroll you in the course {}"
+msgstr "Zapisze Cię to na kurs {}"
+
+#: inginious/frontend/templates/course_register.html:23
+msgid "Invalid password."
+msgstr "Niepoprawne hasło."
+
+#: inginious/frontend/templates/course_unavailable.html:5
+#: inginious/frontend/templates/course_unavailable.html:10
+msgid "Course unavailable"
+msgstr "Kurs niedostępny"
+
+#: inginious/frontend/templates/course_unavailable.html:19
+#: inginious/frontend/templates/task_unavailable.html:9
+msgid "Error 403"
+msgstr "Błąd 403"
+
+#: inginious/frontend/templates/course_unavailable.html:21
+msgid "This course is closed."
+msgstr "Ten kurs jest zamknięty."
+
+#: inginious/frontend/templates/course_unavailable.html:23
+msgid ""
+"This course must be accessed on an external platform. Read the course "
+"description or contact the teaching team for more information."
+msgstr ""
+"Ten kurs jest prowadzony na zewnętrznej platformie. Przeczytaj opis kursu"
+" lub skontaktuj się z zespołem dydaktycznym, aby uzyskać więcej "
+"informacji."
+
+#: inginious/frontend/templates/course_unavailable.html:25
+msgid "You are not registered to this course."
+msgstr "Nie jesteś zapisany/a na ten kurs."
+
+#: inginious/frontend/templates/courselist.html:10
+msgid "Public courses"
+msgstr "Kursy publiczne"
+
+#: inginious/frontend/templates/courselist.html:12
+msgid ""
+"This page lists all the courses that are available now. If you are a "
+"course administrator, go to your 'My courses' page to see all of them."
+msgstr ""
+"Ta strona zawiera wszystkie aktualnie dostępne kursy. Jeśli jesteś "
+"administratorem kursu, przejdź na stronę \"Moje kursy\", aby zobaczyć "
+"wszystkie."
+
+#: inginious/frontend/templates/courselist.html:62
+msgid "External platform"
+msgstr "Zewnętrzna platforma"
+
+#: inginious/frontend/templates/courselist.html:66
+msgid "Auto-registration"
+msgstr "Rejestracja automatyczna"
+
+#: inginious/frontend/templates/courselist.html:70
+msgid "Password needed"
+msgstr "Wymagane hasło"
+
+#: inginious/frontend/templates/group.html:57
+msgid "Register for a group"
+msgstr "Zapisz się do grupy"
+
+#: inginious/frontend/templates/course_admin/student_list.html:48
+#: inginious/frontend/templates/course_admin/student_list.html:209
+#: inginious/frontend/templates/group.html:59
+#: inginious/frontend/templates/group.html:68
+msgid "Groups"
+msgstr "Grupy"
+
+#: inginious/frontend/templates/group.html:84
+#, python-brace-format
+msgid "My group : {}"
+msgstr "Moja grupa : {}"
+
+#: inginious/frontend/templates/group.html:87
+msgid "Quit group"
+msgstr "Opuść grupę"
+
+#: inginious/frontend/templates/group.html:100
+#: inginious/frontend/templates/group.html:163
+msgid "Send an email"
+msgstr "Wyślij e-mail"
+
+#: inginious/frontend/templates/group.html:114
+msgid ""
+"No set group in this course. If you think this is a mistake, please "
+"contact the course administrator."
+msgstr ""
+"W tym kursie nie utworzono grup. Jeśli uważasz, że to błąd, skontaktuj "
+"się z administratorem kursu."
+
+#: inginious/frontend/templates/group.html:118
+msgid ""
+"Groups have been set up but you're not allowed to register in anyone. "
+"Please contact the course administrator."
+msgstr ""
+"Grupy zostały utworzone, ale nie możesz zapisać się do żadnej. Skontaktuj"
+" się z administratorem kursu."
+
+#: inginious/frontend/templates/group.html:121
+#: inginious/frontend/templates/group.html:126
+msgid "My group"
+msgstr "Moja grupa"
+
+#: inginious/frontend/templates/group.html:123
+msgid ""
+"You're not registered to a group. Please consider registration in one of "
+"the group below to take part in all course activities. If no more group "
+"is available, please contact the course administrator."
+msgstr ""
+"Nie jesteś zapisany/a do grupy. Rozważ zapisanie się do jednej z "
+"poniższych grup, aby brać udział we wszystkich aktywnościach kursu. Jeśli"
+" nie ma już wolnych grup, skontaktuj się z administratorem kursu."
+
+#: inginious/frontend/templates/group.html:128
+msgid ""
+"You're not yet registered to a group. Please contact the course "
+"administrator for more information."
+msgstr ""
+"Nie jesteś jeszcze zapisany/a do grupy. Skontaktuj się z administratorem "
+"kursu, aby uzyskać więcej informacji."
+
+#: inginious/frontend/templates/group.html:133
+msgid "All groups"
+msgstr "Wszystkie grupy"
+
+#: inginious/frontend/templates/group.html:145
+#, python-brace-format
+msgid "(available : {})"
+msgstr "(wolne miejsca : {})"
+
+#: inginious/frontend/templates/group.html:147
+msgid "Join in"
+msgstr "Dołącz"
+
+#: inginious/frontend/templates/group.html:156
+msgid "No registered member."
+msgstr "Brak zapisanych członków."
+
+#: inginious/frontend/templates/internalerror.html:9
+msgid ""
+"<b>Internal error</b> Something bad happened. The error has been logged, "
+"please contact your administrator if the error persists."
+msgstr ""
+"<b>Błąd wewnętrzny</b> Coś poszło nie tak. Błąd został zapisany w logach;"
+" jeśli będzie się powtarzał, skontaktuj się z administratorem."
+
+#: inginious/frontend/templates/layout.html:19
+#: inginious/frontend/templates/layout.html:76
+#: inginious/frontend/templates/layout.html:88
+msgid "__is_rtl"
+msgstr ""
+
+#: inginious/frontend/templates/layout.html:124
+msgid "Open menu"
+msgstr "Otwórz menu"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:16
+#: inginious/frontend/templates/course_admin/danger_zone.html:16
+#: inginious/frontend/templates/course_admin/settings.html:16
+#: inginious/frontend/templates/course_admin/stats.html:23
+#: inginious/frontend/templates/course_admin/student_info.html:18
+#: inginious/frontend/templates/course_admin/student_list.html:16
+#: inginious/frontend/templates/course_admin/submission.html:21
+#: inginious/frontend/templates/course_admin/submissions.html:16
+#: inginious/frontend/templates/course_admin/task_edit.html:17
+#: inginious/frontend/templates/course_admin/task_list.html:17
+#: inginious/frontend/templates/layout.html:142
+#: inginious/frontend/templates/task.html:128
+msgid "Administration"
+msgstr "Administracja"
+
+#: inginious/frontend/templates/course_admin/stats.html:260
+#: inginious/frontend/templates/layout.html:145
+msgid "Users"
+msgstr "Użytkownicy"
+
+#: inginious/frontend/templates/layout.html:146
+#: inginious/frontend/templates/marketplace.html:5
+#: inginious/frontend/templates/marketplace.html:25
+#: inginious/frontend/templates/marketplace.html:32
+#: inginious/frontend/templates/marketplace_course.html:45
+msgid "Marketplace"
+msgstr "Marketplace"
+
+#: inginious/frontend/templates/layout.html:155
+#: inginious/frontend/templates/preferences/bindings.html:15
+#: inginious/frontend/templates/preferences/delete.html:16
+#: inginious/frontend/templates/preferences/profile.html:15
+msgid "Preferences"
+msgstr "Preferencje"
+
+#: inginious/frontend/templates/layout.html:156
+msgid "Service status"
+msgstr "Status usług"
+
+#: inginious/frontend/templates/layout.html:157
+msgid "Log out"
+msgstr "Wyloguj się"
+
+#: inginious/frontend/templates/layout.html:161
+msgid "English"
+msgstr "English"
+
+#: inginious/frontend/templates/layout.html:195
+#, python-brace-format
+msgid ""
+"Powered by <a href=\"http://www.inginious.org\" "
+"target=\"_blank\">INGInious</a> v.{} , a free and open-source grading "
+"tool."
+msgstr ""
+"Powered by <a href=\"http://www.inginious.org\" "
+"target=\"_blank\">INGInious</a> v.{}, darmowe i otwarte narzędzie do "
+"automatycznego oceniania kodu."
+
+#: inginious/frontend/templates/layout.html:197
+#, python-brace-format
+msgid "Running INGInious v.{}"
+msgstr "Wersja INGInious v.{}"
+
+#: inginious/frontend/templates/layout.html:199
+msgid "INGInious is distributed under AGPL license"
+msgstr "INGInious jest dystrybuowane na licencji AGPL"
+
+#: inginious/frontend/templates/layout.html:203
+msgid "Privacy Policy"
+msgstr "Polityka prywatności"
+
+#: inginious/frontend/templates/maintenance.html:9
+msgid ""
+"<b>This INGInious instance is currently under maintenance.</b> Please "
+"come back in a few minutes!"
+msgstr ""
+"<b>Ta instancja INGInious jest w trakcie konserwacji.</b> Wróć za kilka "
+"minut!"
+
+#: inginious/frontend/templates/marketplace.html:10
+msgid "How to use"
+msgstr "Jak korzystać"
+
+#: inginious/frontend/templates/marketplace.html:12
+msgid ""
+"This page list all the course that are publicly avalaible. When you click"
+" import, it will create a new course on your INGInious instance. You will"
+" be admin of this new course and it will contain all the tasks and the "
+"structure of the imported course"
+msgstr ""
+"Ta strona zawiera wszystkie publicznie dostępne kursy. Po kliknięciu "
+"\"Importuj\" w Twojej instancji INGInious zostanie utworzony nowy kurs. "
+"Będziesz jego administratorem, a będzie on zawierał wszystkie zadania i "
+"strukturę zaimportowanego kursu"
+
+#: inginious/frontend/templates/marketplace.html:56
+#: inginious/frontend/templates/marketplace_course.html:68
+msgid "Import course"
+msgstr "Importuj kurs"
+
+#: inginious/frontend/templates/marketplace.html:74
+msgid "No public courses available"
+msgstr "Brak publicznych kursów"
+
+#: inginious/frontend/templates/marketplace.html:84
+msgid "Import this course"
+msgstr "Importuj ten kurs"
+
+#: inginious/frontend/templates/marketplace.html:89
+msgid ""
+"This will create a new course with the ID bellow. This new course will "
+"contain the tasks and structure of the selected course"
+msgstr ""
+"Spowoduje to utworzenie nowego kursu o identyfikatorze podanym poniżej. "
+"Nowy kurs będzie zawierał zadania i strukturę wybranego kursu"
+
+#: inginious/frontend/templates/marketplace.html:90
+msgid "Course ID"
+msgstr "Identyfikator kursu"
+
+#: inginious/frontend/templates/marketplace.html:94
+msgid "Create course"
+msgstr "Utwórz kurs"
+
+#: inginious/frontend/templates/marketplace_course.html:7
+#: inginious/frontend/templates/task.html:13
+msgid "Information"
+msgstr "Informacje"
+
+#: inginious/frontend/templates/marketplace_course.html:11
+msgid "Language(s)"
+msgstr "Język(i)"
+
+#: inginious/frontend/templates/marketplace_course.html:17
+msgid "License"
+msgstr "Licencja"
+
+#: inginious/frontend/templates/marketplace_course.html:23
+msgid "Maintainer(s)"
+msgstr "Opiekun(owie)"
+
+#: inginious/frontend/templates/marketplace_course.html:29
+#: inginious/frontend/templates/task.html:17
+msgid "Author(s)"
+msgstr "Autor(zy)"
+
+#: inginious/frontend/templates/marketplace_course.html:35
+msgid "Link"
+msgstr "Link"
+
+#: inginious/frontend/templates/marketplace_course.html:65
+#: inginious/frontend/templates/mycourses.html:107
+msgid "New course id"
+msgstr "Identyfikator nowego kursu"
+
+#: inginious/frontend/templates/mycourses.html:20
+msgid ""
+"This page lists all the courses you are currently enrolled in. You can "
+"find new courses on the course list page."
+msgstr ""
+"Ta strona zawiera kursy, do których jesteś aktualnie zapisany/a. Nowe "
+"kursy znajdziesz na stronie listy kursów."
+
+#: inginious/frontend/templates/mycourses.html:70
+msgid "LTI course"
+msgstr "Kurs LTI"
+
+#: inginious/frontend/templates/mycourses.html:72
+msgid "Hidden course"
+msgstr "Ukryty kurs"
+
+#: inginious/frontend/templates/mycourses.html:76
+msgid "Administrator"
+msgstr "Administrator"
+
+#: inginious/frontend/templates/mycourses.html:78
+msgid "Tutor"
+msgstr "Tutor"
+
+#: inginious/frontend/templates/mycourses.html:80
+msgid "Student"
+msgstr "Student"
+
+#: inginious/frontend/templates/mycourses.html:88
+msgid "You are not registered to any course"
+msgstr "Nie jesteś zapisany/a na żaden kurs"
+
+#: inginious/frontend/templates/mycourses.html:96
+msgid "Course created."
+msgstr "Kurs utworzony."
+
+#: inginious/frontend/templates/mycourses.html:101
+msgid "Failed to create the course."
+msgstr "Nie udało się utworzyć kursu."
+
+#: inginious/frontend/templates/mycourses.html:106
+msgid "Course"
+msgstr "Kurs"
+
+#: inginious/frontend/templates/mycourses.html:110
+msgid "Create new course"
+msgstr "Utwórz nowy kurs"
+
+#: inginious/frontend/templates/notfound.html:5
+#: inginious/frontend/templates/notfound.html:10
+msgid "Error 404"
+msgstr "Błąd 404"
+
+#: inginious/frontend/templates/queue.html:5
+#: inginious/frontend/templates/queue.html:10
+#: inginious/frontend/templates/queue.html:18
+msgid "Job queue"
+msgstr "Kolejka zadań"
+
+#: inginious/frontend/templates/queue.html:19
+msgid "This page shows a <strong>snapshot</strong> of the job queue."
+msgstr "Ta strona pokazuje <strong>migawkę</strong> kolejki zadań."
+
+#: inginious/frontend/templates/queue.html:21
+msgid "Running jobs"
+msgstr "Zadania w trakcie"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:19
+#: inginious/frontend/templates/course_admin/subproblems/file.html:23
+#: inginious/frontend/templates/queue.html:25
+#: inginious/frontend/templates/queue.html:66
+msgid "Type"
+msgstr "Typ"
+
+#: inginious/frontend/templates/queue.html:26
+msgid "Agent name"
+msgstr "Nazwa agenta"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:5
+#: inginious/frontend/templates/course_admin/settings.html:59
+#: inginious/frontend/templates/course_admin/task_edit.html:124
+#: inginious/frontend/templates/queue.html:27
+#: inginious/frontend/templates/queue.html:67
+msgid "Name"
+msgstr "Nazwa"
+
+#: inginious/frontend/templates/queue.html:28
+#: inginious/frontend/templates/queue.html:68
+msgid "Launcher name"
+msgstr "Nazwa inicjatora"
+
+#: inginious/frontend/templates/queue.html:29
+msgid "Started at"
+msgstr "Rozpoczęto"
+
+#: inginious/frontend/templates/queue.html:30
+msgid "Timeout at"
+msgstr "Limit czasu"
+
+#: inginious/frontend/templates/queue.html:31
+#: inginious/frontend/templates/queue.html:70
+msgid "Action"
+msgstr "Akcja"
+
+#: inginious/frontend/templates/queue.html:44
+#: inginious/frontend/templates/queue.html:81
+msgid "No timeout set"
+msgstr "Brak ustawionego limitu czasu"
+
+#: inginious/frontend/templates/queue.html:59
+msgid "There are no jobs running"
+msgstr "Brak uruchomionych zadań"
+
+#: inginious/frontend/templates/queue.html:62
+msgid "Jobs in queue"
+msgstr "Zadania w kolejce"
+
+#: inginious/frontend/templates/queue.html:69
+msgid "Maximum runtime in seconds"
+msgstr "Maksymalny czas wykonania (w sekundach)"
+
+#: inginious/frontend/templates/queue.html:96
+msgid "There are no jobs waiting in queue"
+msgstr "Brak zadań oczekujących w kolejce"
+
+#: inginious/frontend/templates/queue.html:103
+msgid "Kill job"
+msgstr "Zatrzymaj zadanie"
+
+#: inginious/frontend/templates/queue.html:107
+#: inginious/frontend/templates/unregister_modal.html:16
+msgid "Are you sure ?"
+msgstr "Czy na pewno?"
+
+#: inginious/frontend/templates/queue.html:113
+msgid "Kill"
+msgstr "Zatrzymaj"
+
+#: inginious/frontend/templates/register.html:23
+msgid "Register in INGInious"
+msgstr "Rejestracja w INGInious"
+
+#: inginious/frontend/templates/admin/admin_users.html:149
+#: inginious/frontend/templates/register.html:27
+msgid "Username (min. 4 alphanumerical characters) :"
+msgstr "Nazwa użytkownika (min. 4 znaki alfanumeryczne) :"
+
+#: inginious/frontend/templates/admin/admin_users.html:153
+#: inginious/frontend/templates/preferences/profile.html:58
+#: inginious/frontend/templates/register.html:31
+msgid "Complete name :"
+msgstr "Imię i nazwisko :"
+
+#: inginious/frontend/templates/admin/admin_users.html:157
+#: inginious/frontend/templates/preferences/profile.html:62
+#: inginious/frontend/templates/register.html:35
+#: inginious/frontend/templates/register.html:62
+msgid "Email address :"
+msgstr "Adres e-mail :"
+
+#: inginious/frontend/templates/admin/admin_users.html:161
+#: inginious/frontend/templates/register.html:39
+#: inginious/frontend/templates/register.html:85
+msgid "Password (min. 6 characters) :"
+msgstr "Hasło (min. 6 znaków) :"
+
+#: inginious/frontend/templates/register.html:43
+#: inginious/frontend/templates/register.html:89
+msgid "Confirm password :"
+msgstr "Potwierdź hasło :"
+
+#: inginious/frontend/templates/preferences/profile.html:98
+#: inginious/frontend/templates/register.html:48
+#, python-brace-format
+msgid ""
+"I have read the {a1start}Terms of service{a1end} and the {a2start}Privacy"
+" policy{a2end}."
+msgstr ""
+"Przeczytałem/przeczytałam {a1start}regulamin serwisu{a1end} oraz "
+"{a2start}politykę prywatności{a2end}."
+
+#: inginious/frontend/templates/register.html:52
+msgid "Sign up"
+msgstr "Zarejestruj się"
+
+#: inginious/frontend/templates/register.html:58
+msgid "Lost password ?"
+msgstr "Nie pamiętasz hasła?"
+
+#: inginious/frontend/templates/register.html:66
+msgid "Reset my password"
+msgstr "Zresetuj moje hasło"
+
+#: inginious/frontend/templates/register.html:94
+msgid "Set new password"
+msgstr "Ustaw nowe hasło"
+
+#: inginious/frontend/templates/signin_button.html:6
+msgid ""
+"Please register or sign in to see the complete list of courses and be "
+"able to submit answers to problems."
+msgstr ""
+"Zarejestruj się lub zaloguj, aby zobaczyć pełną listę kursów i móc "
+"przesyłać odpowiedzi do zadań."
+
+#: inginious/frontend/templates/task.html:23
+msgid "Contact"
+msgstr "Kontakt"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:49
+#: inginious/frontend/templates/task.html:24
+msgid "Contact link"
+msgstr "Link kontaktowy"
+
+#: inginious/frontend/templates/task.html:32
+msgid "Deadline"
+msgstr "Termin"
+
+#: inginious/frontend/templates/task.html:36
+msgid "No deadline"
+msgstr "Brak terminu"
+
+#: inginious/frontend/templates/task.html:38
+msgid "It's too late"
+msgstr "Za późno"
+
+#: inginious/frontend/templates/task.html:47
+msgid "Status"
+msgstr "Status"
+
+#: inginious/frontend/templates/task.html:50
+msgid "Not yet attempted"
+msgstr "Jeszcze nie podejmowane"
+
+#: inginious/frontend/templates/course_admin/student_info.html:73
+#: inginious/frontend/templates/course_admin/submissions.html:133
+#: inginious/frontend/templates/task.html:52
+msgid "Succeeded"
+msgstr "Zaliczone"
+
+#: inginious/frontend/templates/task.html:61
+msgid "Waiting for verification"
+msgstr "Oczekuje na sprawdzenie"
+
+#: inginious/frontend/templates/course_admin/student_info.html:76
+#: inginious/frontend/templates/course_admin/submissions.html:137
+#: inginious/frontend/templates/task.html:63
+msgid "Failed"
+msgstr "Niezaliczone"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:223
+#: inginious/frontend/templates/task.html:69
+msgid "Grade"
+msgstr "Wynik"
+
+#: inginious/frontend/templates/task.html:75
+msgid "Attempts"
+msgstr "Próby"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:8
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:20
+#: inginious/frontend/templates/task.html:86
+msgid "No limitation"
+msgstr "Bez limitu"
+
+#: inginious/frontend/templates/task.html:89
+#, python-brace-format
+msgid "{nb_submissions} submissions<br /> every {nb_hours} hour(s)"
+msgstr "{nb_submissions} zgłoszeń<br /> co {nb_hours} godz."
+
+#: inginious/frontend/templates/task.html:91
+#, python-brace-format
+msgid "{nb_submissions} submissions"
+msgstr "{nb_submissions} zgłoszeń"
+
+#: inginious/frontend/templates/task.html:104
+msgid "Category tags"
+msgstr "Znaczniki kategorii"
+
+#: inginious/frontend/templates/course_admin/settings.html:49
+#: inginious/frontend/templates/course_admin/submission.html:98
+#: inginious/frontend/templates/task.html:114
+msgid "Tags"
+msgstr "Znaczniki"
+
+#: inginious/frontend/templates/task.html:131
+msgid ""
+"This course is currently invisible for students.  You can change this by "
+"modifying the \"accessible\" option in the configuration of the course."
+msgstr ""
+"Ten kurs jest obecnie niewidoczny dla studentów.  Możesz to zmienić, "
+"modyfikując opcję \"accessible\" w konfiguracji kursu."
+
+#: inginious/frontend/templates/task.html:136
+msgid ""
+"This task is currently invisible for students. You can change this by "
+"modifying the \"accessible\" option in the configuration of the task."
+msgstr ""
+"To zadanie jest obecnie niewidoczne dla studentów. Możesz to zmienić, "
+"modyfikując opcję \"accessible\" w konfiguracji zadania."
+
+#: inginious/frontend/templates/course_admin/stats.html:81
+#: inginious/frontend/templates/course_admin/student_list.html:186
+#: inginious/frontend/templates/course_admin/student_list_table.html:59
+#: inginious/frontend/templates/course_admin/task_dispensers/task_buttons.html:18
+#: inginious/frontend/templates/task.html:141
+msgid "View submissions"
+msgstr "Zobacz zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/task_buttons.html:14
+#: inginious/frontend/templates/task.html:145
+msgid "Edit task"
+msgstr "Edytuj zadanie"
+
+#: inginious/frontend/templates/task.html:148
+#: inginious/frontend/templates/task.html:336
+msgid "Debug information"
+msgstr "Informacje debugowania"
+
+#: inginious/frontend/templates/task.html:153
+msgid "Submitting as"
+msgstr "Zgłoszenie jako"
+
+#: inginious/frontend/templates/task.html:157
+msgid "Group"
+msgstr "Grupa"
+
+#: inginious/frontend/templates/task.html:176
+msgid "For evaluation"
+msgstr "Do oceny"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/evaluation_mode.html:8
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/evaluation_mode.html:21
+#: inginious/frontend/templates/task.html:180
+msgid "Last submission"
+msgstr "Ostatnie zgłoszenie"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/evaluation_mode.html:7
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/evaluation_mode.html:15
+#: inginious/frontend/templates/task.html:182
+msgid "Best submission"
+msgstr "Najlepsze zgłoszenie"
+
+#: inginious/frontend/templates/task.html:191
+#: inginious/frontend/templates/task.html:236
+msgid "No submission"
+msgstr "Brak zgłoszenia"
+
+#: inginious/frontend/templates/task.html:195
+msgid "Submission history"
+msgstr "Historia zgłoszeń"
+
+#: inginious/frontend/templates/task.html:279
+msgid "Load my work from memory"
+msgstr "Wczytaj moją pracę z pamięci"
+
+#: inginious/frontend/templates/task.html:280
+msgid "Save my work in memory"
+msgstr "Zapisz moją pracę w pamięci"
+
+#: inginious/frontend/templates/task.html:281
+msgid "Collapse context"
+msgstr "Zwiń treść"
+
+#: inginious/frontend/templates/task.html:283
+msgid "Previous task"
+msgstr "Poprzednie zadanie"
+
+#: inginious/frontend/templates/task.html:286
+msgid "Next task"
+msgstr "Następne zadanie"
+
+#: inginious/frontend/templates/task.html:315
+msgid "Alternatively, you can also paste this command into your terminal:"
+msgstr "Alternatywnie możesz wkleić to polecenie w swoim terminalu:"
+
+#: inginious/frontend/templates/task.html:317
+msgid "Paste this command into your terminal:"
+msgstr "Wklej to polecenie w swoim terminalu:"
+
+#: inginious/frontend/templates/task.html:321
+#, python-brace-format
+msgid "The password to connect is {}"
+msgstr "Hasło do połączenia to {}"
+
+#: inginious/frontend/templates/task.html:324
+msgid "Please answer to all the questions."
+msgstr "Odpowiedz na wszystkie pytania."
+
+#: inginious/frontend/templates/task.html:326
+#, python-brace-format
+msgid "{} has not a valid extension."
+msgstr "{} ma nieprawidłowe rozszerzenie."
+
+#: inginious/frontend/templates/task.html:327
+#, python-brace-format
+msgid "{} is too heavy."
+msgstr "{} jest zbyt duży."
+
+#: inginious/frontend/templates/task.html:340
+msgid ""
+"The raw data from the container will be displayed here, helping you to "
+"debug the task.<br/> This box is only displayed because you are an "
+"administrator of this course. It is not displayed to students."
+msgstr ""
+"Tutaj zostaną wyświetlone surowe dane z kontenera, pomagające "
+"zdiagnozować zadanie.<br/> To pole jest wyświetlane tylko dlatego, że "
+"jesteś administratorem kursu. Studenci go nie widzą."
+
+#: inginious/frontend/templates/task.html:373
+#, python-brace-format
+msgid "Question {}"
+msgstr "Pytanie {}"
+
+#: inginious/frontend/templates/task.html:390
+msgid "Please enroll in the course to submit."
+msgstr "Zapisz się na kurs, aby móc przesyłać rozwiązania."
+
+#: inginious/frontend/templates/task.html:396
+#: inginious/frontend/templates/task.html:406
+msgid "Submit"
+msgstr "Wyślij"
+
+#: inginious/frontend/templates/task.html:400
+msgid "Start remote SSH console with this input"
+msgstr "Uruchom zdalną konsolę SSH z tymi danymi wejściowymi"
+
+#: inginious/frontend/templates/task.html:409
+msgid "The deadline is over, you cannot submit anymore"
+msgstr "Termin minął — nie możesz już przesyłać rozwiązań"
+
+#: inginious/frontend/templates/task.html:411
+msgid "Please register in a group"
+msgstr "Zapisz się do grupy"
+
+#: inginious/frontend/templates/task.html:414
+msgid "You have reached the submission limit."
+msgstr "Wyczerpałeś/wyczerpałaś limit zgłoszeń."
+
+#: inginious/frontend/templates/task.html:414
+msgid "Your group have reached the submission limit."
+msgstr "Twoja grupa wyczerpała limit zgłoszeń."
+
+#: inginious/frontend/templates/task.html:416
+#, python-brace-format
+msgid "It will be refilled within the next {} hour(s)"
+msgstr "Limit zostanie odnowiony w ciągu najbliższych {} godz."
+
+#: inginious/frontend/templates/task.html:420
+msgid "You are not allowed to submit"
+msgstr "Nie możesz przesyłać rozwiązań"
+
+#: inginious/frontend/templates/task_unavailable.html:5
+#: inginious/frontend/templates/task_unavailable.html:9
+msgid "Task unavailable"
+msgstr "Zadanie niedostępne"
+
+#: inginious/frontend/templates/unregister_modal.html:9
+#, python-brace-format
+msgid "Unregister from {}"
+msgstr "Wypisz się z {}"
+
+#: inginious/frontend/templates/unregister_modal.html:15
+msgid "This will keep your submissions saved but will remove you from your group."
+msgstr ""
+"Twoje zgłoszenia zostaną zachowane, ale zostaniesz usunięty/usunięta ze "
+"swojej grupy."
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:77
+#: inginious/frontend/templates/unregister_modal.html:20
+msgid "Unregister"
+msgstr "Wypisz się"
+
+#: inginious/frontend/templates/admin/admin_users.html:5
+#: inginious/frontend/templates/admin/admin_users.html:20
+msgid "Users Administration"
+msgstr "Administracja użytkownikami"
+
+#: inginious/frontend/templates/admin/admin_users.html:12
+msgid "Users Admin"
+msgstr "Administracja użytkownikami"
+
+#: inginious/frontend/templates/admin/admin_users.html:32
+#: inginious/frontend/templates/course_admin/student_list_table.html:12
+msgid "member"
+msgstr "członek"
+
+#: inginious/frontend/templates/admin/admin_users.html:33
+#: inginious/frontend/templates/course_admin/student_list_table.html:16
+#: inginious/frontend/templates/course_admin/submissions.html:55
+msgid "username"
+msgstr "nazwa użytkownika"
+
+#: inginious/frontend/templates/admin/admin_users.html:34
+#: inginious/frontend/templates/course_admin/student_list_table.html:17
+msgid "email address"
+msgstr "adres e-mail"
+
+#: inginious/frontend/templates/admin/admin_users.html:38
+#: inginious/frontend/templates/course_admin/stats.html:61
+#: inginious/frontend/templates/course_admin/student_info.html:40
+#: inginious/frontend/templates/course_admin/student_list.html:159
+#: inginious/frontend/templates/course_admin/student_list_table.html:26
+#: inginious/frontend/templates/course_admin/submissions.html:78
+msgid "Download CSV"
+msgstr "Pobierz CSV"
+
+#: inginious/frontend/templates/admin/admin_users.html:68
+msgid "Bindings"
+msgstr "Powiązania"
+
+#: inginious/frontend/templates/admin/admin_users.html:102
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:20
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:54
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice_templates.html:31
+#: inginious/frontend/templates/course_admin/task_dispensers/section_menu.html:21
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:166
+msgid "Delete"
+msgstr "Usuń"
+
+#: inginious/frontend/templates/admin/admin_users.html:107
+#, python-brace-format
+msgid "This will delete {}. Are you sure ?"
+msgstr "Spowoduje to usunięcie: {}. Czy na pewno?"
+
+#: inginious/frontend/templates/admin/admin_users.html:112
+msgid "Remove"
+msgstr "Usuń"
+
+#: inginious/frontend/templates/admin/admin_users.html:122
+#: inginious/frontend/templates/admin/admin_users.html:132
+msgid "Activate"
+msgstr "Aktywuj"
+
+#: inginious/frontend/templates/admin/admin_users.html:127
+#, python-brace-format
+msgid "This will activate {}."
+msgstr "Spowoduje to aktywację konta {}."
+
+#: inginious/frontend/templates/admin/admin_users.html:142
+msgid "Add user"
+msgstr "Dodaj użytkownika"
+
+#: inginious/frontend/templates/admin/admin_users.html:168
+#: inginious/frontend/templates/course_admin/edit_tabs/subproblems.html:22
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:110
+msgid "Add"
+msgstr "Dodaj"
+
+#: inginious/frontend/templates/admin/admin_users.html:178
+msgid "Available bindings"
+msgstr "Dostępne powiązania"
+
+#: inginious/frontend/templates/admin/admin_users.html:250
+#: inginious/frontend/templates/preferences/bindings.html:47
+msgid "Revoke access"
+msgstr "Cofnij dostęp"
+
+#: inginious/frontend/templates/admin/admin_users.html:258
+msgid "Identifier :"
+msgstr "Identyfikator :"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:18
+#: inginious/frontend/templates/course_admin/student_list.html:43
+#: inginious/frontend/templates/course_admin/student_list.html:78
+#: inginious/frontend/templates/course_admin/student_list.html:110
+msgid "Audiences"
+msgstr "Grupy odbiorców"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:20
+#: inginious/frontend/templates/course_admin/audience_edit.html:26
+#, python-brace-format
+msgid "Edit audience {}"
+msgstr "Edytuj grupę odbiorców {}"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:44
+#: inginious/frontend/templates/course_admin/audience_edit.html:63
+#: inginious/frontend/templates/course_admin/student_list.html:67
+#: inginious/frontend/templates/course_admin/student_list.html:258
+#: inginious/frontend/templates/course_admin/student_list.html:277
+msgid "Add student"
+msgstr "Dodaj studenta"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:51
+msgid "Choose student :"
+msgstr "Wybierz studenta :"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:55
+#: inginious/frontend/templates/course_admin/settings.html:67
+#: inginious/frontend/templates/course_admin/settings.html:73
+#: inginious/frontend/templates/course_admin/student_list.html:65
+msgid "Enter something here to search for a user"
+msgstr "Wpisz tutaj, aby wyszukać użytkownika"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:74
+#: inginious/frontend/templates/course_admin/task_edit.html:46
+msgid "Basic settings"
+msgstr "Ustawienia podstawowe"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:78
+#: inginious/frontend/templates/course_admin/audience_edit.html:82
+msgid "Audience description"
+msgstr "Opis grupy odbiorców"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:85
+msgid "Delete audience"
+msgstr "Usuń grupę odbiorców"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:92
+msgid "Tutor list"
+msgstr "Lista tutorów"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:124
+msgid "Add tutor"
+msgstr "Dodaj tutora"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:137
+msgid "Student list"
+msgstr "Lista studentów"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:153
+msgid "Remove student"
+msgstr "Usuń studenta"
+
+#: inginious/frontend/templates/course_admin/audience_edit.html:164
+#: inginious/frontend/templates/course_admin/student_list.html:436
+msgid "Update"
+msgstr "Aktualizuj"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:41
+msgid "Archive data"
+msgstr "Archiwizacja danych"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:44
+#: inginious/frontend/templates/course_admin/danger_zone.html:138
+#: inginious/frontend/templates/course_admin/danger_zone.html:151
+#: inginious/frontend/templates/course_admin/danger_zone.html:159
+#: inginious/frontend/templates/course_admin/danger_zone.html:167
+msgid "Delete course"
+msgstr "Usuń kurs"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:52
+#: inginious/frontend/templates/course_admin/danger_zone.html:63
+msgid "Archive course data"
+msgstr "Archiwizuj dane kursu"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:55
+msgid ""
+"<p>This will reset and backup all course data (submissions, audiences, "
+"groups, user statistics) from the database.</p><p>To confirm your will, "
+"please type the course id below :</p>"
+msgstr ""
+"<p>Spowoduje to zresetowanie i utworzenie kopii zapasowej wszystkich "
+"danych kursu (zgłoszeń, grup odbiorców, grup, statystyk użytkowników) z "
+"bazy danych.</p><p>Aby potwierdzić, wpisz poniżej identyfikator kursu "
+":</p>"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:75
+#, python-brace-format
+msgid "Restore backup from {}"
+msgstr "Przywróć kopię zapasową z {}"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:79
+#, python-brace-format
+msgid "<p>This will restore your course data to {}. Are you sure ?</p>"
+msgstr "<p>Spowoduje to przywrócenie danych kursu do stanu z {}. Czy na pewno?</p>"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:86
+#: inginious/frontend/templates/course_admin/danger_zone.html:110
+msgid "Restore backup"
+msgstr "Przywróć kopię zapasową"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:94
+msgid "Backups"
+msgstr "Kopie zapasowe"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:99
+msgid "backup date"
+msgstr "data kopii zapasowej"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:100
+msgid "download"
+msgstr "pobierz"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:114
+msgid "Download backup"
+msgstr "Pobierz kopię zapasową"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:141
+msgid ""
+"<p> This will <b>permanently</b> remove the course and all its data "
+"(including tasks and backups) from INGInious.</p><p>To confirm your will,"
+" please type the course id below :</p>"
+msgstr ""
+"<p> Spowoduje to <b>trwałe</b> usunięcie kursu i wszystkich jego danych "
+"(łącznie z zadaniami i kopiami zapasowymi) z INGInious.</p><p>Aby "
+"potwierdzić, wpisz poniżej identyfikator kursu :</p>"
+
+#: inginious/frontend/templates/course_admin/danger_zone.html:163
+msgid ""
+"<p>This will <b>permanently</b> remove the course and all its data "
+"(including tasks and backups) from INGInious. Are you really sure ?</p>"
+msgstr ""
+"<p>Spowoduje to <b>trwałe</b> usunięcie kursu i wszystkich jego danych "
+"(łącznie z zadaniami i kopiami zapasowymi) z INGInious. Czy na pewno?</p>"
+
+#: inginious/frontend/templates/course_admin/menu.html:15
+msgid "How to create a task?"
+msgstr "Jak utworzyć zadanie?"
+
+#: inginious/frontend/templates/course_admin/menu.html:16
+msgid "Documentation"
+msgstr "Dokumentacja"
+
+#: inginious/frontend/templates/course_admin/settings.html:6
+msgid "Settings"
+msgstr "Ustawienia"
+
+#: inginious/frontend/templates/course_admin/settings.html:32
+msgid "Settings saved."
+msgstr "Ustawienia zapisane."
+
+#: inginious/frontend/templates/course_admin/settings.html:40
+msgid "Base"
+msgstr "Podstawowe"
+
+#: inginious/frontend/templates/course_admin/settings.html:46
+msgid "LTI"
+msgstr "LTI"
+
+#: inginious/frontend/templates/course_admin/settings.html:65
+msgid "Administrators"
+msgstr "Administratorzy"
+
+#: inginious/frontend/templates/course_admin/settings.html:71
+msgid "Tutors"
+msgstr "Tutorzy"
+
+#: inginious/frontend/templates/course_admin/settings.html:77
+msgid "Description"
+msgstr "Opis"
+
+#: inginious/frontend/templates/course_admin/settings.html:83
+msgid "Group attribution"
+msgstr "Przydział grup"
+
+#: inginious/frontend/templates/course_admin/settings.html:90
+msgid "Staff only"
+msgstr "Tylko kadra dydaktyczna"
+
+#: inginious/frontend/templates/course_admin/settings.html:97
+msgid "Staff and students"
+msgstr "Kadra dydaktyczna i studenci"
+
+#: inginious/frontend/templates/course_admin/settings.html:102
+msgid "Enable LTI"
+msgstr "Włącz LTI"
+
+#: inginious/frontend/templates/course_admin/settings.html:109
+msgid ""
+"Enable this option to allow your INGInious course to be used in external "
+"Learning Management Systems (LMS) such as Moodle or edX. Note that this "
+"will deactivate the group system."
+msgstr ""
+"Włącz tę opcję, aby umożliwić korzystanie z kursu INGInious w "
+"zewnętrznych systemach zarządzania nauczaniem (LMS), takich jak Moodle "
+"czy edX. Uwaga: spowoduje to wyłączenie systemu grup."
+
+#: inginious/frontend/templates/course_admin/settings.html:118
+msgid "Course preview"
+msgstr "Podgląd kursu"
+
+#: inginious/frontend/templates/course_admin/settings.html:125
+msgid "Allowed (read-only for non-registered users)"
+msgstr "Dozwolony (tylko do odczytu dla niezapisanych użytkowników)"
+
+#: inginious/frontend/templates/course_admin/settings.html:132
+msgid "Not allowed"
+msgstr "Niedozwolony"
+
+#: inginious/frontend/templates/course_admin/settings.html:145
+msgid "Course hidden from students"
+msgstr "Kurs ukryty dla studentów"
+
+#: inginious/frontend/templates/course_admin/settings.html:152
+msgid "Always accessible"
+msgstr "Zawsze dostępny"
+
+#: inginious/frontend/templates/course_admin/settings.html:159
+#: inginious/frontend/templates/course_admin/settings.html:219
+msgid "Custom:"
+msgstr "Własne:"
+
+#: inginious/frontend/templates/course_admin/settings.html:163
+#: inginious/frontend/templates/course_admin/settings.html:223
+msgid "From"
+msgstr "Od"
+
+#: inginious/frontend/templates/course_admin/settings.html:176
+#: inginious/frontend/templates/course_admin/settings.html:235
+msgid "To"
+msgstr "Do"
+
+#: inginious/frontend/templates/course_admin/settings.html:198
+msgid "Registration"
+msgstr "Rejestracja"
+
+#: inginious/frontend/templates/course_admin/settings.html:205
+msgid "Closed"
+msgstr "Zamknięta"
+
+#: inginious/frontend/templates/course_admin/settings.html:212
+msgid "Always open"
+msgstr "Zawsze otwarta"
+
+#: inginious/frontend/templates/course_admin/settings.html:257
+msgid "Allow auto-unregistration"
+msgstr "Zezwól na automatyczne wypisywanie się"
+
+#: inginious/frontend/templates/course_admin/settings.html:265
+msgid "Yes"
+msgstr "Tak"
+
+#: inginious/frontend/templates/course_admin/settings.html:272
+msgid "No"
+msgstr "Nie"
+
+#: inginious/frontend/templates/course_admin/settings.html:277
+msgid "Registration password"
+msgstr "Hasło do rejestracji"
+
+#: inginious/frontend/templates/course_admin/settings.html:280
+msgid ""
+"Password needed for registration. Leave blank if you don't want to set a "
+"password."
+msgstr ""
+"Hasło wymagane przy rejestracji. Pozostaw puste, jeśli nie chcesz go "
+"ustawiać."
+
+#: inginious/frontend/templates/course_admin/settings.html:285
+msgid "Access control"
+msgstr "Kontrola dostępu"
+
+#: inginious/frontend/templates/course_admin/settings.html:292
+msgid "No access control (everyone can register)"
+msgstr "Brak kontroli dostępu (rejestracja dla wszystkich)"
+
+#: inginious/frontend/templates/course_admin/settings.html:299
+msgid "Check by username"
+msgstr "Weryfikacja po nazwie użytkownika"
+
+#: inginious/frontend/templates/course_admin/settings.html:306
+msgid "Check by authentication binding"
+msgstr "Weryfikacja po powiązaniu uwierzytelniania"
+
+#: inginious/frontend/templates/course_admin/settings.html:313
+msgid "Check by email"
+msgstr "Weryfikacja po adresie e-mail"
+
+#: inginious/frontend/templates/course_admin/settings.html:318
+msgid "Access control type"
+msgstr "Typ kontroli dostępu"
+
+#: inginious/frontend/templates/course_admin/settings.html:325
+msgid "Accept"
+msgstr "Akceptuj"
+
+#: inginious/frontend/templates/course_admin/settings.html:332
+msgid "Deny"
+msgstr "Odrzucaj"
+
+#: inginious/frontend/templates/course_admin/settings.html:337
+msgid "Access control list"
+msgstr "Lista kontroli dostępu"
+
+#: inginious/frontend/templates/course_admin/settings.html:339
+msgid "Only used if access control is activated. Separate users by new lines."
+msgstr ""
+"Używana tylko przy włączonej kontroli dostępu. Oddziel użytkowników "
+"nowymi liniami."
+
+#: inginious/frontend/templates/course_admin/settings.html:345
+#: inginious/frontend/templates/course_admin/settings.html:347
+msgid "External platform URL"
+msgstr "Adres URL zewnętrznej platformy"
+
+#: inginious/frontend/templates/course_admin/settings.html:351
+msgid "LTI 1.1 consumer keys and secrets"
+msgstr "Klucze i sekrety konsumentów LTI 1.1"
+
+#: inginious/frontend/templates/course_admin/settings.html:353
+msgid ""
+"LTI consumer keys and secrets in the form key:secret, separated by "
+"newlines. Please ensure keys are long enough and random."
+msgstr ""
+"Klucze i sekrety konsumentów LTI w formacie klucz:sekrety, oddzielone "
+"nowymi liniami. Upewnij się, że klucze są wystarczająco długie i losowe."
+
+#: inginious/frontend/templates/course_admin/settings.html:358
+msgid "LTI 1.3 (Feature preview) Tool configuration"
+msgstr "Konfiguracja narzędzia LTI 1.3 (zapowiedź funkcji)"
+
+#: inginious/frontend/templates/course_admin/settings.html:360
+msgid ""
+"LTI 1.3 Tool configuration in JSON form, refer to INGInious teachers "
+"documentation."
+msgstr ""
+"Konfiguracja narzędzia LTI 1.3 w formacie JSON — patrz dokumentacja "
+"nauczyciela INGInious."
+
+#: inginious/frontend/templates/course_admin/settings.html:365
+msgid "LTI 1.3 (Feature preview) JSON Web Key Sets"
+msgstr "Zestawy kluczy JSON Web Key (JWKS) dla LTI 1.3 (zapowiedź funkcji)"
+
+#: inginious/frontend/templates/course_admin/settings.html:381
+msgid "Send back grades"
+msgstr "Odsyłanie wyników"
+
+#: inginious/frontend/templates/course_admin/settings.html:388
+msgid ""
+"Enable this to send back grades to the calling Tool Consumer (which is, "
+"most of the time, your LMS). INGInious will deactivate students' access "
+"to the course and tasks from the web application when enabled. Tasks will"
+" be only available from the LTI interface."
+msgstr ""
+"Włącz, aby odsyłać wyniki do wywołującego Tool Consumer (najczęściej Twój"
+" LMS). Po włączeniu INGInious zablokuje studentom dostęp do kursu i zadań"
+" przez aplikację webową — zadania będą dostępne wyłącznie przez interfejs"
+" LTI."
+
+#: inginious/frontend/templates/course_admin/settings.html:403
+msgid "New tag"
+msgstr "Nowy znacznik"
+
+#: inginious/frontend/templates/course_admin/settings.html:408
+#: inginious/frontend/templates/course_admin/submissions.html:66
+msgid "id"
+msgstr "id"
+
+#: inginious/frontend/templates/course_admin/settings.html:409
+msgid "name"
+msgstr "nazwa"
+
+#: inginious/frontend/templates/course_admin/settings.html:410
+msgid "description"
+msgstr "opis"
+
+#: inginious/frontend/templates/course_admin/settings.html:411
+msgid "show to students"
+msgstr "pokazuj studentom"
+
+#: inginious/frontend/templates/course_admin/settings.html:412
+msgid "type "
+msgstr "typ "
+
+#: inginious/frontend/templates/course_admin/settings.html:425
+#: inginious/frontend/templates/course_admin/settings.html:443
+msgid "Skill"
+msgstr "Umiejętność"
+
+#: inginious/frontend/templates/course_admin/settings.html:426
+#: inginious/frontend/templates/course_admin/settings.html:444
+msgid "Misconception"
+msgstr "Częsty błąd"
+
+#: inginious/frontend/templates/course_admin/settings.html:432
+msgid "Unknown name"
+msgstr "Nieznana nazwa"
+
+#: inginious/frontend/templates/course_admin/stats.html:40
+msgid "Student progress"
+msgstr "Postępy studentów"
+
+#: inginious/frontend/templates/course_admin/stats.html:53
+#: inginious/frontend/templates/course_admin/submissions.html:60
+msgid "task name"
+msgstr "nazwa zadania"
+
+#: inginious/frontend/templates/course_admin/stats.html:54
+msgid "# student viewed"
+msgstr "# studentów, którzy widzieli"
+
+#: inginious/frontend/templates/course_admin/stats.html:55
+msgid "# student attempted"
+msgstr "# studentów, którzy próbowali"
+
+#: inginious/frontend/templates/course_admin/stats.html:56
+msgid "# student succeeded"
+msgstr "# studentów, którzy zaliczyli"
+
+#: inginious/frontend/templates/course_admin/stats.html:57
+msgid "# attempts"
+msgstr "# prób"
+
+#: inginious/frontend/templates/course_admin/stats.html:64
+#: inginious/frontend/templates/course_admin/student_info.html:42
+#: inginious/frontend/templates/course_admin/student_info.html:82
+#: inginious/frontend/templates/course_admin/student_list.html:162
+msgid "View all submissions"
+msgstr "Zobacz wszystkie zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/stats.html:105
+msgid "Global statistics"
+msgstr "Statystyki ogólne"
+
+#: inginious/frontend/templates/course_admin/stats.html:109
+msgid "Submissions statistics"
+msgstr "Statystyki zgłoszeń"
+
+#: inginious/frontend/templates/course_admin/stats.html:127
+msgid "Tag statistics"
+msgstr "Statystyki znaczników"
+
+#: inginious/frontend/templates/course_admin/stats.html:132
+msgid "Tag"
+msgstr "Znacznik"
+
+#: inginious/frontend/templates/course_admin/stats.html:133
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:7
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:16
+msgid "All submissions"
+msgstr "Wszystkie zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/stats.html:134
+msgid "Best submissions"
+msgstr "Najlepsze zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/stats.html:262
+msgid "user"
+msgstr "użytkownik"
+
+#: inginious/frontend/templates/course_admin/stats.html:262
+#: inginious/frontend/templates/course_admin/student_info.html:36
+msgid "# submissions"
+msgstr "# zgłoszeń"
+
+#: inginious/frontend/templates/course_admin/stats.html:262
+msgid "# valid submissions"
+msgstr "# poprawnych zgłoszeń"
+
+#: inginious/frontend/templates/course_admin/student_info.html:20
+#: inginious/frontend/templates/course_admin/student_list.html:35
+#: inginious/frontend/templates/course_admin/student_list.html:397
+#: inginious/frontend/templates/course_admin/submission.html:26
+msgid "Students"
+msgstr "Studenci"
+
+#: inginious/frontend/templates/course_admin/student_info.html:29
+#, python-brace-format
+msgid "Statistics for student {realname} ({username})"
+msgstr "Statystyki studenta {realname} ({username})"
+
+#: inginious/frontend/templates/course_admin/student_info.html:34
+msgid "task"
+msgstr "zadanie"
+
+#: inginious/frontend/templates/course_admin/student_info.html:35
+msgid "status"
+msgstr "status"
+
+#: inginious/frontend/templates/course_admin/student_info.html:62
+msgid "Not served by the task dispenser"
+msgstr "Nieobsługiwane przez organizator zadań"
+
+#: inginious/frontend/templates/course_admin/student_info.html:68
+msgid "Not viewed"
+msgstr "Nie oglądane"
+
+#: inginious/frontend/templates/course_admin/student_info.html:70
+msgid "Not attempted (viewed)"
+msgstr "Bez prób (oglądane)"
+
+#: inginious/frontend/templates/course_admin/student_info.html:72
+#: inginious/frontend/templates/course_admin/student_info.html:75
+msgid "View evaluation submission"
+msgstr "Zobacz zgłoszenie oceniane"
+
+#: inginious/frontend/templates/course_admin/student_info.html:85
+msgid "Reset state"
+msgstr "Resetuj stan"
+
+#: inginious/frontend/templates/course_admin/student_info.html:98
+msgid "Reset State"
+msgstr "Resetuj stan"
+
+#: inginious/frontend/templates/course_admin/student_info.html:102
+#, python-brace-format
+msgid "This will reset the state for {}. Are you sure ?"
+msgstr "Spowoduje to zresetowanie stanu dla: {}. Czy na pewno?"
+
+#: inginious/frontend/templates/course_admin/student_info.html:107
+#: inginious/frontend/templates/course_admin/submissions_query.html:252
+msgid "Reset"
+msgstr "Resetuj"
+
+#: inginious/frontend/templates/course_admin/student_list.html:39
+msgid "Teaching staff"
+msgstr "Kadra dydaktyczna"
+
+#: inginious/frontend/templates/course_admin/student_list.html:58
+msgid "Number of students"
+msgstr "Liczba studentów"
+
+#: inginious/frontend/templates/course_admin/student_list.html:81
+msgid "Upload audiences"
+msgstr "Wyślij grupy odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:82
+#: inginious/frontend/templates/course_admin/student_list.html:213
+msgid "Download structure"
+msgstr "Pobierz strukturę"
+
+#: inginious/frontend/templates/course_admin/student_list.html:104
+msgid "Upload audience creation"
+msgstr "Wyślij tworzenie grup odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:108
+#: inginious/frontend/templates/course_admin/student_list.html:227
+msgid "Note : Please refer to documentation for file format"
+msgstr "Uwaga : format pliku opisano w dokumentacji"
+
+#: inginious/frontend/templates/course_admin/student_list.html:115
+msgid "Upload (will erase current repartition)"
+msgstr "Wyślij (usunie obecny podział)"
+
+#: inginious/frontend/templates/course_admin/student_list.html:127
+msgid "Download audiences structure"
+msgstr "Pobierz strukturę grup odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:132
+msgid "Prefered field"
+msgstr "Preferowane pole"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:17
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:25
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:40
+#: inginious/frontend/templates/course_admin/student_list.html:141
+#: inginious/frontend/templates/course_admin/submissions.html:252
+msgid "Download"
+msgstr "Pobierz"
+
+#: inginious/frontend/templates/course_admin/student_list.html:152
+msgid "audience"
+msgstr "grupa odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:153
+msgid "# students"
+msgstr "# studentów"
+
+#: inginious/frontend/templates/course_admin/student_list.html:154
+#: inginious/frontend/templates/course_admin/student_list_table.html:18
+msgid "# task tried"
+msgstr "# zadań, których próbowano"
+
+#: inginious/frontend/templates/course_admin/student_list.html:155
+#: inginious/frontend/templates/course_admin/student_list_table.html:19
+msgid "# task done"
+msgstr "# zadań zaliczonych"
+
+#: inginious/frontend/templates/course_admin/student_list.html:168
+msgid "My audience(s)"
+msgstr "Moje grupy odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:168
+msgid "Other audience(s)"
+msgstr "Inne grupy odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:184
+msgid "Edit audience"
+msgstr "Edytuj grupę odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:201
+msgid "New audience description"
+msgstr "Opis nowej grupy odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:202
+msgid "New audience"
+msgstr "Nowa grupa odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:212
+msgid "Upload structure"
+msgstr "Wyślij strukturę"
+
+#: inginious/frontend/templates/course_admin/student_list.html:223
+msgid "Upload course structure"
+msgstr "Wyślij strukturę kursu"
+
+#: inginious/frontend/templates/course_admin/student_list.html:229
+msgid "Course structure"
+msgstr "Struktura kursu"
+
+#: inginious/frontend/templates/course_admin/student_list.html:234
+msgid "Upload (will erase current settings)"
+msgstr "Wyślij (usunie obecne ustawienia)"
+
+#: inginious/frontend/templates/course_admin/student_list.html:266
+msgid "Student username (will be registered) :"
+msgstr "Nazwa użytkownika studenta (zostanie zapisany) :"
+
+#: inginious/frontend/templates/course_admin/student_list.html:269
+msgid "Student username"
+msgstr "Nazwa użytkownika studenta"
+
+#: inginious/frontend/templates/course_admin/student_list.html:287
+msgid "Ungrouped students"
+msgstr "Studenci bez grupy"
+
+#: inginious/frontend/templates/course_admin/student_list.html:313
+#: inginious/frontend/templates/course_admin/student_list.html:334
+msgid "Group description"
+msgstr "Opis grupy"
+
+#: inginious/frontend/templates/course_admin/student_list.html:313
+#: inginious/frontend/templates/course_admin/student_list.html:421
+msgid "New group"
+msgstr "Nowa grupa"
+
+#: inginious/frontend/templates/course_admin/student_list.html:316
+#: inginious/frontend/templates/course_admin/student_list.html:337
+msgid "Max group size :"
+msgstr "Maks. rozmiar grupy :"
+
+#: inginious/frontend/templates/course_admin/student_list.html:322
+#: inginious/frontend/templates/course_admin/student_list.html:343
+msgid "Delete group"
+msgstr "Usuń grupę"
+
+#: inginious/frontend/templates/course_admin/student_list.html:354
+msgid "Restrict to audiences"
+msgstr "Ogranicz do grup odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:366
+msgid "Add audience"
+msgstr "Dodaj grupę odbiorców"
+
+#: inginious/frontend/templates/course_admin/student_list.html:426
+msgid "Clean groups"
+msgstr "Wyczyść grupy"
+
+#: inginious/frontend/templates/course_admin/student_list.html:431
+msgid "Delete all groups"
+msgstr "Usuń wszystkie grupy"
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:14
+msgid "student"
+msgstr "student"
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:20
+msgid "current grade"
+msgstr "aktualny wynik"
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:21
+msgid "The current grade is computed over the tasks that are visible for users."
+msgstr ""
+"Aktualny wynik jest liczony na podstawie zadań widocznych dla "
+"użytkowników."
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:28
+msgid "View  all submissions"
+msgstr "Zobacz wszystkie zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:30
+msgid "Unregister all"
+msgstr "Wypisz wszystkich"
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:81
+#, python-brace-format
+msgid "This will remove {} from the course. Are you sure ?"
+msgstr "Spowoduje to usunięcie: {} z kursu. Czy na pewno?"
+
+#: inginious/frontend/templates/course_admin/student_list_table.html:87
+#, python-brace-format
+msgid "Remove {}"
+msgstr "Usuń {}"
+
+#: inginious/frontend/templates/course_admin/submission.html:43
+#, python-brace-format
+msgid "Submission {}"
+msgstr "Zgłoszenie {}"
+
+#: inginious/frontend/templates/course_admin/submission.html:45
+msgid ""
+"This page show what was shown to the student when (s)he made his/her "
+"submission."
+msgstr "Ta strona pokazuje, co student widział w momencie wysyłania zgłoszenia."
+
+#: inginious/frontend/templates/course_admin/submission.html:50
+msgid "Click here to hide/display context informations"
+msgstr "Kliknij, aby ukryć/pokazać informacje o kontekście"
+
+#: inginious/frontend/templates/course_admin/submission.html:56
+msgid "Download full submission"
+msgstr "Pobierz pełne zgłoszenie"
+
+#: inginious/frontend/templates/course_admin/submission.html:63
+#: inginious/frontend/templates/course_admin/submissions.html:185
+msgid "Replay submission"
+msgstr "Sprawdź zgłoszenie ponownie"
+
+#: inginious/frontend/templates/course_admin/submission.html:69
+#, python-brace-format
+msgid "Replay as {}"
+msgstr "Sprawdź ponownie jako {}"
+
+#: inginious/frontend/templates/course_admin/submission.html:75
+#, python-brace-format
+msgid "Replay/debug as {}"
+msgstr "Sprawdź ponownie/debuguj jako {}"
+
+#: inginious/frontend/templates/course_admin/submission.html:135
+msgid "This problem id is not defined in the task."
+msgstr "Ten identyfikator podzadania nie jest zdefiniowany w zadaniu."
+
+#: inginious/frontend/templates/course_admin/submission.html:137
+msgid "This problem is not present in the submission."
+msgstr "Tego podzadania nie ma w zgłoszeniu."
+
+#: inginious/frontend/templates/course_admin/submissions.html:43
+msgid "submissions selected"
+msgstr "wybrane zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/submissions.html:53
+msgid "student name"
+msgstr "imię i nazwisko studenta"
+
+#: inginious/frontend/templates/course_admin/submissions.html:62
+msgid "taskid"
+msgstr "id zadania"
+
+#: inginious/frontend/templates/course_admin/submissions.html:68
+msgid "submitted on"
+msgstr "wysłano"
+
+#: inginious/frontend/templates/course_admin/submissions.html:69
+msgid "replayed on"
+msgstr "sprawdzono ponownie"
+
+#: inginious/frontend/templates/course_admin/submissions.html:70
+msgid "result"
+msgstr "wynik"
+
+#: inginious/frontend/templates/course_admin/submissions.html:72
+msgid "tags"
+msgstr "znaczniki"
+
+#: inginious/frontend/templates/course_admin/submissions.html:80
+msgid "Download current selection"
+msgstr "Pobierz wybrane zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/submissions.html:83
+msgid "Replay current selection"
+msgstr "Sprawdź ponownie wybrane zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/submissions.html:135
+#: inginious/frontend/templates/course_admin/submissions.html:269
+msgid "Waiting"
+msgstr "Oczekuje"
+
+#: inginious/frontend/templates/course_admin/submissions.html:181
+msgid "View submission"
+msgstr "Zobacz zgłoszenie"
+
+#: inginious/frontend/templates/course_admin/submissions.html:182
+msgid "Download submission"
+msgstr "Pobierz zgłoszenie"
+
+#: inginious/frontend/templates/course_admin/submissions.html:228
+msgid "Download format"
+msgstr "Format pobierania"
+
+#: inginious/frontend/templates/course_admin/submissions.html:232
+msgid "Folder format"
+msgstr "Format folderów"
+
+#: inginious/frontend/templates/course_admin/submissions.html:235
+msgid "taskid/username"
+msgstr "id zadania/użytkownik"
+
+#: inginious/frontend/templates/course_admin/submissions.html:235
+msgid "taskid/audience"
+msgstr "id zadania/grupa odbiorców"
+
+#: inginious/frontend/templates/course_admin/submissions.html:235
+msgid "username/taskid"
+msgstr "użytkownik/id zadania"
+
+#: inginious/frontend/templates/course_admin/submissions.html:235
+msgid "audience/taskid"
+msgstr "grupa odbiorców/id zadania"
+
+#: inginious/frontend/templates/course_admin/submissions.html:242
+#: inginious/frontend/templates/course_admin/submissions_query.html:154
+msgid "Only evaluation submissions"
+msgstr "Tylko zgłoszenia oceniane"
+
+#: inginious/frontend/templates/course_admin/submissions.html:246
+msgid "Simplified file tree"
+msgstr "Uproszczone drzewo plików"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:21
+msgid "Query submissions"
+msgstr "Wyszukaj zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:34
+msgid "Select students"
+msgstr "Wybierz studentów"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:38
+msgid "Select audiences"
+msgstr "Wybierz grupy odbiorców"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:42
+#: inginious/frontend/templates/course_admin/submissions_query.html:98
+#: inginious/frontend/templates/course_admin/submissions_query.html:125
+msgid "Select all"
+msgstr "Zaznacz wszystko"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:45
+#: inginious/frontend/templates/course_admin/submissions_query.html:101
+#: inginious/frontend/templates/course_admin/submissions_query.html:128
+msgid "Deselect all"
+msgstr "Odznacz wszystko"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:50
+msgid "Tutored only"
+msgstr "Tylko pod opieką tutora"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:59
+msgid "No user to display"
+msgstr "Brak użytkowników do wyświetlenia"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:73
+msgid "No audience to display"
+msgstr "Brak grup odbiorców do wyświetlenia"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:95
+msgid "Select tasks"
+msgstr "Wybierz zadania"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:122
+msgid "Select category"
+msgstr "Wybierz kategorię"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:149
+msgid "Advanced query"
+msgstr "Zaawansowane wyszukiwanie"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:155
+msgid "Only timeouts and crashes"
+msgstr "Tylko przekroczenia czasu i awarie"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:156
+msgid "Show Tags"
+msgstr "Pokaż znaczniki"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:157
+msgid "Show submission id"
+msgstr "Pokaż id zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:158
+msgid "Show task name"
+msgstr "Pokaż nazwę zadania"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:159
+msgid "Show student name"
+msgstr "Pokaż nazwisko studenta"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:173
+msgid "Min grade"
+msgstr "Wynik min."
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:177
+msgid "Max grade"
+msgstr "Wynik maks."
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:184
+msgid "After date"
+msgstr "Po dacie"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:193
+msgid "Before date"
+msgstr "Przed datą"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:207
+msgid "Limit"
+msgstr "Limit"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:213
+msgid "Normal statistics"
+msgstr "Statystyki zwykłe"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:214
+msgid "Weighted statistics"
+msgstr "Statystyki ważone"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:219
+msgid "Sort by"
+msgstr "Sortuj według"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:221
+msgid "Submitted on"
+msgstr "Data wysłania"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:222
+msgid "User"
+msgstr "Użytkownik"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:224
+msgid "Task id"
+msgstr "Identyfikator zadania"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:231
+msgid "Order"
+msgstr "Kolejność"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:233
+msgid "Descending"
+msgstr "Malejąco"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:234
+msgid "Ascending"
+msgstr "Rosnąco"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:237
+msgid ""
+"Only visual. Download, replay and csv always consider all queried "
+"submissions."
+msgstr ""
+"Dotyczy tylko podglądu. Pobieranie, ponowne sprawdzanie i eksport CSV "
+"zawsze obejmują wszystkie wyszukane zgłoszenia."
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:238
+msgid "Submissions per page"
+msgstr "Zgłoszeń na stronę"
+
+#: inginious/frontend/templates/course_admin/submissions_query.html:255
+msgid "Filter"
+msgstr "Filtruj"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:6
+#, python-brace-format
+msgid "Edit {}"
+msgstr "Edytuj {}"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:21
+#: inginious/frontend/templates/course_admin/task_edit.html:28
+#, python-brace-format
+msgid "Edit task \"{}\""
+msgstr "Edytuj zadanie \"{}\""
+
+#: inginious/frontend/templates/course_admin/task_dispensers/task_buttons.html:10
+#: inginious/frontend/templates/course_admin/task_edit.html:32
+msgid "View task"
+msgstr "Zobacz zadanie"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:49
+msgid "Environment"
+msgstr "Środowisko"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:52
+msgid "Subproblems"
+msgstr "Podzadania"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:55
+msgid "Task files"
+msgstr "Pliki zadania"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:79
+msgid "File list"
+msgstr "Lista plików"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:109
+msgid "Problem id:"
+msgstr "Identyfikator podzadania:"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:126
+msgid "A title for this question"
+msgstr "Tytuł tego pytania"
+
+#: inginious/frontend/templates/course_admin/task_edit.html:144
+msgid "Are you sure that you want to delete this subproblem?"
+msgstr "Czy na pewno chcesz usunąć to podzadanie?"
+
+#: inginious/frontend/templates/course_admin/task_list.html:29
+#: inginious/frontend/templates/course_admin/task_list.html:41
+msgid "Switch task dispenser"
+msgstr "Zmień organizatora zadań"
+
+#: inginious/frontend/templates/course_admin/task_list.html:47
+msgid ""
+"This will wipe your current course structure. Tasks file won't be deleted"
+" but you'll have to import them again."
+msgstr ""
+"Spowoduje to wyczyszczenie obecnej struktury kursu. Pliki zadań nie "
+"zostaną usunięte, ale trzeba je będzie zaimportować ponownie."
+
+#: inginious/frontend/templates/course_admin/task_list.html:48
+msgid "New task dispenser:"
+msgstr "Nowy organizator zadań:"
+
+#: inginious/frontend/templates/course_admin/task_list.html:69
+msgid "WebDAV access"
+msgstr "Dostęp WebDAV"
+
+#: inginious/frontend/templates/course_admin/task_list.html:74
+msgid "Use this URL to access your course folder using WebDAV:"
+msgstr "Użyj tego adresu URL, aby uzyskać dostęp do folderu kursu przez WebDAV:"
+
+#: inginious/frontend/templates/course_admin/task_list.html:77
+msgid "URL"
+msgstr "URL"
+
+#: inginious/frontend/templates/course_admin/task_list.html:97
+msgid "Changes saved."
+msgstr "Zmiany zapisane."
+
+#: inginious/frontend/templates/course_admin/task_list.html:107
+msgid ""
+"This course currently includes legacy tasks with settings that have to be"
+" imported to the task dispenser settings to be effective."
+msgstr ""
+"Ten kurs zawiera obecnie starsze zadania z ustawieniami, które trzeba "
+"zaimportować do ustawień organizatora zadań, aby stały się skuteczne."
+
+#: inginious/frontend/templates/course_admin/task_list.html:109
+msgid "Migrate tasks"
+msgstr "Migruj zadania"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:13
+msgid "Filetype"
+msgstr "Typ pliku"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:30
+#: inginious/frontend/templates/course_admin/subproblems/code.html:5
+#: inginious/frontend/templates/course_admin/subproblems/file.html:5
+#: inginious/frontend/templates/course_admin/subproblems/match.html:5
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:5
+msgid "Context"
+msgstr "Treść"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:36
+msgid "Author"
+msgstr "Autor"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:43
+msgid "Your name"
+msgstr "Twoje imię i nazwisko"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:47
+msgid "Contact URL"
+msgstr "Adres URL kontaktu"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:53
+msgid "Random inputs"
+msgstr "Losowe dane wejściowe"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:60
+msgid "Regenerate random inputs for each reloading of the task page"
+msgstr ""
+"Generuj losowe dane wejściowe ponownie przy każdym odświeżeniu strony "
+"zadania"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/basic.html:60
+msgid "Regenerate input random"
+msgstr "Wygeneruj ponownie dane losowe"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:5
+msgid "Timeout limit (in seconds)"
+msgstr "Limit czasu (w sekundach)"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:11
+msgid "Hard timeout limit (in seconds) <small>Default to 3*timeout</small>"
+msgstr "Twardy limit czasu (w sekundach) <small>Domyślnie 3*limit czasu</small>"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:18
+msgid "Memory limit (in megabytes)"
+msgstr "Limit pamięci (w megabajtach)"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:24
+msgid "Allow internet access inside the grading container?"
+msgstr "Zezwolić na dostęp do internetu wewnątrz kontenera oceniającego?"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:24
+msgid "It also adds and configures local interfaces with IPv4 and IPv6."
+msgstr "Dodatkowo dodaje i konfiguruje lokalne interfejsy IPv4 i IPv6."
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:35
+msgid ""
+"Custom command to be run in container <small>(instead of running the run "
+"script)</small>"
+msgstr ""
+"Własne polecenie do wykonania w kontenerze <small>(zamiast uruchamiania "
+"skryptu run)</small>"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:38
+msgid "Optional"
+msgstr "Opcjonalne"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/env_generic_docker_oci.html:43
+msgid "Are the task's responses written in HTML instead of restructuredText?"
+msgstr "Czy treść zadania jest napisana w HTML zamiast w reStructuredText?"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/environment.html:5
+msgid "Grading environment type"
+msgstr "Typ środowiska oceniania"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/environment.html:20
+msgid "Grading environment"
+msgstr "Środowisko oceniania"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/file_modals.html:9
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:61
+msgid "Upload a file"
+msgstr "Wyślij plik"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/file_modals.html:16
+msgid "File:"
+msgstr "Plik:"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/file_modals.html:20
+msgid "File path:"
+msgstr "Ścieżka pliku:"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/file_modals.html:27
+msgid "Upload"
+msgstr "Wyślij"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:16
+msgid "Path"
+msgstr "Ścieżka"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:18
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:45
+msgid "Edit"
+msgstr "Edytuj"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:19
+msgid "Move"
+msgstr "Przenieś"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:50
+msgid "Move/Rename"
+msgstr "Przenieś/zmień nazwę"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:60
+msgid "Create a new file"
+msgstr "Utwórz nowy plik"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/files.html:70
+msgid "Drag and drop a file here."
+msgstr "Przeciągnij i upuść plik tutaj."
+
+#: inginious/frontend/templates/course_admin/edit_tabs/subproblems.html:8
+msgid "New problem id"
+msgstr "Identyfikator nowego podzadania"
+
+#: inginious/frontend/templates/course_admin/edit_tabs/subproblems.html:13
+msgid "Problem type"
+msgstr "Typ podzadania"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:12
+msgid "Language"
+msgstr "Język"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:14
+msgid "Language used in this question (c/cpp/java/python/oz/...)"
+msgstr "Język użyty w tym pytaniu (c/cpp/java/python/oz/...)"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:23
+msgid "Multiline code"
+msgstr "Kod wielolinijkowy"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:25
+msgid "Single-line code"
+msgstr "Kod jednolinijkowy"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:31
+msgid "Optional?"
+msgstr "Opcjonalne?"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:41
+msgid "Default value"
+msgstr "Wartość domyślna"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:53
+msgid "Code line offset"
+msgstr "Przesunięcie numeracji linii kodu"
+
+#: inginious/frontend/templates/course_admin/subproblems/code.html:55
+msgid "Line offset for the code block. Must be a number."
+msgstr "Przesunięcie numeracji linii bloku kodu. Musi być liczbą."
+
+#: inginious/frontend/templates/course_admin/subproblems/file.html:11
+msgid "Allowed file extensions (including the dot, separated by commas)"
+msgstr "Dozwolone rozszerzenia plików (z kropką, oddzielone przecinkami)"
+
+#: inginious/frontend/templates/course_admin/subproblems/file.html:17
+msgid "Maximum file size (in bytes)"
+msgstr "Maksymalny rozmiar pliku (w bajtach)"
+
+#: inginious/frontend/templates/course_admin/subproblems/file.html:26
+msgid "File upload"
+msgstr "Wysyłanie pliku"
+
+#: inginious/frontend/templates/course_admin/subproblems/match.html:11
+msgid "Answer"
+msgstr "Odpowiedź"
+
+#: inginious/frontend/templates/course_admin/subproblems/match.html:13
+msgid "Answer of this question"
+msgstr "Odpowiedź do tego pytania"
+
+#: inginious/frontend/templates/course_admin/subproblems/match.html:17
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:27
+msgid "Count error only at top of the page?"
+msgstr "Liczyć błąd tylko u góry strony?"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:11
+msgid "Can select multiple answers"
+msgstr "Można wybrać wiele odpowiedzi"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:19
+msgid "Unshuffle answers"
+msgstr "Nie tasuj odpowiedzi"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:35
+msgid "Number of choices to display (0 = all choices)"
+msgstr "Liczba wyświetlanych odpowiedzi (0 = wszystkie)"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:41
+msgid "Success message"
+msgstr "Komunikat o sukcesie"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:45
+msgid "An optional success message"
+msgstr "Opcjonalny komunikat o sukcesie"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:49
+msgid "Error message"
+msgstr "Komunikat o błędzie"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:53
+msgid "An optional error message"
+msgstr "Opcjonalny komunikat o błędzie"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:58
+msgid "Choices"
+msgstr "Odpowiedzi"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice.html:63
+msgid "Add new choice"
+msgstr "Dodaj nową odpowiedź"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice_templates.html:8
+msgid "Content"
+msgstr "Treść"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice_templates.html:15
+msgid "Feedback message (displayed when selected)"
+msgstr "Komunikat zwrotny (wyświetlany po zaznaczeniu)"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice_templates.html:19
+msgid "An optional feedback message"
+msgstr "Opcjonalny komunikat zwrotny"
+
+#: inginious/frontend/templates/course_admin/subproblems/multiple_choice_templates.html:26
+msgid "Valid ?"
+msgstr "Poprawna?"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/combinatory_test.html:5
+msgid "Combinatory tests"
+msgstr "Testy kombinatoryczne"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/combinatory_test.html:9
+msgid ""
+"Only the specified amount of tasks to be displayed will be shown to the "
+"user. There is no state: changing the amount of tasks per section, "
+"section position or section title will affect the effective task set a "
+"user will be displayed."
+msgstr ""
+"Użytkownikowi zostanie wyświetlona wyłącznie podana liczba zadań. Nie ma "
+"tu stanu zapamiętawanego: zmiana liczby zadań w sekcji, pozycji sekcji "
+"lub tytułu sekcji wpłynie na faktyczny zestaw zadań wyświetlany "
+"użytkownikowi."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/combinatory_test.html:11
+msgid ""
+"As an administrator, the only way to access all the tasks is through this"
+" administration page."
+msgstr ""
+"Jako administrator dostęp do wszystkich zadań masz wyłącznie przez tę "
+"stronę administracyjną."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/combinatory_test.html:27
+#: inginious/frontend/templates/course_admin/task_dispensers/toc.html:17
+msgid "Add section"
+msgstr "Dodaj sekcję"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/combinatory_test.html:33
+#: inginious/frontend/templates/course_admin/task_dispensers/toc.html:23
+msgid "New section"
+msgstr "Nowa sekcja"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/empty_section.html:26
+msgid "Drag tasks or section here."
+msgstr "Przeciągnij tutaj zadania lub sekcję."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/section_menu.html:10
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:85
+msgid "Add tasks"
+msgstr "Dodaj zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/section_menu.html:14
+msgid "Add subsection"
+msgstr "Dodaj podsekcję"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/section_menu.html:18
+msgid "Rename"
+msgstr "Zmień nazwę"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/task_buttons.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:148
+msgid "Task settings"
+msgstr "Ustawienia zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/task_buttons.html:23
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:152
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:11
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:35
+msgid "Delete task"
+msgstr "Usuń zadanie"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/task_list.html:49
+msgid "No valid task with id:"
+msgstr "Brak poprawnego zadania o identyfikatorze:"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/task_list.html:54
+msgid "Delete invalid task"
+msgstr "Usuń niepoprawne zadanie"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:51
+msgid "Edit selected tasks"
+msgstr "Edytuj wybrane zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:89
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:92
+msgid "Create new task"
+msgstr "Utwórz nowe zadanie"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:91
+msgid "New task id"
+msgstr "Identyfikator nowego zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:94
+msgid "Import from course filesystem"
+msgstr "Importuj z systemu plików kursu"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:95
+msgid "Search..."
+msgstr "Szukaj..."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:97
+msgid "No unassigned tasks in the filesystem of this course"
+msgstr "Brak nieprzypisanych zadań w systemie plików tego kursu"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:137
+msgid "New task with id: "
+msgstr "Nowe zadanie o identyfikatorze: "
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:161
+msgid "Grouped actions"
+msgstr "Akcje grupowe"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:163
+msgid "Change selection"
+msgstr "Zmień zaznaczenie"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:165
+msgid "Move to section..."
+msgstr "Przenieś do sekcji..."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:168
+msgid "Compact view"
+msgstr "Widok kompaktowy"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util.html:172
+msgid "On setting: "
+msgstr "Ustawienie: "
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:9
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:32
+msgid "Delete section"
+msgstr "Usuń sekcję"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:13
+msgid "Delete selected tasks"
+msgstr "Usuń wybrane zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:19
+msgid ""
+"Once saved, this will <b>permanently</b> delete this section, all its "
+"subsections and remove all the tasks and their files from INGInious."
+msgstr ""
+"Po zapisie ta sekcja, wszystkie jej podsekcje oraz zadania i ich pliki "
+"zostaną <b>trwale</b> usunięte z INGInious."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:21
+msgid ""
+"Once saved, this will <b>permanently</b> remove the task and its files "
+"from INGInious."
+msgstr ""
+"Po zapisie to zadanie i jego pliki zostaną <b>trwale</b> usunięte z "
+"INGInious."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:25
+msgid "Wipe all submissions"
+msgstr "Wyczyść wszystkie zgłoszenia"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:31
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:34
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:37
+msgid "Keep files"
+msgstr "Zachowaj pliki"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_delete_modal.html:38
+msgid "Delete tasks"
+msgstr "Usuń zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_move_modal.html:8
+msgid "Move selected tasks"
+msgstr "Przenieś wybrane zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_move_modal.html:12
+msgid "Please select the section to move the selected tasks into."
+msgstr "Wybierz sekcję, do której mają zostać przeniesione wybrane zadania."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_move_modal.html:18
+msgid "Move tasks"
+msgstr "Przenieś zadania"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/util_task_edit_modal.html:8
+#, python-brace-format
+msgid "Edit task {}"
+msgstr "Edytuj zadanie {}"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:7
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:21
+msgid "Never"
+msgstr "Nigdy"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:8
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:27
+msgid "Always"
+msgstr "Zawsze"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:10
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:34
+#, python-brace-format
+msgid "Custom, from: {} to: {}"
+msgstr "Własne, od: {} do: {}"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:60
+msgid "Students can still submit after this date"
+msgstr "Studenci mogą przesyłać rozwiązania także po tej dacie"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/accessibility.html:60
+msgid "Soft Deadline"
+msgstr "Miękki termin"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/categories.html:11
+msgid "Tag name, separated by commas"
+msgstr "Nazwy znaczników, oddzielone przecinkami"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/evaluation_mode.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/evaluation_mode.html:10
+msgid "Evaluation submission"
+msgstr "Zgłoszenie oceniane"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/groups.html:7
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/groups.html:26
+msgid "Per group"
+msgstr "Na grupę"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/groups.html:8
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/groups.html:17
+msgid "Individually"
+msgstr "Indywidualnie"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:17
+msgid "Submission limits"
+msgstr "Limity zgłoszeń"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:10
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:26
+#, python-brace-format
+msgid "Hard limit: {nbr_submissions} submission(s)"
+msgstr "Twardy limit: {nbr_submissions} zgłoszeń"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:13
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_limit.html:34
+#, python-brace-format
+msgid "Soft limit: {nbr_submissions} submission(s) every {nbr_hours} hour(s)"
+msgstr "Miękki limit: {nbr_submissions} zgłoszeń co {nbr_hours} godz."
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:9
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/submission_storage.html:22
+#, python-brace-format
+msgid "Only the last {nbr_submissions} submissions"
+msgstr "Tylko ostatnie {nbr_submissions} zgłoszeń"
+
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/weight.html:6
+#: inginious/frontend/templates/course_admin/task_dispensers/config_items/weight.html:8
+msgid "Grade weight (in comparison to other tasks)"
+msgstr "Waga wyniku (w porównaniu z innymi zadaniami)"
+
+#: inginious/frontend/templates/lti/bind.html:5
+msgid "Bind LTI"
+msgstr "Powiąż LTI"
+
+#: inginious/frontend/templates/lti/bind.html:7
+msgid "Binding to an existing LMS"
+msgstr "Powiązanie z istniejącym LMS"
+
+#: inginious/frontend/templates/lti/bind.html:16
+msgid "Authorization required"
+msgstr "Wymagana autoryzacja"
+
+#: inginious/frontend/templates/lti/bind.html:18
+#, python-brace-format
+msgid ""
+"You are going to bind your INGInious account <strong>{realname} "
+"[{username}]</strong> with the following LTI tool and context:"
+msgstr ""
+"Zamierzasz powiązać swoje konto INGInious <strong>{realname} "
+"[{username}]</strong> z następującym narzędziem i kontekstem LTI:"
+
+#: inginious/frontend/templates/lti/bind.html:20
+msgid "Tool name:"
+msgstr "Nazwa narzędzia:"
+
+#: inginious/frontend/templates/lti/bind.html:21
+msgid "Tool description:"
+msgstr "Opis narzędzia:"
+
+#: inginious/frontend/templates/lti/bind.html:22
+msgid "Tool URL:"
+msgstr "Adres URL narzędzia:"
+
+#: inginious/frontend/templates/lti/bind.html:23
+msgid "Tool context:"
+msgstr "Kontekst narzędzia:"
+
+#: inginious/frontend/templates/lti/bind.html:24
+msgid "Tool identifiers:"
+msgstr "Identyfikatory narzędzia:"
+
+#: inginious/frontend/templates/lti/bind.html:31
+msgid "Bind my account"
+msgstr "Powiąż moje konto"
+
+#: inginious/frontend/templates/lti/login.html:13
+msgid "Hello!"
+msgstr "Witaj!"
+
+#: inginious/frontend/templates/lti/login.html:14
+msgid "Welcome on the INGInious platform."
+msgstr "Witaj na platformie INGInious."
+
+#: inginious/frontend/templates/lti/login.html:26
+msgid ""
+"In order to use INGInious via this platform, please bind your existing "
+"account or create a new one."
+msgstr ""
+"Aby korzystać z INGInious przez tę platformę, powiąż istniejące konto lub"
+" utwórz nowe."
+
+#: inginious/frontend/templates/lti/login.html:33
+msgid "Bind your INGInious account"
+msgstr "Powiąż swoje konto INGInious"
+
+#: inginious/frontend/templates/lti/login.html:34
+msgid "Refresh"
+msgstr "Odśwież"
+
+#: inginious/frontend/templates/preferences/bindings.html:46
+msgid "Refresh fields"
+msgstr "Odśwież pola"
+
+#: inginious/frontend/templates/preferences/bindings.html:58
+msgid "Identifier"
+msgstr "Identyfikator"
+
+#: inginious/frontend/templates/preferences/bindings.html:60
+msgid "Additional fields"
+msgstr "Dodatkowe pola"
+
+#: inginious/frontend/templates/preferences/bindings.html:74
+msgid "Add a new binding"
+msgstr "Dodaj nowe powiązanie"
+
+#: inginious/frontend/templates/preferences/bindings.html:78
+msgid "Select a authentication binding"
+msgstr "Wybierz powiązanie uwierzytelniania"
+
+#: inginious/frontend/templates/preferences/bindings.html:87
+msgid "Add new binding"
+msgstr "Dodaj nowe powiązanie"
+
+#: inginious/frontend/templates/preferences/delete.html:41
+msgid "To confirm, type your email address :"
+msgstr "Aby potwierdzić, wpisz swój adres e-mail :"
+
+#: inginious/frontend/templates/preferences/delete.html:56
+msgid "This will also delete all your data ! Are you really sure ?"
+msgstr "Spowoduje to również usunięcie wszystkich Twoich danych! Czy na pewno?"
+
+#: inginious/frontend/templates/preferences/profile.html:40
+msgid "Please set a new username"
+msgstr "Ustaw nową nazwę użytkownika"
+
+#: inginious/frontend/templates/preferences/profile.html:54
+msgid "Username :"
+msgstr "Nazwa użytkownika :"
+
+#: inginious/frontend/templates/preferences/profile.html:66
+msgid "Language :"
+msgstr "Język :"
+
+#: inginious/frontend/templates/preferences/profile.html:74
+msgid "Code indentation :"
+msgstr "Wcięcie kodu :"
+
+#: inginious/frontend/templates/preferences/profile.html:83
+msgid "Old password :"
+msgstr "Stare hasło :"
+
+#: inginious/frontend/templates/preferences/profile.html:87
+msgid "New password (min. 6 characters) :"
+msgstr "Nowe hasło (min. 6 znaków) :"
+
+#: inginious/frontend/templates/preferences/profile.html:91
+msgid "Confirm new password :"
+msgstr "Potwierdź nowe hasło :"
+
+#: inginious/frontend/templates/preferences/profile.html:102
+msgid "Save my profile"
+msgstr "Zapisz mój profil"
+
+#: inginious/frontend/templates/task_dispensers/task_list.html:34
+msgid "deadline reached"
+msgstr "termin minął"
+
+#: inginious/frontend/templates/task_dispensers/task_list.html:39
+msgid "Weight : "
+msgstr "Waga : "
+
+#: inginious/frontend/templates/tasks/file.html:7
+msgid "Click here to download the file you submitted previously"
+msgstr "Kliknij, aby pobrać plik wysłany poprzednio"
+
+#: inginious/frontend/templates/tasks/file.html:22
+msgid "Max file size:"
+msgstr "Maks. rozmiar pliku:"
+
+#: inginious/frontend/templates/tasks/file.html:23
+msgid "Allowed extensions:"
+msgstr "Dozwolone rozszerzenia:"
+
