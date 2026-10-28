@@ -3,6 +3,9 @@ ARG  REGISTRY
 
 FROM ${REGISTRY}/inginious/core-base:${VERSION}
 
+# Ensure common/ matches this build, not the (possibly stale) base image layer.
+COPY inginious/__init__.py inginious/
+COPY inginious/common/ inginious/common/
 COPY inginious/frontend inginious/frontend/
 COPY inginious/client inginious/client/
 COPY inginious-webapp .

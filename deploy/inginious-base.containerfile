@@ -3,7 +3,7 @@ FROM rockylinux:8
 
 ENV INGINIOUS_COMPOSE=1
 
-RUN dnf update -y && dnf install -y python39 python39-pip git
+RUN dnf update -y && dnf install -y python39 python39-pip python39-devel git gcc
 
 WORKDIR /inginious
 COPY setup.py README.rst ./
