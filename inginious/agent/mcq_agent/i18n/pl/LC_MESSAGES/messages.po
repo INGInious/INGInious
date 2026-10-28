@@ -1,0 +1,45 @@
+# Polish translations for .
+# Copyright (C) 2019 ORGANIZATION
+# This file is distributed under the same license as the  project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  INGInious\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2019-10-03 14:13+0200\n"
+"PO-Revision-Date: 2026-10-28 18:30+0100\n"
+"Last-Translator: Błażej Gruszka\n"
+"Language: pl\n"
+"Language-Team: Polish\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && "
+"(n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: inginious/agent/mcq_agent/__init__.py:56
+msgid "Wrong answer. Make sure to select all the valid possibilities"
+msgstr "Zła odpowiedź. Upewnij się, że zaznaczasz wszystkie poprawne możliwości"
+
+#: inginious/agent/mcq_agent/__init__.py:57
+msgid "Wrong answer"
+msgstr "Zła odpowiedź"
+
+#: inginious/agent/mcq_agent/__init__.py:58
+msgid "Correct answer"
+msgstr "Poprawna odpowiedź"
+
+#: inginious/agent/mcq_agent/__init__.py:70
+#, python-brace-format
+msgid "You have {} wrong answer(s)."
+msgstr "Masz {} błędnych odpowiedzi."
+
+#: inginious/agent/mcq_agent/__init__.py:72
+#, python-brace-format
+msgid "Among them, you have {} invalid answers in the multiple choice questions"
+msgstr ""
+"Wśród nich masz {} niepoprawnych odpowiedzi w pytaniach jednokrotnego "
+"wyboru"
+
