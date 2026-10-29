@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  INGInious\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-29 08:53+0100\n"
+"POT-Creation-Date: 2026-10-29 09:11+0100\n"
 "PO-Revision-Date: 2026-10-28 18:30+0100\n"
 "Last-Translator: Błażej Gruszka\n"
 "Language: pl\n"
@@ -1535,6 +1535,27 @@ msgstr ""
 #: inginious/frontend/templates/mycourses.html:95
 msgid "You are not allowed to have more than 6 pinned courses."
 msgstr "Nie możesz mieć więcej niż 6 przypiętych kursów."
+
+#: inginious/frontend/templates/mycourses.html:99
+msgid "Search a course by its name"
+msgstr "Szukaj kursu po jego nazwie"
+
+#: inginious/frontend/templates/mycourses.html:103
+msgctxt "course filter"
+msgid "Archive"
+msgstr "Archiwum"
+
+#: inginious/frontend/templates/mycourses.html:104
+msgid "LTI"
+msgstr "LTI"
+
+#: inginious/frontend/templates/mycourses.html:105
+msgid "Hidden"
+msgstr "Ukryte"
+
+#: inginious/frontend/templates/mycourses.html:106
+msgid "Pinned"
+msgstr "Przypięte"
 
 #: inginious/frontend/templates/mycourses.html:144
 msgid "LTI course"
