@@ -13,7 +13,7 @@ from io import BytesIO
 
 from flask import current_app
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden, APIInvalidArguments, APIError
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APINotFound, APIForbidden, APIInvalidArguments, APIError
 
 
 def _get_submissions(submission_manager, user_manager, courseid, taskid, username, with_input, submissionid=None):
@@ -82,7 +82,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, usernam
     return 200, output
 
 
-class APISubmissionSingle(APIAuthenticatedPage):
+class APISubmissionSingle(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -122,7 +122,7 @@ class APISubmissionSingle(APIAuthenticatedPage):
         return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, flask.g.user.username, with_input, submissionid)
 
 
-class APISubmissions(APIAuthenticatedPage):
+class APISubmissions(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::

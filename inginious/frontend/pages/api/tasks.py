@@ -7,11 +7,11 @@
 import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APINotFound, APIForbidden
 from inginious.frontend.parsable_text import ParsableText
 
 
-class APITasks(APIAuthenticatedPage):
+class APITasks(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::

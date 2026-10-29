@@ -7,10 +7,10 @@
 import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APINotFound
 
 
-class APICourses(APIAuthenticatedPage):
+class APICourses(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::

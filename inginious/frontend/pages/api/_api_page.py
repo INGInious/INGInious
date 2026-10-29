@@ -51,12 +51,7 @@ class APIPage(INGIniousPage):
 
     def _handle_api(self, handler, handler_args, handler_kwargs):
         """ Handle call to subclasses and convert the output to an appropriate value """
-        try:
-            status_code, return_value = handler(*handler_args, **handler_kwargs)
-        except APIError as error:
-            return error.send()
-
-        return _api_convert_output(status_code, return_value)
+        raise NotImplementedError()
 
     def _guess_available_methods(self):
         """ Guess the method implemented by the subclass"""
@@ -101,14 +96,55 @@ class APIPage(INGIniousPage):
         self.invalid_method()
 
 
-class APIAuthenticatedPage(APIPage):
+class APIPageV0(APIPage):
+    """ Base class for v0 API pages: output format depends on the request content type """
+
+    def _handle_api(self, handler, handler_args, handler_kwargs):
+        """ Handle call to subclasses and convert the output to an appropriate value """
+        try:
+            status_code, return_value = handler(*handler_args, **handler_kwargs)
+        except APIError as error:
+            return self._api_convert_output(error.status_code, error.return_value, error.headers)
+
+        return self._api_convert_output(status_code, return_value)
+
+    def _api_convert_output(self, status_code, return_value, headers=None):
+        """ Convert the output to what the client asks """
+        response = Response()
+        response.status_code = status_code
+        if headers:
+            response.headers.update(headers)
+        content_type = flask.request.environ.get('CONTENT_TYPE', 'text/json')
+
+        if "text/json" in content_type:
+            response.content_type = 'text/json; charset=utf-8'
+            response.response = [json.dumps(return_value)]
+            return response
+        if "text/html" in content_type:
+            response.content_type = 'text/html; charset=utf-8'
+            dump = yaml.dump(return_value)
+            response.response = ["<pre>" + dump + "</pre>"]
+            return response
+        if "text/yaml" in content_type or \
+                "text/x-yaml" in content_type or \
+                "application/yaml" in content_type or \
+                "application/x-yaml" in content_type:
+            response.content_type = 'text/yaml; charset=utf-8'
+            response.response = [yaml.dump(return_value)]
+            return response
+        response.content_type = 'text/json; charset=utf-8'
+        response.response = [json.dumps(return_value)]
+        return response
+
+
+class APIAuthenticatedPageV0(APIPageV0):
     """
         A wrapper for pages that needs authentication. Automatically checks that the client is authenticated and returns "403 Forbidden" if it's
         not the case.
     """
 
     def _handle_api(self, handler, handler_args, handler_kwargs):
-        return APIPage._handle_api(self, (lambda *args, **kwargs: self._verify_authentication(handler, args, kwargs)), handler_args, handler_kwargs)
+        return super()._handle_api((lambda *args, **kwargs: self._verify_authentication(handler, args, kwargs)), handler_args, handler_kwargs)
 
     def _verify_authentication(self, handler, args, kwargs):
         """
@@ -147,29 +183,22 @@ class APIAuthenticatedPage(APIPage):
 
 
 class APIError(Exception):
-    """ Standard API Error """
+    """ Standard API Error. Pure data: rendering is done by the API page """
 
-    def __init__(self, status_code, return_value):
+    def __init__(self, status_code, return_value, headers=None):
         super(APIError, self).__init__()
         self.status_code = status_code
         self.return_value = return_value
-
-    def send(self, response=None):
-        """ Send the API Exception to the client """
-        return _api_convert_output(self.status_code, self.return_value, response)
+        self.headers = headers or {}
 
 
 class APIInvalidMethod(APIError):
     """ Invalid method error """
 
     def __init__(self, methods):
-        APIError.__init__(self, 405, {"error": "This endpoint has no such method"})
+        APIError.__init__(self, 405, {"error": "This endpoint has no such method"},
+                          {"Allow": ",".join(methods)})
         self.methods = methods
-
-    def send(self):
-        response = Response()
-        response.headers['Allow'] = ",".join(self.methods)
-        return APIError.send(self, response)
 
 
 class APIInvalidArguments(APIError):
@@ -192,30 +221,3 @@ class APINotFound(APIError):
     def __init__(self, message="Not found"):
         APIError.__init__(self, 404, {"error": message})
 
-
-def _api_convert_output(status_code, return_value, response=None):
-    if not response:
-        response = Response()
-        response.status_code = status_code
-    """ Convert the output to what the client asks """
-    content_type = flask.request.environ.get('CONTENT_TYPE', 'text/json')
-
-    if "text/json" in content_type:
-        response.content_type = 'text/json; charset=utf-8'
-        response.response = [json.dumps(return_value)]
-        return response
-    if "text/html" in content_type:
-        response.content_type = 'text/html; charset=utf-8'
-        dump = yaml.dump(return_value)
-        response.response = ["<pre>" + dump + "</pre>"]
-        return response
-    if "text/yaml" in content_type or \
-                    "text/x-yaml" in content_type or \
-                    "application/yaml" in content_type or \
-                    "application/x-yaml" in content_type:
-        response.content_type = 'text/yaml; charset=utf-8'
-        response.response = [yaml.dump(return_value)]
-        return response
-    response.content_type = 'text/json; charset=utf-8'
-    response.response = [json.dumps(return_value)]
-    return response
