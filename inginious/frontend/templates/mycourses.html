@@ -96,14 +96,14 @@
             </div>
 
             <div class="form-group">
-                <input class="form-control" id="course_search" type="text" placeholder="Search a course by its name">
+                <input class="form-control" id="course_search" type="text" placeholder="{{ _('Search a course by its name') }}">
             </div>
             <div class="form_group" id="course_filters">
                 <div >
-                    <button type="button" id="is_archive" class="btn btn-light course_filter" data-value="null">Archive</button>
-                    <button type="button" id="is_lti" class="btn btn-light course_filter" data-value="null">LTI</button>
-                    <button type="button" id="is_hidden" class="btn btn-light course_filter" data-value="null">Hidden</button>
-                    <button type="button" id="is_pinned" class="btn btn-light course_filter" data-value="null">Pinned</button>
+                    <button type="button" id="is_archive" class="btn btn-light course_filter" data-value="null">{{ pgettext('course filter', 'Archive') }}</button>
+                    <button type="button" id="is_lti" class="btn btn-light course_filter" data-value="null">{{ _('LTI') }}</button>
+                    <button type="button" id="is_hidden" class="btn btn-light course_filter" data-value="null">{{ _('Hidden') }}</button>
+                    <button type="button" id="is_pinned" class="btn btn-light course_filter" data-value="null">{{ _('Pinned') }}</button>
                 </div>
             </div>
             <hr>
