@@ -181,6 +181,67 @@ class APIAuthenticatedPageV0(APIPageV0):
         return handler(*args, **kwargs)
 
 
+class APIAuthenticatedPageV1(APIPage):
+    """
+
+    """
+
+    def _handle_api(self, handler, handler_args, handler_kwargs):
+        """
+        Handle call to subclasses and convert the output to an appropriate value.
+        Returns the Response object directly from the endpoint classes if no error is raised.
+        If an APIError is raised, it will be converted to a Response object and returned.
+         """
+        try:
+            response = self._verify_authentication(handler, handler_args, handler_kwargs)
+            if isinstance(response, tuple):
+                # Endpoint shared with v0: (status_code, data) -> JSON Response
+                status_code, return_value = response
+                response = flask.jsonify(return_value)
+                response.status_code = status_code
+            elif not isinstance(response, Response):
+                raise APIError(500, {"error": "Endpoint did not return a valid response object"})
+        except APIError as error:
+            response = flask.jsonify(error.return_value)
+            response.status_code = error.status_code
+            response.headers.update(error.headers)
+
+        return response
+
+    # TODO : avoid duplicated _verify_authentication() code ? This version does not allow flask session fallback. But does it justify the duplication ?
+    def _verify_authentication(self, handler, args, kwargs):
+        """
+        Verify that the user is authenticated.
+        Checks if the client used token authentication, falls back to session if not.
+        Otherwise, raises an APIForbidden exception.
+        """
+
+        auth_header = flask.request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.removeprefix("Bearer ").strip()
+            try:
+                payload = jwt.decode(token, current_app.config["API_JWT_SECRET"], algorithms=["HS256"])
+            except jwt.ExpiredSignatureError:
+                raise APIForbidden("Your token has expired, please generate a new one.")
+            except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidTokenError) as e:
+                # token signature does not match any known secret, token is malformed, or any other token-related error from PyJWT
+                self._logger.warning(f"A user has used an invalid token. {str(e)}")
+                raise APIForbidden("Invalid token.")
+            except Exception as e:
+                self._logger.exception(f"Unexpected error while decoding JWT: {str(e)}")
+                raise APIForbidden("Invalid token.")
+
+            flask.g.user = User.objects(username=payload["sub"]).get()
+
+            if payload["jti"] not in flask.g.user.apitokens.keys():
+                self._logger.warning(
+                    f"User {flask.g.user} attempted to use an API token that is not present in the database.")
+                raise APIForbidden("Invalid token.")
+        else:
+            raise APIForbidden("Not authenticated, missing or malformed Authorization header")
+
+        return handler(*args, **kwargs)
+
 class APIError(Exception):
     """ Standard API Error. """
 
