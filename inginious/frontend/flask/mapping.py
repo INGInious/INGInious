@@ -30,9 +30,10 @@ from inginious.frontend.pages.marketplace import MarketplacePage
 from inginious.frontend.pages.marketplace_course import MarketplaceCoursePage
 from inginious.frontend.pages.api.auth_methods import APIAuthMethods
 from inginious.frontend.pages.api.authentication import APIAuthentication
-from inginious.frontend.pages.api.courses import APICourses
-from inginious.frontend.pages.api.tasks import APITasks
-from inginious.frontend.pages.api.submissions import APISubmissions, APISubmissionSingle, APISubmissionsCourseV1, APISubmissionInputV1
+from inginious.frontend.pages.api.courses import APICoursesV0, APICoursesV1
+from inginious.frontend.pages.api.tasks import APITasksV0, APITasksV1
+from inginious.frontend.pages.api.submissions import APISubmissionsV0, APISubmissionSingleV0, APISubmissionsCourseV1, APISubmissionInputV1, \
+    APISubmissionsV1, APISubmissionSingleV1
 from inginious.frontend.pages.course_admin.utils import CourseRedirectPage
 from inginious.frontend.pages.course_admin.settings import CourseSettingsPage
 from inginious.frontend.pages.course_admin.student_list import CourseStudentListPage
@@ -139,33 +140,46 @@ def init_flask_mapping(flask_app):
                            view_func=CourseDangerZonePage.as_view('coursedangerzonepage'))
     flask_app.add_url_rule('/admin/<courseid>/stats',
                            view_func=CourseStatisticsPage.as_view('coursestatisticspage'))
-    flask_app.add_url_rule('/api/v0/auth_methods',
-                           view_func=APIAuthMethods.as_view('apiauthmethods'))
-    flask_app.add_url_rule('/api/v0/authentication',
-                           view_func=APIAuthentication.as_view('apiauthentication'))
-    flask_app.add_url_rule('/api/v0/courses', view_func=APICourses.as_view('apicourses.alias'),
-                           defaults={'courseid': None})
-    flask_app.add_url_rule('/api/v0/courses/<courseid>',
-                           view_func=APICourses.as_view('apicourses'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks',
-                           view_func=APITasks.as_view('apitasks.alias'), defaults={'taskid': None})
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>',
-                           view_func=APITasks.as_view('apitasks'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions',
-                           view_func=APISubmissions.as_view('apisubmissions.alias'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
-                           view_func=APISubmissionSingle.as_view('apisubmissions'))
 
     flask_app.add_url_rule('/administrator/users',
                            view_func=AdministrationUsersPage.as_view('administrationuserspage'))
     flask_app.add_url_rule('/administrator/user_action',
                            view_func=AdministrationUserActionPage.as_view('administrationuseractionpage'))
 
+    # API v0 endpoints
+    flask_app.add_url_rule('/api/v0/auth_methods',
+                           view_func=APIAuthMethods.as_view('apiauthmethods'))
+    flask_app.add_url_rule('/api/v0/authentication',
+                           view_func=APIAuthentication.as_view('apiauthentication'))
+    flask_app.add_url_rule('/api/v0/courses', view_func=APICoursesV0.as_view('apicourses.alias'),
+                           defaults={'courseid': None})
+    flask_app.add_url_rule('/api/v0/courses/<courseid>',
+                           view_func=APICoursesV0.as_view('apicourses'))
+    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks',
+                           view_func=APITasksV0.as_view('apitasks.alias'), defaults={'taskid': None})
+    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>',
+                           view_func=APITasksV0.as_view('apitasks'))
+    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions',
+                           view_func=APISubmissionsV0.as_view('apisubmissions.alias'))
+    flask_app.add_url_rule('/api/v0/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
+                           view_func=APISubmissionSingleV0.as_view('apisubmissions'))
 
     # API v1 endpoints
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/submissions',
-                           view_func=APISubmissionsCourseV1.as_view('apisubmissionscourse'))
-    flask_app.add_url_rule('/api/v0/courses/<courseid>/<taskid>/submissions',
-                           view_func=APISubmissionsCourseV1.as_view('apisubmissionscoursetask'))
+    flask_app.add_url_rule('/api/v1/courses',
+                           view_func=APICoursesV1.as_view('apicoursesv1.alias'), defaults={'courseid': None})
+    flask_app.add_url_rule('/api/v1/courses/<courseid>',
+                           view_func=APICoursesV1.as_view('apicoursesv1'))
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks',
+                           view_func=APITasksV1.as_view('apitasksv1.alias'), defaults={'taskid': None})
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks/<taskid>',
+                           view_func=APITasksV1.as_view('apitasksv1'))
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks/<taskid>/submissions',
+                           view_func=APISubmissionsV1.as_view('apisubmissionsv1.alias'))
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/tasks/<taskid>/submissions/<submissionid>',
+                           view_func=APISubmissionSingleV1.as_view('apisubmissionsv1'))
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/submissions',
+                           view_func=APISubmissionsCourseV1.as_view('apisubmissionscoursev1'))
+    flask_app.add_url_rule('/api/v1/courses/<courseid>/<taskid>/submissions',
+                           view_func=APISubmissionsCourseV1.as_view('apisubmissionscoursetaskv1'))
     flask_app.add_url_rule('/api/v1/submission/<submissionid>/input',
-                           view_func=APISubmissionInputV1.as_view('apisubmissioninput'))
+                           view_func=APISubmissionInputV1.as_view('apisubmissioninputv1'))

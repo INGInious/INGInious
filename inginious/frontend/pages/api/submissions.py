@@ -93,7 +93,7 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, usernam
     return 200, output
 
 
-class APISubmissionSingle(APIAuthenticatedPageV0):
+class APISubmissionSingleV0(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -133,7 +133,14 @@ class APISubmissionSingle(APIAuthenticatedPageV0):
         return _get_submissions(self.submission_manager, self.user_manager, courseid, taskid, flask.g.user.username, with_input, submissionid)
 
 
-class APISubmissions(APIAuthenticatedPageV0):
+class APISubmissionSingleV1(APIAuthenticatedPageV1):
+    """
+
+    """
+    API_GET = APISubmissionSingleV0.API_GET
+
+
+class APISubmissionsV0(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -253,6 +260,14 @@ class APISubmissions(APIAuthenticatedPageV0):
         except Exception as ex:
             self._logger.exception("Error while adding a submission for user %r on task %r in course %r: %r", username, taskid, courseid, ex)
             raise APIError(500, {"error": str(ex) if debug else "Internal server error"})
+
+
+class APISubmissionsV1(APIAuthenticatedPageV1):
+    """
+
+    """
+    API_GET = APISubmissionsV0.API_GET
+    API_POST = APISubmissionsV0.API_POST
 
 
 class APISubmissionsCourseV1(APIAuthenticatedPageV1):

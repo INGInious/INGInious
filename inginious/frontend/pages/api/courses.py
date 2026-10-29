@@ -7,10 +7,10 @@
 import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APINotFound
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APIAuthenticatedPageV1, APINotFound
 
 
-class APICourses(APIAuthenticatedPageV0):
+class APICoursesV0(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -73,3 +73,11 @@ class APICourses(APIAuthenticatedPageV0):
                 output.append(data)
 
         return 200, output
+
+
+class APICoursesV1(APIAuthenticatedPageV1):
+    """
+
+    """
+    API_GET = APICoursesV0.API_GET
+

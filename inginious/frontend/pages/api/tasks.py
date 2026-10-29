@@ -7,11 +7,25 @@
 import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APINotFound
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APIAuthenticatedPageV1, APINotFound
 from inginious.frontend.parsable_text import ParsableText
 
 
-class APITasks(APIAuthenticatedPageV0):
+def _check_for_parsable_text(val):
+    """ Util to remove parsable text from a dict, recursively """
+    if isinstance(val, ParsableText):
+        return val.original_content()
+    if isinstance(val, list):
+        for key, val2 in enumerate(val):
+            val[key] = _check_for_parsable_text(val2)
+        return val
+    if isinstance(val, dict):
+        for key, val2 in val.items():
+            val[key] = _check_for_parsable_text(val2)
+    return val
+
+
+class APITasksV0(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -20,18 +34,6 @@ class APITasks(APIAuthenticatedPageV0):
 
     """
 
-    def _check_for_parsable_text(self, val):
-        """ Util to remove parsable text from a dict, recursively """
-        if isinstance(val, ParsableText):
-            return val.original_content()
-        if isinstance(val, list):
-            for key, val2 in enumerate(val):
-                val[key] = self._check_for_parsable_text(val2)
-            return val
-        if isinstance(val, dict):
-            for key, val2 in val.items():
-                val[key] = self._check_for_parsable_text(val2)
-        return val
 
     def API_GET(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -110,9 +112,17 @@ class APITasks(APIAuthenticatedPageV0):
                     del pcontent["answer"]
                 if pcontent["type"] == "multiple_choice":
                     pcontent["choices"] = {key: val["text"] for key, val in enumerate(pcontent["choices"])}
-                pcontent = self._check_for_parsable_text(pcontent)
+                pcontent = _check_for_parsable_text(pcontent)
                 data["problems"].append(pcontent)
 
             output.append(data)
 
         return 200, output
+
+
+class APITasksV1(APIAuthenticatedPageV1):
+    """
+
+    """
+    API_GET = APITasksV0.API_GET
+
