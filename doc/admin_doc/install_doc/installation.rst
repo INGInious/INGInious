@@ -279,6 +279,34 @@ Start the web app and, if needed, the WebDAV server, each on its own local port:
 The user running these commands must own the INGInious folder, and be allowed to launch containers and to connect to
 MongoDB.
 
+.. NOTE::
+    These commands stop with your terminal session. To start the applications at boot and restart them on failure, run
+    them as *systemd* services. For the web app, create a ``/etc/systemd/system/inginious-webapp.service`` file,
+    adapting the paths to your installation:
+    ::
+
+        [Unit]
+        Description=INGInious web app
+        After=network.target docker.service mongod.service
+
+        [Service]
+        WorkingDirectory=/var/www/INGInious
+        Environment=INGINIOUS_WEBAPP_CONFIG=/var/www/INGInious/configuration.yaml
+        ExecStart=/usr/local/bin/gunicorn 'inginious.scripts.webapp:wsgi_app()' --bind 127.0.0.1:8000
+        Restart=on-failure
+
+        [Install]
+        WantedBy=multi-user.target
+
+    Then, enable and start the service:
+    ::
+
+        # systemctl daemon-reload
+        # systemctl enable --now inginious-webapp
+
+    For WebDAV, create a similar ``inginious-webdav.service`` file, using the ``ExecStart`` command given above for the
+    WebDAV server.
+
 .. WARNING::
     **If you use a local backend with remote Docker daemon**, you may need to set the ``DOCKER_HOST`` variable in the
     environment of Gunicorn. To know the value to set, start a terminal that has access to the docker daemon (the
