@@ -4,6 +4,7 @@
 # more information about the licensing of this file.
 
 """ Allow the webapp to act as a simple POST grader """
+import base64
 import json
 import re
 import flask
@@ -29,6 +30,7 @@ def init(plugin_manager, client, config):
                   return_fields: "^(result|text|problems)$"
 
         The grader will only return fields that are in the job return dict if their key match return_fields.
+        The archive field, if returned, is base64-encoded.
 
         Different types of request are available : see documentation
     """
@@ -64,7 +66,10 @@ def init(plugin_manager, client, config):
 
         def keep_only_config_return_values(self, job_return):
             """ Keep only some useful return values """
-            return {key: value for key, value in job_return.items() if return_fields.match(key)}
+            filtered = {key: value for key, value in job_return.items() if return_fields.match(key)}
+            if filtered.get("archive"):
+                filtered["archive"] = base64.b64encode(filtered["archive"]).decode("utf8")
+            return filtered
 
         def POST(self):
             """ POST request """
@@ -91,10 +96,12 @@ def init(plugin_manager, client, config):
                     response.response = [json.dumps({"status": "error", "status_message": "Input is not consistent with the task"})]
                     return response
 
+                job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
+
                 if post_input.get("async") is None:
                     # New sync job
                     try:
-                        result, grade, problems, tests, custom, state, archive, stdout, stderr = client_sync.new_job(0, course, task, task_input, "Plugin - Simple Grader")
+                        result, grade, problems, tests, custom, state, archive, stdout, stderr = client_sync.new_job(0, job_info, task_input, "Plugin - Simple Grader")
                         job_return = {"result":result, "grade": grade, "problems": problems, "tests": tests, "custom": custom, "state": state, "archive": archive, "stdout": stdout, "stderr": stderr}
                     except:
                         response.response = [json.dumps({"status": "error", "status_message": "An internal error occurred"})]
@@ -104,7 +111,7 @@ def init(plugin_manager, client, config):
                     return response
                 else:
                     # New async job
-                    jobid = client_buffer.new_job(course, task, task_input, "Plugin - Simple Grader")
+                    jobid = client_buffer.new_job(0, job_info, task_input, "Plugin - Simple Grader")
                     response.response = [json.dumps({"status": "done", "jobid": str(jobid)})]
                     return response
             elif "jobid" in post_input:
@@ -115,7 +122,7 @@ def init(plugin_manager, client, config):
                 elif client_buffer.is_done(post_input["jobid"]):
                     result, grade, problems, tests, custom, state, archive, stdout, stderr = client_buffer.get_result(post_input["jobid"])
                     job_return = {"result": result, "grade": grade, "problems": problems, "tests": tests,
-                                  "custom": custom, "archive": archive, "stdout": stdout, "stderr": stderr}
+                                  "custom": custom, "state": state, "archive": archive, "stdout": stdout, "stderr": stderr}
                     response.response = [json.dumps(dict(list({"status": "done"}.items()) + list(self.keep_only_config_return_values(job_return).items())))]
                     return response
                 else:
