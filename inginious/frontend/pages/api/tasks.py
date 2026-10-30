@@ -7,11 +7,25 @@
 import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APIAuthenticatedPageV1, APINotFound
 from inginious.frontend.parsable_text import ParsableText
 
 
-class APITasks(APIAuthenticatedPage):
+def _check_for_parsable_text(val):
+    """ Util to remove parsable text from a dict, recursively """
+    if isinstance(val, ParsableText):
+        return val.original_content()
+    if isinstance(val, list):
+        for key, val2 in enumerate(val):
+            val[key] = _check_for_parsable_text(val2)
+        return val
+    if isinstance(val, dict):
+        for key, val2 in val.items():
+            val[key] = _check_for_parsable_text(val2)
+    return val
+
+
+class APITasksV0(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -20,18 +34,6 @@ class APITasks(APIAuthenticatedPage):
 
     """
 
-    def _check_for_parsable_text(self, val):
-        """ Util to remove parsable text from a dict, recursively """
-        if isinstance(val, ParsableText):
-            return val.original_content()
-        if isinstance(val, list):
-            for key, val2 in enumerate(val):
-                val[key] = self._check_for_parsable_text(val2)
-            return val
-        if isinstance(val, dict):
-            for key, val2 in val.items():
-                val[key] = self._check_for_parsable_text(val2)
-        return val
 
     def API_GET(self, courseid, taskid):  # pylint: disable=arguments-differ
         """
@@ -65,12 +67,14 @@ class APITasks(APIAuthenticatedPage):
         try:
             course = Course.get(courseid)
         except:
-            raise APINotFound("Course not found")
+            self._logger.info("Course %r not found.", courseid)
+            raise APINotFound()
 
         user = flask.g.user
 
         if not self.user_manager.course_is_open_to_user(course, user.username, lti=False):
-            raise APIForbidden("You are not registered to this course")
+            self._logger.warning("Course %r not open to user %r.", courseid, user.username)
+            raise APINotFound()
 
         if taskid is None:
             tasks = {tid: task for tid, task in course.get_tasks().items()
@@ -79,9 +83,11 @@ class APITasks(APIAuthenticatedPage):
             try:
                 task = course.get_task(taskid)
             except:
-                raise APINotFound("Task not found")
+                self._logger.info("Task %r not found in course %r.", taskid, courseid)
+                raise APINotFound()
             if not self.user_manager.task_is_visible_by_user(course, task, user.username, lti=False):
-                raise APINotFound("Task not found")
+                self._logger.warning("Task %r not open to user %r.", taskid, user.username)
+                raise APINotFound()
             tasks = {taskid: task}
 
         output = []
@@ -106,9 +112,17 @@ class APITasks(APIAuthenticatedPage):
                     del pcontent["answer"]
                 if pcontent["type"] == "multiple_choice":
                     pcontent["choices"] = {key: val["text"] for key, val in enumerate(pcontent["choices"])}
-                pcontent = self._check_for_parsable_text(pcontent)
+                pcontent = _check_for_parsable_text(pcontent)
                 data["problems"].append(pcontent)
 
             output.append(data)
 
         return 200, output
+
+
+class APITasksV1(APIAuthenticatedPageV1):
+    """
+
+    """
+    API_GET = APITasksV0.API_GET
+

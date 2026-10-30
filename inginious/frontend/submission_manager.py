@@ -33,6 +33,11 @@ def _validate_list(list_of_ids):
             raise Forbidden(description=_("List not valid."))
 
 
+class SubmissionAlreadyPendingError(Exception):
+    """ Raised when a user tries to submit while one of their submissions is still waiting """
+    def __init__(self):
+        super().__init__("A submission is already pending for this task!")
+
 class WebAppSubmissionManager:
     """ Manages submissions. Communicates with the database and the client. """
 
@@ -440,7 +445,7 @@ class WebAppSubmissionManager:
         user = User.objects.get(username=username)
 
         if waiting_submission:
-            raise Exception("A submission is already pending for this task!")
+            raise SubmissionAlreadyPendingError()
 
         obj = {
             "courseid": course.get_id(),
