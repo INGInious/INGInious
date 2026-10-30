@@ -7,20 +7,21 @@
 
 import flask
 import datetime
+import secrets
 
-from flask import redirect, session, url_for
+from flask import redirect, url_for, current_app
 from oauthlib.oauth1 import RequestValidator
-from mongoengine.errors import NotUniqueError
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
 from lti import ToolProvider
 
+from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.common import exceptions
-from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.pages.tasks import BaseTaskPage
+from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
+from inginious.frontend.lti.v1_1 import MongoLTI11LaunchDataStorage
 
-from inginious.frontend.models import Nonce, LTIData
+from inginious.frontend.models import LTIData, LaunchData
 
 class LTIFlaskToolProvider(ToolProvider):
     '''
@@ -76,40 +77,32 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
 
     def validate_timestamp_and_nonce(self, client_key, timestamp, nonce, request, request_token=None, access_token=None):
         try:
-            date = datetime.datetime.fromtimestamp(int(timestamp)).astimezone()
-            Nonce(timestamp=date, nonce=nonce, expiration=date + self._nonce_validity).save()
-            return True
+            timestamp = int(timestamp)
         except ValueError: # invalid timestamp
             return False
-        except NotUniqueError:
-            return False
+        # Nonces are not bound to a session, they must be unique across all launches
+        return MongoLTI11LaunchDataStorage().add_value("lti1p1-nonce-{}-{}".format(timestamp, nonce), True,
+                                                       self._nonce_validity.total_seconds())
 
     def get_client_secret(self, client_key, request):
         return self._keys[client_key] if client_key in self._keys else None
 
 
-class LTI11TaskPage(INGIniousAuthPage):
-    def is_lti_page(self):
-        return True
+class LTI11TaskPage(TaskPage):
+    _is_lti = True
+    _lti_version = "1.1"
 
-    def fetch_lti_data(self):
-        if (data := session.lti) is None:
-            raise Forbidden(description=_("No LTI data available."))
-        return data['task']
 
-    def GET_AUTH(self):
-        courseid, taskid = self.fetch_lti_data()
-        return BaseTaskPage(self).GET(courseid, taskid, True)
+class LTI11TaskPageStaticDownload(TaskPageStaticDownload):
+    _is_lti = True
+    _lti_version = "1.1"
 
-    def POST_AUTH(self):
-        courseid, taskid = self.fetch_lti_data()
-        return BaseTaskPage(self).POST(courseid, taskid, True)
 
 class LTI11LaunchPage(INGIniousPage):
     """
-    Page called by the TC to start an LTI session on a given task
+    Page called by the TC to start an LTI launch on a given task
     """
-    endpoint = 'ltilaunchpage'
+    endpoint = 'lti.launchpage'
 
     def GET(self, courseid, taskid):
         raise MethodNotAllowed()
@@ -143,14 +136,18 @@ class LTI11LaunchPage(INGIniousPage):
             outcome_result_id = post_input.get("lis_result_sourcedid", None)
             consumer_key = post_input["oauth_consumer_key"]
 
-            if course.lti_send_back_grade():
-                if lis_outcome_service_url is None or outcome_result_id is None:
-                    self.logger.info('Error: lis_outcome_service_url is None but lti_send_back_grade is True')
-                    raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
-                                        "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
-            else:
-                lis_outcome_service_url = None
-                outcome_result_id = None
+            if course.lti_send_back_grade() and (lis_outcome_service_url is None or outcome_result_id is None):
+                self.logger.info('Error: lis_outcome_service_url is None but lti_send_back_grade is True')
+                raise Forbidden(description=_("In order to send grade back to the TC, INGInious needs the parameters lis_outcome_service_url and "
+                                    "lis_outcome_result_id in the LTI basic-launch-request. Please contact your administrator."))
+
+            # Store the launch message information, as done by pylti1p3 for LTI1.3
+            launch_id = "lti1p1-launch-" + secrets.token_urlsafe(32)  # unguessable launch id
+            MongoLTI11LaunchDataStorage(flask.session.id).set_value(launch_id, {
+                "consumer_key": consumer_key,
+                "outcome_service_url": lis_outcome_service_url,
+                "outcome_result_id": outcome_result_id
+            }, current_app.permanent_session_lifetime.total_seconds())
 
             tool_name = post_input.get('tool_consumer_instance_name', 'N/A')
             tool_desc = post_input.get('tool_consumer_instance_description', 'N/A')
@@ -158,29 +155,24 @@ class LTI11LaunchPage(INGIniousPage):
             context_title = post_input.get('context_title', 'N/A')
             context_label = post_input.get('context_label', 'N/A')
 
-            if not session.is_lti:
-                raise Exception("Not an LTI session")
-
-            session.loggedin = False
-            session.lti = LTIData(
+            lti_data = LTIData(
                 version="1.1",
                 email=email,
                 username=user_id,
                 realname=realname,
                 roles=roles,
                 task=(courseid, taskid),
-                outcome_service_url=lis_outcome_service_url,
-                outcome_result_id=outcome_result_id,
-                consumer_key=consumer_key,
+                platform_instance_id=courseid + "/" + consumer_key,
                 context_title=context_title,
                 context_label=context_label,
                 tool_description=tool_desc,
                 tool_name=tool_name,
                 tool_url=tool_url,
-                redir_url=url_for("ltitaskpage")
+                redir_url=url_for("lti.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
             )
+            LaunchData.objects(session_id=flask.session.id, launch_id=launch_id).update(set__lti=lti_data)
 
-            return redirect(url_for("ltiloginpage"))
+            return redirect(url_for("lti.loginpage", launch_id=launch_id))
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))
@@ -208,8 +200,8 @@ class LTI11LaunchPage(INGIniousPage):
 
 
 class LTI11BindPage(LTIBindPage):
-    pass
+    _lti_version = "1.1"
 
 
 class LTI11LoginPage(LTILoginPage):
-    pass
+    _lti_version = "1.1"

@@ -5,51 +5,36 @@
 
 """ LTI """
 
-from flask import  redirect, request, render_template, session, url_for
+from flask import  redirect, render_template, session
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
-from inginious.frontend.models import User, Session
-
-class LTIAssetPage(INGIniousAuthPage):
-    def is_lti_page(self):
-        return True
-
-    def GET_AUTH(self, asset_url):
-        data = session.lti
-        if data is None:
-            raise Forbidden(description=_("No LTI data available."))
-        (courseid, taskid) = data['task']
-        return redirect(url_for("taskpagestaticdownload", courseid=courseid, taskid=taskid, path=asset_url))
+from inginious.frontend.models import User, LaunchData
 
 
 class LTIBindPage(INGIniousAuthPage):
     _lti_version = ""
-    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
-    def is_lti_page(self):
-        return False
-
-    def _get_lti_session_data(self):
-        data = Session.objects(id=request.args['lti_session_id']).first() if 'lti_session_id' in request.args else None
-        if data is None:
+    def _get_lti_data(self, launch_id):
+        launch = LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=self._lti_version).first()
+        if launch is None:
             return None, render_template("lti/bind.html", success=False,
-                                                     data=None, error=_("Invalid LTI session id"))
-        return data.lti, None
+                                                     data=None, error=_("Invalid LTI launch id"))
+        return launch.lti, None
 
-    def GET_AUTH(self):
-        data, error = self._get_lti_session_data()
+    def GET_AUTH(self, launch_id):
+        data, error = self._get_lti_data(launch_id)
         if error:
             return error
         return render_template("lti/bind.html", success=False, data=data, error="")
 
-    def POST_AUTH(self):
-        data, error = self._get_lti_session_data()
+    def POST_AUTH(self, launch_id):
+        data, error = self._get_lti_data(launch_id)
         if error:
             return error
 
         if data:
-            field = self._mongo_field(data)
+            field = data.platform_instance_id.replace(".", "").replace("$", "")
             user_profile = User.objects.get(username=session.username)
             lti_user_profile = User.objects(**{"ltibindings__" + field: data["username"]}).first()
             if not user_profile.ltibindings.get(field, "") and not lti_user_profile:
@@ -71,32 +56,26 @@ class LTIBindPage(INGIniousAuthPage):
 
 class LTILoginPage(INGIniousPage):
     _lti_version = ""
-    _mongo_field = lambda self, data: data["task"][0] + "/" + data["consumer_key"].replace(".", "").replace("$", "")
 
-    def is_lti_page(self):
-        return True
-
-    def GET(self):
+    def GET(self, launch_id):
         """
-            Checks if user is authenticated and calls POST_AUTH or performs login and calls GET_AUTH.
-            Otherwise, returns the login template.
+            Checks if user is authenticated and valides the pending LTI launch.
+            Otherwise, returns the login templates that invites to bind account.
         """
-        data = session.lti
-        if data is None:
+        launch = LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=self._lti_version).first()
+        if launch is None:
             raise Forbidden(description=_("No LTI data available."))
 
-        user_profile = User.objects(**{"ltibindings__" + self._mongo_field(data): data["username"]}).first()
+        search = {"ltibindings__" + launch.lti.platform_instance_id.replace(".", "").replace("$", ""): launch.lti.username}
+        user_profile = User.objects(**search).first()
+
         if user_profile:
-            self.user_manager.connect_user(user_profile)
+            if not session.loggedin or session.username != user_profile.username:
+                self.user_manager.connect_user(user_profile)
+            launch.update(set__lti__valid=True)
+            return redirect(launch.lti.redir_url)
 
-        if session.loggedin:
-            return redirect(data.redir_url)
+        return render_template("lti/login.html", lti_version=self._lti_version, launch_id=launch_id)
 
-        return render_template("lti/login.html", lti_version=self._lti_version)
-
-    def POST(self):
-        """
-        Checks if user is authenticated and calls POST_AUTH or performs login and calls GET_AUTH.
-        Otherwise, returns the login template.
-        """
-        return self.GET()
+    def POST(self, launch_id):
+        return self.GET(launch_id)

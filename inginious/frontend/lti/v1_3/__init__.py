@@ -3,7 +3,7 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import logging
 import hashlib
 
@@ -38,34 +38,39 @@ def lti_tool(course_config, global_config) -> ToolConfDict:
     return lti_tool
 
 
-class MongoLTILaunchDataStorage(LaunchDataStorage):
+class MongoLTI13LaunchDataStorage(LaunchDataStorage):
     """
     Stores LTI Launch messages in database during the handshake process and
     to submit grades later using the LTIGradeManager.
     """
-    _session_cookie_name = None
+    _session_cookie_name = None  # the INGInious session id is used instead of a pylti1p3 cookie
+
+    def __init__(self, session_id=None):
+        """ Keys are bound to session_id if given """
+        self.set_session_id(str(session_id) if session_id else None)
 
     def can_set_keys_expiration(self) -> bool:
-        return False  # TODO(mp): I think it's reasonable to clean LTI Launch messages further than a week away tho
+        return True
 
     def get_value(self, key: str):
-        entry = LaunchData.objects(key=key).first()
+        entry = LaunchData.objects(session_id=self._session_id, launch_id=key).first()
         return entry.value if entry else None
 
     def set_value(self, key: str, value, exp) -> None:
-        LaunchData.objects(key=key).update(key=key, value=value, upsert=True)
+        exp_date = datetime.now(timezone.utc) + timedelta(seconds=exp)
+        LaunchData.objects(session_id=self._session_id, launch_id=key).update(value=value, expiration=exp_date,
+                                                                              upsert=True)
 
     def check_value(self, key: str) -> bool:
-        return bool(LaunchData.objects(key=key).first())
+        return bool(LaunchData.objects(session_id=self._session_id, launch_id=key).first())
 
 
 class LTIGradeManager(LTIScorePublisher):
-    _submission_tags = {"message_launch_id": "message_launch_id"}
 
     def __init__(self, user_manager, global_config):
         self._logger = logging.getLogger("inginious.webapp.lti1_3.grade_manager")
         self._global_config = global_config
-        super(LTIGradeManager, self).__init__(LTIGrade, user_manager)
+        super(LTIGradeManager, self).__init__("1.3", user_manager)
 
     def process(self, mongo_entry : LTIGrade, grade):
         courseid, taskid, message_launch_id = (mongo_entry.courseid, mongo_entry.taskid, mongo_entry.message_launch_id)
@@ -73,7 +78,8 @@ class LTIGradeManager(LTIScorePublisher):
         try:
             course = Course.get(courseid)
             tool_config = lti_tool(course.lti_config(), self._global_config)
-            message_launch = FlaskMessageLaunch.from_cache(message_launch_id, request=None, tool_config=tool_config, launch_data_storage=MongoLTILaunchDataStorage())
+            launch = LaunchData.objects.get(id=message_launch_id)
+            message_launch = FlaskMessageLaunch.from_cache(launch.launch_id, request=None, tool_config=tool_config, launch_data_storage=MongoLTI13LaunchDataStorage(launch.session_id))
             launch_data = message_launch.get_launch_data()
             ags = message_launch.get_ags()
 

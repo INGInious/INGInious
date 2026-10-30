@@ -10,9 +10,6 @@ from datetime import datetime, timezone
 
 from itsdangerous import Signer, BadSignature
 from flask.sessions import SessionInterface
-from werkzeug.exceptions import HTTPException
-from inginious.frontend.pages.lti.v1_1 import LTI11LaunchPage
-from inginious.frontend.pages.lti.v1_3 import LTI13LaunchPage
 
 from inginious.frontend.models import Session
 
@@ -33,24 +30,12 @@ class MongoDBSessionInterface(SessionInterface):
         return Signer(app.secret_key, salt='flask-session', key_derivation='hmac')
 
     def open_session(self, app, request):
-        # Check for LTI session in the path
-        lti_session = request.args.get('session_id')
-
-        # If LTI launch page, then generate a new LTI session
-        try:
-            # request.url_rule is not set yet here.
-            endpoint, _ = app.create_url_adapter(request).match()
-            if endpoint in [LTI11LaunchPage.endpoint, LTI13LaunchPage.endpoint]:
-                return Session(permanent=self.permanent, is_lti=True)
-        except HTTPException:
-            pass # Could not determine endpoint, continue
-
-        sid = lti_session or request.cookies.get(self.get_cookie_name(app))
+        sid = request.cookies.get(self.get_cookie_name(app))
 
         if not sid:
             return Session(permanent=self.permanent)
 
-        if self.use_signer and not lti_session:
+        if self.use_signer:
             signer = self._get_signer(app)
             if signer is None:
                 return None
@@ -72,11 +57,11 @@ class MongoDBSessionInterface(SessionInterface):
         session.expiration = expires
         session.save()
 
-        if not session.is_lti:
-            session_id = self._get_signer(app).sign(str(session.id)).decode() if self.use_signer else session.id
-            domain = self.get_cookie_domain(app)
-            path = self.get_cookie_path(app)
-            httponly = self.get_cookie_httponly(app)
-            secure = self.get_cookie_secure(app)
-            response.set_cookie(self.get_cookie_name(app), session_id, expires=expires, httponly=httponly,
-                                domain=domain, path=path, secure=secure)
+        session_id = self._get_signer(app).sign(str(session.id)).decode() if self.use_signer else session.id
+        domain = self.get_cookie_domain(app)
+        path = self.get_cookie_path(app)
+        httponly = self.get_cookie_httponly(app)
+        secure = self.get_cookie_secure(app)
+        samesite = self.get_cookie_samesite(app)
+        response.set_cookie(self.get_cookie_name(app), session_id, expires=expires, httponly=httponly,
+                            domain=domain, path=path, secure=secure, samesite=samesite)

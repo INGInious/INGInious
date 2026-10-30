@@ -157,13 +157,18 @@ The different entries are :
             cookie_name: "inginious_session_id"
             cookie_domain: null
             cookie_path: null
-            samesite: "Lax"
+            samesite: "None"
             timeout: 86400  # 24 * 60 * 60, # 24 hours in seconds
             httponly: True
             secret_key: "fLjUfxqXtfNoIldA0A0G"
-            secure: False
+            secure: True
 
     Most value are as defined in standard HTTP cookies. The ``secret_key`` should be a long sequence of random characters.
+
+    LTI sessions rely on the session cookie. As INGInious is then embedded in the platform (in an iframe, from another
+    site), LTI requires ``samesite: "None"`` and ``secure: True``, and therefore INGInious to be served over HTTPS.
+    If INGInious is served over plain HTTP, set ``secure: False`` and ``samesite: "Lax"``: browsers reject
+    ``samesite: "None"`` cookies that are not secure. LTI will then not be available.
 
 ``reverse-proxy-config``
     A dictionary for reverse proxy configuration.

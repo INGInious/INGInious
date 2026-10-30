@@ -1,31 +1,23 @@
 from bson import ObjectId, json_util
 from flask import session
 from werkzeug.exceptions import NotFound
+
 from inginious.frontend.task_problems import DisplayableMultipleChoiceProblem, DisplayableCodeProblem, DisplayableMatchProblem, DisplayableFileProblem
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.courses import Course
-from inginious.frontend.models import UserTask,  User,  Submission
+from inginious.frontend.models import UserTask, Submission, LaunchData
 
 
 class LTI11BestSubmissionPage(INGIniousAuthPage):
-    _field = "consumer_key"
+    _lti_version = "1.1"
 
-    def is_lti_page(self):
-        return True
-
-    def GET_AUTH(self):
-        data = session.lti
-        if data is None:
+    def GET_AUTH(self, launch_id):
+        # the launch must belong to the current INGInious session
+        if not (launch := LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=self._lti_version, lti__valid=True).first()):
             raise NotFound()
 
-        courseid, taskid = data["task"]
-
-        # get the INGInious username from the ToolConsumer-provided username
-        user_profile = User.objects(**{"ltibindings__" + courseid + "__" + data[self._field]: data["username"]}).first()
-        if not user_profile:
-            return json_util.dumps({"status": "error", "message": "user not bound with lti"})
-
-        inginious_username = user_profile.username
+        courseid, taskid = launch.lti.task
+        inginious_username = session.username
 
         # get best submission from database
         user_best_sub = UserTask.objects(username=inginious_username, courseid=courseid, taskid=taskid).only("submissionid").get()
@@ -71,15 +63,15 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
         return json_util.dumps({"status": "success", "submission": best_sub, "question_answer": question_answer_list,
                                 "task_context": context})
 
-    def POST_AUTH(self):
+    def POST_AUTH(self, launch_id):
         raise NotFound()
 
 
 class LTI13BestSubmissionPage(LTI11BestSubmissionPage):
-    _field = "platform_instance_id"
+    _lti_version = "1.3"
 
 
 def init(plugin_manager, *args, **kwargs):
     """ Init the plugin """
-    plugin_manager.add_page("/lti/bestsubmission", LTI11BestSubmissionPage.as_view('lti11bestsubmissionpage'))
-    plugin_manager.add_page("/lti1.3/bestsubmission", LTI11BestSubmissionPage.as_view('lti13bestsubmissionpage'))
+    plugin_manager.add_page("/lti/bestsubmission/<launch_id>", LTI11BestSubmissionPage.as_view('lti11bestsubmissionpage'))
+    plugin_manager.add_page("/lti1.3/bestsubmission/<launch_id>", LTI13BestSubmissionPage.as_view('lti13bestsubmissionpage'))

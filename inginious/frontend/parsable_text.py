@@ -7,11 +7,9 @@
 import html
 import re
 import gettext
-import flask
 import tidylib
 
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 from docutils import core, nodes
 from docutils.parsers.rst import directives, roles, Directive
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
@@ -139,20 +137,7 @@ class _CustomHTMLWriter(html4css1.Writer, object):
             """ Ensures all links to outside this instance of INGInious have target='_blank' """
             if tagname == 'a' and "href" in attributes and not attributes["href"].startswith('#'):
                 attributes["target"] = "_blank"
-            # Rewrite paths if we are in LTI mode
-            # TODO: this should be an argument passed through all the functions
-            if flask.has_app_context() and flask.request.args.get('session_id'):
-                if tagname == 'a' and 'href' in attributes:
-                    attributes['href'] = self.rewrite_lti_url(attributes['href'])
-                elif tagname == 'img' and 'src' in attributes:
-                    attributes['src'] = self.rewrite_lti_url(attributes['src'])
             return html4css1.HTMLTranslator.starttag(self, node, tagname, suffix, empty, **attributes)
-
-        @staticmethod
-        def rewrite_lti_url(url):
-            if urlparse(url).netloc: # If URL is absolute, don't do anything
-                return url
-            return 'asset/' + url + '?session_id=' + flask.request.args['session_id']
 
         def visit_table(self, node):
             """ Remove needless borders """

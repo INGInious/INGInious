@@ -34,10 +34,10 @@ class Submission(Document):
     ssh_password = StringField()
     last_replay = DateTimeField()
     lti_version = StringField() # This should be refactored in the future to avoid storing data from modules
-    message_launch_id = StringField() # LTI1.3 field
-    outcome_service_url = StringField() # LTI1.1 field
-    outcome_result_id = StringField() # LTI 1.1 field
-    outcome_consumer_key = StringField() #LTI1.1 field
+    message_launch_id = StringField() # LTI1.1 and LTI1.3 field
+    outcome_service_url = StringField() # Deprecated LTI1.1 field, kept for older submissions
+    outcome_result_id = StringField() # Deprecated LTI1.1 field, kept for older submissions
+    outcome_consumer_key = StringField() # Deprecated LTI1.1 field, kept for older submissions
 
     def get_input(self):
         value = bson.BSON.decode(self.input.read())

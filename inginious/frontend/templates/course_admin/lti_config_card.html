@@ -58,16 +58,16 @@
             <div class="row">
                 <div class="col-md-2 mb-2">{{ _("Launch URL") }}</div>
                 {%  set params = {'courseid': course.get_id()}  if type == "course" else {} %}
-                <div class="col-md-4 mb-2"><code>{{  url_for('lti1.3launchpage',  _external=True, **params) }}</code></div>
+                <div class="col-md-4 mb-2"><code>{{  url_for('lti13.launchpage',  _external=True, **params) }}</code></div>
                 <div class="col-md-2 mb-2">{{ _("Deep Link URL") }}</div>
-                <div class="col-md-4 mb-2"><code>{{ url_for('lti1.3launchpage', _external=True, **params) }}</code></div>
+                <div class="col-md-4 mb-2"><code>{{ url_for('lti13.launchpage', _external=True, **params) }}</code></div>
                 <div class="col-md-2 mb-2">{{ _("OIDC Login URL") }}</div>
-                <div class="col-md-4 mb-2"><code>{{ url_for('lti1.3oidcloginpage', _external=True, **params) }}</code></div>
+                <div class="col-md-4 mb-2"><code>{{ url_for('lti13.oidcloginpage', _external=True, **params) }}</code></div>
                 <div class="col-md-2 mb-2">{{ _("Redirect URLs") }}</div>
-                <div class="col-md-4 mb-2"><code>[&quot;{{ url_for('lti1.3launchpage', _external=True, **params) }}&quot;]</code></div>
+                <div class="col-md-4 mb-2"><code>[&quot;{{ url_for('lti13.launchpage', _external=True, **params) }}&quot;]</code></div>
             </div>
             <div class="row mb-2">
-                {% set path = url_for('lti1.3jwkspage', keyset_hash=lti_keyset_hash(iss, client.client_id), _external=True, **params) %}
+                {% set path = url_for('lti13.jwkspage', keyset_hash=lti_keyset_hash(iss, client.client_id), _external=True, **params) %}
                 <div class="col-md-2">{{ _("JWKS keyset") }}</div>
                 <div class="col-md-10"><code>{{ path }}</code></div>
             </div>
