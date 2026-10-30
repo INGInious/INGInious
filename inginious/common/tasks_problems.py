@@ -21,18 +21,11 @@ def _inspect_problem_types(name: str, base_class) -> dict:
         :param  name:       The name of the module to explore.
         :param  base_class: The parent Problem class.
         :return:            The mapping of problem name and problem class.
+        :raise ModuleNotFoundError: If the module or one of its dependencies is not installed.
     """
-    try:
-        """ Get the module by name """
-        myself = sys.modules[name]
-    except KeyError:
-        try:
-            """ If the module is not loaded, we try to load it """
-            myself = importlib.import_module(name)
-        except ModuleNotFoundError:
-            """ There is nothing much to do """
-            return None
-    
+    """ Get the module by name, loading it if needed """
+    myself = importlib.import_module(name)
+
     """ Search for child classes of `base_class` """
     members = [member for (_, member) in inspect.getmembers(myself, inspect.isclass) 
                if base_class in inspect.getmro(member) and member != base_class]
