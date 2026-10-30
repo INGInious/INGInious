@@ -22,6 +22,7 @@ _available_translations = {
     "he": "עִבְרִית",
     "nl": "Nederlands",
     "nb_NO": "Norsk (bokmål)",
+    "pl": "Polski",
     "pt": "Português",
     "vi": "Tiếng Việt"
 }
