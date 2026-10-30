@@ -217,7 +217,7 @@ Running INGInious
 
 During the configuration step, you were asked to setup either a local or remote backend. In the former case, the frontend
 will automatically start a local backend and grading agents.
-Additionally, if you intend to have many simultaneous submissions, it is highly recommended to have a webserver, such as lighttpd or Apache -- see below.
+Additionally, if you intend to have many simultaneous submissions, it is highly recommended to use Gunicorn behind a webserver, such as lighttpd or Apache -- see below.
 
 With local backend/agent -- no webserver
 ````````````````````````````````````````
@@ -255,125 +255,36 @@ To run INGInious with a remote backend (and agents), do as follows:
 With local backend/agent and a webserver
 ````````````````````````````````````````
 
-The following guides suggest to run the INGInious webapp on http port and WebDAV on port 8080 on the same host.
+In production environments, `Gunicorn <https://gunicorn.org/>`_ serves the INGInious applications in replacement of the
+built-in Python server, behind a webserver acting as a reverse proxy. The following guides suggest to expose the
+INGInious webapp on http port and WebDAV on port 8080 on the same host.
 You are free to adapt them to your use case (for instance, adding SSL support or using two hostnames).
 
-.. _lighttpd:
+Create a folder for INGInious, for example ``/var/www/INGInious``. Put your configuration file in that folder, as well
+as your tasks, backup, download, and temporary (if local backend) directories (see :ref:`config` for more details on
+these folders).
+
+Install Gunicorn in the same Python environment as INGInious:
+::
+
+    # pip3 install gunicorn
+
+Start the web app and, if needed, the WebDAV server, each on its own local port:
+::
+
+    $ export INGINIOUS_WEBAPP_CONFIG="/var/www/INGInious/configuration.yaml"
+    $ gunicorn 'inginious.scripts.webapp:wsgi_app()' --bind 127.0.0.1:8000
+    $ gunicorn 'inginious.scripts.webdav:wsgi_app()' --bind 127.0.0.1:8001 --workers 1
+
+The user running these commands must own the INGInious folder, and be allowed to launch containers and to connect to
+MongoDB.
 
 .. WARNING::
-    In configurations below, environment variables accessible to the application must be explicitly repeated.
-    **If you use a local backend with remote Docker daemon**, you may need to set the ``DOCKER_HOST`` variable.
-    To know the value to set, start a terminal that has access to the docker daemon (the terminal should be able to run
-    ``docker info``), and write ``echo $DOCKER_HOST``. If it returns nothing, just ignore this comment. It is possible
-    that you may need to do the same for the env variable ``DOCKER_CERT_PATH`` and ``DOCKER_TLS_VERIFY`` too.
-
-Using lighttpd
-``````````````
-
-In production environments, you can use lighttpd in replacement of the built-in Python server.
-This guide is made for CentOS 7.x.
-
-Install lighttpd with fastcgi:
-
-::
-
-    # yum install lighttpd lighttpd-fastcgi
-
-Add the ``lighttpd`` user in the necessary groups, to allow it to launch new containers and to connect to mongodb:
-
-::
-
-    # usermod -aG docker lighttpd
-    # usermod -aG mongodb lighttpd
-
-Create a folder for INGInious, for example ``/var/www/INGInious``, and change the directory owner to ``lighttpd``:
-
-::
-
-    # mkdir -p /var/www/INGInious
-    # chown -R lighttpd:lighttpd /var/www/INGInious
-
-Put your configuration file in that folder, as well as your tasks, backup, download, and temporary (if local backend)
-directories (see :ref:`config` for more details on these folders).
-
-Once this is done, we can configure lighttpd. First, the file ``/etc/lighttpd/modules.conf``, to load these modules:
-::
-
-    server.modules = (
-        "mod_access",
-        "mod_alias"
-    )
-
-    include "conf.d/compress.conf"
-    include "conf.d/fastcgi.conf"
-
-You can then add virtual host entries in a ``/etc/lighttpd/vhosts.d/inginious.conf`` file and apply the following rules:
-::
-
-    server.modules   += ( "mod_fastcgi" )
-    server.modules   += ( "mod_rewrite" )
-
-    $SERVER["socket"] == ":80" {
-        alias.url = (
-            "/static/" => "/usr/lib/python3.6/site-packages/inginious/frontend/static/"
-        )
-
-        fastcgi.server = ( "/inginious-webapp" =>
-            (( "socket" => "/tmp/fastcgi.socket",
-                "bin-path" => "/usr/bin/inginious-webapp",
-                "max-procs" => 1,
-                "bin-environment" => (
-                    "INGINIOUS_WEBAPP_HOST" => "0.0.0.0",
-                    "INGINIOUS_WEBAPP_PORT" => "80",
-                    "INGINIOUS_WEBAPP_CONFIG" => "/var/www/INGInious/configuration.yaml",
-                    "REAL_SCRIPT_NAME" => ""
-                ),
-                "check-local" => "disable"
-            ))
-        )
-
-        url.rewrite-once = (
-            "^/favicon.ico$" => "/static/icons/favicon.ico",
-            "^/static/(.*)$" => "/static/$1",
-            "^/(.*)$" => "/inginious-webapp/$1"
-        )
-    }
-
-    $SERVER["socket"] == ":8080" {
-        fastcgi.server = ( "/inginious-webdav" =>
-            (( "socket" => "/tmp/fastcgi.socket",
-                "bin-path" => "/usr/bin/inginious-webdav",
-                "max-procs" => 1,
-                "bin-environment" => (
-                    "INGINIOUS_WEBDAV_HOST" => "0.0.0.0",
-                    "INGINIOUS_WEBDAV_PORT" => "8080",
-                    "INGINIOUS_WEBAPP_CONFIG" => "/var/www/INGInious/configuration.yaml",
-                    "REAL_SCRIPT_NAME" => ""
-                ),
-                "check-local" => "disable"
-            ))
-        )
-
-        url.rewrite-once = (
-            "^/(.*)$" => "/inginious-webdav/$1"
-        )
-    }
-
-
-In your lighttpd configuration  ``/etc/lighttpd/lighttpd.conf`` change these lines:
-::
-
-   server.document-root = server_root + "/INGInious"
-
-Also append this at the end of ``/etc/lighttpd/lighttpd.conf``:
-
-  ::
-
-   include "/etc/lighttpd/vhosts.d/inginious.conf"
-
-.. note::
-
-   Make sure that INGInious static directory path is executable by Ligttpd by giving the right permission with ``chmod``
+    **If you use a local backend with remote Docker daemon**, you may need to set the ``DOCKER_HOST`` variable in the
+    environment of Gunicorn. To know the value to set, start a terminal that has access to the docker daemon (the
+    terminal should be able to run ``docker info``), and write ``echo $DOCKER_HOST``. If it returns nothing, just ignore
+    this comment. It is possible that you may need to do the same for the env variable ``DOCKER_CERT_PATH`` and
+    ``DOCKER_TLS_VERIFY`` too.
 
 In some cases docker won't be able to run INGInious containers due to invalid temp directory just
 make sure you append this in your INGInious configuration.yaml
@@ -383,21 +294,31 @@ make sure you append this in your INGInious configuration.yaml
    local-config:
        tmp_dir: /var/www/INGInious/agent_tmp
 
-The ``INGINIOUS_WEBAPP`` and ``INGINIOUS_WEBDAV`` prefixed environment variables are used to replace the default command line parameters.
-See :ref:`inginious-webapp` for more details.
+Static files are served by the web app through Gunicorn, the webserver only has to forward the requests.
 
-The ``REAL_SCRIPT_NAME`` environment variable must be specified under lighttpd if you plan to access the application
-from another path than the specified one. In this case, lighttpd forces to set a non-root path ``/inginious-webapp``,
-while a root access if wanted, in order to serve static files correctly. Therefore, this environment variable is set
-to an empty string in addition to the rewrite rule.
+.. _lighttpd:
 
-.. note::
+Using lighttpd
+``````````````
 
-   The Default configuration doesn't optimize Inginious for performance, please refer to
-   https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_Performance for more about performance optimising
-   you may also change 'max-procs' and append "PHP_FCGI_CHILDREN" => "someValue" inside "bin-environment"
-   for more about these values check https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_PerformanceFastCGI
+Add the following rules in a ``/etc/lighttpd/vhosts.d/inginious.conf`` file:
+::
 
+    server.modules += ( "mod_proxy" )
+
+    $SERVER["socket"] == ":80" {
+        proxy.server = ( "" => (( "host" => "127.0.0.1", "port" => 8000 )) )
+    }
+
+    $SERVER["socket"] == ":8080" {
+        proxy.server = ( "" => (( "host" => "127.0.0.1", "port" => 8001 )) )
+    }
+
+Append this at the end of ``/etc/lighttpd/lighttpd.conf``:
+
+  ::
+
+   include "/etc/lighttpd/vhosts.d/inginious.conf"
 
 Finally, start the server:
 
@@ -410,21 +331,6 @@ Finally, start the server:
 
 Using Apache
 ````````````
-
-Apache can be used as a reverse proxy in front of `Gunicorn <https://gunicorn.org/>`_, which serves the INGInious
-WSGI applications. Install Gunicorn in the same Python environment as INGInious:
-::
-
-    # pip3 install gunicorn
-
-Start the web app and, if needed, the WebDAV server, each on its own local port:
-::
-
-    $ export INGINIOUS_WEBAPP_CONFIG="/var/www/INGInious/configuration.yaml"
-    $ gunicorn 'inginious.scripts.webapp:wsgi_app()' --bind 127.0.0.1:8000
-    $ gunicorn 'inginious.scripts.webdav:wsgi_app()' --bind 127.0.0.1:8001 --workers 1
-
-The user running these commands must be allowed to launch containers and to connect to MongoDB.
 
 Enable the Apache proxy modules. On Ubuntu:
 ::
