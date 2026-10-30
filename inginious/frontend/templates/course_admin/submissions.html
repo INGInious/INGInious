@@ -26,7 +26,7 @@
 <h2>{{_("Submissions")}}</h2>
 
 <!-- Query submissions -->
-{% with target="submissions#alerts", is_stats=False %}
+{% with target="submissions#alerts", is_stats=False, path = url_for('coursesubmissionspage', courseid=course.get_id()) %}
     {% include "course_admin/submissions_query.html" %}
 {% endwith %}
 

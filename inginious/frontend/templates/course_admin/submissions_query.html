@@ -247,8 +247,7 @@
 
             <!-- Validate -->
             <div class="btn-group pull-right mb-2">
-                {% set path = url_for('coursesubmissionspage', courseid=course.get_id()) %}
-                <button type="button" class="btn btn-danger btn-block m-1 p-2 pl-4 pr-4" onclick="window.location.href='{{ path }}'">
+                <button type="button" class="btn btn-danger btn-block m-1 p-2 pl-4 pr-4" onclick="window.location.href='{{ path }}{% if is_stats %}?reset=1{% endif %}'">
                     <i class="fa fa-undo"></i> {{ _("Reset") }}
                 </button>
                 <button type="submit" class="btn btn-primary btn-block m-1 p-2 pl-4 pr-4">

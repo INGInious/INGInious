@@ -88,7 +88,7 @@
             </div>
         </div>
         <div role="tabpanel" class="tab-pane card-body" id="tab_submissions">
-            {% with target="stats#alerts", is_stats=True %}
+            {% with target="stats#alerts", is_stats=True, path = url_for('coursestatisticspage', courseid=course.get_id()) %}
                 {% include "course_admin/submissions_query.html" %}
             {% endwith %}
             <!-- Alerts -->
@@ -274,10 +274,13 @@
 
 <script>
     $(function() {
-        var url = window.location.href;
-        if(url.indexOf('alerts') >= 0){
+        let url = window.location.href;
+        let reset = new URLSearchParams(window.location.search).get('reset');
+        if(url.indexOf('alerts') >= 0 || reset) {
+            // going to the submissions tab only during a reset or when showing result of a filter.
             $('.nav-tabs a[href="#tab_submissions"]').tab('show');
         } else {
+            // close the query form when alert is not in the url. That means we are in the student progress tab and we close the form so it is closed when moving to the submissions tab.
             dropdown(document.getElementById("query_header"))
         }
 
