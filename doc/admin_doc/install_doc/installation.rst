@@ -408,212 +408,50 @@ Finally, start the server:
 
 .. _apache:
 
-Using Apache on CentOS 7.x
-``````````````````````````
+Using Apache
+````````````
 
-You may also want to use Apache. You should install `mod_wsgi`. WSGI interfaces are supported through the
-`inginious-webapp` script.
-
-Install the following packages (please note that the Python3.5+ version of *mod_wsgi* is required):
+Apache can be used as a reverse proxy in front of `Gunicorn <https://gunicorn.org/>`_, which serves the INGInious
+WSGI applications. Install Gunicorn in the same Python environment as INGInious:
 ::
 
-    # yum install httpd httpd-devel
-    # pip3.5 install mod_wsgi
+    # pip3 install gunicorn
 
-Add the ``apache`` user in the necessary groups, to allow it to launch new containers and to connect to mongodb:
+Start the web app and, if needed, the WebDAV server, each on its own local port:
 ::
 
-    # usermod -aG docker apache
-    # usermod -aG mongodb apache
+    $ export INGINIOUS_WEBAPP_CONFIG="/var/www/INGInious/configuration.yaml"
+    $ gunicorn 'inginious.scripts.webapp:wsgi_app()' --bind 127.0.0.1:8000
+    $ gunicorn 'inginious.scripts.webdav:wsgi_app()' --bind 127.0.0.1:8001 --workers 1
 
-Create a folder for INGInious, for example ``/var/www/INGInious``, and change the directory owner to ``apache``:
+The user running these commands must be allowed to launch containers and to connect to MongoDB.
+
+Enable the Apache proxy modules. On Ubuntu:
 ::
 
-    # mkdir -p /var/www/INGInious
-    # chown -R apache:apache /var/www/INGInious
+    # a2enmod proxy proxy_http
 
-Put your configuration file in that folder, as well as your tasks, backup, download, and temporary (if local backend)
-directories (see :ref:`config` for more details on these folders).
+On RHEL-based distributions, ``mod_proxy`` and ``mod_proxy_http`` are provided by the ``httpd`` package.
 
-Set the environment variables used by the INGInious CLI scripts in the Apache service environment file
-(see lighttpd_ for more details):
-::
-
-    # cat  << EOF >> /etc/sysconfig/httpd
-    INGINIOUS_WEBAPP_CONFIG="/var/www/INGInious/configuration.yaml"
-    INGINIOUS_WEBAPP_HOST="0.0.0.0"
-    INGINIOUS_WEBAPP_PORT="80"
-    EOF
-    # rm /etc/httpd/conf.d/welcome.conf
-
-Please note that the service environment file ``/etc/sysconfig/httpd`` may differ from your distribution and wether it
-uses *systemd* or *init*.
-
-Append this in your INGInious configuration.yaml
-
-  ::
-
-   local-config:
-       tmp_dir: /var/www/inginious/agent_tmp
-
-You can then add virtual host entries in a ``/etc/httpd/vhosts.d/inginious.conf`` file and apply the following rules:
+Then, add the following virtual hosts to your Apache configuration, and listen on port 8080 if you use WebDAV:
 
   ::
 
     <VirtualHost *:80>
         ServerName my_inginious_domain
-        LoadModule wsgi_module /usr/lib64/python3.5/site-packages/mod_wsgi/server/mod_wsgi-py35.cpython-35m-x86_64-linux-gnu.so
-
-        WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webapp.py"
-        WSGIScriptReloading On
-
-        Alias /static /usr/lib/python3.6/site-packages/inginious/frontend/static
-
-        <Directory "/usr/bin">
-            <Files "inginious-webapp">
-                Require all granted
-            </Files>
-        </Directory>
-
-        <DirectoryMatch "/usr/lib/python3.6/site-packages/inginious/frontend/static">
-            Require all granted
-        </DirectoryMatch>
+        ProxyPreserveHost On
+        ProxyPass / http://127.0.0.1:8000/
+        ProxyPassReverse / http://127.0.0.1:8000/
     </VirtualHost>
 
     <VirtualHost *:8080>
         ServerName my_inginious_domain
-        LoadModule wsgi_module /usr/lib64/python3.6/site-packages/mod_wsgi/server/mod_wsgi-py35.cpython-35m-x86_64-linux-gnu.so
-
-        WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webdav.py"
-        WSGIScriptReloading On
-
-        <Directory "/usr/bin">
-            <Files "inginious-webdav">
-                Require all granted
-            </Files>
-        </Directory>
+        ProxyPreserveHost On
+        ProxyPass / http://127.0.0.1:8001/
+        ProxyPassReverse / http://127.0.0.1:8001/
     </VirtualHost>
 
-Please note that the compiled *wsgi* module path may differ according to the exact Python version you are running.
-
-
-Using Apache on Ubuntu 18.04
-````````````````````````````
-
-Change the owner to the inginious folder and its contents to the Apache2 user:
-::
-
-    chown -R www-data:www-data /var/www/inginious
-
-Set the global server name: add the line `ServerName localhost` in `/etc/apache2/conf.d/httpd.conf`
-
-Set the environment variables used by the INGInious CLI scripts in the Apache service environment file, /etc/apache2/envvars :
-::
-
-    export INGINIOUS_WEBAPP_CONFIG="/var/www/inginious/configuration.yaml"
-    export INGINIOUS_WEBAPP_HOST="0.0.0.0"
-    export INGINIOUS_WEBAPP_PORT="80"
-
-Add them also inside the file `/lib/systemd/system/apache2.service`, as follows:
-::
-
-    Environment=INGINIOUS_WEBAPP_CONFIG="/var/www/inginious/configuration.yaml"
-    Environment=INGINIOUS_WEBAPP_HOST="0.0.0.0"
-    Environment=INGINIOUS_WEBAPP_PORT="80"
-
-
-Append this in your INGInious configuration.yaml
-
-  ::
-
-   local-config:
-       tmp_dir: /var/www/inginious/agent_tmp
-
-Add virtual host entries in a `/etc/apache2/sites-available/inginious.conf` file with the following rules:
-
-  ::
-
-    <VirtualHost *:80>
-        WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webapp.py"
-        WSGIScriptReloading On
-
-        Alias /static /usr/local/lib/python3.6/dist-packages/inginious/frontend/static
-
-            <Directory "/usr/local/bin">
-                <Files "inginious-webapp">
-                    Require all granted
-                </Files>
-            </Directory>
-
-            <DirectoryMatch "/usr/local/lib/python3.6/dist-packages/inginious/frontend/static">
-                Require all granted
-            </DirectoryMatch>
-
-        ServerAdmin erelsgl@gmail.com
-        DocumentRoot /var/www/inginious
-    </VirtualHost>
-
-
-    <VirtualHost *:8080>
-            WSGIScriptAlias / "/usr/local/lib/python3.6/dist-packages/inginious/frontend/wsgi/webdav.py"
-            WSGIScriptReloading On
-
-            <Directory "/usr/local/bin">
-                <Files "inginious-webdav">
-                    Require all granted
-                </Files>
-            </Directory>
-    </VirtualHost>
-
-Please note that the static files path may differ according to the exact Python version you are running.
-
-Then, enable the new site and reload apache2:
-
-  ::
-
-    a2enmod wsgi
-    a2dissite 000-default
-    a2ensite inginious
-    systemctl reload apache2
-
-Apache will automatically start the frontend.
-
-To check that the various parts of the system are correctly installed, you can use the following commands.
-
-1  Check that docker is active:
-
-    # systemctl status docker
-
-2  Check that mongo db is active:
-
-    # systemctl status mongodb
-
-3  Check that Apache 2 is active:
-
-    # systemctl status apache2
-
-All of them should be in status "active (running)".
-
-4  Check that wsgi is installed:
-
-    # source /etc/apache2/envvars
-    # apache2 -M
-
-The last line should be "wsgi_module (shared)".
-
-    # apache2 -S
-
-There should be two lines under `VirtualHost configuration:` referring to `inginious.conf`.
-
-5  Check access to a file in the `static` folder, e.g.:
-
-    # curl http://localhost/static/icons/wb.svg
-
-6  Check access to the `courselist` folder:
-
-    # curl http://localhost/courselist
-
-7  Finally, open the URL to your website in a browser, and login as superadmin; you should see the INGInious homepage.
+Finally, reload Apache and open the URL of your website in a browser.
 
 Optional apps
 =============
