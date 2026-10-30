@@ -382,6 +382,7 @@ To enable the plugin, add to your configuration file:
 - ``page_pattern`` is the URL at which you want to make the simple grader available.
 
 - ``return_fields`` is a regular expression matching the submission fields that can be returned via the simple grader.
+  The ``archive`` field, if returned, is base64-encoded.
 
 A demonstration POST form will be available at the ``page_pattern`` specified URL.
 

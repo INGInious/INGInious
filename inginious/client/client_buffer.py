@@ -16,20 +16,20 @@ class ClientBuffer(object):
         self._waiting_jobs = []
         self._jobs_done = {}
 
-    def new_job(self, priority, course, task, inputdata, launcher_name="Unknown", debug=False):
+    def new_job(self, priority, job_info, inputdata, launcher_name="Unknown", debug=False):
         """ Runs a new job. It works exactly like the Client class, instead that there is no callback """
         bjobid = uuid.uuid4()
         self._waiting_jobs.append(str(bjobid))
-        self._client.new_job(priority, course, task, inputdata,
-                             (lambda result, grade, problems, tests, custom, archive, stdout, stderr:
-                              self._callback(bjobid, result, grade, problems, tests, custom, archive, stdout, stderr)),
+        self._client.new_job(priority, job_info, inputdata,
+                             (lambda result, grade, problems, tests, custom, state, archive, stdout, stderr:
+                              self._callback(bjobid, result, grade, problems, tests, custom, state, archive, stdout, stderr)),
                              launcher_name, debug)
         return bjobid
 
-    def _callback(self, bjobid, result, grade, problems, tests, custom, archive, stdout, stderr):
+    def _callback(self, bjobid, result, grade, problems, tests, custom, state, archive, stdout, stderr):
         """ Callback for self._client.new_job """
         if str(bjobid) in self._waiting_jobs:
-            self._jobs_done[str(bjobid)] = (result, grade, problems, tests, custom, archive, stdout, stderr)
+            self._jobs_done[str(bjobid)] = (result, grade, problems, tests, custom, state, archive, stdout, stderr)
             self._waiting_jobs.remove(str(bjobid))
 
     def is_waiting(self, bjobid):
@@ -43,13 +43,15 @@ class ClientBuffer(object):
     def get_result(self, bjobid):
         """
             Get the result of task. Must only be called ONCE, AFTER the task is done (after a successfull call to is_done).
-            :return a tuple (result, grade, problems, tests, custom, archive)
+            :return a tuple (result, grade, problems, tests, custom, state, archive, stdout, stderr)
             result is itself a tuple containing the result string and the main feedback (i.e. ('success', 'You succeeded')
             grade is a number between 0 and 100 indicating the grade of the users
             problems is a dict of tuple, in the form {'problemid': result}
             test is a dict of tests made in the container
             custom is a dict containing random things set in the container
+            state is a string containing the state of the task
             archive is either None or a bytes containing a tgz archive of files from the job
+            stdout and stderr are the outputs of the container
         """
         result = self._jobs_done[str(bjobid)]
         del self._jobs_done[str(bjobid)]
