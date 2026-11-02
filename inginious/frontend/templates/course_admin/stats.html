@@ -88,7 +88,7 @@
             </div>
         </div>
         <div role="tabpanel" class="tab-pane card-body" id="tab_submissions">
-            {% with target="stats#alerts", is_stats=True, path = url_for('coursestatisticspage', courseid=course.get_id()) %}
+            {% with target=url_for('coursestatisticspage', courseid=course.get_id(), _anchor="alerts"), is_stats=True, path=url_for('coursestatisticspage', courseid=course.get_id(), reset=1) %}
                 {% include "course_admin/submissions_query.html" %}
             {% endwith %}
             <!-- Alerts -->
