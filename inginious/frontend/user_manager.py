@@ -57,6 +57,15 @@ class AuthMethod(object, metaclass=ABCMeta):
         """
         return None
 
+    def get_default_username(self, uid, email, additional):
+        """
+        :param uid: The identifier of the user for this auth method
+        :param email: The email address of the user
+        :param additional: The dict of additional fields returned by the callback
+        :return: The username for a new account, or an empty string to let the user choose one
+        """
+        return ""
+
     @abstractmethod
     def get_name(self):
         """
@@ -321,7 +330,13 @@ class UserManager:
                 self.connect_user(existing_profile)
             else:
                 # New user, create an account using email address
-                user_profile = User(username="", realname=realname, email=email,
+                default_username = auth_method.get_default_username(username, email, additional)
+                if default_username and User.objects(username=default_username).first():
+                    self._logger.warning("Default username %s is already taken, %s has to choose one.",
+                                         default_username, email)
+                    default_username = ""
+
+                user_profile = User(username=default_username, realname=realname, email=email,
                                 bindings={auth_id: [username, additional]}, language=session.language)
 
                 user_profile.save()

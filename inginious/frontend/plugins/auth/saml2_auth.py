@@ -17,6 +17,7 @@ from werkzeug.exceptions import abort, InternalServerError
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
+from inginious.common.base import get_default_username
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.user_manager import AuthMethod
 
@@ -124,6 +125,9 @@ class SAMLAuthMethod(AuthMethod):
                                                                          ", ".join(errors) +
                                                                          " | reason: " + str(auth.get_last_error_reason()))
             return None
+
+    def get_default_username(self, uid, email, additional):
+        return get_default_username(self._settings, uid, email, additional)
 
     def get_settings(self):
         return self._settings

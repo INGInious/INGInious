@@ -24,6 +24,26 @@ def id_checker_tests(id_to_test):
     return bool(re.match(r'[a-z0-9\-\._*]+$', id_to_test, re.IGNORECASE))
 
 
+def get_default_username(auth_config, uid, email, additional):
+    """
+    Derives the username of a new account from the identity data provided by an auth method.
+    :param auth_config: configuration of the auth method, whose optional ``default_username`` entry contains
+        ``source`` (``uid``, ``email`` or a field of ``additional``; defaults to ``uid``) and ``regex``, which has to
+        match the complete value and whose first group is the username.
+    :param uid: the identifier of the user for this auth method
+    :param email: the email address of the user
+    :param additional: the dict of additional fields provided by the auth method
+    :return: the username, or an empty string if there is none and the user has to choose one
+    """
+    config = auth_config.get("default_username")
+    if not config:
+        return ""
+    source = config.get("source", "uid")
+    value = {"uid": uid, "email": email}.get(source, additional.get(source))
+    match = re.fullmatch(config["regex"], value or "")
+    return match.group(1) if match else ""
+
+
 def load_json_or_yaml(file_path):
     """ Load JSON or YAML depending on the file extension. Returns a dict """
     with open(file_path, "r") as f:

@@ -278,6 +278,19 @@ Your IdP is required to provide at least attributes corresponding to the usernam
 Use the ``attributes`` entry for the mapping. The ``additionalX509certs`` is a plugin-specific entry to specify several
 certificates in case your IdP is able to use more than one.
 
+New accounts have to choose their username after their first login, unless the optional ``default_username`` entry
+derives it from the data provided by the IdP:
+::
+
+    default_username:
+        source: uid
+        regex: '(s\d{7})(@.*)?'
+
+``source`` is ``uid``, ``email`` or a field of the ``additional`` entry and defaults to ``uid``. ``regex`` has to match
+the complete value and its first group is the username. Users whose value does not match, or whose username is already
+taken, still choose their own. Existing accounts can be renamed accordingly with
+``python -m inginious.scripts.rename_saml_usernames``, which only displays the changes unless ``--apply`` is given.
+
 This plugin mainly relies on python3-saml_ package and configuration parameters are interoperable.
 Please refer to the package documentation for more detailed configuration parameters. The SP Attribute Consuming Service (ACS)
 is automatically configured by the plugin.
