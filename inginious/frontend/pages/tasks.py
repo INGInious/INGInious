@@ -110,9 +110,9 @@ class BaseTaskPage(object):
                 return Response(response=file_data, content_type='text/plain')
         else:
             # Generate random inputs and save it into db
-            random.seed(str(username if username is not None else "") + taskid + courseid + str(
+            rand = random.Random(str(username if username is not None else "") + taskid + courseid + str(
                 time.time() if task.regenerate_input_random() else ""))
-            random_input_list = [random.random() for i in range(task.get_number_input_random())]
+            random_input_list = [rand.random() for i in range(task.get_number_input_random())]
 
             user_task = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username=username).modify(
                 set__random=random_input_list,

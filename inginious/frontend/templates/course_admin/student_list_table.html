@@ -34,32 +34,34 @@
                 </tr>
             </thead>
             <tbody>
-            {% for user in user_data %}
+            {% for username in usernames %}
+                {% set user = users_info[username] %}
+                {% set progress = user_progress[username] %}
                  <tr>
                     <td>
-                        {{ user["realname"] or user["username"] }}
+                        {{ user["realname"] or username }}
                     </td>
                     <td>
-                        {{user["username"]}}
+                        {{username}}
                     </td>
                     <td>
                         <a href="mailto:{{user['email']}}">{{user["email"]}}</a>
                     </td>
-                    <td>{{user["task_tried"]}}</td>
-                    <td>{{user["task_succeeded"]}}</td>
+                    <td>{{progress["task_tried"]}}</td>
+                    <td>{{progress["task_succeeded"]}}</td>
                     <td>
                         <div class="progress">
-                            <div class="progress-bar bg-success" role="progressbar" aria-valuenow="{{ user['grade'] | int }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ user['grade'] | int }}%">
-                                <span>{{ user["grade"] }}%</span>
+                            <div class="progress-bar bg-success" role="progressbar" aria-valuenow="{{ progress['grade'] | int }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress['grade'] | int }}%">
+                                <span>{{ progress["grade"] }}%</span>
                             </div>
                         </div>
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
-                            <a href="{{url_for('coursestudentinfopage', courseid=course.get_id(), username=user['username'])}}" class="btn btn-secondary" title="{{ _('View submissions') }}"
+                            <a href="{{url_for('coursestudentinfopage', courseid=course.get_id(), username=username)}}" class="btn btn-secondary" title="{{ _('View submissions') }}"
                                data-toggle="tooltip" data-placement="bottom"><i class="fa fa-file-code-o fa-fw"></i></a>
                             {% if is_admin and not is_staff %}
-                                <button type="button" data-username="{{user['username']}}" data-type="single" data-toggle="modal" data-target="#remove_modal" class="btn btn-warning remove_user" title="Unregister"><i class="fa fa-user-times"></i></button>
+                                <button type="button" data-username="{{username}}" data-type="single" data-toggle="modal" data-target="#remove_modal" class="btn btn-warning remove_user" title="Unregister"><i class="fa fa-user-times"></i></button>
                             {% endif %}
                         </div>
                     </td>

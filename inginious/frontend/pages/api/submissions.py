@@ -33,6 +33,9 @@ def _get_submissions(submission_manager, user_manager, courseid, taskid, usernam
     except:
         raise APINotFound("Task not found")
 
+    if not user_manager.task_is_visible_by_user(course, task, username, lti=False):
+        raise APINotFound("Task not found")
+
     if submissionid is None:
         submissions = submission_manager.get_user_submissions(course, task, username)
     else:

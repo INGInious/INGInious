@@ -73,12 +73,16 @@ class APITasks(APIAuthenticatedPage):
             raise APIForbidden("You are not registered to this course")
 
         if taskid is None:
-            tasks = course.get_tasks()
+            tasks = {tid: task for tid, task in course.get_tasks().items()
+                     if self.user_manager.task_is_visible_by_user(course, task, user.username, lti=False)}
         else:
             try:
-                tasks = {taskid: course.get_task(taskid)}
+                task = course.get_task(taskid)
             except:
                 raise APINotFound("Task not found")
+            if not self.user_manager.task_is_visible_by_user(course, task, user.username, lti=False):
+                raise APINotFound("Task not found")
+            tasks = {taskid: task}
 
         output = []
         for taskid, task in tasks.items():

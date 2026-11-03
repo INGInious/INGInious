@@ -137,7 +137,8 @@ def test_task(yaml_data, course, task, client, client_sync):
         time.sleep(1)
     if task.get_environment_id() not in client.get_available_environments().get(task.get_environment_type(), ()):
         raise Exception('Environment not available')
-    new_output = client_sync.new_job(0, course, task, yaml_data['input'])  # request the client with input from yaml and given task
+    job_info = {"course": course, "task": task, "environment_type": task.get_environment_type(), "environment": task.get_environment_id()}
+    new_output = client_sync.new_job(0, job_info, yaml_data['input'])  # request the client with input from yaml and given task
     keys = ["result", "grade", "problems", "tests", "custom", "state", "archive", "stdout", "stderr"]
     old_output = [yaml_data.get(x, None) for x in keys]
     return compare_all_outputs(old_output, new_output, keys)
@@ -276,7 +277,7 @@ def main():
     if args.ptype:
         load_modules(args.ptype, register_problem_types)
 
-    config = { "course_directory": args.course_dir, "backend": "local"}
+    config = { "course_directory": args.course_dir, "BACKEND": "local", "LOCAL-CONFIG": {}}
     if args.file:
         config["file"] = args.file
 

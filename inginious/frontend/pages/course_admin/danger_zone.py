@@ -5,7 +5,7 @@
 
 from datetime import datetime, timezone
 import logging
-import random
+import secrets
 
 from flask import  request, redirect, render_template, session, url_for
 
@@ -126,7 +126,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
     def page(self, course, msg="", error=False):
         """ Get all data and display the page """
-        thehash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
+        thehash = UserManager.hash_password_sha512(str(secrets.randbits(256)))
         session.token = thehash
 
 

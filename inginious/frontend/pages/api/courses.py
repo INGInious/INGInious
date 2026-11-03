@@ -66,7 +66,8 @@ class APICourses(APIAuthenticatedPage):
                     "is_registered": self.user_manager.course_is_open_to_user(course, user.username, False)
                 }
                 if self.user_manager.course_is_open_to_user(course, user.username, False):
-                    data["tasks"] = {taskid: task.get_name(user.language) for taskid, task in course.get_tasks().items()}
+                    data["tasks"] = {taskid: task.get_name(user.language) for taskid, task in course.get_tasks().items()
+                                     if self.user_manager.task_is_visible_by_user(course, task, user.username, lti=False)}
                     data["grade"] = self.user_manager.get_course_cache(user.username, course)["grade"]
                 output.append(data)
 

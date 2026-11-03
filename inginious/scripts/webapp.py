@@ -33,7 +33,7 @@ def get_app(configfile=None):
         else:
             raise Exception("No configuration file found")
 
-    # Load configuration and application (!!! For mod_wsgi, application identifier must be present)
+    # Load configuration and application
     config = load_json_or_yaml(configfile)
 
     # Init logging
@@ -65,6 +65,9 @@ def get_app(configfile=None):
 
     return config, application
 
+def wsgi_app():
+    return get_app(os.environ.get("INGINIOUS_WEBAPP_CONFIG"))[1]
+
 def main():
     # Parse the paramaters from command line arguments
     parser = argparse.ArgumentParser()
@@ -87,5 +90,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-else:
-    config, application = get_app(os.environ.get("INGINIOUS_WEBAPP_CONFIG"))

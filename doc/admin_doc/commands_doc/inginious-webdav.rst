@@ -3,7 +3,7 @@
 inginious-webdav
 ================
 
-Start the WebDAV frontend. This command can run a standalone web server (see ``--host`` and ``--port`` options), or as a FastCGI backend.
+Start the WebDAV frontend. This command can run a standalone web server (see ``--host`` and ``--port`` options). For production, see :ref:`production`.
 
 .. program:: inginious-webdav
 

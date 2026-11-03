@@ -3,7 +3,7 @@
 inginious-webapp
 ================
 
-Start the Web App Frontend. This command can run a standalone web server (see ``--host`` and ``--port`` options) or as a FastCGI backend.
+Start the Web App Frontend. This command can run a standalone web server (see ``--host`` and ``--port`` options). For production, see :ref:`production`.
 
 .. program:: inginious-webapp
 

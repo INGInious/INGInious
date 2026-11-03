@@ -5,7 +5,7 @@
 
 """ Registration page"""
 
-import random
+import secrets
 import re
 import flask
 import logging
@@ -92,7 +92,7 @@ class RegistrationPage(INGIniousPage):
                     msg = _("This email address is already in use !")
             else:
                 passwd_hash = UserManager.hash_password(data["passwd"])
-                activate_hash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
+                activate_hash = UserManager.hash_password_sha512(str(secrets.randbits(256)))
                 User(username= data["username"], realname=data["realname"], email=email,
                      password=passwd_hash, activate=activate_hash,
                      language=session.language, tos_accepted=True).save()
@@ -132,7 +132,7 @@ To activate your account, please click on the following link :
             msg = _("Invalid email format.")
 
         if not error:
-            reset_hash = UserManager.hash_password_sha512(str(random.getrandbits(256)))
+            reset_hash = UserManager.hash_password_sha512(str(secrets.randbits(256)))
             user = User.objects(email=data["recovery_email"]).modify(reset=reset_hash, new=True)
             if user is None:
                 error = True

@@ -51,7 +51,7 @@ RUN  --mount=source=.git,target=.git,type=bind \
     pip"${PYTHON_VERSION}" install --no-cache-dir -e '.[saml2]' &&\
     pip"${PYTHON_VERSION}" install 'gunicorn==26.0.0'
 
-CMD ["sh", "-c", "python${PYTHON_VERSION} -m inginious.scripts.database_update && python${PYTHON_VERSION} -m gunicorn.app.wsgiapp 'inginious.scripts.webapp:application' --bind 0.0.0.0"]
+CMD ["sh", "-c", "python${PYTHON_VERSION} -m inginious.scripts.database_update && python${PYTHON_VERSION} -m gunicorn.app.wsgiapp 'inginious.scripts.webapp:wsgi_app()' --bind 0.0.0.0"]
 
 
 ###########
@@ -106,4 +106,4 @@ RUN --mount=source=.git,target=.git,type=bind \
     pip"${PYTHON_VERSION}" install --no-cache-dir -e . &&\
     pip"${PYTHON_VERSION}" install 'gunicorn==26.0.0'
 
-CMD ["sh", "-c", "python${PYTHON_VERSION} -m gunicorn.app.wsgiapp 'inginious.scripts.webdav:application' --bind 0.0.0.0 --workers 1"]
+CMD ["sh", "-c", "python${PYTHON_VERSION} -m gunicorn.app.wsgiapp 'inginious.scripts.webdav:wsgi_app()' --bind 0.0.0.0 --workers 1"]
