@@ -731,8 +731,9 @@ class WebAppSubmissionManager:
                     tar.addfile(info, fileobj=submission_yaml)
 
                     # If there is an archive, add it too
-                    if 'archive' in submission and submission['archive'] is not None and submission['archive'] != "":
+                    if submission.archive:
                         subfile = submission['archive']
+                        subfile.seek(0)  # the GridFS proxy is cached: rewind if the submission is exported twice
                         subtar = tarfile.open(fileobj=subfile, mode="r:gz")
 
                         for member in subtar.getmembers():
