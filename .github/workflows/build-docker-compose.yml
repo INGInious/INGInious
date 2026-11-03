@@ -5,14 +5,13 @@ on:
     branches:
       - main
     paths:
-      - base-containers/base/**
       - deploy/Containerfile
-      - docker-compose.yml
       - uantwerpen/containers/**
       - inginious/**
       - pyproject.toml
-      - .github/workflows/build-docker-compose.yml
 
+  # Builds every image, e.g. after changing this workflow or to pick up a new
+  # upstream env-base, which a push does not detect.
   workflow_dispatch:
 
 env:
@@ -23,7 +22,53 @@ env:
   UPSTREAM_ENV_TAG: main
 
 jobs:
+  # Only the images affected by a push are built: docker-compose.yml uses the
+  # :latest tag of each image, which stays valid for the skipped ones.
+  changes:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    outputs:
+      core: ${{ steps.filter.outputs.core }}
+      env-computer-graphics: ${{ steps.filter.outputs.env-computer-graphics }}
+      env-inleiding-programmeren: ${{ steps.filter.outputs.env-inleiding-programmeren }}
+      env-computer-systemen-architectuur: ${{ steps.filter.outputs.env-computer-systemen-architectuur }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select images to build
+        id: filter
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # Everything is built if the previous commit is unknown (manual run)
+          # or unavailable (first push of a branch).
+          if [ -n "$BEFORE" ] && git fetch --depth=1 origin "$BEFORE"; then
+            changed=$(git diff --name-only "$BEFORE" "$GITHUB_SHA")
+          else
+            changed=ALL
+          fi
+
+          select_image() {
+            if [ "$changed" = ALL ] || grep -qE "$2" <<< "$changed"; then
+              echo "$1=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$1=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+
+          select_image core '^(inginious/|deploy/Containerfile$|pyproject\.toml$)'
+          select_image env-computer-graphics '^uantwerpen/containers/computer-graphics/'
+          select_image env-inleiding-programmeren '^uantwerpen/containers/inleiding-programmeren/'
+          select_image env-computer-systemen-architectuur '^uantwerpen/containers/computer-systemen-architectuur/'
+
   build-and-push:
+    needs: changes
     runs-on: ubuntu-latest
 
     permissions:
@@ -69,6 +114,7 @@ jobs:
 
       # Build core images (from deploy/Containerfile with multiple targets)
       - name: Build and push core-backend
+        if: needs.changes.outputs.core == 'true'
         uses: docker/build-push-action@v7
         with:
           context: ./
@@ -83,6 +129,7 @@ jobs:
             REGISTRY=${{ env.REGISTRY }}
 
       - name: Build and push core-agent_docker
+        if: needs.changes.outputs.core == 'true'
         uses: docker/build-push-action@v7
         with:
           context: ./
@@ -101,6 +148,7 @@ jobs:
       # agent-mcq service in docker-compose.yml).
 
       - name: Build and push core-frontend
+        if: needs.changes.outputs.core == 'true'
         uses: docker/build-push-action@v7
         with:
           context: ./
@@ -115,6 +163,7 @@ jobs:
             REGISTRY=${{ env.REGISTRY }}
 
       - name: Build and push env-computer-graphics
+        if: needs.changes.outputs.env-computer-graphics == 'true'
         uses: docker/build-push-action@v7
         with:
           context: ./uantwerpen/containers/computer-graphics/
@@ -128,6 +177,7 @@ jobs:
             REGISTRY=ghcr.io
 
       - name: Build and push env-inleiding-programmeren
+        if: needs.changes.outputs.env-inleiding-programmeren == 'true'
         uses: docker/build-push-action@v7
         with:
           context: ./uantwerpen/containers/inleiding-programmeren/
@@ -141,6 +191,7 @@ jobs:
             REGISTRY=ghcr.io
 
       - name: Build and push env-computer-systemen-architectuur
+        if: needs.changes.outputs.env-computer-systemen-architectuur == 'true'
         uses: docker/build-push-action@v7
         with:
           context: ./uantwerpen/containers/computer-systemen-architectuur/
