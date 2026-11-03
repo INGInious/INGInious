@@ -19,7 +19,7 @@ from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
-from inginious.frontend.i18n import available_languages, gettext
+from inginious.frontend.i18n import available_languages, gettext, pgettext
 from inginious import __version__, DB_VERSION
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems import init_fs_provider
@@ -184,6 +184,7 @@ def get_app(config):
     # Add some helpers for the templates
     flask_app.jinja_loader = jinja2.ChoiceLoader([flask_app.jinja_loader, jinja2.PrefixLoader({})])
     flask_app.jinja_env.globals["_"] = gettext
+    flask_app.jinja_env.globals["pgettext"] = pgettext
     flask_app.jinja_env.globals["str"] = str
     flask_app.jinja_env.globals["plugin_manager"] = plugin_manager
     flask_app.jinja_env.globals["pkg_version"] = __version__

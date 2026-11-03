@@ -20,6 +20,11 @@ msgstr ""
 "Generated-By: Babel 2.18.0\n"
 
 #: inginious/frontend/parsable_text.py:29
+#: inginious/frontend/templates/mycourses.html:103
+msgctxt "course filter"
+msgid "Archive"
+msgstr "Archiwum"
+
 msgid "[no content]"
 msgstr "[brak treści]"
 
