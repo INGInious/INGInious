@@ -118,11 +118,11 @@ class LDAPAuthenticationPage(AuthenticationPage):
             finally:
                 conn.unbind()
 
+            redir_url = session.auth_storage.get(id, {}).get("redir_url", "/")
             if not self.user_manager.bind_user(id, (username, realname, email, {})):
                 return redirect(url_for("signinpage",binderror=""))
 
-            auth_storage = session.auth_storage.setdefault(id, {})
-            return redirect(auth_storage.get("redir_url", "/"))
+            return redirect(redir_url)
         else:
             logger.debug('Auth Failed')
             conn.unbind()
