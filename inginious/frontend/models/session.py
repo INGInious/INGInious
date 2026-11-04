@@ -3,14 +3,14 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
+import secrets
 import tzlocal
-from bson.objectid import ObjectId
 from mongoengine import Document, StringField, BooleanField
-from mongoengine import DateTimeField, DynamicField, MapField, ObjectIdField
+from mongoengine import DateTimeField, DynamicField, MapField
 
 
 class Session(Document):
-    id = ObjectIdField(primary_key=True, default=lambda: ObjectId()) # id should be available at creation time
+    id = StringField(primary_key=True, default=lambda: secrets.token_urlsafe(32)) # id should be available at creation time
     permanent = BooleanField(required=True)
     loggedin = BooleanField(required=True, default=False)
     auth_storage = MapField(DynamicField(), default=dict)

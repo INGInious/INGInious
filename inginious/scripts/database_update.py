@@ -199,9 +199,8 @@ def main():
         # LTI launch storage is merged in a single collection with a new format, launches are short-lived anyway
         for collection in ["nonce", "lis_launch", "lti_launch"]:
             database[collection].drop()
-        # LTI data is no longer stored in sessions: cookieless LTI sessions are useless without their launch data
-        database.sessions.delete_many({"is_lti": True})
-        database.sessions.update_many({}, {"$unset": {"is_lti": True, "lti": True}})
+        # Session ids are now random secrets instead of ObjectIds and no longer store LTI data: drop previous sessions
+        database.sessions.drop()
         db_version = 21
 
     database.db_version.update_one({}, {"$set": {"db_version": db_version}}, upsert=True)
