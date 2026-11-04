@@ -42,15 +42,15 @@ def _put_configuration_defaults(config):
     :return: the same dict, but with defaults for some unfilled parameters
     """
     session_parameters = config.get('session_parameters', None)
-    if not session_parameters or 'secret_key' not in config['session_parameters']:
+    if not session_parameters or not session_parameters.get('secret_key'):
         print("Please define a secret_key in the session_parameters part of the configuration.", file=sys.stderr)
         print("You can simply add the following (the text between the lines, without the lines) "
               "to your INGInious configuration file. We generated a random key for you.", file=sys.stderr)
         print("-------------", file=sys.stderr)
         print("session_parameters:", file=sys.stderr)
-        print('\ttimeout: 86400  # 24 * 60 * 60, # 24 hours in seconds', file=sys.stderr)
-        print('\tsecure: False # change this to True if you only use https', file=sys.stderr)
-        print('\tsecret_key: "{}"'.format(hexlify(os.urandom(32)).decode('utf-8')), file=sys.stderr)
+        print('    timeout: 86400  # 24 * 60 * 60, # 24 hours in seconds', file=sys.stderr)
+        print('    secure: False # change this to True if you only use https', file=sys.stderr)
+        print('    secret_key: "{}"'.format(hexlify(os.urandom(32)).decode('utf-8')), file=sys.stderr)
         print("-------------", file=sys.stderr)
         exit(1)
 
