@@ -65,16 +65,16 @@ def init_lti11_blueprint():
 def init_lti13_blueprint():
     lti13 = Blueprint('lti13', __name__, url_prefix='/lti1.3')
     lti13oidcloginpage_view = LTI13OIDCLoginPage.as_view('oidcloginpage')
-    lti13.add_url_rule('/oidc_login', view_func=lti13oidcloginpage_view, defaults={'courseid': None})
+    lti13.add_url_rule('/oidc_login', view_func=lti13oidcloginpage_view, defaults={'courseid': ""})
     lti13.add_url_rule('/oidc_login/<courseid>', view_func=lti13oidcloginpage_view)
 
     lti13launchpage_view = LTI13LaunchPage.as_view('launchpage')
-    lti13.add_url_rule('/launch', view_func=lti13launchpage_view, defaults={'courseid': None, 'taskid': None})
-    lti13.add_url_rule('/launch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': None})
+    lti13.add_url_rule('/launch', view_func=lti13launchpage_view, defaults={'courseid': "", 'taskid': ""})
+    lti13.add_url_rule('/launch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': ""})
     lti13.add_url_rule('/launch/<courseid>/<taskid>', view_func=lti13launchpage_view)
     # Aliases to support platforms that require another link for deep linking launches
-    lti13.add_url_rule('/deeplaunch', view_func=lti13launchpage_view, defaults={'courseid': None, 'taskid': None})
-    lti13.add_url_rule('/deeplaunch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': None})
+    lti13.add_url_rule('/deeplaunch', view_func=lti13launchpage_view, defaults={'courseid': "", 'taskid': ""})
+    lti13.add_url_rule('/deeplaunch/<courseid>', view_func=lti13launchpage_view, defaults={'taskid': ""})
 
     lti13jwkspage_view = LTI13JWKSPage.as_view('jwkspage')
     lti13.add_url_rule('/jwks/<keyset_hash>', view_func=lti13jwkspage_view, defaults={'courseid': None})

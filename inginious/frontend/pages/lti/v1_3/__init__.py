@@ -117,16 +117,14 @@ class LTI13LaunchPage(INGIniousPage):
         if message_launch.is_resource_launch():
             # Fetch courseid and taskid
             custom_data = launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"]
-            courseid = courseid or custom_data.get('courseid')
-            taskid = taskid or custom_data.get('taskid')
+            courseid = courseid or custom_data.get('courseid', '')
+            taskid = taskid or custom_data.get('taskid', '')
             # Check course secret
             if not Course.get(courseid).lti_secrets().get(platform_instance_id) == custom_data.get('secret', ''):
                 raise Forbidden(description=_("Invalid LTI secret"))
 
             redir_url = url_for("lti13.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
         elif message_launch.is_deep_link_launch():
-            courseid = ""
-            taskid = ""
             redir_url = url_for("lti13.deeplinkpage", launch_id=launch_id)
 
         lti_data = LTIData(
@@ -187,11 +185,15 @@ class LTI13LoginPage(LTILoginPage):
 class LTI13DeepLinkPage(INGIniousAuthPage):
 
     def GET(self, launch_id):
-        if not LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version="1.3", lti__valid=True).first():
+        if not (launch := LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version="1.3", lti__valid=True).first()):
             raise Forbidden(description=_("No LTI data available."))
 
+        launch_courseid = launch.lti.task[0] # A course with this courseid *should* exist
+        all_courses = {launch_courseid: Course.get(launch_courseid)} if launch_courseid else Course.get_all()
+
+        # Filter lti courses
         lti_courses = {
-            courseid: course for courseid, course in Course.get_all().items()
+            courseid: course for courseid, course in all_courses.items()
             if self.user_manager.has_admin_rights_on_course(course) and course.is_lti()
         }
 
@@ -208,11 +210,14 @@ class LTI13DeepLinkPage(INGIniousAuthPage):
         if not (launch := LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version="1.3", lti__valid=True).first()):
             raise Forbidden(description=_("No LTI data available."))
 
-        courseid = request.form.get("courseid")
+        # If courseid is in launch URL, use it first
+        courseid = launch.lti.task[0] or request.form.get("courseid")
         taskid = request.form.get("taskid")
 
         try:
-            course =  Course.get(courseid)
+            course = Course.get(courseid)
+            if not self.user_manager.has_admin_rights_on_course(course) or not course.is_lti():
+                raise Forbidden(description=_("You are not allowed to import tasks from this course."))
             task = course.get_task(taskid)
         except CourseNotFoundException as ex:
             raise NotFound(description=_(str(ex)))
@@ -235,7 +240,7 @@ class LTI13DeepLinkPage(INGIniousAuthPage):
         # Generate deep link response
         deep_link = message_launch.get_deep_link()
         resource = DeepLinkResource()
-        resource.set_url(url_for("lti13.launchpage", _external=True)) \
+        resource.set_url(url_for("lti13.launchpage", _external=True, courseid=launch.lti.task[0])) \
             .set_custom_params({'courseid': courseid, "taskid": taskid, "secret": lti_secrets[platform_instance_id]}) \
             .set_title(task.get_name(session.language))
 
