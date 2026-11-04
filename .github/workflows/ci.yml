@@ -29,6 +29,10 @@ jobs:
         working-directory: base-containers/base
         run: for stage in ${ENV_CONTAINERS}; do docker build --target=env-${stage} -t ${REGISTRY}/inginious/env-${stage}:${VERSION} . ; done
 
+      - name: Generate deployment secrets
+        run: |
+          sed -i -E "s/^(\s*secret_key:).*/\1 $(openssl rand -hex 32)/" configuration.deploy.yaml
+
       - name: Test deployment
         id: deploy
         run: |
@@ -61,6 +65,10 @@ jobs:
     needs: [tests]
     steps:
       - uses: actions/checkout@v7
+
+      - name: Generate deployment secrets
+        run: |
+          sed -i -E "s/^(\s*secret_key:).*/\1 $(openssl rand -hex 32)/; s/^(api_jwt_secret:).*/\1 $(openssl rand -hex 32)/" configuration.deploy.yaml
 
       - name: Test deployment
         id: deploy
