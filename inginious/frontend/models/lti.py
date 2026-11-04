@@ -4,7 +4,7 @@
 # more information about the licensing of this file.
 
 from mongoengine import Document, StringField, ListField, BooleanField, EmbeddedDocument, EmbeddedDocumentField, \
-    DynamicField, DateTimeField, ObjectIdField, IntField
+    DynamicField, DateTimeField, IntField
 
 
 class LTIData(EmbeddedDocument):
@@ -32,7 +32,7 @@ class LTIData(EmbeddedDocument):
 
 class LaunchData(Document):
     """ LTI launch messages and nonces, launch ids being prefixed by the LTI version (lti1p1- or lti1p3-) """
-    session_id = ObjectIdField()
+    session_id = StringField()
     launch_id = StringField(required=True)  # pylti1p3 key
     value = DynamicField(required=True)
     expiration = DateTimeField(required=True)
