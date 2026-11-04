@@ -17,7 +17,7 @@ def gettext(text):
 def pgettext(context, text):
     language = session.language if flask.has_app_context() else ""
     translations = _translations.get(language, _gettext.NullTranslations())
-    return translations.gettext(f"{context}\x04{text}") if text else ""
+    return translations.pgettext(context, text) if text else ""
 
 _available_translations = {
     "de": "Deutsch",
