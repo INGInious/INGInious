@@ -589,7 +589,8 @@ class Installer:
         options["session_parameters"]['timeout'] = self._ask_integer("How much time should a user stay connected, "
                                                                      "in seconds? The default is 86400, one day.", 86400)
         options["session_parameters"]['secure'] = self._ask_boolean("Do you plan to serve your INGInious instance only"
-                                                                    " in HTTPS?", False)
+                                                                    " in HTTPS? This is required for LTI.", True)
+        options["session_parameters"]['samesite'] = "None" if options["session_parameters"]['secure'] else "Lax"
         options["session_parameters"]['secret_key'] = hexlify(os.urandom(32)).decode('utf-8')
 
         return options

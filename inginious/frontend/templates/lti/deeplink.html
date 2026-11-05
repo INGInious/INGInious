@@ -55,7 +55,7 @@
             taskSelect.setValue("");
 
             $.ajax({
-                url: '{{ url_for("lti1.3deeplinkpage") }}',
+                url: '{{ request.path }}',
                 type: 'GET',
                 data: { courseid: courseId },
                 dataType: 'json',

@@ -25,11 +25,6 @@ class INGIniousPage(MethodView):
     Contains references to the PluginManager, the CourseFactory, and the SubmissionManager
     """
 
-    @property
-    def is_lti_page(self):
-        """ True if the current page allows LTI sessions. False else. """
-        return False
-
     def _pre_check(self):
         """ Checks for language. """
         if "lang" in request.args and request.args["lang"] in available_languages:
@@ -98,10 +93,6 @@ class INGIniousAuthPage(INGIniousPage):
                     and not self.__class__.__name__ == "ProfilePage":
                 return redirect(url_for("profilepage"))
 
-            if not self.is_lti_page and session.is_lti:  # lti session
-                self.user_manager.disconnect_user()
-                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
-
             return self.GET_AUTH(*args, **kwargs)
         elif self.preview_allowed(*args, **kwargs):
             return self.GET_AUTH(*args, **kwargs)
@@ -124,10 +115,6 @@ class INGIniousAuthPage(INGIniousPage):
         if session.loggedin:
             if not session.username and not self.__class__.__name__ == "ProfilePage":
                 return redirect(url_for("profilepage"))
-
-            if not self.is_lti_page and session.is_lti:  # lti session
-                self.user_manager.disconnect_user()
-                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
 
             return self.POST_AUTH(*args, **kwargs)
         else:

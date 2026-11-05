@@ -9,21 +9,21 @@ import threading
 import queue
 import time
 
-from typing import Type
 from abc import ABCMeta, abstractmethod
-from mongoengine import Document
+
+from inginious.frontend.models import LTIGrade
 
 
 class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
-    _submission_tags = {}
+    _submission_tags = {"message_launch_id": "message_launch_id"}
 
-    def __init__(self, mongo_document : Type[Document], user_manager):
+    def __init__(self, lti_version, user_manager):
         super(LTIScorePublisher, self).__init__()
         self.daemon = True
         self._queue = queue.Queue()
         self._stopped = False
 
-        self._mongo_document = mongo_document
+        self._lti_version = lti_version
         self._user_manager = user_manager
         self.start()
 
@@ -32,7 +32,7 @@ class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
 
     def run(self):
         # Load old tasks from the database
-        for todo in self._mongo_document.objects():
+        for todo in LTIGrade.objects(lti_version=self._lti_version):
             self._queue.put(todo)
 
         try:
@@ -75,11 +75,12 @@ class LTIScorePublisher(threading.Thread, metaclass=ABCMeta):
                 return
 
         for username in submission["username"]:
-            search = {"username": username, "courseid": submission["courseid"], "taskid": submission["taskid"]}
+            search = {"lti_version": self._lti_version, "username": username,
+                      "courseid": submission["courseid"], "taskid": submission["taskid"]}
             search.update({key: submission[key] for key in self._submission_tags.keys()})
-            entry = self._mongo_document.objects(**search).modify(nb_attempt=0, upsert=True, new=False)
+            entry = LTIGrade.objects(**search).modify(nb_attempt=0, upsert=True, new=False)
             if entry is None:  # and it should be
-                self._queue.put(self._mongo_document.objects.get(**search))
+                self._queue.put(LTIGrade.objects.get(**search))
 
     def tag_submission(self, submission, lti_info):
         """

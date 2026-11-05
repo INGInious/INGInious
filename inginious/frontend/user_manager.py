@@ -10,7 +10,7 @@ import logging
 import hashlib
 import flask
 
-from flask import session
+from flask import session, request
 from typing import Dict, Optional
 from werkzeug.exceptions import NotFound
 from abc import ABCMeta, abstractmethod
@@ -22,7 +22,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
 
-from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission
+from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission, LaunchData
 
 class AuthInvalidInputException(Exception):
     pass
@@ -186,6 +186,11 @@ class UserManager:
 
         ip = flask.request.remote_addr
 
+        # Forge a new session to prevent session fixation, keeping the pending LTI launches
+        previous_id = session.id
+        session.regenerate()
+        LaunchData.objects(session_id=previous_id).update(session_id=session.id)
+
         session.loggedin = True
         session.email = user.email
         session.username = user.username
@@ -209,7 +214,8 @@ class UserManager:
             self._logger.info("User %s disconnected - %s - %s - %s", session.username, session.realname,
                               session.email, ip)
 
-        session.loggedin = False
+        # Forge a new session to prevent any reuse of the previous session id (and data bound to it, like LTI launches)
+        session.regenerate()
 
     def get_users_info(self, usernames) -> Dict[str, Optional[User]]:
         """
@@ -706,7 +712,8 @@ class UserManager:
         :return: True if the user can access the course, False (or the reason if return_reason is True) otherwise
         """
         if lti == "auto":
-            lti = session.is_lti
+            #FIXME: will be removed when flask dependency is removed from the module
+            lti = request.blueprint in ["lti", "lti13"]
 
         if self.has_staff_rights_on_course(course, username):
             return True

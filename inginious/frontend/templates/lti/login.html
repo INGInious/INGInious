@@ -24,10 +24,23 @@
 <div class="row justify-content-center">
     <div class="col-md-4 p-0">
         <div class="card card-body bg-light">
-            {% set path = url_for('lti' + lti_version + 'bindpage') %}
-            <p class="mb-2"><a onclick="window.open('{{ path }}');" href="#">{{ _("Bind your INGInious account") }}</a></p>
-            <p class="m-0"><a href="{{ url_for('lti' + lti_version + 'loginpage') }}">{{ _("Refresh") }}</a></p>
+            <p class="mb-2"><a id="lti-bind-link" href="#">{{ _("Bind your INGInious account") }}</a></p>
+            <p class="m-0"><a href="{{ request.path }}">{{ _("Refresh") }}</a></p>
         </div>
     </div>
 </div>
+<script type="text/javascript">
+    // The binding window may not share this frame session (partitioned cookies): hand it the bind token,
+    // only once it proves to be the window we opened, on our own origin.
+    var popup = null;
+    $("#lti-bind-link").on("click", function (event) {
+        event.preventDefault();
+        popup = window.open("{{ url_for('.bindpage') }}");
+    });
+    $(window).on("message", function (event) {
+        var msg = event.originalEvent;
+        if (popup && msg.source === popup && msg.origin === window.location.origin)
+            popup.postMessage({{ bind_token | tojson }}, window.location.origin);
+    });
+</script>
 {% endblock %}

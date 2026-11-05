@@ -157,13 +157,24 @@ The different entries are :
             cookie_name: "inginious_session_id"
             cookie_domain: null
             cookie_path: null
-            samesite: "Lax"
+            samesite: "None"
             timeout: 86400  # 24 * 60 * 60, # 24 hours in seconds
             httponly: True
             secret_key: "fLjUfxqXtfNoIldA0A0G"
-            secure: False
+            secure: True
+            partitioned: True  # defaults to the value of secure
 
     Most value are as defined in standard HTTP cookies. The ``secret_key`` should be a long sequence of random characters.
+
+    LTI sessions rely on the session cookie. As INGInious is then embedded in the platform (in an iframe, from another
+    site), LTI requires ``samesite: "None"`` and ``secure: True``, and therefore INGInious to be served over HTTPS.
+    If INGInious is served over plain HTTP, set ``secure: False`` and ``samesite: "Lax"``: browsers reject
+    ``samesite: "None"`` cookies that are not secure. LTI will then not be available.
+
+    ``partitioned: True`` adds the ``Partitioned`` attribute (CHIPS) to the session cookie: browsers then keep a
+    separate session for INGInious embedded in each LTI platform, as Firefox and Safari already do by default.
+    This makes the behaviour consistent across browsers. It requires ``secure: True`` and is therefore enabled by
+    default only for secure cookies.
 
 ``reverse-proxy-config``
     A dictionary for reverse proxy configuration.
@@ -173,6 +184,9 @@ The different entries are :
         
     ``x_for``
         Number of values to trust for X-Forwarded-For. Its default value is 1
+
+    ``x_proto``
+        Number of values to trust for X-Forwarded-Proto. Its default value is 1
 
     ``x_host``
         Number of values to trust for X-Forwarded-Host. Its default value is 1
