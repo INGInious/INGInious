@@ -179,6 +179,9 @@ The different entries are :
     ``x_for``
         Number of values to trust for X-Forwarded-For. Its default value is 1
 
+    ``x_proto``
+        Number of values to trust for X-Forwarded-Proto. Its default value is 1
+
     ``x_host``
         Number of values to trust for X-Forwarded-Host. Its default value is 1
 
