@@ -29,6 +29,11 @@ class LTIData(EmbeddedDocument):
     tool_name = StringField()
     tool_url = StringField()
 
+    @property
+    def binding_key(self):
+        """ platform_instance_id usable as a MongoDB key in User.ltibindings ('.' and '$' are forbidden) """
+        return self.platform_instance_id.replace(".", "").replace("$", "")
+
 
 class LaunchData(Document):
     """ LTI launch messages and nonces, launch ids being prefixed by the LTI version (lti1p1- or lti1p3-) """
