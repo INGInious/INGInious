@@ -45,10 +45,14 @@ class LaunchData(Document):
     # Set by INGInious once the launch message is validated
     lti = EmbeddedDocumentField(LTIData)
 
+    # Token handed by the LMS frame to the binding window, whose session differs with partitioned cookies
+    bind_token = StringField()
+
     meta = {
         'collection': 'lti_launch',
         'indexes': [
             {'fields': ['session_id', 'launch_id'], 'unique': True},
+            {'fields': ['bind_token'], 'sparse': True},
             {
                 'fields': ['expiration'],
                 'expireAfterSeconds': 0  # use field value
