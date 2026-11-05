@@ -34,20 +34,20 @@ class LTIBindPage(INGIniousAuthPage):
             return error
 
         if data:
-            field = data.platform_instance_id.replace(".", "").replace("$", "")
+            binding_key = data.binding_key
             user_profile = User.objects.get(username=session.username)
-            lti_user_profile = User.objects(**{"ltibindings__" + field: data["username"]}).first()
-            if not user_profile.ltibindings.get(field, "") and not lti_user_profile:
+            lti_user_profile = User.objects(**{"ltibindings__" + binding_key: data["username"]}).first()
+            if not user_profile.ltibindings.get(binding_key, "") and not lti_user_profile:
                 # There is no binding yet, so bind LTI to this account
-                user_profile.ltibindings[field] = data["username"]
+                user_profile.ltibindings[binding_key] = data["username"]
                 user_profile.save()
             elif not (lti_user_profile and user_profile["username"] == lti_user_profile["username"]):
                 # There exists an LTI binding for another account, refuse auth!
                 self.logger.info("User %s tried to bind LTI user %s in for %s, but %s is already bound.",
                                  user_profile["username"],
                                  data["username"],
-                                 field,
-                                 user_profile.ltibindings.get(field, ""))
+                                 binding_key,
+                                 user_profile.ltibindings.get(binding_key, ""))
                 return render_template("lti/bind.html", lti_version=self._lti_version, success=False,
                                                    data=data, error=_("Your account is already bound with this context."))
 
@@ -66,7 +66,7 @@ class LTILoginPage(INGIniousPage):
         if launch is None:
             raise Forbidden(description=_("No LTI data available."))
 
-        search = {"ltibindings__" + launch.lti.platform_instance_id.replace(".", "").replace("$", ""): launch.lti.username}
+        search = {"ltibindings__" + launch.lti.binding_key: launch.lti.username}
         user_profile = User.objects(**search).first()
 
         if user_profile:
