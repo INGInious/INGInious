@@ -94,7 +94,9 @@ def _put_configuration_defaults(config):
         "SESSION_COOKIE_PATH": session_parameters.get("cookie_path", None),
         "SESSION_COOKIE_SAMESITE": session_parameters.get("samesite", "None"),
         "SESSION_COOKIE_HTTPONLY": session_parameters.get("httponly", True),
-        "SESSION_COOKIE_SECURE": session_parameters.get("secure", True)
+        "SESSION_COOKIE_SECURE": session_parameters.get("secure", True),
+        # Partitioned cookies must be secure: browsers reject them otherwise
+        "SESSION_COOKIE_PARTITIONED": session_parameters.get("partitioned", session_parameters.get("secure", True))
     }
 
     if new_config["SESSION_COOKIE_SAMESITE"] != "None" or not new_config["SESSION_COOKIE_SECURE"]:

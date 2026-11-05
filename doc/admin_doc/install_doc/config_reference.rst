@@ -162,6 +162,7 @@ The different entries are :
             httponly: True
             secret_key: "fLjUfxqXtfNoIldA0A0G"
             secure: True
+            partitioned: True  # defaults to the value of secure
 
     Most value are as defined in standard HTTP cookies. The ``secret_key`` should be a long sequence of random characters.
 
@@ -169,6 +170,11 @@ The different entries are :
     site), LTI requires ``samesite: "None"`` and ``secure: True``, and therefore INGInious to be served over HTTPS.
     If INGInious is served over plain HTTP, set ``secure: False`` and ``samesite: "Lax"``: browsers reject
     ``samesite: "None"`` cookies that are not secure. LTI will then not be available.
+
+    ``partitioned: True`` adds the ``Partitioned`` attribute (CHIPS) to the session cookie: browsers then keep a
+    separate session for INGInious embedded in each LTI platform, as Firefox and Safari already do by default.
+    This makes the behaviour consistent across browsers. It requires ``secure: True`` and is therefore enabled by
+    default only for secure cookies.
 
 ``reverse-proxy-config``
     A dictionary for reverse proxy configuration.
