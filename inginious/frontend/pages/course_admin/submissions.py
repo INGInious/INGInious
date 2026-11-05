@@ -40,7 +40,7 @@ class CourseSubmissionsPage(INGIniousSubmissionsAdminPage):
             data = self.submissions_from_user_input(course, params, msgs, best_only=best_only)
 
             if "csv" in user_input:
-                return make_csv(data)
+                return make_csv([dict(s.to_mongo(), best=s.best) for s in data])
 
             elif "download" in user_input:
                 download_type = user_input.get("download_type", "")
