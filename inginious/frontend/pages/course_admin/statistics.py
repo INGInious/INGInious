@@ -137,11 +137,11 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
     def _global_stats(self, course, tasks, filter, limit, best_submissions_list, pond_stat):
         submissions = Submission.objects(**filter)
         if limit is not None:
-            submissions.limit(limit)
+            submissions = submissions.limit(limit)
 
         data = list(submissions)
         for d in data:
-            d["best"] = d["_id"] in best_submissions_list  # mark best submissions
+            d.best = d.id in best_submissions_list  # mark best submissions
 
         return compute_statistics(course, tasks, data, pond_stat)
 
@@ -241,7 +241,7 @@ def compute_statistics(course, tasks, data, ponderation):
                 if "tests" in submission and tag.get_id() in submission["tests"] and submission["tests"][tag.get_id()]:
                     super_dict[tag][username][submission["taskid"]][1] += 1
 
-                if submission["best"]:
+                if submission.best:
                     super_dict[tag][username][submission["taskid"]][2] += 1
                     if "tests" in submission and tag.get_id() in submission["tests"] and submission["tests"][tag.get_id()]:
                         super_dict[tag][username][submission["taskid"]][3] += 1
@@ -278,7 +278,7 @@ def fast_stats(data):
     total_submission_best_succeeded = 0
         
     for submission in data:
-        if "best" in submission and submission["best"]:
+        if submission.best:
             total_submission_best = total_submission_best + 1
             if "result" in submission and submission["result"] == "success":
                 total_submission_best_succeeded += 1
