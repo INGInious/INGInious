@@ -63,5 +63,6 @@ class MongoDBSessionInterface(SessionInterface):
         httponly = self.get_cookie_httponly(app)
         secure = self.get_cookie_secure(app)
         samesite = self.get_cookie_samesite(app)
+        partitioned = self.get_cookie_partitioned(app)
         response.set_cookie(self.get_cookie_name(app), session_id, expires=expires, httponly=httponly,
-                            domain=domain, path=path, secure=secure, samesite=samesite)
+                            domain=domain, path=path, secure=secure, samesite=samesite, partitioned=partitioned)
