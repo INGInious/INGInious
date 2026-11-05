@@ -5,13 +5,18 @@
 {% block title %} {{ _("Bind LTI") }} {% endblock %}
 {% block content %}
 <h2>{{ _("Binding to an existing LMS") }}</h2>
-{% if error %}
+{% if success %}
+    <script type="text/javascript">
+        $(window).on("load", function () {
+            window.opener?.location.reload();
+            window.close();
+        });
+    </script>
+{% elif error %}
     <div class="alert alert-danger">
         {{ error }}
     </div>
-{% endif %}
-
-{%if data %}
+{% elif data %}
     <div class="card border-warning">
         <div class="card-header bg-warning text-white">{{ _("Authorization required") }}</div>
       <div class="card-body">
@@ -28,20 +33,32 @@
         <div class="card-footer text-right">
             <div class="btn-group-sm">
                 <form method="post">
+                    <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="confirm" value="1">
                     <button type="submit" class="btn btn-sm btn-primary">{{ _("Bind my account") }}</button>
                     <button type="button" onclick="window.close()" class="btn btn-sm btn-secondary" data-dismiss="modal">{{ _("Cancel") }}</button>
                 </form>
             </div>
         </div>
     </div>
-{% endif %}
-
-{%if success %}
+{% else %}
+    <div id="lti-bind-error" class="alert alert-danger d-none">
+        {{ _("This binding request is invalid. Please close this window and use the binding link from your LMS.") }}
+    </div>
+    <form id="lti-bind-token-form" method="post"><input type="hidden" name="token"></form>
     <script type="text/javascript">
-        window.onload = function() {
-            window.opener.location.reload();
-            window.close();
-        }
+        // Ask the LMS frame that opened this window for the bind token, accepting it from our own origin only
+        $(function () {
+            setTimeout(function () { $("#lti-bind-error").removeClass("d-none"); }, 5000);  // left as soon as the token arrives
+            $(window).on("message", function (event) {
+                var msg = event.originalEvent;
+                if (msg.source === window.opener && msg.origin === window.location.origin) {
+                    $("#lti-bind-token-form input[name=token]").val(msg.data);
+                    $("#lti-bind-token-form").submit();
+                }
+            });
+            window.opener?.postMessage("ready", window.location.origin);
+        });
     </script>
 {% endif %}
 
