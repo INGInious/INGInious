@@ -15,3 +15,5 @@ superadmins:
 tasks_directory: /inginious/tasks
 use_minified_js: true
 webdav_host: https://localhost/dav
+reverse-proxy-config:
+  enable: true

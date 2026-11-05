@@ -72,4 +72,5 @@ smtp:
 reverse-proxy-config:
     enable: false
     x_for: 1
+    x_proto: 1
     x_host: 1

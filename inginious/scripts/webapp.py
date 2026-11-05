@@ -47,6 +47,14 @@ def get_app(configfile=None):
         ('/static/', os.path.join(root_path, 'frontend', 'static'))
     ])
 
+    # Trust X-Forwarded-* headers set by the reverse proxy
+    reverse_proxy_config = config.get('reverse-proxy-config', {})
+    if reverse_proxy_config.get('enable', False):
+        application = ProxyFix(application,
+                               x_for=reverse_proxy_config.get('x_for', 1),
+                               x_proto=reverse_proxy_config.get('x_proto', 1),
+                               x_host=reverse_proxy_config.get('x_host', 1))
+
     # Close the client when interrupting the app
     def close_app_signal():
         close_app_func()
@@ -75,15 +83,6 @@ def main():
 
     config, application = get_app(configfile)
     logging.getLogger("inginious.webapp").info("https://%s:%d/" % (host, int(port)))
-
-    # Fix Reverse Proxy
-    reverse_proxy_config = config.get('reverse-proxy-config', {})
-    reverse_proxy_enable = reverse_proxy_config.get('enable', False)
-    x_for = reverse_proxy_config.get('x-for', 1)
-    x_host = reverse_proxy_config.get('x-host', 1)
-
-    if reverse_proxy_enable:
-        application = ProxyFix(application, x_for=x_for, x_host=x_host)
 
     # Launch the app
     run_simple(host, port, application, use_debugger=config.get("web_debug", False), threaded=True, ssl_context="adhoc")
