@@ -5,10 +5,10 @@
 
 """ Auth methods """
 
-from inginious.frontend.pages.api._api_page import APIPage
+from inginious.frontend.pages.api._api_page import APIPageV0
 
 
-class APIAuthMethods(APIPage):
+class APIAuthMethods(APIPageV0):
     """
         Endpoint /api/v0/auth_methods
     """
