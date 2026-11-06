@@ -9,7 +9,7 @@ import flask
 import datetime
 import secrets
 
-from flask import redirect, url_for, current_app
+from flask import url_for, current_app
 from oauthlib.oauth1 import RequestValidator
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
 from lti import ToolProvider
@@ -17,7 +17,7 @@ from lti import ToolProvider
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
-from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
+from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage, login_or_bind
 from inginious.frontend.courses import Course
 from inginious.frontend.lti.v1_1 import MongoLTI11LaunchDataStorage
 
@@ -80,7 +80,7 @@ class LTIValidator(RequestValidator):  # pylint: disable=abstract-method
             timestamp = int(timestamp)
         except ValueError: # invalid timestamp
             return False
-        # Nonces are not bound to a session, they must be unique across all launches
+        # Nonces must be unique across all launches
         return MongoLTI11LaunchDataStorage().add_value("lti1p1-nonce-{}-{}".format(timestamp, nonce), True,
                                                        self._nonce_validity.total_seconds())
 
@@ -143,7 +143,7 @@ class LTI11LaunchPage(INGIniousPage):
 
             # Store the launch message information, as done by pylti1p3 for LTI1.3
             launch_id = "lti1p1-launch-" + secrets.token_urlsafe(32)  # unguessable launch id
-            MongoLTI11LaunchDataStorage(flask.session.id).set_value(launch_id, {
+            MongoLTI11LaunchDataStorage().set_value(launch_id, {
                 "consumer_key": consumer_key,
                 "outcome_service_url": lis_outcome_service_url,
                 "outcome_result_id": outcome_result_id
@@ -170,9 +170,8 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_url=tool_url,
                 redir_url=url_for("lti.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
             )
-            LaunchData.objects(session_id=flask.session.id, launch_id=launch_id).update(set__lti=lti_data)
-
-            return redirect(url_for("lti.loginpage", launch_id=launch_id))
+            launch = LaunchData.objects(launch_id=launch_id).modify(set__lti=lti_data, new=True)
+            return login_or_bind(self.user_manager, launch)
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))
