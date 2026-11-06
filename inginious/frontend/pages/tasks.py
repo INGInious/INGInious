@@ -28,8 +28,8 @@ from inginious.frontend.models import UserTask, Group, LaunchData
 
 def _get_lti_launch(lti_version, courseid, taskid, launch_id):
     """ Returns the LTI launch if it is still valid and was issued for this task, None otherwise """
-    if not (launch := LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=lti_version,
-                                         lti__valid=True).first()):
+    if not session.loggedin or not (launch := LaunchData.objects(launch_id=launch_id, username=session.username,
+                                                                 lti__version=lti_version).first()):
         return None
 
     same_courseid = launch.lti.task[0] == courseid

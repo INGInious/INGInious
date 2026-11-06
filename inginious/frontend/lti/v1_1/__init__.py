@@ -22,20 +22,15 @@ class MongoLTI11LaunchDataStorage:
     Keys must be prefixed by lti1p1-, as pylti1p3 does with lti1p3- for LTI1.3.
     """
 
-    def __init__(self, session_id=None):
-        """ Keys are bound to session_id if given """
-        self._session_id = str(session_id) if session_id else None
-
     def set_value(self, key: str, value, exp) -> None:
         exp_date = datetime.now(timezone.utc) + timedelta(seconds=exp)
-        LaunchData.objects(session_id=self._session_id, launch_id=key).update(value=value, expiration=exp_date,
-                                                                              upsert=True)
+        LaunchData.objects(launch_id=key).update(value=value, expiration=exp_date, upsert=True)
 
     def add_value(self, key: str, value, exp) -> bool:
         """ Atomically stores the value if the key does not exist yet. Returns False if it already exists. """
         exp_date = datetime.now(timezone.utc) + timedelta(seconds=exp)
         try:
-            result = LaunchData.objects(session_id=self._session_id, launch_id=key).update_one(
+            result = LaunchData.objects(launch_id=key).update_one(
                 set_on_insert__value=value, set_on_insert__expiration=exp_date, upsert=True, full_result=True)
             return result.upserted_id is not None
         except NotUniqueError:  # concurrent insertion of the same key
