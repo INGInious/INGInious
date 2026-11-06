@@ -62,6 +62,10 @@
                     {{ _("<p>This will reset and archive all course data (submissions, audiences, groups, user statistics) from the database. The archive will be stored as a new course.</p><p>To confirm your will, please type the course id below :</p>") | safe }}
                     <form class="form-horizontal" method="post">
                         <input type="hidden" name="token" value="{{ thehash }}">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="keep_staff" name="keep_staff">
+                            <label class="form-check-label" for="keep_staff">{{ _("Keep the submissions of staff members (administrators and tutors) in the current course") }}</label>
+                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <input type="text" placeholder="course id" name="courseid" class="form-control">
