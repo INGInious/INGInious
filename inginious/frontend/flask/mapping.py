@@ -54,7 +54,7 @@ def init_lti11_blueprint():
     lti11 = Blueprint('lti', __name__, url_prefix='/lti')
     lti11.add_url_rule('/<courseid>/<taskid>', view_func=LTI11LaunchPage.as_view('launchpage'))
     lti11.add_url_rule('/bind', view_func=LTI11BindPage.as_view('bindpage'))
-    lti11.add_url_rule('/login/<launch_id>', view_func=LTI11LoginPage.as_view('loginpage'))
+    lti11.add_url_rule('/login', view_func=LTI11LoginPage.as_view('loginpage'))
 
     lti11.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=LTI11TaskPage.as_view('taskpage'))
     lti11.add_url_rule('/task/<launch_id>/<courseid>/<taskid>/<path:path>',
@@ -80,7 +80,7 @@ def init_lti13_blueprint():
     lti13.add_url_rule('/jwks/<keyset_hash>', view_func=lti13jwkspage_view, defaults={'courseid': None})
     lti13.add_url_rule('/jwks/<courseid>/<keyset_hash>', view_func=lti13jwkspage_view)
     lti13.add_url_rule('/bind', view_func=LTI13BindPage.as_view('bindpage'))
-    lti13.add_url_rule('/login/<launch_id>', view_func=LTI13LoginPage.as_view('loginpage'))
+    lti13.add_url_rule('/login', view_func=LTI13LoginPage.as_view('loginpage'))
     lti13.add_url_rule('/deeplink/<launch_id>', view_func=LTI13DeepLinkPage.as_view('deeplinkpage'))
 
     lti13.add_url_rule('/task/<launch_id>/<courseid>/<taskid>', view_func=LTI13TaskPage.as_view('taskpage'))

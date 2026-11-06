@@ -22,7 +22,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
 
-from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission, LaunchData
+from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission
 
 class AuthInvalidInputException(Exception):
     pass
@@ -186,10 +186,8 @@ class UserManager:
 
         ip = flask.request.remote_addr
 
-        # Forge a new session to prevent session fixation, keeping the pending LTI launches
-        previous_id = session.id
+        # Forge a new session to prevent session fixation
         session.regenerate()
-        LaunchData.objects(session_id=previous_id).update(session_id=session.id)
 
         session.loggedin = True
         session.email = user.email

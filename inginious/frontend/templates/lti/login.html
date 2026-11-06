@@ -25,22 +25,33 @@
     <div class="col-md-4 p-0">
         <div class="card card-body bg-light">
             <p class="mb-2"><a id="lti-bind-link" href="#">{{ _("Bind your INGInious account") }}</a></p>
-            <p class="m-0"><a href="{{ request.path }}">{{ _("Refresh") }}</a></p>
+            <p class="m-0"><a id="lti-login-link" href="#">{{ _("Refresh") }}</a></p>
         </div>
+        <form id="lti-login-form" method="post" action="{{ url_for('.loginpage') }}">
+            <input type="hidden" name="token" value="{{ token }}">
+        </form>
     </div>
 </div>
 <script type="text/javascript">
-    // The binding window may not share this frame session (partitioned cookies): hand it the bind token,
-    // only once it proves to be the window we opened, on our own origin.
+    // The binding window may not share this frame session (partitioned cookies): hand it the launch token,
+    // only once it proves to be the window we opened, on our own origin. Log in once it reports the binding.
     var popup = null;
     $("#lti-bind-link").on("click", function (event) {
         event.preventDefault();
         popup = window.open("{{ url_for('.bindpage') }}");
     });
+    $("#lti-login-link").on("click", function (event) {
+        event.preventDefault();
+        $("#lti-login-form").submit();
+    });
     $(window).on("message", function (event) {
         var msg = event.originalEvent;
-        if (popup && msg.source === popup && msg.origin === window.location.origin)
-            popup.postMessage({{ bind_token | tojson }}, window.location.origin);
+        if (!popup || msg.source !== popup || msg.origin !== window.location.origin)
+            return;
+        if (msg.data === "ready")
+            popup.postMessage($("#lti-login-form input[name=token]").val(), window.location.origin);
+        else if (msg.data === "bound")
+            $("#lti-login-form").submit();
     });
 </script>
 {% endblock %}
