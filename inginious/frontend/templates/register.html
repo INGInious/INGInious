@@ -24,28 +24,32 @@
             <form method="post" class="form-horizontal">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="control-label">{{ _("Username (min. 4 alphanumerical characters) :") }} </label>
-                        <input name="username" type="text" class="form-control">
+                        <label class="control-label">{{ _("Username") }} <span class="text-danger">*</span> :</label>
+                        <input name="username" type="text" class="form-control" required minlength="4" pattern="[\-_\|~0-9A-Za-z]{4,}" aria-describedby="username_help">
+                        <small id="username_help" class="form-text text-muted">{{ _("Minimum 4 characters. Allowed: letters, digits, '-', '_', '|' and '~'. No spaces or other special characters.") }}</small>
                     </div>
                     <div class="col-sm-12">
-                        <label class="control-label">{{ _("Complete name :") }} </label>
-                        <input name="realname" type="text" class="form-control">
+                        <label class="control-label">{{ _("Complete name") }} <span class="text-danger">*</span> :</label>
+                        <input name="realname" type="text" class="form-control" required>
                     </div>
                     <div class="col-sm-12">
-                        <label class="control-label">{{ _("Email address :") }} </label>
-                        <input name="email" type="text" class="form-control">
+                        <label class="control-label">{{ _("Email address") }} <span class="text-danger">*</span> :</label>
+                        <input name="email" type="email" class="form-control" required>
                     </div>
                     <div class="col-sm-6">
-                        <label class="control-label">{{ _("Password (min. 6 characters) :") }} </label>
-                        <input name="passwd" type="password" class="form-control">
+                        <label class="control-label">{{ _("Password (min. 6 characters)") }} <span class="text-danger">*</span> :</label>
+                        <input name="passwd" type="password" class="form-control" required minlength="6">
                     </div>
                     <div class="col-sm-6">
-                        <label class="control-label">{{ _("Confirm password :") }} </label>
-                        <input name="passwd2" type="password" class="form-control">
+                        <label class="control-label">{{ _("Confirm password") }} <span class="text-danger">*</span> :</label>
+                        <input name="passwd2" type="password" class="form-control" required minlength="6">
+                    </div>
+                    <div class="col-sm-12">
+                        <small class="form-text text-muted"><span class="text-danger">*</span> {{ _("Mandatory field") }}</small>
                     </div>
                     {% if config.IS_TOS_DEFINED %}
                         <div class="col-sm-12 mt-sm-3">
-                            <input name="term_policy_check" type="checkbox"> {{ _("I have read the {a1start}Terms of service{a1end} and the {a2start}Privacy policy{a2end}.").format(a1start='<a href="/pages/'+ config.TERMS_PAGE + '">', a1end='</a>', a2start='<a href="/pages/' + config.PRIVACY_PAGE + '">', a2end='</a>') | safe }}
+                            <input name="term_policy_check" type="checkbox" required> <span class="text-danger">*</span> {{ _("I have read the {a1start}Terms of service{a1end} and the {a2start}Privacy policy{a2end}.").format(a1start='<a href="/pages/'+ config.TERMS_PAGE + '">', a1end='</a>', a2start='<a href="/pages/' + config.PRIVACY_PAGE + '">', a2end='</a>') | safe }}
                         </div>
                     {% endif %}
                     <div class="col-sm-12"><br />
@@ -59,8 +63,8 @@
             <form method="post" class="form-horizontal">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="control-label">{{_("Email address :")}} </label>
-                        <input name="recovery_email" type="text" class="form-control">
+                        <label class="control-label">{{_("Email address")}} <span class="text-danger">*</span> :</label>
+                        <input name="recovery_email" type="email" class="form-control" required>
                     </div>
                     <div class="col-sm-12"><br />
                         <button type="submit" name="lostpasswd" class="btn btn-warning btn-block"><i class="fa fa-undo"></i> {{_("Reset my password")}}</button>
@@ -82,12 +86,12 @@
                     <form method="post" class="form-horizontal">
                         <div class="row">
                             <div class="col-sm-6">
-                                <label class="control-label">{{_("Password (min. 6 characters) :")}} </label>
-                                <input name="passwd" type="password" class="form-control">
+                                <label class="control-label">{{_("Password (min. 6 characters)")}} <span class="text-danger">*</span> :</label>
+                                <input name="passwd" type="password" class="form-control" required minlength="6">
                             </div>
                             <div class="col-sm-6">
-                                <label class="control-label">{{_("Confirm password :")}} </label>
-                                <input name="passwd2" type="password" class="form-control">
+                                <label class="control-label">{{_("Confirm password")}} <span class="text-danger">*</span> :</label>
+                                <input name="passwd2" type="password" class="form-control" required minlength="6">
                             </div>
                             <div class="col-sm-12"><br />
                                 <input type="hidden" name="reset" value="{{reset['hash']}}">
