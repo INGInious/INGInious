@@ -8,10 +8,10 @@
 import flask
 from flask import session
 
-from inginious.frontend.pages.api._api_page import APIPage, APIInvalidArguments
+from inginious.frontend.pages.api._api_page import APIPageV0, APIInvalidArguments
 
 
-class APIAuthentication(APIPage):
+class APIAuthentication(APIPageV0):
     """
         Endpoint /api/v0/authentication
     """
