@@ -8,7 +8,7 @@
 {% if success %}
     <script type="text/javascript">
         $(window).on("load", function () {
-            window.opener?.location.reload();
+            window.opener?.postMessage("bound", window.location.origin);
             window.close();
         });
     </script>
