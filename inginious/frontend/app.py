@@ -98,10 +98,13 @@ def _put_configuration_defaults(config):
         "SESSION_COOKIE_PARTITIONED": session_parameters.get("partitioned", True)
     }
 
-    if new_config["SESSION_COOKIE_PARTITIONED"] and not new_config["SESSION_COOKIE_SECURE"]:
-        print("Warning: session_parameters has partitioned: True without secure: True. Browsers will reject the "
-              "__Host- prefixed session cookie, and INGInious will not be usable. Set partitioned: False.",
-              file=sys.stderr)
+    # Browsers reject __Host- prefixed cookies unless they are secure, with path / and no domain
+    if new_config["SESSION_COOKIE_PARTITIONED"] and (not new_config["SESSION_COOKIE_SECURE"]
+                                                     or new_config["SESSION_COOKIE_DOMAIN"]
+                                                     or new_config["SESSION_COOKIE_PATH"] not in (None, "/")):
+        print("Warning: session_parameters has partitioned: True, which requires secure: True, cookie_domain: null "
+              "and cookie_path: null. Browsers will reject the __Host- prefixed session cookie, and INGInious will "
+              "not be usable. Set partitioned: False or fix these parameters.", file=sys.stderr)
 
     if new_config["SESSION_COOKIE_PARTITIONED"]:
         new_config["SESSION_COOKIE_NAME"] = "__Host-" + new_config["SESSION_COOKIE_NAME"]
