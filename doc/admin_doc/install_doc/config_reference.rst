@@ -168,13 +168,15 @@ The different entries are :
 
     LTI sessions rely on the session cookie, while INGInious is embedded in the platform (in an iframe, from another
     site). Using LTI in iframes requires ``samesite: "None"``, ``secure: True`` and ``partitioned: True``, and therefore
-    INGInious to be served over HTTPS. A warning is displayed at startup if ``samesite`` or ``secure`` prevent LTI from
-    working. When ``partitioned`` is ``True``, the cookie name is prefixed with ``__Host-``: browsers then only accept it
-    with ``secure: True``, ``cookie_domain: null`` and ``cookie_path: null``.
+    INGInious to be served over HTTPS. When ``partitioned`` is ``True``, the cookie name is prefixed with ``__Host-``:
+    browsers then only accept it with ``secure: True``, ``cookie_domain: null`` and ``cookie_path: null``. A warning is
+    displayed at startup if ``partitioned`` is ``True`` without ``secure: True``.
 
     If INGInious is served over plain HTTP, set ``secure: False``, ``samesite: "Lax"`` and ``partitioned: False``:
-    browsers reject the session cookie otherwise, even outside iframes. LTI will then not be available.
-    When browsers do not accept cookies in iframes, the LTI launch invites users to open INGInious in a new tab.
+    browsers reject the session cookie otherwise, even outside iframes.
+
+    When the configuration or the browser does not allow cookies in iframes, the LTI launch invites users to open
+    INGInious in a new tab.
 
 ``reverse-proxy-config``
     A dictionary for reverse proxy configuration.

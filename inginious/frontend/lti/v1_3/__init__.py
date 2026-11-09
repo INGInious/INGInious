@@ -7,7 +7,8 @@ from datetime import datetime, timedelta, timezone
 import logging
 import hashlib
 
-from pylti1p3.contrib.flask import FlaskMessageLaunch
+from flask import current_app
+from pylti1p3.contrib.flask import FlaskMessageLaunch, FlaskCookieService
 from pylti1p3.grade import Grade
 from pylti1p3.launch_data_storage.base import LaunchDataStorage
 from pylti1p3.tool_config import ToolConfDict
@@ -36,6 +37,21 @@ def lti_tool(course_config, global_config) -> ToolConfDict:
             lti_tool.set_private_key(iss, client_config['private_key'], client_id=client_config['client_id'])
             lti_tool.set_public_key(iss, client_config['public_key'], client_id=client_config['client_id'])
     return lti_tool
+
+
+class LTI13CookieService(FlaskCookieService):
+    """ pylti1p3 cookies (OIDC state), set and read from the LMS frame, with the same parameters as the session cookie """
+
+    def update_response(self, response):
+        interface = current_app.session_interface
+        for key, cookie_data in self._cookie_data_to_set.items():
+            response.set_cookie(key, cookie_data["value"], max_age=cookie_data["exp"],
+                                domain=interface.get_cookie_domain(current_app),
+                                path=interface.get_cookie_path(current_app),
+                                httponly=interface.get_cookie_httponly(current_app),
+                                secure=interface.get_cookie_secure(current_app),
+                                samesite=interface.get_cookie_samesite(current_app),
+                                partitioned=interface.get_cookie_partitioned(current_app))
 
 
 class MongoLTI13LaunchDataStorage(LaunchDataStorage):

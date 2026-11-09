@@ -170,10 +170,10 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_url=tool_url,
                 redir_url=url_for("lti.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
             )
-            # Check cookies as pylti1p3 enable_check_cookies before continuing the launch with its token
+            # The launch cannot be replayed (signed with a nonce): continue it with its token once cookies are checked
             token = secrets.token_urlsafe(32)
             LaunchData.objects(launch_id=launch_id).update_one(set__lti=lti_data, set__token=token)
-            return render_template("lti/check_cookies_v1_1.html", token=token)
+            return render_template("lti/check_cookies.html", action=url_for(".loginpage"), fields={"token": token})
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))

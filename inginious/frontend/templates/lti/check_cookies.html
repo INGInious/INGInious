@@ -1,0 +1,53 @@
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+{# Same page as pylti1p3 enable_check_cookies, testing a cookie with the attributes of the session cookie. #}
+{# The launch is continued by posting the fields to the action, in a new tab if cookies are blocked. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title></title>
+<meta charset="UTF-8">
+<style type="text/css">
+body {
+font-family: Geneva, Arial, Helvetica, sans-serif;
+}
+</style>
+<script type="text/javascript">
+function checkCookiesAllowed() {
+    var form = document.getElementById("lti-launch-form");
+    var attributes = "; path=/{% if config.SESSION_COOKIE_SAMESITE %}; SameSite={{ config.SESSION_COOKIE_SAMESITE }}{% endif %}{% if config.SESSION_COOKIE_SECURE %}; secure{% endif %}{% if config.SESSION_COOKIE_PARTITIONED %}; Partitioned{% endif %}";
+    document.cookie = "lti_test_cookie=1" + attributes;
+    var res = document.cookie.indexOf("lti_test_cookie") !== -1;
+    if (res) {
+        // remove test cookie and continue the launch
+        document.cookie = "lti_test_cookie=1; expires=Thu, 01-Jan-1970 00:00:01 GMT" + attributes;
+        document.getElementById("lti-loading-msg").style.display = "block";
+        form.submit();
+    } else {
+        document.getElementById("lti-warning-msg").style.display = "block";
+        var newTabLink = document.getElementById("lti-new-tab-link");
+        newTabLink.onclick = function() {
+            form.target = "_blank";
+            form.submit();
+            newTabLink.parentNode.removeChild(newTabLink);
+        };
+    }
+}
+
+document.addEventListener("DOMContentLoaded", checkCookiesAllowed);
+</script>
+</head>
+<body>
+<div id="lti-loading-msg" style="display: none;">
+{{ _("Loading...") }}
+</div>
+<div id="lti-warning-msg" style="display: none;">
+<p><strong>{{ _("Your browser prohibits to save cookies in the iframes.") }}</strong> <a href="javascript: void(0);" id="lti-new-tab-link">{{ _("Click here to open content in the new tab.") }}</a></p>
+</div>
+<form id="lti-launch-form" method="post" action="{{ action }}">
+{% for name, value in fields.items() %}
+<input type="hidden" name="{{ name }}" value="{{ value }}">
+{% endfor %}
+</form>
+</body>
+</html>

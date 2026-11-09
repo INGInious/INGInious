@@ -16,7 +16,7 @@ from inginious.common.exceptions import CourseNotFoundException
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage, login_or_bind
-from inginious.frontend.lti.v1_3 import MongoLTI13LaunchDataStorage, lti_tool, lti_keyset_hash
+from inginious.frontend.lti.v1_3 import MongoLTI13LaunchDataStorage, LTI13CookieService, lti_tool, lti_keyset_hash
 from inginious.frontend.courses import Course
 
 from inginious.frontend.models import LTIData, LaunchData
@@ -58,6 +58,8 @@ class LTI13JWKSPage(INGIniousPage):
 
 class LTI13OIDCLoginPage(INGIniousPage):
     endpoint = 'lti13.oidcloginpage'
+    _oidc_params = ["iss", "login_hint", "target_link_uri", "lti_message_hint", "lti_deployment_id", "client_id"]
+    _cookies_checked_param = "lti_cookies_checked"
 
     def _handle_oidc_login_request(self, courseid):
         """ Initiates the LTI 1.3 OIDC login. """
@@ -71,10 +73,17 @@ class LTI13OIDCLoginPage(INGIniousPage):
         if not target_link_uri:
             raise Forbidden(description='Missing "target_link_uri" param')
 
-        oidc_login = FlaskOIDCLogin(flask_request, lti_tool(lti_config, current_app.config.get("LTI_CONFIG")))
+        # Check cookies as pylti1p3 enable_check_cookies, then login again with the OIDC parameters
+        if not flask_request.get_param(self._cookies_checked_param):
+            fields = {param: value for param in self._oidc_params if (value := flask_request.get_param(param))}
+            return render_template("lti/check_cookies.html", action=request.script_root + request.path,
+                                   fields={**fields, self._cookies_checked_param: "1"})
+
+        tool_conf = lti_tool(lti_config, current_app.config.get("LTI_CONFIG"))
+        oidc_login = FlaskOIDCLogin(flask_request, tool_conf, cookie_service=LTI13CookieService(flask_request))
         oidc_login.set_launch_data_storage(MongoLTI13LaunchDataStorage())
         oidc_login.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
-        return oidc_login.enable_check_cookies().redirect(target_link_uri)
+        return oidc_login.redirect(target_link_uri)
 
     def GET(self, courseid):
         return self._handle_oidc_login_request(courseid)
@@ -94,7 +103,8 @@ class LTI13LaunchPage(INGIniousPage):
             raise NotFound(description=_(str(ex)))
 
         flask_request = FlaskRequest()
-        message_launch = FlaskMessageLaunch(flask_request, lti_tool(lti_config, current_app.config.get("LTI_CONFIG")))
+        tool_conf = lti_tool(lti_config, current_app.config.get("LTI_CONFIG"))
+        message_launch = FlaskMessageLaunch(flask_request, tool_conf, cookie_service=LTI13CookieService(flask_request))
         message_launch.set_launch_data_storage(MongoLTI13LaunchDataStorage())
         message_launch.set_launch_data_lifetime(current_app.config["PERMANENT_SESSION_LIFETIME"])
 
