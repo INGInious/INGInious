@@ -8,8 +8,7 @@ import sys
 from flask import session, request, redirect, render_template, url_for
 from werkzeug.exceptions import Forbidden
 
-from inginious.common.base import id_checker
-from inginious.common.exceptions import ImportCourseException
+from inginious.common.exceptions import ImportCourseException, InvalidNameException, CourseAlreadyExistsException
 from inginious.common.log import get_course_logger
 
 from inginious.frontend.courses import Course
@@ -46,6 +45,10 @@ class MarketplacePage(INGIniousAuthPage):
             try:
                 course = get_marketplace_course(user_input["courseid"])
                 import_course(course, new_courseid, session.username)
+            except InvalidNameException:
+                errors.append(_("Course ID is not valid"))
+            except CourseAlreadyExistsException:
+                errors.append(_("Course ID already exists"))
             except ImportCourseException as e:
                 errors.append(str(e))
             except:
@@ -63,12 +66,10 @@ class MarketplacePage(INGIniousAuthPage):
 
 
 def import_course(course, new_courseid, username):
-    if not id_checker(new_courseid):
-        raise ImportCourseException("Course with invalid name: " + new_courseid)
 
     course_fs = Course(new_courseid, {"name": new_courseid}).get_fs()
     if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
-        raise ImportCourseException("Course with id " + new_courseid + " already exists.")
+        raise CourseAlreadyExistsException("Course with id " + new_courseid + " already exists.")
 
     try:
         git.clone(course.get_link(), course_fs.prefix)
@@ -98,4 +99,3 @@ def import_course(course, new_courseid, username):
         raise ImportCourseException(_("An error occur while editing the course description"))
 
     get_course_logger(new_courseid).info("Course %s cloned from the marketplace.", new_courseid)
-
