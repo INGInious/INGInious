@@ -114,3 +114,4 @@ Issues ="https://github.com/INGInious/INGInious/issues"
 
 # automatically find packages in the project
 [tool.setuptools.packages.find]
+include = ["inginious*"]
