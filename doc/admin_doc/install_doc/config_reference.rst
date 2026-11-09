@@ -170,7 +170,7 @@ The different entries are :
     site). Using LTI in iframes requires ``samesite: "None"``, ``secure: True`` and ``partitioned: True``, and therefore
     INGInious to be served over HTTPS. When ``partitioned`` is ``True``, the cookie name is prefixed with ``__Host-``:
     browsers then only accept it with ``secure: True``, ``cookie_domain: null`` and ``cookie_path: null``. A warning is
-    displayed at startup if ``partitioned`` is ``True`` without ``secure: True``.
+    displayed at startup otherwise.
 
     If INGInious is served over plain HTTP, set ``secure: False``, ``samesite: "Lax"`` and ``partitioned: False``:
     browsers reject the session cookie otherwise, even outside iframes.
