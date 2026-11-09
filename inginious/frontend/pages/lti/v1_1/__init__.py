@@ -9,7 +9,7 @@ import flask
 import datetime
 import secrets
 
-from flask import url_for, current_app
+from flask import url_for, current_app, render_template
 from oauthlib.oauth1 import RequestValidator
 from werkzeug.exceptions import Forbidden, NotFound, MethodNotAllowed
 from lti import ToolProvider
@@ -17,7 +17,7 @@ from lti import ToolProvider
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.common import exceptions
 from inginious.frontend.pages.utils import INGIniousPage
-from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage, login_or_bind
+from inginious.frontend.pages.lti import LTIBindPage, LTILoginPage
 from inginious.frontend.courses import Course
 from inginious.frontend.lti.v1_1 import MongoLTI11LaunchDataStorage
 
@@ -170,8 +170,10 @@ class LTI11LaunchPage(INGIniousPage):
                 tool_url=tool_url,
                 redir_url=url_for("lti.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
             )
-            launch = LaunchData.objects(launch_id=launch_id).modify(set__lti=lti_data, new=True)
-            return login_or_bind(self.user_manager, launch)
+            # Check cookies as pylti1p3 enable_check_cookies before continuing the launch with its token
+            token = secrets.token_urlsafe(32)
+            LaunchData.objects(launch_id=launch_id).update_one(set__lti=lti_data, set__token=token)
+            return render_template("lti/check_cookies_v1_1.html", token=token)
         else:
             self.logger.info("Couldn't validate LTI request")
             raise Forbidden(description=_("Couldn't validate LTI request"))
