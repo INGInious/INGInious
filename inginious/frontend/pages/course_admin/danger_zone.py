@@ -48,7 +48,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
         # Copy archive course
         archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-        archive_course_fs = Course(archive_course_id, {"name": archive_course_id}).get_fs()
+        archive_course_fs = Course(archive_course_id, {"name": archive_course_id, "archived": True}).get_fs()
         archive_course_fs.copy_to(course_fs.prefix)
 
         # Update archive YAML file
