@@ -23,7 +23,7 @@
         <div class="col-xs-12 col-lg-3">
             <label>
                 <input name="submission_limit" type="radio" value="hard" class="submission_limit {%if grouped %} submission_limit_grouped{% endif %}" />
-                {{ _("Hard limit: {nbr_submissions} submission(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_hard" style="height:20px;padding: 0 10px;"  placeholder="5"  type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
+                {{ _("Hard limit: {nbr_submissions} submission(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_hard" style="height:20px;padding: 0 10px;"  placeholder="5"  type="number" data-select-radio="input[name=&quot;submission_limit&quot;][value=&quot;hard&quot;]"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
             </label>
         </div>
     </div>
@@ -31,7 +31,7 @@
         <div class="col-xs-12 col-lg-3">
             <label>
                 <input name="submission_limit" type="radio" value="soft" class="submission_limit {%if grouped %}submission_limit_grouped{% endif %}" />
-                {{ _("Soft limit: {nbr_submissions} submission(s) every {nbr_hours} hour(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_soft_0" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>', nbr_hours='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_soft_1" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-1"><label>') | safe }}
+                {{ _("Soft limit: {nbr_submissions} submission(s) every {nbr_hours} hour(s)").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_soft_0" style="height:20px;padding: 0 10px;" placeholder="5" type="number" data-select-radio="input[name=&quot;submission_limit&quot;][value=&quot;soft&quot;]"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>', nbr_hours='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-2"><input class="form-control input-xs ' + ('submission_limit_grouped' if grouped else '') + '" id="submission_limit_soft_1" style="height:20px;padding: 0 10px;" placeholder="5" type="number" data-select-radio="input[name=&quot;submission_limit&quot;][value=&quot;soft&quot;]"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-1"><label>') | safe }}
             </label>
         </div>
     </div>
