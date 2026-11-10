@@ -19,7 +19,7 @@
         <div>
             <label class="col-xs-12 col-lg-12">
                 <input type="radio" value="store_not_all" class="no_stored_submissions {%if grouped %}no_stored_submissions_grouped{% endif %}" name="no_stored_submissions"  />
-                {{ _("Only the last {nbr_submissions} submissions").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><input class="form-control input-xs ' + ('no_stored_submissions_grouped' if grouped else '') + '" id="no_stored_submissions_value" style="height:20px;padding: 0 10px;" placeholder="5" type="number"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
+                {{ _("Only the last {nbr_submissions} submissions").format(nbr_submissions='</label></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><input class="form-control input-xs ' + ('no_stored_submissions_grouped' if grouped else '') + '" id="no_stored_submissions_value" style="height:20px;padding: 0 10px;" placeholder="5" type="number" data-select-radio="input[name=&quot;no_stored_submissions&quot;][value=&quot;store_not_all&quot;]"></div><div class="col-xs-offset-1 col-lg-offset-0 col-xs-11 col-lg-3"><label>') | safe }}
             </label>
         </div>
     </div>

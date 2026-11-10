@@ -6,6 +6,14 @@
 
 let user_indentation_type;
 
+// When a user clicks on an element with the data-select-radio attribute, the corresponding radio button is selected
+// the data-select-radio attribute should contain a selector for the radio button to be selected
+$(document).on("focusin click", "[data-select-radio]", function () {
+    const radio = $(this).closest("form, .modal").find($(this).attr("data-select-radio"));
+    if (!radio.prop("checked"))
+        radio.prop("checked", true).trigger("change");
+});
+
 function init_common()
 {
     //Init CodeMirror
