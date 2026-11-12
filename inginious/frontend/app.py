@@ -123,7 +123,7 @@ def _put_configuration_defaults(config):
         })
 
     # Optional keys
-    for key in ["fs", "privacy_page",  "terms_page", "webdav_host", "webterm", "welcome_page"]:
+    for key in ["fs", "privacy_page", "terms_page", "webdav_host", "webterm", "welcome_page", "observability"]:
         if key in config:
             new_config[key.upper()] = config[key]
 
@@ -144,12 +144,31 @@ def _close_app(client):
     client.close()
     disconnect()
 
+def observability(app, collector):
+    try:
+        from opentelemetry import trace
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+        from opentelemetry.instrumentation.flask import FlaskInstrumentor
+    except ImportError as e:
+        raise RuntimeError("observability is configured but the packages are not available") from e
+
+    resource = Resource.create(attributes={SERVICE_NAME: "inginious"})
+    provider = TracerProvider(resource=resource)
+    processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=collector))
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+    FlaskInstrumentor().instrument_app(app)
+
 def get_app(config):
     """
     :param config: the configuration dict
     :return: A new app
     """
     config = _put_configuration_defaults(config)
+
 
     # Init database
     connect(config['MONGO_OPT'].get('database', 'INGInious'), host=config['MONGO_OPT'].get('host', 'localhost'), tz_aware=True)
@@ -162,6 +181,10 @@ def get_app(config):
     flask_app = flask.Flask(__name__)
 
     flask_app.config.from_mapping(**config)
+
+    if (obs:=config.get('OBSERVABILITY')) and\
+       (collector:=obs.get('collector')):
+        observability(flask_app, collector)
 
     # config.get('SESSION_PERMANENT', True)
     flask_app.session_interface = MongoDBSessionInterface(config['SESSION_USE_SIGNER'], True)

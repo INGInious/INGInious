@@ -18,3 +18,5 @@ webdav_host: https://localhost/dav
 api_jwt_secret:  # must be set: the frontend prints a random value to use at first launch
 reverse-proxy-config:
   enable: true
+observability:
+  collector: http://otelcol:4317

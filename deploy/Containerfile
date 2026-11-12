@@ -12,7 +12,7 @@ COPY inginious/__init__.py inginious/
 
 # See https://github.com/pypa/setuptools_scm/#usage-from-docker
 RUN --mount=source=.git,target=.git,type=bind \
-    pip"${PYTHON_VERSION}" install --no-cache-dir -e .
+    pip"${PYTHON_VERSION}" install --no-cache-dir -e .[telemetry]
 
 ##########
 # BACKEND
