@@ -144,10 +144,7 @@ The different entries are :
 ``welcome_page``
     Static page id to serve instead of the course list as home page. (see :ref:`StaticPages`)
 
-``sentry_io_url``
-    The Sentry.io *Data Source Name* to use for error reporting in the frontend. If not set, sentry.io is not loaded.
-
-``session_parameters``
+ `session_parameters``
     A dictionnary containing information about the management of sessions in the app.
     Its default value is:
 
