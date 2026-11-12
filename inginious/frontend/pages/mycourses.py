@@ -5,10 +5,15 @@
 
 """ Index page """
 from collections import OrderedDict
+
 from flask import session, request, render_template, url_for
+from opentelemetry import trace
+
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
+
+tracer = trace.get_tracer("page:my_courses")
 
 class MyCoursesPage(INGIniousAuthPage):
     """ Index page """
@@ -57,9 +62,12 @@ class MyCoursesPage(INGIniousAuthPage):
 
         return self.show_page(success)
 
+    @tracer.start_as_current_span("mycourses:show_page")
     def show_page(self, success):
         """  Display main course list page """
         username = session.username
+        span = trace.get_current_span()
+        span.set_attributes({"username": username})
         user_info = self.user_manager.get_user_info(username)
 
         all_courses = Course.get_all()

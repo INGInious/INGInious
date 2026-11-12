@@ -13,6 +13,12 @@ import oauthlib
 from binascii import hexlify
 from werkzeug.exceptions import InternalServerError
 from mongoengine import connect, disconnect
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
 from inginious.frontend.environment_types import register_base_env_types
 from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
@@ -117,7 +123,7 @@ def _put_configuration_defaults(config):
         })
 
     # Optional keys
-    for key in ["fs", "privacy_page", "sentry_io_url", "terms_page", "webdav_host", "webterm", "welcome_page"]:
+    for key in ["fs", "privacy_page", "sentry_io_url", "terms_page", "webdav_host", "webterm", "welcome_page", "observability"]:
         if key in config:
             new_config[key.upper()] = config[key]
 
@@ -145,6 +151,14 @@ def get_app(config):
     """
     config = _put_configuration_defaults(config)
 
+    if (obs:=config.get('OBSERVABILITY')) and\
+       (collector:=obs.get('collector')):
+        resource = Resource.create(attributes={SERVICE_NAME: "inginious"})
+        provider = TracerProvider(resource=resource)
+        processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=collector))
+        provider.add_span_processor(processor)
+        trace.set_tracer_provider(provider)
+
     # Init database
     connect(config['MONGO_OPT'].get('database', 'INGInious'), host=config['MONGO_OPT'].get('host', 'localhost'), tz_aware=True)
 
@@ -154,6 +168,7 @@ def get_app(config):
         raise Exception("Please update the database before running INGInious")
 
     flask_app = flask.Flask(__name__)
+    FlaskInstrumentor().instrument_app(flask_app)
 
     flask_app.config.from_mapping(**config)
 

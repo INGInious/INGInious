@@ -21,6 +21,9 @@ from binascii import hexlify
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
+from opentelemetry.semconv.trace import SpanAttributes
 
 from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission, LaunchData
 
@@ -71,6 +74,8 @@ class AuthMethod(object, metaclass=ABCMeta):
         """
         return ""
 
+tracer = trace.get_tracer("user_manager")
+
 class UserManager:
     def __init__(self, superadmins):
         """
@@ -80,6 +85,9 @@ class UserManager:
         self._superadmins = superadmins
         self._auth_methods = OrderedDict()
         self._logger = logging.getLogger("inginious.webapp.users")
+
+        span = trace.get_current_span()
+        span.set_attribute("service.name", "user_manager")
 
     @classmethod
     def sanitize_email(cls, email: str) -> str:
@@ -121,6 +129,7 @@ class UserManager:
         """
         return self._auth_methods
 
+    @tracer.start_as_current_span("auth_user")
     def auth_user(self, username, password, do_connect=True):
         """
         Authenticate the user using database password
@@ -129,9 +138,14 @@ class UserManager:
         :param do_connect: indicates if the user must be connected after authentification, True by default
         :return: Returns a User model, or None if the authentication was not successful
         """
+        span = trace.get_current_span()
+        span.set_attributes({"username": username, "connect": do_connect})
+
         user = User.objects(username=username, activate__exists=False).first()
 
         if not user or not user.password:
+            span.set_status(Status(StatusCode.ERROR))
+            span.add_event("unknown user")
             return None
 
         method, db_hash = user.password.split("-", 1) if "-" in user.password else ("sha512", user.password)
@@ -140,6 +154,8 @@ class UserManager:
             if do_connect:
                 self.connect_user(user)
             return user
+        span.set_status(Status(StatusCode.ERROR))
+        span.add_event("invalid password")
 
     def verify_hash(cls, db_hash, password, method="sha512"):
         """

@@ -1,8 +1,27 @@
 # Replace me with dedicated FQDN.
 inginious.local localhost {
+
 	header -Server
-	reverse_proxy frontend:8000
+
 	handle /dav/* {
+		tracing {
+			span webdav
+		}
 		reverse_proxy webdav:8000
+	}
+
+	handle /jaeger/* {
+		tracing {
+			span jaeger
+		}
+		reverse_proxy jaeger:16686
+	}
+
+	handle {
+		tracing {
+			span inginious
+		}
+		request_header X-Trace-Id {http.vars.trace_id}
+		reverse_proxy frontend:8000
 	}
 }
