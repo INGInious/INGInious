@@ -124,12 +124,13 @@ class TaskPage(INGIniousAuthPage):
                 time.time() if task.regenerate_input_random() else ""))
             random_input_list = [rand.random() for i in range(task.get_number_input_random())]
 
+            # Anonymous users (course preview) have no UserTask
             user_task = UserTask.objects(courseid=course.get_id(), taskid=task.get_id(), username=username).modify(
                 set__random=random_input_list,
                 new=True
-            )
+            ) if username else None
 
-            submissionid = user_task.submissionid
+            submissionid = user_task.submissionid if user_task else None
             eval_submission = Submission.objects.get(id=submissionid) if submissionid else None
 
             students = [session.username]
