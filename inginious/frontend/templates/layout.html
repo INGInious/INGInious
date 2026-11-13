@@ -59,21 +59,6 @@
     <meta name="msapplication-TileImage" content="{{ url_for('static', filename='icons/mstile-144x144.png') }}">
     <meta name="msapplication-config" content="{{ url_for('static', filename='icons/browserconfig.xml') }}">
 
-    {% if config.SENTRY_IO_URL %}
-    <script src="{{ url_for('static', filename='js/libs/sentry-io-bundle.min.js', version='5.4.3') }}" type="text/javascript" charset="utf-8"></script>
-    <script>
-        Sentry.init({ dsn: "{{config.SENTRY_IO_URL}}" });
-        {% if user_manager is defined and session.loggedin %}
-            Sentry.configureScope(function(scope) {
-                scope.setUser({
-                    "username": "{{session.username}}",
-                    "realname": "{{session.realname}}"
-                })
-            });
-        {% endif %}
-    </script>
-    {% endif %}
-
     {% if config.USE_MINIFIED_JS %}
         {% if  _("__is_rtl") == "true"%}
             <script src="{{ url_for('static', filename='js/all-minified-rtl.js', version=static_ver) }}"></script>

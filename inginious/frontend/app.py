@@ -123,7 +123,7 @@ def _put_configuration_defaults(config):
         })
 
     # Optional keys
-    for key in ["fs", "privacy_page", "sentry_io_url", "terms_page", "webdav_host", "webterm", "welcome_page"]:
+    for key in ["fs", "privacy_page",  "terms_page", "webdav_host", "webterm", "welcome_page"]:
         if key in config:
             new_config[key.upper()] = config[key]
 
