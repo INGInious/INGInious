@@ -59,9 +59,13 @@
                     </div>
                 {% else %}
                 <div class="card-body">
-                    {{ _("<p>This will reset and archive all course data (submissions, audiences, groups, user statistics) from the database. The archive will be stored as a new course.</p><p>To confirm your will, please type the course id below :</p>") | safe }}
+                    {{ _("<p>This will archive course data (submissions, audiences, groups, user statistics) from the database in a new course. If you select the option below, staff members' submissions and task records will remain in the current course and will not be included in the archive.</p><p>To confirm your choice, please type the course id below :</p>") | safe }}
                     <form class="form-horizontal" method="post">
                         <input type="hidden" name="token" value="{{ thehash }}">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="keep_staff" name="keep_staff">
+                            <label class="form-check-label" for="keep_staff">{{ _("Keep the submissions of staff members (administrators and tutors) in the current course. They will not be part of the archive.") }}</label>
+                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <input type="text" placeholder="course id" name="courseid" class="form-control">
