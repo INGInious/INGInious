@@ -162,19 +162,21 @@ The different entries are :
             httponly: True
             secret_key: "fLjUfxqXtfNoIldA0A0G"
             secure: True
-            partitioned: True  # defaults to the value of secure
+            partitioned: True
 
     Most value are as defined in standard HTTP cookies. The ``secret_key`` should be a long sequence of random characters.
 
-    LTI sessions rely on the session cookie. As INGInious is then embedded in the platform (in an iframe, from another
-    site), LTI requires ``samesite: "None"`` and ``secure: True``, and therefore INGInious to be served over HTTPS.
-    If INGInious is served over plain HTTP, set ``secure: False`` and ``samesite: "Lax"``: browsers reject
-    ``samesite: "None"`` cookies that are not secure. LTI will then not be available.
+    LTI sessions rely on the session cookie, while INGInious is embedded in the platform (in an iframe, from another
+    site). Using LTI in iframes requires ``samesite: "None"``, ``secure: True`` and ``partitioned: True``, and therefore
+    INGInious to be served over HTTPS. When ``partitioned`` is ``True``, the cookie name is prefixed with ``__Host-``:
+    browsers then only accept it with ``secure: True``, ``cookie_domain: null`` and ``cookie_path: null``. A warning is
+    displayed at startup otherwise.
 
-    ``partitioned: True`` adds the ``Partitioned`` attribute (CHIPS) to the session cookie: browsers then keep a
-    separate session for INGInious embedded in each LTI platform, as Firefox and Safari already do by default.
-    This makes the behaviour consistent across browsers. It requires ``secure: True`` and is therefore enabled by
-    default only for secure cookies.
+    If INGInious is served over plain HTTP, set ``secure: False``, ``samesite: "Lax"`` and ``partitioned: False``:
+    browsers reject the session cookie otherwise, even outside iframes.
+
+    When the configuration or the browser does not allow cookies in iframes, the LTI launch invites users to open
+    INGInious in a new tab.
 
 ``reverse-proxy-config``
     A dictionary for reverse proxy configuration.

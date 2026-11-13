@@ -12,8 +12,8 @@ class LTI11BestSubmissionPage(INGIniousAuthPage):
     _lti_version = "1.1"
 
     def GET_AUTH(self, launch_id):
-        # the launch must belong to the current INGInious session
-        if not (launch := LaunchData.objects(session_id=session.id, launch_id=launch_id, lti__version=self._lti_version, lti__valid=True).first()):
+        # the launch must belong to the current INGInious user
+        if not (launch := LaunchData.objects(launch_id=launch_id, username=session.username, lti__version=self._lti_version).first()):
             raise NotFound()
 
         courseid, taskid = launch.lti.task

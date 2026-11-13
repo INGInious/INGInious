@@ -95,13 +95,19 @@ def _put_configuration_defaults(config):
         "SESSION_COOKIE_SAMESITE": session_parameters.get("samesite", "None"),
         "SESSION_COOKIE_HTTPONLY": session_parameters.get("httponly", True),
         "SESSION_COOKIE_SECURE": session_parameters.get("secure", True),
-        # Partitioned cookies must be secure: browsers reject them otherwise
-        "SESSION_COOKIE_PARTITIONED": session_parameters.get("partitioned", session_parameters.get("secure", True))
+        "SESSION_COOKIE_PARTITIONED": session_parameters.get("partitioned", True)
     }
 
-    if new_config["SESSION_COOKIE_SAMESITE"] != "None" or not new_config["SESSION_COOKIE_SECURE"]:
-        print("Warning: LTI will not work unless session_parameters has samesite: \"None\" and secure: True, "
-              "as the session cookie must be sent from within the LMS iframe (requires https).", file=sys.stderr)
+    # Browsers reject __Host- prefixed cookies unless they are secure, with path / and no domain
+    if new_config["SESSION_COOKIE_PARTITIONED"] and (not new_config["SESSION_COOKIE_SECURE"]
+                                                     or new_config["SESSION_COOKIE_DOMAIN"]
+                                                     or new_config["SESSION_COOKIE_PATH"] not in (None, "/")):
+        print("Warning: session_parameters has partitioned: True, which requires secure: True, cookie_domain: null "
+              "and cookie_path: null. Browsers will reject the __Host- prefixed session cookie, and INGInious will "
+              "not be usable. Set partitioned: False or fix these parameters.", file=sys.stderr)
+
+    if new_config["SESSION_COOKIE_PARTITIONED"]:
+        new_config["SESSION_COOKIE_NAME"] = "__Host-" + new_config["SESSION_COOKIE_NAME"]
 
     # SMTP config
     smtp_conf = config.get('smtp', None)

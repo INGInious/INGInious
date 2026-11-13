@@ -7,7 +7,8 @@ from datetime import datetime, timedelta, timezone
 import logging
 import hashlib
 
-from pylti1p3.contrib.flask import FlaskMessageLaunch
+from flask import current_app
+from pylti1p3.contrib.flask import FlaskMessageLaunch, FlaskCookieService
 from pylti1p3.grade import Grade
 from pylti1p3.launch_data_storage.base import LaunchDataStorage
 from pylti1p3.tool_config import ToolConfDict
@@ -38,31 +39,41 @@ def lti_tool(course_config, global_config) -> ToolConfDict:
     return lti_tool
 
 
+class LTI13CookieService(FlaskCookieService):
+    """ pylti1p3 cookies (OIDC state), set and read from the LMS frame, with the same parameters as the session cookie """
+
+    def update_response(self, response):
+        interface = current_app.session_interface
+        for key, cookie_data in self._cookie_data_to_set.items():
+            response.set_cookie(key, cookie_data["value"], max_age=cookie_data["exp"],
+                                domain=interface.get_cookie_domain(current_app),
+                                path=interface.get_cookie_path(current_app),
+                                httponly=interface.get_cookie_httponly(current_app),
+                                secure=interface.get_cookie_secure(current_app),
+                                samesite=interface.get_cookie_samesite(current_app),
+                                partitioned=interface.get_cookie_partitioned(current_app))
+
+
 class MongoLTI13LaunchDataStorage(LaunchDataStorage):
     """
     Stores LTI Launch messages in database during the handshake process and
     to submit grades later using the LTIGradeManager.
     """
-    _session_cookie_name = None  # the INGInious session id is used instead of a pylti1p3 cookie
-
-    def __init__(self, session_id=None):
-        """ Keys are bound to session_id if given """
-        self.set_session_id(str(session_id) if session_id else None)
+    _session_cookie_name = None  # keys are not bound to a session, the OIDC state is checked by pylti1p3 cookies
 
     def can_set_keys_expiration(self) -> bool:
         return True
 
     def get_value(self, key: str):
-        entry = LaunchData.objects(session_id=self._session_id, launch_id=key).first()
+        entry = LaunchData.objects(launch_id=key).first()
         return entry.value if entry else None
 
     def set_value(self, key: str, value, exp) -> None:
         exp_date = datetime.now(timezone.utc) + timedelta(seconds=exp)
-        LaunchData.objects(session_id=self._session_id, launch_id=key).update(value=value, expiration=exp_date,
-                                                                              upsert=True)
+        LaunchData.objects(launch_id=key).update(value=value, expiration=exp_date, upsert=True)
 
     def check_value(self, key: str) -> bool:
-        return bool(LaunchData.objects(session_id=self._session_id, launch_id=key).first())
+        return bool(LaunchData.objects(launch_id=key).first())
 
 
 class LTIGradeManager(LTIScorePublisher):
@@ -79,7 +90,7 @@ class LTIGradeManager(LTIScorePublisher):
             course = Course.get(courseid)
             tool_config = lti_tool(course.lti_config(), self._global_config)
             launch = LaunchData.objects.get(id=message_launch_id)
-            message_launch = FlaskMessageLaunch.from_cache(launch.launch_id, request=None, tool_config=tool_config, launch_data_storage=MongoLTI13LaunchDataStorage(launch.session_id))
+            message_launch = FlaskMessageLaunch.from_cache(launch.launch_id, request=None, tool_config=tool_config, launch_data_storage=MongoLTI13LaunchDataStorage())
             launch_data = message_launch.get_launch_data()
             ags = message_launch.get_ags()
 
