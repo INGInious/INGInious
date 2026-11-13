@@ -145,6 +145,8 @@ services:
         condition: service_started
       backend:
         condition: service_started
+      otelcol:
+        condition: service_started
     environment:
       - INGINIOUS_WEBAPP_HOST=0.0.0.0
     volumes:
@@ -171,13 +173,36 @@ services:
     networks:
       - inginious
 
+  otelcol:
+    image: docker.io/otel/opentelemetry-collector:0.164.0
+    volumes:
+      - ./deploy/otelcol.yaml:/etc/otelcol/config.yaml
+    networks:
+      - inginious
+
+  jaeger:
+    image: docker.io/jaegertracing/jaeger:latest
+    volumes:
+      - ./deploy/jaeger.yml:/jaeger/config.yaml
+    command: ["--config", "/jaeger/config.yaml"]
+    depends_on:
+      - otelcol
+    networks:
+      - inginious
+
   caddy:
     image: docker.io/library/caddy:2.11.4-alpine
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:z
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otelcol:4317
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      OTEL_SERVICE_NAME: caddy
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
     depends_on:
       - frontend
       - webdav
+      - otelcol
     ports:
       - 443:443
     # For illustration purpose, not useful in real deployments.
