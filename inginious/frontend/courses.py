@@ -24,7 +24,7 @@ from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.task_dispensers import get_task_dispensers
 from inginious.frontend.tasks import Task
-from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException
+from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException, CourseAlreadyExistsException
 
 
 def _load_course(course_fs : FileSystemProvider, courseid : str):
@@ -40,11 +40,23 @@ def _load_course(course_fs : FileSystemProvider, courseid : str):
 class Course(object):
     """ A course with some modification for users """
 
+    @staticmethod
+    def is_valid_id(courseid, is_archive=False):
+        """Check whether courseid is a valid course identifier."""
+        if is_archive:
+            max_length = 50 + len("_archive_YYYY_MM_DD_HH_MM_SS")
+        else:
+            max_length = 50
+        return isinstance(courseid, str) and id_checker(courseid) and 1 <= len(courseid) <= max_length
+
     def __init__(self, courseid, content):
+        if not self.is_valid_id(courseid, is_archive=content.get("archived", False)):
+            logging.getLogger("inginious.course").warning("Course creation attempt with invalid ID : %s", courseid)
+            raise InvalidNameException("Course with invalid id: " + str(courseid))
+
         self._id = courseid
         self._content = content
         self._fs = get_fs_provider().from_subfolder(courseid)
-        self._new_doc = not self._fs.exists()
 
         self._translations = {}
 
@@ -292,14 +304,20 @@ class Course(object):
     def save(self):
         """ Saves the Course into the filesystem """
         self._fs.put("course.yaml", get_json_or_yaml("course.yaml", self._content))
-        if self._new_doc:
-            logging.getLogger("inginious.course").info("Course %s created in the factory.", self._fs.prefix)
+        logging.getLogger("inginious.course").info("Course %s saved in the factory.", self._fs.prefix)
+
+    def create(self):
+        """Creates the course"""
+        if self._fs.exists():
+            logging.getLogger("inginious.course").warning("Course creation attempt with already existing ID : %s", self._id)
+            raise CourseAlreadyExistsException()
+        self.save()
 
     @classmethod
     def get(cls, courseid : str) -> Course:
         """ Fetch a course with id courseid from the specified course filesystem"""
-        if not id_checker(courseid):
-            raise InvalidNameException("Course with invalid name: " + courseid)
+        if not cls.is_valid_id(courseid):
+            raise InvalidNameException("Course with invalid name: " + str(courseid))
 
         course_fs = get_fs_provider().from_subfolder(courseid)
         if not course_fs.exists("course.yaml"):
