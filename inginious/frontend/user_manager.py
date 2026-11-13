@@ -487,6 +487,8 @@ class UserManager:
 
     def user_saw_task(self, username, courseid, taskid):
         """ Set in the database that the user has viewed this task """
+        if not username:
+            return
         UserTask.objects(username=username, courseid=courseid, taskid=taskid).update_one(
             set_on_insert__username=username,
             set_on_insert__courseid=courseid,
@@ -579,6 +581,9 @@ class UserManager:
         if username is None:
             username = session.username
 
+        if not username:
+            return False
+
         if self.has_staff_rights_on_course(course, username):
             return True
 
@@ -590,11 +595,11 @@ class UserManager:
 
         # Check for group
         is_group_task = course.get_task_dispenser().get_group_submission(task.get_id())
-        group = Group.objects(courseid=course.get_id(), students=session.username).first()
+        group = Group.objects(courseid=course.get_id(), students=username).first()
         group_filter = group is not None if 'groups' in checks and is_group_task else True
 
         # Check for tokens
-        students = group["students"] if (group is not None and is_group_task) else [session.username]
+        students = group["students"] if (group is not None and is_group_task) else [username]
         token_filter = True
         submission_limit = course.get_task_dispenser().get_submission_limit(task.get_id())
         if 'tokens' in checks and submission_limit != {"amount": -1, "period": -1}:
