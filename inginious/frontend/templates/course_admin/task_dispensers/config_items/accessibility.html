@@ -109,10 +109,8 @@
         $(this).find(".date_picker_grouped").datetimepicker("clear"); // reset picker state of modal for grouped editing
     });
 
-
-    // Catch modals changes
-    $(".accessibility input").change(function () {
-        let name = $(this).attr("name");
+    // Catch radio changes in the modals (never, always, custom)
+    $(".accessibility input[type='radio']").change(function () {
         let value = $(this).val();
 
         let grouped = $(this).hasClass("accessibility_grouped");
@@ -120,26 +118,23 @@
 
         tasks.each(function () {
             let taskid = $(this).data("taskid");
-            if(name == "accessibility") {
-                $("#task_" + taskid + " .accessibility").hide();
-                if(value == "true") {
-                    $("#task_" + taskid + " .accessibility-always").show();
-                    dispenser_config[taskid]["accessibility"] = true;
-                } else if(value== "false") {
-                    $("#task_" + taskid + " .accessibility-never").show();
-                    dispenser_config[taskid]["accessibility"] = false;
-                } else {
-                    $("#task_" + taskid + " .accessibility-custom").show();
-                    dispenser_update_task_accessibility(grouped, taskid);
-                    dispenser_refresh_task_accessibility_dates(grouped, taskid);
-                }
-            } else
-                $(this).parent().trigger("change.datetimepicker");
+            $("#task_" + taskid + " .accessibility").hide();
+            if (value == "true") {
+                $("#task_" + taskid + " .accessibility-always").show();
+                dispenser_config[taskid]["accessibility"] = true;
+            } else if (value == "false") {
+                $("#task_" + taskid + " .accessibility-never").show();
+                dispenser_config[taskid]["accessibility"] = false;
+            } else {
+                $("#task_" + taskid + " .accessibility-custom").show();
+                dispenser_update_task_accessibility(grouped, taskid);
+                dispenser_refresh_task_accessibility_dates(grouped, taskid);
+            }
         });
     });
 
-    // Catch time picker changes
-    $('.date_picker').on("focusin click", function () {
+    // Catch time picker changes in the modals
+    $('.date_picker').on("focusin focusout", function () { // works, but when autoselecting, leaving fires twice
         let grouped = $(this).hasClass("date_picker_grouped");
         let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
 
@@ -151,11 +146,11 @@
     });
 
     function dispenser_refresh_task_accessibility_dates(grouped, taskid) {
-        let suffix = grouped ? "_grouped" : "";
-        $('.date_picker' + suffix).each(function() {
+        let modal = $(grouped ? "#grouped-actions-edit" : "#edit_task_modal");
+        modal.find('.date_picker').each(function() {
             let targetInput = $(this).data('target-input');
             let targetSpan = $(this).data('target-span');
-            let val = $(targetInput).val();
+            let val = $(this).find(targetInput).val();
             let target = $("#task_" + taskid + " ." + targetSpan).empty();
             if (val) {
                 target.append($("<time/>").attr("datetime", val).text(dtf.format(new Date(val))));
@@ -164,9 +159,11 @@
     }
 
     function dispenser_update_task_accessibility(grouped, taskid) {
-        let start = $("#accessibility_start" + (grouped ? "_grouped" : "")).val();
-        let soft_end = $("#accessibility_soft_end" + (grouped ? "_grouped" : "")).val();
-        let end = $("#accessibility_end" + (grouped ? "_grouped" : "")).val();
+        let modal = $(grouped ? "#grouped-actions-edit" : "#edit_task_modal");
+        let suffix = grouped ? "_grouped" : "";
+        let start = modal.find("#accessibility_start" + suffix).val();
+        let soft_end = modal.find("#accessibility_soft_end" + suffix).val();
+        let end = modal.find("#accessibility_end" + suffix).val();
         dispenser_config[taskid]["accessibility"] = start + "/" + soft_end + "/" + end;
     }
 </script>
