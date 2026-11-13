@@ -144,7 +144,7 @@ The different entries are :
 ``welcome_page``
     Static page id to serve instead of the course list as home page. (see :ref:`StaticPages`)
 
- `session_parameters``
+``session_parameters``
     A dictionnary containing information about the management of sessions in the app.
     Its default value is:
 
