@@ -69,6 +69,9 @@ class RegistrationPage(INGIniousPage):
         if re.match(r"^[-_|~0-9A-Z]{4,}$", data["username"], re.IGNORECASE) is None:
             error = True
             msg = _("Invalid username format.")
+        elif not data["realname"]:
+            error = True
+            msg = _("Complete name is required.")
         elif email is None:
             error = True
             msg = _("Invalid email format.")
@@ -193,6 +196,7 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
         msg = ""
         error = False
         data = flask.request.form
+        data = {k: v.strip() for k, v in data.items()}  # Remove leading and trailing whitespace for all values of the form
         if "register" in data:
             msg, error = self.register_user(data)
         elif "lostpasswd" in data:
