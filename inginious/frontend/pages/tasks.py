@@ -94,6 +94,8 @@ class TaskPage(INGIniousAuthPage):
         userinput = flask.request.args
         if "submissionid" in userinput and "questionid" in userinput:
             # Download a previously submitted file
+            if not username:  # anonymous preview: get_submission would skip the ownership check
+                raise Forbidden()
             submission = self.submission_manager.get_submission(userinput["submissionid"], as_username=username if not is_staff else None)
             if submission is None:
                 raise current_app.notfound(message=_("Submission doesn't exist."))
@@ -185,6 +187,11 @@ class TaskPage(INGIniousAuthPage):
         task = course.get_task(taskid)
         if not self.user_manager.task_is_visible_by_user(course, task, username, self._is_lti):
             return render_template("task_unavailable.html")
+
+        # Anonymous preview users cannot submit nor access submissions
+        # (get_submission would skip the ownership check)
+        if not username:
+            raise Forbidden()
 
         self.user_manager.user_saw_task(username, courseid, taskid)
 
