@@ -51,12 +51,7 @@ class APIPage(INGIniousPage):
 
     def _handle_api(self, handler, handler_args, handler_kwargs):
         """ Handle call to subclasses and convert the output to an appropriate value """
-        try:
-            status_code, return_value = handler(*handler_args, **handler_kwargs)
-        except APIError as error:
-            return error.send()
-
-        return _api_convert_output(status_code, return_value)
+        raise NotImplementedError()
 
     def _guess_available_methods(self):
         """ Guess the method implemented by the subclass"""
@@ -101,15 +96,119 @@ class APIPage(INGIniousPage):
         self.invalid_method()
 
 
-class APIAuthenticatedPage(APIPage):
+class APIPageV0(APIPage):
+    """ Base class for v0 API pages: output format depends on the request content type """
+
+    def _handle_api(self, handler, handler_args, handler_kwargs):
+        """ Handle call to subclasses and convert the output to an appropriate value """
+        try:
+            status_code, return_value = handler(*handler_args, **handler_kwargs)
+        except APIError as error:
+            return self._api_convert_output(error.status_code, error.return_value, error.headers)
+
+        return self._api_convert_output(status_code, return_value)
+
+    def _api_convert_output(self, status_code, return_value, headers=None):
+        """ Convert the output to what the client asks """
+        response = Response()
+        response.status_code = status_code
+        if headers:
+            response.headers.update(headers)
+        content_type = flask.request.environ.get('CONTENT_TYPE', 'text/json')
+
+        if "text/json" in content_type:
+            response.content_type = 'text/json; charset=utf-8'
+            response.response = [json.dumps(return_value)]
+            return response
+        if "text/html" in content_type:
+            response.content_type = 'text/html; charset=utf-8'
+            dump = yaml.dump(return_value)
+            response.response = ["<pre>" + dump + "</pre>"]
+            return response
+        if "text/yaml" in content_type or \
+                "text/x-yaml" in content_type or \
+                "application/yaml" in content_type or \
+                "application/x-yaml" in content_type:
+            response.content_type = 'text/yaml; charset=utf-8'
+            response.response = [yaml.dump(return_value)]
+            return response
+        response.content_type = 'text/json; charset=utf-8'
+        response.response = [json.dumps(return_value)]
+        return response
+
+
+class APIAuthenticatedPageV0(APIPageV0):
     """
         A wrapper for pages that needs authentication. Automatically checks that the client is authenticated and returns "403 Forbidden" if it's
         not the case.
     """
 
     def _handle_api(self, handler, handler_args, handler_kwargs):
-        return APIPage._handle_api(self, (lambda *args, **kwargs: self._verify_authentication(handler, args, kwargs)), handler_args, handler_kwargs)
+        return super()._handle_api((lambda *args, **kwargs: self._verify_authentication(handler, args, kwargs)), handler_args, handler_kwargs)
 
+    def _verify_authentication(self, handler, args, kwargs):
+        """
+        Verify that the user is authenticated.
+        Checks if the client used token authentication, falls back to session if not.
+        Otherwise, raises an APIForbidden exception.
+        """
+
+        auth_header = flask.request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.removeprefix("Bearer ").strip()
+            try:
+                payload = jwt.decode(token, current_app.config["API_JWT_SECRET"], algorithms=["HS256"])
+            except jwt.ExpiredSignatureError:
+                raise APIForbidden("Your token has expired, please generate a new one.")
+            except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidTokenError) as e:
+                # token signature does not match any known secret, token is malformed, or any other token-related error from PyJWT
+                self._logger.warning("A user has used an invalid token. %s", e)
+                raise APIForbidden("Invalid token.")
+            except Exception as e:
+                self._logger.exception("Unexpected error while decoding JWT: %s", e)
+                raise APIForbidden("Invalid token.")
+
+            flask.g.user = User.objects(username=payload["sub"]).get()
+
+            if payload["jti"] not in flask.g.user.apitokens.keys():
+                self._logger.warning("User %s attempted to use an API token that is not present in the database.", flask.g.user.username)
+                raise APIForbidden("Invalid token.")
+        elif session.loggedin:
+            flask.g.user = User.objects(username=session.username).get()
+        else:
+            raise APIForbidden("Not authenticated, missing or malformed Authorization header")
+
+        return handler(*args, **kwargs)
+
+
+class APIAuthenticatedPageV1(APIPage):
+    """
+
+    """
+
+    def _handle_api(self, handler, handler_args, handler_kwargs):
+        """
+        Handle call to subclasses and convert the output to an appropriate value.
+        Returns the Response object directly from the endpoint classes if no error is raised.
+        If an APIError is raised, it will be converted to a Response object and returned.
+         """
+        try:
+            response = self._verify_authentication(handler, handler_args, handler_kwargs)
+            if isinstance(response, tuple):
+                # Endpoint shared with v0: (status_code, data) -> JSON Response
+                status_code, return_value = response
+                response = flask.jsonify(return_value)
+                response.status_code = status_code
+            elif not isinstance(response, Response):
+                raise APIError(500, {"error": "Endpoint did not return a valid response object"})
+        except APIError as error:
+            response = flask.jsonify(error.return_value)
+            response.status_code = error.status_code
+            response.headers.update(error.headers)
+
+        return response
+
+    # TODO : avoid duplicated _verify_authentication() code ? This version does not allow flask session fallback. But does it justify the duplication ?
     def _verify_authentication(self, handler, args, kwargs):
         """
         Verify that the user is authenticated.
@@ -138,38 +237,28 @@ class APIAuthenticatedPage(APIPage):
                 self._logger.warning(
                     f"User {flask.g.user} attempted to use an API token that is not present in the database.")
                 raise APIForbidden("Invalid token.")
-        elif session.loggedin:
-            flask.g.user = User.objects(username=session.username).get()
         else:
             raise APIForbidden("Not authenticated, missing or malformed Authorization header")
 
         return handler(*args, **kwargs)
 
-
 class APIError(Exception):
-    """ Standard API Error """
+    """ Standard API Error. """
 
-    def __init__(self, status_code, return_value):
+    def __init__(self, status_code, return_value, headers=None):
         super(APIError, self).__init__()
         self.status_code = status_code
         self.return_value = return_value
-
-    def send(self, response=None):
-        """ Send the API Exception to the client """
-        return _api_convert_output(self.status_code, self.return_value, response)
+        self.headers = headers or {}
 
 
 class APIInvalidMethod(APIError):
     """ Invalid method error """
 
     def __init__(self, methods):
-        APIError.__init__(self, 405, {"error": "This endpoint has no such method"})
+        APIError.__init__(self, 405, {"error": "This endpoint has no such method"},
+                          {"Allow": ",".join(methods)})
         self.methods = methods
-
-    def send(self):
-        response = Response()
-        response.headers['Allow'] = ",".join(self.methods)
-        return APIError.send(self, response)
 
 
 class APIInvalidArguments(APIError):
@@ -192,30 +281,3 @@ class APINotFound(APIError):
     def __init__(self, message="Not found"):
         APIError.__init__(self, 404, {"error": message})
 
-
-def _api_convert_output(status_code, return_value, response=None):
-    if not response:
-        response = Response()
-        response.status_code = status_code
-    """ Convert the output to what the client asks """
-    content_type = flask.request.environ.get('CONTENT_TYPE', 'text/json')
-
-    if "text/json" in content_type:
-        response.content_type = 'text/json; charset=utf-8'
-        response.response = [json.dumps(return_value)]
-        return response
-    if "text/html" in content_type:
-        response.content_type = 'text/html; charset=utf-8'
-        dump = yaml.dump(return_value)
-        response.response = ["<pre>" + dump + "</pre>"]
-        return response
-    if "text/yaml" in content_type or \
-                    "text/x-yaml" in content_type or \
-                    "application/yaml" in content_type or \
-                    "application/x-yaml" in content_type:
-        response.content_type = 'text/yaml; charset=utf-8'
-        response.response = [yaml.dump(return_value)]
-        return response
-    response.content_type = 'text/json; charset=utf-8'
-    response.response = [json.dumps(return_value)]
-    return response

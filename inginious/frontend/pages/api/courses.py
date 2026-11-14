@@ -7,10 +7,10 @@
 import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APIAuthenticatedPageV1, APINotFound
 
 
-class APICourses(APIAuthenticatedPage):
+class APICoursesV0(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -52,7 +52,8 @@ class APICourses(APIAuthenticatedPage):
             try:
                 courses = {courseid: Course.get(courseid)}
             except:
-                raise APINotFound("Course not found")
+                self._logger.info("Course %r not found.", courseid)
+                raise APINotFound()
 
         user = flask.g.user
         user_info = self.user_manager.get_user_info(user.username)
@@ -72,3 +73,11 @@ class APICourses(APIAuthenticatedPage):
                 output.append(data)
 
         return 200, output
+
+
+class APICoursesV1(APIAuthenticatedPageV1):
+    """
+
+    """
+    API_GET = APICoursesV0.API_GET
+
