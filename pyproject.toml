@@ -15,7 +15,7 @@ authors = [
 ]
 description = "An intelligent grader that allows secured and automated testing of code made by students."
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 keywords = ["autograder", "programming", "training", "learning", "education",
     "mooc", "autograding", "evaluation", "grading", "exercise", "interview",
     "assessment", "lti", "learn-to-code", "programming-exercise", "e-assessment",

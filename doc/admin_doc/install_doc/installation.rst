@@ -14,7 +14,7 @@ Dependencies setup
 
 INGInious needs:
 
-- Python_ 3.10+
+- Python_ 3.11+
 - Docker_ or Podman_
 - MongoDB_
 
