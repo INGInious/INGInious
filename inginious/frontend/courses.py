@@ -13,6 +13,7 @@ import os
 import logging
 from typing import Iterable, List, Any
 from datetime import datetime
+import sys
 
 from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
 from inginious.common.tags import Tag
@@ -25,6 +26,13 @@ from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.task_dispensers import get_task_dispensers
 from inginious.frontend.tasks import Task
 from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException, CourseAlreadyExistsException
+
+
+if sys.platform == 'win32':
+    import pbs
+    git = pbs.Command('git')
+else:
+    from sh import git  # pylint: disable=no-name-in-module
 
 
 def _load_course(course_fs : FileSystemProvider, courseid : str):
@@ -309,6 +317,20 @@ class Course(object):
             logging.getLogger("inginious.course").warning("Course creation attempt with already existing ID : %s", self._id)
             raise CourseAlreadyExistsException("Course with id " + str(self._id) + " already exists.")
         self.save()
+
+    def git_import(self, git_url):
+        """ Imports the course from a git repository.  """
+        if not self.is_archive() and not self.is_valid_id(self._id):
+            logging.getLogger("inginious.course").warning("Course creation attempt with invalid ID : %s", self._id)
+            raise InvalidNameException("Course with invalid id: " + str(self._id))
+        if self._fs.exists():
+            logging.getLogger("inginious.course").warning("Course creation attempt with already existing ID : %s", self._id)
+            raise CourseAlreadyExistsException("Course with id " + str(self._id) + " already exists.")
+        try:
+            git.clone(git_url, self._fs.prefix)
+        except Exception as e:
+            logging.getLogger("inginious.course").warning("Course import attempt failed for ID : %s", self._id)
+            raise Exception("Course import failed: " + str(e))
 
     @classmethod
     def get(cls, courseid : str) -> Course:

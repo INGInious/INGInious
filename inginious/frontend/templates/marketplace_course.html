@@ -62,7 +62,7 @@
     </div>
     <form class="form row" method="post">
         <div class="form-group col-sm-8">
-            <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder='{{ _("New course id") }}'>
+            <input name="new_courseid" type="text" class="form-control" id="new_courseid" placeholder='{{ _("New course id") }}' required maxlength="50" pattern="^[a-z0-9][a-z0-9\-\._]*$">
         </div>
         <div class="form-group col-sm-4">
             <button type="submit" class="btn btn-block btn-primary">{{ _("Import course") }}</button>
