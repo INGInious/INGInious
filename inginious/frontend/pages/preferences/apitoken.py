@@ -4,15 +4,11 @@
 # more information about the licensing of this file.
 
 """ API token page """
-from flask import session, request, render_template, current_app
-import datetime
-from datetime import timezone
-import uuid
+from flask import session, request, render_template
 from mongoengine import ValidationError
-import jwt
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.models import User, APIToken
+from inginious.frontend.models import User
 from inginious.frontend.controllers import auth
 
 
@@ -42,20 +38,8 @@ class APITokenPage(INGIniousAuthPage):
             if not 10 <= days <= 365:
                 return self.show_page(errors=[_("Expiration duration must be between 10 and 365 days.")])
 
-            expiration = datetime.datetime.now(tz=timezone.utc) + datetime.timedelta(days=days)
-            token_id = uuid.uuid4().hex
-            payload = {
-                "jti": token_id,
-                "sub": user.username,
-                "exp": expiration.timestamp(),
-            }
-
-            token = jwt.encode(payload, current_app.config["API_JWT_SECRET"], algorithm="HS256")
-            
             try:
-                new_token = APIToken(token=auth.hash_password(token), expires=expiration, description=description)
-                user.apitokens[token_id] = new_token
-                user.save()
+                token = auth.create_api_token(user, days, description)
             except ValidationError as e:
                 return self.show_page(errors=[list(e.to_dict().values())[0]])
             return self.show_page(generated_token=token)
@@ -63,12 +47,8 @@ class APITokenPage(INGIniousAuthPage):
         elif "delete" in request.form:
             token_id = request.form.get("token_id")
 
-            if token_id not in user.apitokens:
+            if not auth.revoke_api_token(user, token_id):
                 return self.show_page(errors=["Token not found."])
-
-            del user.apitokens[token_id]
-            user.save()
-
             return self.show_page()
 
     def show_page(self, generated_token=None, errors=None):

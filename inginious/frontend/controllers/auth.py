@@ -8,16 +8,19 @@ import re
 import logging
 import hashlib
 import secrets
+import uuid
+import jwt
 import flask
 
-from flask import session
+from flask import session, current_app
+from datetime import datetime, timedelta, timezone
 from abc import ABCMeta, abstractmethod
 from werkzeug.exceptions import NotFound
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
 
-from inginious.frontend.models import User
+from inginious.frontend.models import User, APIToken
 
 _auth_methods = {}
 _logger = logging.getLogger("inginious.webapp.auth")
@@ -388,3 +391,39 @@ def reset_password(reset_hash, password):
     """
     return User.objects(reset=reset_hash).modify(set__password=hash_password(password),
                                                  unset__reset=True, unset__activate=True, new=True)
+
+
+def create_api_token(user, days, description):
+    """
+    Generate a signed API token for the user, valid for the given number of days
+    :return: the token, to be shown only once as only its id and hash are stored
+    :raise ValidationError: if the description is invalid or the user has too many tokens
+    """
+    expiration = datetime.now(tz=timezone.utc) + timedelta(days=days)
+    token_id = uuid.uuid4().hex
+    token = jwt.encode({"jti": token_id, "sub": user.username, "exp": expiration.timestamp()},
+                       current_app.config["API_JWT_SECRET"], algorithm="HS256")
+    user.apitokens[token_id] = APIToken(token=hash_password(token), expires=expiration, description=description)
+    user.save()
+    return token
+
+
+def revoke_api_token(user, token_id):
+    """ :return: False if the user has no API token with this id """
+    if user.apitokens.pop(token_id, None) is None:
+        return False
+    user.save()
+    return True
+
+
+def verify_api_token(token):
+    """
+    :return: the User owning this API token
+    :raise jwt.ExpiredSignatureError: if the token has expired
+    :raise jwt.InvalidTokenError: if the token is invalid or has been revoked
+    """
+    payload = jwt.decode(token, current_app.config["API_JWT_SECRET"], algorithms=["HS256"])
+    user = User.objects(username=payload["sub"]).first()
+    if user is None or payload["jti"] not in user.apitokens:
+        raise jwt.InvalidTokenError(f"Token {payload['jti']} of user {payload['sub']} is not present in the database.")
+    return user

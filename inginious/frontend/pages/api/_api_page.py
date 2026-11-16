@@ -7,13 +7,14 @@
 
 import json
 import flask
-from flask import session, Response, current_app
+from flask import session, Response
 import jwt
 import logging
 
 import inginious.common.custom_yaml as yaml
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.models import User
+from inginious.frontend.controllers import auth
 
 
 class APIPage(INGIniousPage):
@@ -121,22 +122,15 @@ class APIAuthenticatedPage(APIPage):
         if auth_header.startswith("Bearer "):
             token = auth_header.removeprefix("Bearer ").strip()
             try:
-                payload = jwt.decode(token, current_app.config["API_JWT_SECRET"], algorithms=["HS256"])
+                flask.g.user = auth.verify_api_token(token)
             except jwt.ExpiredSignatureError:
                 raise APIForbidden("Your token has expired, please generate a new one.")
-            except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidTokenError) as e:
-                # token signature does not match any known secret, token is malformed, or any other token-related error from PyJWT
+            except jwt.InvalidTokenError as e:
+                # bad signature, malformed or revoked token, or any other token-related error from PyJWT
                 self._logger.warning(f"A user has used an invalid token. {str(e)}")
                 raise APIForbidden("Invalid token.")
             except Exception as e:
                 self._logger.exception(f"Unexpected error while decoding JWT: {str(e)}")
-                raise APIForbidden("Invalid token.")
-
-            flask.g.user = User.objects(username=payload["sub"]).get()
-
-            if payload["jti"] not in flask.g.user.apitokens.keys():
-                self._logger.warning(
-                    f"User {flask.g.user} attempted to use an API token that is not present in the database.")
                 raise APIForbidden("Invalid token.")
         elif session.loggedin:
             flask.g.user = User.objects(username=session.username).get()
