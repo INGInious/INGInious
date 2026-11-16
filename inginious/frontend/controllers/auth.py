@@ -376,7 +376,8 @@ def activate_user(activate_hash: str) -> bool:
     Activate a user based on his/her activation hash
     :return: True if the user was found and activated
     """
-    return User.objects(activate=activate_hash).modify(unset__activate=True) is not None
+    # an empty hash would match every activated account
+    return bool(activate_hash) and User.objects(activate=activate_hash).modify(unset__activate=True) is not None
 
 
 def create_reset_token(email: str) -> User | None:
@@ -386,7 +387,8 @@ def create_reset_token(email: str) -> User | None:
 
 def get_reset_user(reset_hash: str) -> User | None:
     """ :return: the User to which this reset token belongs, or None """
-    return User.objects(reset=reset_hash).first()
+    # an empty hash would match every account without pending reset
+    return User.objects(reset=reset_hash).first() if reset_hash else None
 
 
 def reset_password(reset_hash: str, password: str) -> User | None:
@@ -394,6 +396,8 @@ def reset_password(reset_hash: str, password: str) -> User | None:
     Set a new password for the user owning this reset token, and activate the account
     :return: the User, or None if the reset token is invalid
     """
+    if not reset_hash:  # an empty hash would match every account without pending reset
+        return None
     return User.objects(reset=reset_hash).modify(set__password=hash_password(password),
                                                  unset__reset=True, unset__activate=True, new=True)
 
