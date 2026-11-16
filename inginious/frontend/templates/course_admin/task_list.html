@@ -76,7 +76,7 @@
                 <table class="table">
                     <tr><td>{{_("URL")}}</td><td><code>{{ config.WEBDAV_HOST ~ "/" ~ course.get_id()}}</code></td></tr>
                     <tr><td>{{_("Username")}}</td><td><code>{{  session.username  }}</code></td></tr>
-                    <tr><td>{{_("Password")}}</td><td><code>{{ user_manager.get_user_api_key(session.username) }}</code></td></tr>
+                    <tr><td>{{_("Password")}}</td><td><code>{{ webdav_password }}</code></td></tr>
                 </table>
                 </div>
             </div>

@@ -427,3 +427,15 @@ def verify_api_token(token):
     if user is None or payload["jti"] not in user.apitokens:
         raise jwt.InvalidTokenError(f"Token {payload['jti']} of user {payload['sub']} is not present in the database.")
     return user
+
+
+def get_api_key(username):
+    """
+    :return: the API key of the user, used as its webdav password and generated on first request,
+        or None if the user does not exist
+    """
+    user = User.objects(username=username).first()
+    if user is not None and user.apikey is None:
+        user.apikey = secrets.token_hex(40)
+        user.save()
+    return user.apikey if user is not None else None

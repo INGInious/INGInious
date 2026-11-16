@@ -16,6 +16,7 @@ from mongoengine import connect
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
 from inginious.frontend.user_manager import UserManager
+from inginious.frontend.controllers import auth
 from inginious.frontend.courses import Course
 
 from inginious.common.tasks_problems import register_problem_types
@@ -62,15 +63,15 @@ def get_dc(user_manager):
         def basic_auth_user(self, realm, user_name, password, environ):
             if not self.is_user_realm_admin(realm, user_name):
                 return False
-            apikey = user_manager.get_user_api_key(user_name, create=True)
+            apikey = auth.get_api_key(user_name)
             return apikey is not None and password == apikey
 
         def digest_auth_user(self, realm, user_name, environ):
             """Computes digest hash A1 part."""
             if not self.is_user_realm_admin(realm, user_name):
                 return False
-            password = user_manager.get_user_api_key(user_name, create=True) or ''
-            return self._compute_http_digest_a1(realm, user_name, password)
+            apikey = auth.get_api_key(user_name)
+            return apikey is not None and self._compute_http_digest_a1(realm, user_name, apikey)
 
     return INGIniousDAVDomainController
 

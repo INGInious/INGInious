@@ -4,14 +4,12 @@
 # more information about the licensing of this file.
 
 """ Manages users data """
-import os
 import logging
 
 from flask import session, request
 from typing import Dict, Optional
 from functools import reduce
 from natsort import natsorted
-from binascii import hexlify
 from mongoengine import Q
 
 from inginious.frontend.controllers import auth
@@ -67,22 +65,6 @@ class UserManager:
         if info is not None:
             return info.email
         return None
-
-    def get_user_api_key(self, username, create=True):
-        """
-        Get the API key of a given user.
-        API keys are generated on demand.
-        :param username:
-        :param create: Create the API key if none exists yet
-        :return: the API key assigned to the user, or None if none exists and create is False.
-        """
-        retval = User.objects.get(username=username)
-        if not retval:
-            return None
-        elif "apikey" not in retval and create:
-            retval.apikey = self.generate_api_key()
-            retval.save()
-        return retval.apikey
 
     def delete_user(self, username, confirmation_email=None):
         """
@@ -546,7 +528,3 @@ class UserManager:
             username = session.username
 
         return (username in course.get_staff()) or (include_superadmins and self.user_is_superadmin(username))
-
-    @classmethod
-    def generate_api_key(cls):
-        return hexlify(os.urandom(40)).decode('utf-8')

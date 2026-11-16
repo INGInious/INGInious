@@ -7,7 +7,7 @@ import json
 import logging
 from collections import OrderedDict
 
-from flask import session, request, render_template
+from flask import session, request, render_template, current_app
 from natsort import natsorted
 
 from inginious.frontend.tasks import Task
@@ -15,6 +15,7 @@ from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.common.exceptions import TaskAlreadyExistsException
 from inginious.frontend.task_dispensers import get_task_dispensers
 from inginious.frontend.models import UserTask, Submission
+from inginious.frontend.controllers import auth
 
 
 class CourseTaskListPage(INGIniousAdminPage):
@@ -136,7 +137,9 @@ class CourseTaskListPage(INGIniousAdminPage):
         tasks_data = OrderedDict(tasks_data)
 
         task_dispensers = get_task_dispensers()
+        webdav_password = auth.get_api_key(session.username) if current_app.config.get("WEBDAV_HOST") else None
 
         return render_template("course_admin/task_list.html", course=course,
                                            task_dispensers=task_dispensers, tasks=tasks_data, errors=errors,
-                                           tasks_errors=tasks_errors, validated=validated)
+                                           tasks_errors=tasks_errors, validated=validated,
+                                           webdav_password=webdav_password)
