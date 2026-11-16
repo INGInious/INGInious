@@ -44,7 +44,7 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
         feedback = None
         if action == "activate":
             user = User.objects.get(username=username)
-            if not self.user_manager.activate_user(user.activate):
+            if not auth.activate_user(user.activate):
                 feedback = _("User not found")
         elif action == "delete":
             if not self.user_manager.delete_user(username):

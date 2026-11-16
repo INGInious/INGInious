@@ -84,14 +84,6 @@ class UserManager:
             retval.save()
         return retval.apikey
 
-    def activate_user(self, activate_hash):
-        """Active a user based on his/her activation hash
-        :param activate_hash: The activation hash of a user
-        :return A boolean if the user was found and updated
-        """
-        user = User.objects(activate=activate_hash).modify(unset__activate=True)
-        return user is not None
-
     def delete_user(self, username, confirmation_email=None):
         """
         Delete a user based on username

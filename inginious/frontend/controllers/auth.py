@@ -7,6 +7,7 @@
 import re
 import logging
 import hashlib
+import secrets
 import flask
 
 from flask import session
@@ -14,6 +15,7 @@ from abc import ABCMeta, abstractmethod
 from werkzeug.exceptions import NotFound
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from mongoengine import Q
 
 from inginious.frontend.models import User
 
@@ -298,3 +300,61 @@ def revoke_binding(username, binding_id):
         User.objects(username=username).update(**{"unset__bindings__" + binding_id: 1})
         return False, ""
     return True, _("You must set a password before removing all bindings.")
+
+
+def generate_token():
+    """ :return: a random token, for account activation or password reset links """
+    return secrets.token_hex(64)
+
+
+def check_new_password(password, confirmation):
+    """ :return: an error message if the new password is not acceptable, None otherwise """
+    if len(password) < 6:
+        return _("Password too short.")
+    if password != confirmation:
+        return _("Passwords don't match !")
+    return None
+
+
+def register_user(username, realname, email, password, language):
+    """
+    Create a local account, to be activated with its `activate` token
+    :return: (User, None) if created, (None, error message) if the username or email is already used
+    """
+    existing_user = User.objects(Q(username=username) | Q(email=email)).first()
+    if existing_user is not None:
+        if existing_user.username == username:
+            return None, _("This username is already taken !")
+        return None, _("This email address is already in use !")
+
+    user = User(username=username, realname=realname, email=email, password=hash_password(password),
+                activate=generate_token(), language=language, tos_accepted=True)
+    user.save()
+    return user, None
+
+
+def activate_user(activate_hash):
+    """
+    Activate a user based on his/her activation hash
+    :return: True if the user was found and activated
+    """
+    return User.objects(activate=activate_hash).modify(unset__activate=True) is not None
+
+
+def create_reset_token(email):
+    """ :return: the User with this email and a new `reset` token, or None if not found """
+    return User.objects(email=email).modify(reset=generate_token(), new=True)
+
+
+def get_reset_user(reset_hash):
+    """ :return: the User to which this reset token belongs, or None """
+    return User.objects(reset=reset_hash).first()
+
+
+def reset_password(reset_hash, password):
+    """
+    Set a new password for the user owning this reset token, and activate the account
+    :return: the User, or None if the reset token is invalid
+    """
+    return User.objects(reset=reset_hash).modify(set__password=hash_password(password),
+                                                 unset__reset=True, unset__activate=True, new=True)

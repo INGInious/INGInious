@@ -5,7 +5,6 @@
 
 """ Registration page"""
 
-import secrets
 import re
 import flask
 import logging
@@ -13,12 +12,10 @@ import logging
 from flask import current_app, session, render_template
 from flask_mail import Message
 from werkzeug.exceptions import Forbidden
-from mongoengine import Q
 
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.flask.mail import mail
 from inginious.frontend.controllers import auth
-from inginious.frontend.models import User
 
 
 class RegistrationPage(INGIniousPage):
@@ -37,7 +34,7 @@ class RegistrationPage(INGIniousPage):
         data = flask.request.args
 
         if "activate" in data:
-            error = not self.user_manager.activate_user(data["activate"])
+            error = not auth.activate_user(data["activate"])
             msg = _("Invalid activation hash.") if error else _("User successfully activated.")
         elif "reset" in data:
             msg, error, reset = self.get_reset_data(data)
@@ -49,7 +46,7 @@ class RegistrationPage(INGIniousPage):
         error = False
         reset = None
         msg = ""
-        user = User.objects(reset=data.get("reset", "")).first()
+        user = auth.get_reset_user(data.get("reset", ""))
         if user is None:
             error = True
             msg = "Invalid reset hash."
@@ -75,36 +72,24 @@ class RegistrationPage(INGIniousPage):
         elif email is None:
             error = True
             msg = _("Invalid email format.")
-        elif len(data["passwd"]) < 6:
+        elif password_error := auth.check_new_password(data["passwd"], data["passwd2"]):
             error = True
-            msg = _("Password too short.")
-        elif data["passwd"] != data["passwd2"]:
-            error = True
-            msg = _("Passwords don't match !")
+            msg = password_error
         elif current_app.config["IS_TOS_DEFINED"] and "term_policy_check" not in data:
             error = True
             msg = _("Please accept the Terms of Service and Data Privacy")
 
         if not error:
-            existing_user = User.objects(Q(username=data["username"]) | Q(email=email)).first()
-            if existing_user is not None:
+            user, msg = auth.register_user(data["username"], data["realname"], email, data["passwd"], session.language)
+            if user is None:
                 error = True
-                if existing_user["username"] == data["username"]:
-                    msg = _("This username is already taken !")
-                else:
-                    msg = _("This email address is already in use !")
             else:
-                passwd_hash = auth.hash_password(data["passwd"])
-                activate_hash = auth.hash_password_sha512(str(secrets.randbits(256)))
-                User(username= data["username"], realname=data["realname"], email=email,
-                     password=passwd_hash, activate=activate_hash,
-                     language=session.language, tos_accepted=True).save()
                 try:
                     subject = _("Welcome on INGInious")
                     body = _("""Welcome on INGInious !
 
 To activate your account, please click on the following link :
-""") + flask.request.url_root + "register?activate=" + activate_hash
+""") + flask.request.url_root + "register?activate=" + user.activate
 
                     message = Message(recipients=[(data["realname"], email)],
                                       subject=subject,
@@ -113,7 +98,7 @@ To activate your account, please click on the following link :
                     msg = _("You are succesfully registered. An email has been sent to you for activation.")
                 except Exception as ex:
                     # Remove newly inserted user (do not add after to prevent email sending in case of failure)
-                    User.objects(username=data["username"]).delete()
+                    user.delete()
                     error = True
                     msg = _("Something went wrong while sending you activation email. Please contact the administrator.")
                     self._logger.error("Couldn't send email : {}".format(str(ex)))
@@ -125,18 +110,13 @@ To activate your account, please click on the following link :
         error = False
         msg = ""
 
-        # Check input format
-        email_re = re.compile(
-            r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*"  # dot-atom
-            r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-011\013\014\016-\177])*"'  # quoted-string
-            r')@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$', re.IGNORECASE)  # domain
-        if email_re.match(data["recovery_email"]) is None:
+        email = auth.sanitize_email(data["recovery_email"])
+        if email is None:
             error = True
             msg = _("Invalid email format.")
 
         if not error:
-            reset_hash = auth.hash_password_sha512(str(secrets.randbits(256)))
-            user = User.objects(email=data["recovery_email"]).modify(reset=reset_hash, new=True)
+            user = auth.create_reset_token(email)
             if user is None:
                 error = True
                 msg = _("This email address was not found in database.")
@@ -147,9 +127,9 @@ To activate your account, please click on the following link :
                     body = _("""Dear {realname},
 
 Someone (probably you) asked to reset your INGInious password. If this was you, please click on the following link :
-""").format(realname=user["realname"]) + flask.request.url_root + "register?reset=" + reset_hash
+""").format(realname=user["realname"]) + flask.request.url_root + "register?reset=" + user.reset
 
-                    message = Message(recipients=[(user["realname"], data["recovery_email"])],
+                    message = Message(recipients=[(user["realname"], user.email)],
                                       subject=subject,
                                       body=body)
                     mail.send(message)
@@ -167,18 +147,13 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
         error = False
         msg = ""
 
-        # Check input format
-        if len(data["passwd"]) < 6:
+        password_error = auth.check_new_password(data["passwd"], data["passwd2"])
+        if password_error:
             error = True
-            msg = _("Password too short.")
-        elif data["passwd"] != data["passwd2"]:
-            error = True
-            msg = _("Passwords don't match !")
+            msg = password_error
 
         if not error:
-            passwd_hash = auth.hash_password(data["passwd"])
-            user = User.objects(reset=data["reset"]).modify(set__password=passwd_hash,
-                                                            unset__reset=True, unset__activate=True, new=True)
+            user = auth.reset_password(data["reset"], data["passwd"])
             if user is None:
                 error = True
                 msg = _("Invalid reset hash.")
