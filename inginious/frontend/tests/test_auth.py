@@ -119,6 +119,10 @@ def test_verify_hash_legacy_sha512():
     assert not auth.verify_hash(db_hash, "other")
 
 
+def test_verify_hash_sha512_malformed_hash():
+    assert not auth.verify_hash("non-ascii-hash-é", "secret")
+
+
 def test_verify_hash_unknown_method():
     with pytest.raises(auth.AuthInvalidMethodException):
         auth.verify_hash("hash", "secret", "md5")
@@ -235,6 +239,13 @@ def test_connect_and_disconnect_regenerate_session(session):
     auth.disconnect_user()
     assert session.id != logged_id
     assert not session.loggedin and session.username is None
+
+
+def test_connect_user_does_not_write_user(session):
+    stale = make_user("alice")
+    User.objects(username="alice").update(realname="Alice Updated")
+    auth.connect_user(stale)
+    assert User.objects.get(username="alice").realname == "Alice Updated"
 
 
 def test_bind_user_unknown_method(session):

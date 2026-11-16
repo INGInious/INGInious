@@ -7,6 +7,7 @@
 import re
 import logging
 import hashlib
+import hmac
 import secrets
 import uuid
 import jwt
@@ -138,7 +139,7 @@ def verify_hash(db_hash: str, password: str, method: str = "sha512") -> bool:
 
 
 def verify_hash_sha512(db_hash: str, password: str) -> bool:
-    return hash_password_sha512(password) == db_hash
+    return hmac.compare_digest(hash_password_sha512(password).encode(), db_hash.encode())
 
 
 def verify_hash_argon2id(db_hash: str, password: str) -> bool:
@@ -192,7 +193,7 @@ def auth_user(username: str, password: str) -> User | None:
     return None
 
 
-def connect_user(user: User) -> bool:
+def connect_user(user: User) -> None:
     """ Opens a session for the user
 
     :param user : a User, it must at least contain the following fields:
@@ -203,9 +204,6 @@ def connect_user(user: User) -> bool:
 
     if not all(key in user for key in ["realname", "email", "username"]):
         raise AuthInvalidInputException()
-
-    User.objects(email=user["email"]).update(realname=user["realname"], username=user["username"],
-                                             language=user.language)
 
     ip = flask.request.remote_addr
 
@@ -223,8 +221,6 @@ def connect_user(user: User) -> bool:
     session.token = None
 
     _logger.info("User %s connected - %s - %s - %s", user["username"], user["realname"], user["email"], ip)
-
-    return True
 
 
 def disconnect_user() -> None:
