@@ -166,24 +166,22 @@ def get_auth_methods():
     return _auth_methods
 
 
-def auth_user(username, password, do_connect=True):
+def verify_password(user, password):
+    """ :return: True if the password matches the one stored for the User, False if it does not or there is none """
+    if not user.password:
+        return False
+    method, db_hash = user.password.split("-", 1) if "-" in user.password else ("sha512", user.password)
+    return verify_hash(db_hash, password, method)
+
+
+def auth_user(username, password):
     """
-    Authenticate the user using database password
-    :param username: Username/Login
-    :param password: User password
-    :param do_connect: indicates if the user must be connected after authentification, True by default
+    Authenticate an activated user using database password, and open its session
     :return: Returns a User model, or None if the authentication was not successful
     """
     user = User.objects(username=username, activate__exists=False).first()
-
-    if not user or not user.password:
-        return None
-
-    method, db_hash = user.password.split("-", 1) if "-" in user.password else ("sha512", user.password)
-
-    if verify_hash(db_hash, password, method):
-        if do_connect:
-            connect_user(user)
+    if user and verify_password(user, password):
+        connect_user(user)
         return user
 
 

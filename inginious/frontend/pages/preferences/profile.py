@@ -51,18 +51,10 @@ class ProfilePage(INGIniousAuthPage):
             if msg:
                 return result, msg, True
 
-            if "password" in userdata:
-                user = auth.auth_user(session.username, data["oldpasswd"], False)
-            else:
-                user = User.objects.get(username=userdata["username"])
-
-            if user is None:
-                error = True
-                msg = _("Incorrect old password.")
-                return result, msg, error
-            else:
-                passwd_hash = auth.hash_password(data["passwd"])
-                profile_data_to_be_updated["password"] = passwd_hash
+            # Accounts created through another auth method may not have a password yet
+            if "password" in userdata and not auth.verify_password(userdata, data["oldpasswd"]):
+                return result, _("Incorrect old password."), True
+            profile_data_to_be_updated["password"] = auth.hash_password(data["passwd"])
 
         # Check if updating language
         if data["language"] != userdata.language:
