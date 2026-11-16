@@ -20,9 +20,12 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
 
-from inginious.frontend.models import User, APIToken
+from inginious.frontend.models import User, APIToken, LaunchData, LTIData
 
-_auth_methods = {}
+# (username, realname, email, additional data) returned by AuthMethod.callback
+AuthUserInfo = tuple[str, str, str, dict]
+
+_auth_methods: dict[str, "AuthMethod"] = {}
 _logger = logging.getLogger("inginious.webapp.auth")
 
 
@@ -37,14 +40,14 @@ class AuthInvalidMethodException(Exception):
 class AuthMethod(object, metaclass=ABCMeta):
 
     @abstractmethod
-    def get_id(self):
+    def get_id(self) -> str:
         """
         :return: The auth method id
         """
         return ""
 
     @abstractmethod
-    def get_auth_link(self, auth_storage):
+    def get_auth_link(self, auth_storage: dict) -> str:
         """
         :param auth_storage: The session auth method storage dict
         :return: The authentication link
@@ -52,7 +55,7 @@ class AuthMethod(object, metaclass=ABCMeta):
         return ""
 
     @abstractmethod
-    def callback(self, auth_storage):
+    def callback(self, auth_storage: dict) -> AuthUserInfo | None:
         """
         :param auth_storage: The session auth method storage dict
         :return: User tuple and , or None, if failed
@@ -60,14 +63,14 @@ class AuthMethod(object, metaclass=ABCMeta):
         return None
 
     @abstractmethod
-    def get_name(self):
+    def get_name(self) -> str:
         """
         :return: The name of the auth method, to be displayed publicly
         """
         return ""
 
     @abstractmethod
-    def get_imlink(self):
+    def get_imlink(self) -> str:
         """
         :return: The image link
         """
@@ -80,7 +83,7 @@ _email_re = re.compile(
     r')@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$', re.IGNORECASE)  # domain
 
 
-def sanitize_email(email: str) -> str:
+def sanitize_email(email: str) -> str | None:
     """ Sanitize an email address and put the bar part of an address foo@bar in lower case. None if invalid. """
     if _email_re.match(email) is None:
         return None
@@ -88,7 +91,7 @@ def sanitize_email(email: str) -> str:
     return "%s@%s" % (local, domain.lower())
 
 
-def hash_password_sha512(content):
+def hash_password_sha512(content: str) -> str:
     """
     :param content: a str input
     :return a hash of str input
@@ -96,7 +99,7 @@ def hash_password_sha512(content):
     return hashlib.sha512(content.encode("utf-8")).hexdigest()
 
 
-def hash_password_argon2id(content):
+def hash_password_argon2id(content: str) -> str:
     """
     :param content: a str input
     :return a hash of str input
@@ -105,7 +108,7 @@ def hash_password_argon2id(content):
     return ph.hash(content)
 
 
-def hash_password(content):
+def hash_password(content: str) -> str:
     """
     Encapsulates the other password hashing functions
     :param content: a str input
@@ -118,7 +121,7 @@ def hash_password(content):
     return latest_method + "-" + methods[latest_method](content)
 
 
-def verify_hash(db_hash, password, method="sha512"):
+def verify_hash(db_hash: str, password: str, method: str = "sha512") -> bool:
     """
     Verify a hash
     :param db_hash: The hash to verify
@@ -134,11 +137,11 @@ def verify_hash(db_hash, password, method="sha512"):
         raise AuthInvalidMethodException()
 
 
-def verify_hash_sha512(db_hash, password):
+def verify_hash_sha512(db_hash: str, password: str) -> bool:
     return hash_password_sha512(password) == db_hash
 
 
-def verify_hash_argon2id(db_hash, password):
+def verify_hash_argon2id(db_hash: str, password: str) -> bool:
     try:
         ph = PasswordHasher()
         return ph.verify(db_hash, password)
@@ -146,7 +149,7 @@ def verify_hash_argon2id(db_hash, password):
         return False
 
 
-def register_auth_method(auth_method):
+def register_auth_method(auth_method: AuthMethod) -> None:
     """
     Registers an authentication method
     :param auth_method: an AuthMethod object
@@ -154,7 +157,7 @@ def register_auth_method(auth_method):
     _auth_methods[auth_method.get_id()] = auth_method
 
 
-def get_auth_method(auth_method_id):
+def get_auth_method(auth_method_id: str) -> AuthMethod | None:
     """
     :param auth_method_id: the auth method id
     :return: AuthMethod if it exists, otherwise None
@@ -162,14 +165,14 @@ def get_auth_method(auth_method_id):
     return _auth_methods.get(auth_method_id, None)
 
 
-def get_auth_methods():
+def get_auth_methods() -> dict[str, AuthMethod]:
     """
     :return: The auth methods dict
     """
     return _auth_methods
 
 
-def verify_password(user, password):
+def verify_password(user: User, password: str) -> bool:
     """ :return: True if the password matches the one stored for the User, False if it does not or there is none """
     if not user.password:
         return False
@@ -177,7 +180,7 @@ def verify_password(user, password):
     return verify_hash(db_hash, password, method)
 
 
-def auth_user(username, password):
+def auth_user(username: str, password: str) -> User | None:
     """
     Authenticate an activated user using database password, and open its session
     :return: Returns a User model, or None if the authentication was not successful
@@ -186,9 +189,10 @@ def auth_user(username, password):
     if user and verify_password(user, password):
         connect_user(user)
         return user
+    return None
 
 
-def connect_user(user):
+def connect_user(user: User) -> bool:
     """ Opens a session for the user
 
     :param user : a User, it must at least contain the following fields:
@@ -223,7 +227,7 @@ def connect_user(user):
     return True
 
 
-def disconnect_user():
+def disconnect_user() -> None:
     """
     Disconnects the user currently logged-in
     """
@@ -236,15 +240,15 @@ def disconnect_user():
     session.regenerate()
 
 
-def bind_user(auth_id, user):
+def bind_user(auth_id: str, user: AuthUserInfo) -> bool:
     """
     Add a binding method to a user
     :param auth_id: The binding method id
     :param user: (username, realname, email, additional) tuple returned by the auth method
     :return: Boolean if method has been add
     """
-    username, realname, email, additional = user
-    email = sanitize_email(email)
+    username, realname, raw_email, additional = user
+    email = sanitize_email(raw_email)
     if email is None:
         _logger.warning("Invalid email format.")
         return False
@@ -287,7 +291,7 @@ def bind_user(auth_id, user):
     return True
 
 
-def revoke_binding(username, binding_id):
+def revoke_binding(username: str, binding_id: str) -> tuple[bool, str]:
     """
     Revoke a binding method for a user
     :param binding_id: The binding method id
@@ -303,7 +307,7 @@ def revoke_binding(username, binding_id):
     return True, _("You must set a password before removing all bindings.")
 
 
-def lti_login(launch):
+def lti_login(launch: LaunchData) -> User | None:
     """
     Connects the user bound to the LTI user of the launch and assigns the launch to it
     :return: the User, or None if no account is bound to this LTI user yet
@@ -316,7 +320,7 @@ def lti_login(launch):
     return user
 
 
-def bind_lti(username, lti):
+def bind_lti(username: str, lti: LTIData) -> bool:
     """
     Binds the LTI user to the INGInious account
     :param lti: the LTIData of the launch
@@ -335,12 +339,12 @@ def bind_lti(username, lti):
     return False
 
 
-def generate_token():
+def generate_token() -> str:
     """ :return: a random token, for account activation or password reset links """
     return secrets.token_hex(64)
 
 
-def check_new_password(password, confirmation):
+def check_new_password(password: str, confirmation: str) -> str | None:
     """ :return: an error message if the new password is not acceptable, None otherwise """
     if len(password) < 6:
         return _("Password too short.")
@@ -349,7 +353,8 @@ def check_new_password(password, confirmation):
     return None
 
 
-def register_user(username, realname, email, password, language):
+def register_user(username: str, realname: str, email: str, password: str,
+                  language: str) -> tuple[User | None, str | None]:
     """
     Create a local account, to be activated with its `activate` token
     :return: (User, None) if created, (None, error message) if the username or email is already used
@@ -366,7 +371,7 @@ def register_user(username, realname, email, password, language):
     return user, None
 
 
-def activate_user(activate_hash):
+def activate_user(activate_hash: str) -> bool:
     """
     Activate a user based on his/her activation hash
     :return: True if the user was found and activated
@@ -374,17 +379,17 @@ def activate_user(activate_hash):
     return User.objects(activate=activate_hash).modify(unset__activate=True) is not None
 
 
-def create_reset_token(email):
+def create_reset_token(email: str) -> User | None:
     """ :return: the User with this email and a new `reset` token, or None if not found """
     return User.objects(email=email).modify(reset=generate_token(), new=True)
 
 
-def get_reset_user(reset_hash):
+def get_reset_user(reset_hash: str) -> User | None:
     """ :return: the User to which this reset token belongs, or None """
     return User.objects(reset=reset_hash).first()
 
 
-def reset_password(reset_hash, password):
+def reset_password(reset_hash: str, password: str) -> User | None:
     """
     Set a new password for the user owning this reset token, and activate the account
     :return: the User, or None if the reset token is invalid
@@ -393,7 +398,7 @@ def reset_password(reset_hash, password):
                                                  unset__reset=True, unset__activate=True, new=True)
 
 
-def create_api_token(user, days, description):
+def create_api_token(user: User, days: int, description: str) -> str:
     """
     Generate a signed API token for the user, valid for the given number of days
     :return: the token, to be shown only once as only its id and hash are stored
@@ -408,7 +413,7 @@ def create_api_token(user, days, description):
     return token
 
 
-def revoke_api_token(user, token_id):
+def revoke_api_token(user: User, token_id: str) -> bool:
     """ :return: False if the user has no API token with this id """
     if user.apitokens.pop(token_id, None) is None:
         return False
@@ -416,7 +421,7 @@ def revoke_api_token(user, token_id):
     return True
 
 
-def verify_api_token(token):
+def verify_api_token(token: str) -> User:
     """
     :return: the User owning this API token
     :raise jwt.ExpiredSignatureError: if the token has expired
@@ -429,7 +434,7 @@ def verify_api_token(token):
     return user
 
 
-def get_api_key(username):
+def get_api_key(username: str) -> str | None:
     """
     :return: the API key of the user, used as its webdav password and generated on first request,
         or None if the user does not exist
