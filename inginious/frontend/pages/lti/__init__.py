@@ -12,9 +12,10 @@ from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.models import User, LaunchData
+from inginious.frontend.controllers import auth
 
 
-def login_or_bind(user_manager, launch):
+def login_or_bind(launch):
     """
     Connects the INGInious user bound to the LTI user of the launch and redirects to the launched page.
     Otherwise, returns the login template that invites to bind an account, holding the launch token.
@@ -22,7 +23,7 @@ def login_or_bind(user_manager, launch):
     user_profile = User.objects(**{"ltibindings__" + launch.lti.binding_key: launch.lti.username}).first()
     if user_profile:
         if not session.loggedin or session.username != user_profile.username:
-            user_manager.connect_user(user_profile)
+            auth.connect_user(user_profile)
         launch.update(set__username=user_profile.username, unset__token=True)
         return redirect(launch.lti.redir_url)
 
@@ -85,4 +86,4 @@ class LTILoginPage(INGIniousPage):
         launch = LaunchData.objects(token=token, lti__version=self._lti_version).first() if token else None
         if launch is None:
             raise Forbidden(description=_("No LTI data available."))
-        return login_or_bind(self.user_manager, launch)
+        return login_or_bind(launch)

@@ -8,13 +8,14 @@ from flask import  session, request, redirect, render_template, url_for
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User
+from inginious.frontend.controllers import auth
 
 class BindingsPage(INGIniousAuthPage):
     """ Bindings page for DB-authenticated users"""
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ
         """ GET request """
-        auth_methods = self.user_manager.get_auth_methods()
+        auth_methods = auth.get_auth_methods()
         user_data = self.user_manager.get_user_info(session.username)
         bindings = user_data.bindings
         return render_template("preferences/bindings.html", bindings=bindings,
@@ -27,7 +28,7 @@ class BindingsPage(INGIniousAuthPage):
 
         user_data = User.objects.get(username=session.username)
         user_input = request.form
-        auth_methods = self.user_manager.get_auth_methods()
+        auth_methods = auth.get_auth_methods()
 
         if "auth_binding" in user_input:
             auth_binding = user_input["auth_binding"]
@@ -39,7 +40,7 @@ class BindingsPage(INGIniousAuthPage):
                 return redirect(url_for("authenticationpage", auth_id=auth_binding))
         elif "revoke_auth_binding" in user_input:
             auth_id = user_input["revoke_auth_binding"]
-            error, msg = self.user_manager.revoke_binding(session.username, auth_id)
+            error, msg = auth.revoke_binding(session.username, auth_id)
 
         bindings = user_data.bindings
 

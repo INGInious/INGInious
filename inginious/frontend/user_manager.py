@@ -3,73 +3,19 @@
 # This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 # more information about the licensing of this file.
 
-""" Manages users data and session """
+""" Manages users data """
 import os
-import re
 import logging
-import hashlib
-import flask
 
 from flask import session, request
 from typing import Dict, Optional
-from werkzeug.exceptions import NotFound
-from abc import ABCMeta, abstractmethod
 from functools import reduce
 from natsort import natsorted
-from collections import OrderedDict
 from binascii import hexlify
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
 
+from inginious.frontend.controllers import auth
 from inginious.frontend.models import User, Group, Audience, CourseClass, UserTask, Submission
-
-class AuthInvalidInputException(Exception):
-    pass
-
-
-class AuthInvalidMethodException(Exception):
-    pass
-
-
-class AuthMethod(object, metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_id(self):
-        """
-        :return: The auth method id
-        """
-        return ""
-
-    @abstractmethod
-    def get_auth_link(self, auth_storage):
-        """
-        :param auth_storage: The session auth method storage dict
-        :return: The authentication link
-        """
-        return ""
-
-    @abstractmethod
-    def callback(self, auth_storage):
-        """
-        :param auth_storage: The session auth method storage dict
-        :return: User tuple and , or None, if failed
-        """
-        return None
-
-    @abstractmethod
-    def get_name(self):
-        """
-        :return: The name of the auth method, to be displayed publicly
-        """
-        return ""
-
-    @abstractmethod
-    def get_imlink(self):
-        """
-        :return: The image link
-        """
-        return ""
 
 class UserManager:
     def __init__(self, superadmins):
@@ -78,142 +24,11 @@ class UserManager:
         :param superadmins: list of the super-administrators' usernames
         """
         self._superadmins = superadmins
-        self._auth_methods = OrderedDict()
         self._logger = logging.getLogger("inginious.webapp.users")
 
-    @classmethod
-    def sanitize_email(cls, email: str) -> str:
-        """
-        Sanitize an email address and put the bar part of an address foo@bar in lower case.
-        """
-        email_re = re.compile(
-            r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*"  # dot-atom
-            r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-011\013\014\016-\177])*"'  # quoted-string
-            r')@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$', re.IGNORECASE)  # domain
-
-        if email_re.match(email) is None:
-            return None
-
-        email = email.split('@')
-        return "%s@%s" % (email[0], email[1].lower())
-
     ##############################################
-    #      User searching and authentication     #
+    #              User information              #
     ##############################################
-
-    def register_auth_method(self, auth_method):
-        """
-        Registers an authentication method
-        :param auth_method: an AuthMethod object
-        """
-        self._auth_methods[auth_method.get_id()] = auth_method
-
-    def get_auth_method(self, auth_method_id):
-        """
-        :param the auth method id, as provided by get_auth_methods_inputs()
-        :return: AuthMethod if it exists, otherwise None
-        """
-        return self._auth_methods.get(auth_method_id, None)
-
-    def get_auth_methods(self):
-        """
-        :return: The auth methods dict
-        """
-        return self._auth_methods
-
-    def auth_user(self, username, password, do_connect=True):
-        """
-        Authenticate the user using database password
-        :param username: Username/Login
-        :param password: User password
-        :param do_connect: indicates if the user must be connected after authentification, True by default
-        :return: Returns a User model, or None if the authentication was not successful
-        """
-        user = User.objects(username=username, activate__exists=False).first()
-
-        if not user or not user.password:
-            return None
-
-        method, db_hash = user.password.split("-", 1) if "-" in user.password else ("sha512", user.password)
-
-        if self.verify_hash(db_hash, password, method):
-            if do_connect:
-                self.connect_user(user)
-            return user
-
-    def verify_hash(cls, db_hash, password, method="sha512"):
-        """
-        Verify a hash
-        :param db_hash: The hash to verify
-        :param password: The password to verify
-        :param method: The hash method
-        :return: A boolean if the hash is correct
-        """
-        available_methods = {"sha512": cls.verify_hash_sha512, "argon2id": cls.verify_hash_argon2id}
-
-        if method in available_methods:
-            return available_methods[method](db_hash, password)
-        else:
-            raise AuthInvalidMethodException()
-
-
-    def verify_hash_sha512(cls, db_hash, password):
-        return cls.hash_password_sha512(password) == db_hash
-
-
-    def verify_hash_argon2id(cls, db_hash, password):
-        try:
-            ph = PasswordHasher()
-            return ph.verify(db_hash, password)
-        except VerifyMismatchError:
-            return False
-
-    def connect_user(self, user):
-        """ Opens a session for the user
-
-        :param user : a dict representing the user, it contains the data of the user.
-            It must at least contain the following fields:
-            - realname
-            - email
-            - username
-        """
-
-        if not all(key in user for key in ["realname", "email", "username"]):
-            raise AuthInvalidInputException()
-
-        User.objects(email=user["email"]).update(realname=user["realname"], username=user["username"],
-                                                 language=user.language)
-
-        ip = flask.request.remote_addr
-
-        # Forge a new session to prevent session fixation
-        session.regenerate()
-
-        session.loggedin = True
-        session.email = user.email
-        session.username = user.username
-        session.realname = user.realname
-        session.language = user.language
-        session.timezone = user.timezone
-        session.code_indentation = user.code_indentation
-        session.tos_signed = user.tos_accepted
-        session.token = None
-
-        self._logger.info("User %s connected - %s - %s - %s", user["username"], user["realname"], user["email"], ip)
-
-        return True
-
-    def disconnect_user(self):
-        """
-        Disconnects the user currently logged-in
-        """
-        if session.loggedin:
-            ip = flask.request.remote_addr
-            self._logger.info("User %s disconnected - %s - %s - %s", session.username, session.realname,
-                              session.email, ip)
-
-        # Forge a new session to prevent any reuse of the previous session id (and data bound to it, like LTI launches)
-        session.regenerate()
 
     def get_users_info(self, usernames) -> Dict[str, Optional[User]]:
         """
@@ -277,77 +92,6 @@ class UserManager:
         user = User.objects(activate=activate_hash).modify(unset__activate=True)
         return user is not None
 
-    def bind_user(self, auth_id, user):
-        """
-        Add a binding method to a user
-        :param auth_id: The binding method id
-        :param user: User object
-        :return: Boolean if method has been add
-        """
-        username, realname, email, additional = user
-        email = UserManager.sanitize_email(email)
-        if email is None:
-            self._logger.exception("Invalid email format.")
-            return False
-
-        auth_method = self.get_auth_method(auth_id)
-        if not auth_method:
-            raise NotFound(description=_("Auth method not found."))
-
-        # Look for already bound auth method username
-        user_profile = User.objects(**{"bindings__" + auth_id: username}).first()
-
-        if user_profile and not session.loggedin:
-            # Sign in
-            self.connect_user(user_profile)
-        elif user_profile and session.email == user_profile.email:
-            # Logged in, refresh fields if found profile email matches session email
-            user_profile.bindings[auth_id] = [username, additional]
-            user_profile.save()
-        elif user_profile:
-            # Logged in, but already linked to another account
-            self._logger.exception("Tried to bind an already bound account !")
-        elif session.loggedin:
-            # No binding, but logged: add new binding
-            # !!! Use email as it may happen that a user is logged with empty username
-            # !!! if the binding link is used as is
-            User.objects(email=session.email).update(**{"bindings__" + auth_id: [username, additional]})
-        else:
-            # No binding, check for email
-            if User.objects(email=email).first():
-                # Found an email, existing user account, abort without binding
-                self._logger.exception("The binding email is already used by another account!")
-                return False
-            else:
-                # New user, create an account using email address
-                user_profile = User(username="", realname=realname, email=email,
-                                bindings={auth_id: [username, additional]}, language=session.language)
-
-                user_profile.save()
-                self.connect_user(user_profile)
-
-        return True
-
-    def revoke_binding(self, username, binding_id):
-        """
-        Revoke a binding method for a user
-        :param binding_id: The binding method id
-        :param username: username of the user
-        :return: Boolean if error occurred and message if necessary
-        """
-        user_data = User.objects(username=username).first()
-        if binding_id not in self.get_auth_methods().keys():
-            error = True
-            msg = _("Incorrect authentication binding.")
-        elif user_data is not None and (len(user_data.bindings.keys()) > 1 or "password" in user_data):
-            User.objects(username=username).update(**{"unset__bindings__" + binding_id: 1})
-            msg = ""
-            error = False
-        else:
-            error = True
-            msg = _("You must set a password before removing all bindings.")
-        return error, msg
-
     def delete_user(self, username, confirmation_email=None):
         """
         Delete a user based on username
@@ -378,7 +122,7 @@ class UserManager:
             return _("User could not be created.")
 
         User(username=values["username"], realname=values["realname"], email=values["email"],
-             password=self.hash_password(values["password"])).save()
+             password=auth.hash_password(values["password"])).save()
 
         return None
 
@@ -814,33 +558,3 @@ class UserManager:
     @classmethod
     def generate_api_key(cls):
         return hexlify(os.urandom(40)).decode('utf-8')
-
-    @classmethod
-    def hash_password_sha512(cls, content):
-        """
-        :param content: a str input
-        :return a hash of str input
-        """
-        return hashlib.sha512(content.encode("utf-8")).hexdigest()
-
-    @classmethod
-    def hash_password_argon2id(cls, content):
-        """
-        :param content: a str input
-        :return a hash of str input
-        """
-        ph = PasswordHasher()
-        return ph.hash(content)
-
-    @classmethod
-    def hash_password(cls, content):
-        """
-        Encapsulates the other password hashing functions
-        :param content: a str input
-        :return a hash of str input
-        """
-
-        methods = {"argon2id": cls.hash_password_argon2id, "sha512": cls.hash_password_sha512}
-        latest_method = "argon2id"
-
-        return latest_method + "-" + methods[latest_method](content)

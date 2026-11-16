@@ -17,7 +17,7 @@ from mongoengine import Q
 
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.flask.mail import mail
-from inginious.frontend.user_manager import UserManager
+from inginious.frontend.controllers import auth
 from inginious.frontend.models import User
 
 
@@ -63,7 +63,7 @@ class RegistrationPage(INGIniousPage):
         error = False
         msg = ""
 
-        email = UserManager.sanitize_email(data["email"])
+        email = auth.sanitize_email(data["email"])
 
         # Check input format
         if re.match(r"^[-_|~0-9A-Z]{4,}$", data["username"], re.IGNORECASE) is None:
@@ -94,8 +94,8 @@ class RegistrationPage(INGIniousPage):
                 else:
                     msg = _("This email address is already in use !")
             else:
-                passwd_hash = UserManager.hash_password(data["passwd"])
-                activate_hash = UserManager.hash_password_sha512(str(secrets.randbits(256)))
+                passwd_hash = auth.hash_password(data["passwd"])
+                activate_hash = auth.hash_password_sha512(str(secrets.randbits(256)))
                 User(username= data["username"], realname=data["realname"], email=email,
                      password=passwd_hash, activate=activate_hash,
                      language=session.language, tos_accepted=True).save()
@@ -135,7 +135,7 @@ To activate your account, please click on the following link :
             msg = _("Invalid email format.")
 
         if not error:
-            reset_hash = UserManager.hash_password_sha512(str(secrets.randbits(256)))
+            reset_hash = auth.hash_password_sha512(str(secrets.randbits(256)))
             user = User.objects(email=data["recovery_email"]).modify(reset=reset_hash, new=True)
             if user is None:
                 error = True
@@ -176,7 +176,7 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
             msg = _("Passwords don't match !")
 
         if not error:
-            passwd_hash = UserManager.hash_password(data["passwd"])
+            passwd_hash = auth.hash_password(data["passwd"])
             user = User.objects(reset=data["reset"]).modify(set__password=passwd_hash,
                                                             unset__reset=True, unset__activate=True, new=True)
             if user is None:

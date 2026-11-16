@@ -12,7 +12,7 @@ from werkzeug.exceptions import NotFound
 
 from inginious.frontend.models import User
 from inginious.frontend.pages.utils import INGIniousAuthPage
-from inginious.frontend.user_manager import UserManager
+from inginious.frontend.controllers import auth
 from inginious.frontend.i18n import available_languages
 
 
@@ -57,7 +57,7 @@ class ProfilePage(INGIniousAuthPage):
         elif current_app.config.get("ALLOW_REGISTRATION") and len(data["passwd"]) >= 6:
 
             if "password" in userdata:
-                user = self.user_manager.auth_user(session.username, data["oldpasswd"], False)
+                user = auth.auth_user(session.username, data["oldpasswd"], False)
             else:
                 user = User.objects.get(username=userdata["username"])
 
@@ -66,7 +66,7 @@ class ProfilePage(INGIniousAuthPage):
                 msg = _("Incorrect old password.")
                 return result, msg, error
             else:
-                passwd_hash = UserManager.hash_password(data["passwd"])
+                passwd_hash = auth.hash_password(data["passwd"])
                 profile_data_to_be_updated["password"] = passwd_hash
 
         # Check if updating language

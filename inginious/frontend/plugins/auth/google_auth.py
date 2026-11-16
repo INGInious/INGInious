@@ -12,7 +12,7 @@ import flask
 from flask import redirect
 from requests_oauthlib import OAuth2Session
 
-from inginious.frontend.user_manager import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod
 
 authorization_base_url = 'https://accounts.google.com/o/oauth2/v2/auth'
 token_url = 'https://www.googleapis.com/oauth2/v4/token'

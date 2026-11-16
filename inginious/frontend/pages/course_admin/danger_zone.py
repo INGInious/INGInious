@@ -12,7 +12,7 @@ from flask import  request, redirect, render_template, session, url_for
 from inginious.frontend.models import Submission, Audience, UserTask, Group,  CourseClass
 from inginious.frontend.courses import Course
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
-from inginious.frontend.user_manager import UserManager
+from inginious.frontend.controllers import auth
 from inginious.common.exceptions import CourseNotFoundException, CourseNotArchivable
 
 
@@ -129,7 +129,7 @@ class CourseDangerZonePage(INGIniousAdminPage):
 
     def page(self, course, msg="", error=False):
         """ Get all data and display the page """
-        thehash = UserManager.hash_password_sha512(str(secrets.randbits(256)))
+        thehash = auth.hash_password_sha512(str(secrets.randbits(256)))
         session.token = thehash
 
 

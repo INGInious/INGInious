@@ -11,7 +11,7 @@ import flask
 
 from requests_oauthlib import OAuth2Session
 
-from inginious.frontend.user_manager import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod
 
 authorization_base_url = 'https://github.com/login/oauth/authorize'
 token_url = 'https://github.com/login/oauth/access_token'

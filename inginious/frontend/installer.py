@@ -21,7 +21,7 @@ import secrets
 
 from inginious import __version__
 import inginious.common.custom_yaml as yaml
-from inginious.frontend.user_manager import UserManager
+from inginious.frontend.controllers import auth
 from inginious.frontend.models import User
 
 HEADER = '\033[95m'
@@ -557,14 +557,14 @@ class Installer:
         email = None
         while not email:
             email = self._ask_with_default("Enter the email address of the superadmin", "superadmin@inginious.org")
-            email = UserManager.sanitize_email(email)
+            email = auth.sanitize_email(email)
             if email is None:
                 self._display_error("Invalid email format.")
 
         password = self._ask_with_default("Enter the password of the superadmin", "superadmin")
 
         if not User.objects(username=username):
-            User(username=username, realname=realname, email=email, password=UserManager.hash_password(password)).save()
+            User(username=username, realname=realname, email=email, password=auth.hash_password(password)).save()
         else:
             self._display_warning("User already exists, skipping creation.")
 

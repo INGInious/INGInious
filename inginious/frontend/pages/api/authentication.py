@@ -9,6 +9,7 @@ import flask
 from flask import session
 
 from inginious.frontend.pages.api._api_page import APIPage, APIInvalidArguments
+from inginious.frontend.controllers import auth
 
 
 class APIAuthentication(APIPage):
@@ -43,7 +44,7 @@ class APIAuthentication(APIPage):
             raise APIInvalidArguments()
 
         try:
-            if self.user_manager.auth_user(user_input["login"].strip(), user_input["password"]) is not None:
+            if auth.auth_user(user_input["login"].strip(), user_input["password"]) is not None:
                     return 200, {"status": "success", "username": session.username}
         except:
             pass

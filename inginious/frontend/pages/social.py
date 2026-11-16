@@ -7,11 +7,12 @@
 from flask import current_app, redirect, session, request, url_for
 
 from inginious.frontend.pages.utils import INGIniousPage
+from inginious.frontend.controllers import auth
 
 
 class AuthenticationPage(INGIniousPage):
     def process_signin(self,auth_id):
-        auth_method = self.user_manager.get_auth_method(auth_id)
+        auth_method = auth.get_auth_method(auth_id)
         if not auth_method:
             raise current_app.notfound(message=_("Auth method doesn't exist"))
 
@@ -29,7 +30,7 @@ class AuthenticationPage(INGIniousPage):
 
 class CallbackPage(INGIniousPage):
     def process_callback(self, auth_id):
-        auth_method = self.user_manager.get_auth_method(auth_id)
+        auth_method = auth.get_auth_method(auth_id)
         if not auth_method:
             raise current_app.notfound(message=_("Auth method doesn't exist."))
 
@@ -37,7 +38,7 @@ class CallbackPage(INGIniousPage):
         user = auth_method.callback(auth_storage)
         if not user:
             return redirect(url_for("signinpage", callbackerror=""))
-        if not self.user_manager.bind_user(auth_id, user):
+        if not auth.bind_user(auth_id, user):
             return redirect(url_for("signinpage", binderror=""))
 
         return redirect(auth_storage.get("redir_url", "/"))

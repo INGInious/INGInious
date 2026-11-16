@@ -10,7 +10,7 @@ import bisect
 
 from jinja2 import  FileSystemLoader
 
-from inginious.frontend.user_manager import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod, register_auth_method
 from inginious.frontend.task_problems import inspect_displayable_problem_types
 from inginious.common.tasks_problems import register_problem_types
 from inginious.common.exceptions import NotLoadedException
@@ -92,7 +92,7 @@ class PluginManager(object):
         """
         if not self._loaded:
             raise NotLoadedException("PluginManager not loaded")
-        self._user_manager.register_auth_method(auth_method)
+        register_auth_method(auth_method)
 
     def get_submission_manager(self):
         """ Returns the submission manager"""

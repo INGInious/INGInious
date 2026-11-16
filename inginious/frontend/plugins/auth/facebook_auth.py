@@ -12,7 +12,7 @@ import flask
 from requests_oauthlib import OAuth2Session
 from requests_oauthlib.compliance_fixes import facebook_compliance_fix
 
-from inginious.frontend.user_manager import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod
 
 authorization_base_url = 'https://www.facebook.com/dialog/oauth'
 token_url = 'https://graph.facebook.com/oauth/access_token'

@@ -8,6 +8,7 @@ from flask import current_app, session, request, redirect, render_template, url_
 from werkzeug.exceptions import Forbidden
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.controllers import auth
 
 class DeletePage(INGIniousAuthPage):
     """ Delete account page for DB-authenticated users"""
@@ -24,7 +25,7 @@ class DeletePage(INGIniousAuthPage):
             error = True
             msg = _("The specified email is incorrect.")
         else:
-            self.user_manager.disconnect_user()
+            auth.disconnect_user()
         return msg, error
 
     def GET_AUTH(self):  # pylint: disable=arguments-differ

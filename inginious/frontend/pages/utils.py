@@ -15,6 +15,7 @@ from inginious.client.client import Client
 from inginious.common import custom_yaml
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
+from inginious.frontend.controllers import auth
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.i18n import available_languages
 
@@ -104,7 +105,7 @@ class INGIniousAuthPage(INGIniousPage):
             if "callbackerror" in request.args:
                 error = _("Couldn't fetch the required information from the service. Please check the provided "
                           "permissions (name, email) and contact your INGInious administrator if the error persists.")
-            return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
+            return render_template("auth.html", auth_methods=auth.get_auth_methods(),
                                                error=error)
 
     def POST(self, *args, **kwargs):
@@ -120,15 +121,15 @@ class INGIniousAuthPage(INGIniousPage):
         else:
             user_input = request.form
             if "login" in user_input and "password" in user_input:
-                if self.user_manager.auth_user(user_input["login"].strip(), user_input["password"]) is not None:
+                if auth.auth_user(user_input["login"].strip(), user_input["password"]) is not None:
                     return self.GET_AUTH(*args, **kwargs)
                 else:
-                    return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods(),
+                    return render_template("auth.html", auth_methods=auth.get_auth_methods(),
                                                        error=_("Invalid login/password"))
             elif self.preview_allowed(*args, **kwargs):
                 return self.POST_AUTH(*args, **kwargs)
             else:
-                return render_template("auth.html", auth_methods=self.user_manager.get_auth_methods())
+                return render_template("auth.html", auth_methods=auth.get_auth_methods())
 
     def preview_allowed(self, *args, **kwargs):
         """
@@ -182,11 +183,11 @@ class SignInPage(INGIniousAuthPage):
 
 class LogOutPage(INGIniousAuthPage):
     def GET_AUTH(self, *args, **kwargs):
-        self.user_manager.disconnect_user()
+        auth.disconnect_user()
         return redirect(url_for("courselistpage"))
 
     def POST_AUTH(self, *args, **kwargs):
-        self.user_manager.disconnect_user()
+        auth.disconnect_user()
         return redirect(url_for("courselistpage"))
 
 

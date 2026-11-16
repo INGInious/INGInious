@@ -153,7 +153,7 @@ class LTI13LaunchPage(INGIniousPage):
             redir_url=redir_url
         )
         launch = LaunchData.objects(launch_id=launch_id).modify(set__lti=lti_data, new=True)
-        return login_or_bind(self.user_manager, launch)
+        return login_or_bind(launch)
 
     def GET(self, courseid, taskid):
         return self._handle_message_launch(courseid, taskid)

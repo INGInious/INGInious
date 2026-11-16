@@ -13,7 +13,7 @@ import jwt
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.models import User, APIToken
-from inginious.frontend.user_manager import UserManager
+from inginious.frontend.controllers import auth
 
 
 class APITokenPage(INGIniousAuthPage):
@@ -53,7 +53,7 @@ class APITokenPage(INGIniousAuthPage):
             token = jwt.encode(payload, current_app.config["API_JWT_SECRET"], algorithm="HS256")
             
             try:
-                new_token = APIToken(token=UserManager.hash_password(token), expires=expiration, description=description)
+                new_token = APIToken(token=auth.hash_password(token), expires=expiration, description=description)
                 user.apitokens[token_id] = new_token
                 user.save()
             except ValidationError as e:
