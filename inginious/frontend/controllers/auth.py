@@ -16,7 +16,6 @@ import flask
 from flask import session, current_app
 from datetime import datetime, timedelta, timezone
 from abc import ABCMeta, abstractmethod
-from werkzeug.exceptions import NotFound
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from mongoengine import Q
@@ -30,11 +29,39 @@ _auth_methods: dict[str, "AuthMethod"] = {}
 _logger = logging.getLogger("inginious.webapp.auth")
 
 
-class AuthInvalidInputException(Exception):
+class AuthError(Exception):
+    """ Base class of the errors raised by the auth controller. Pages translate them into messages. """
+
+
+class AuthInvalidInputException(AuthError):
     pass
 
 
-class AuthInvalidMethodException(Exception):
+class AuthInvalidMethodException(AuthError):
+    pass
+
+
+class UnknownAuthMethod(AuthError):
+    pass
+
+
+class LastBindingWithoutPassword(AuthError):
+    pass
+
+
+class PasswordTooShort(AuthError):
+    pass
+
+
+class PasswordMismatch(AuthError):
+    pass
+
+
+class UsernameTaken(AuthError):
+    pass
+
+
+class EmailTaken(AuthError):
     pass
 
 
@@ -250,7 +277,7 @@ def bind_user(auth_id: str, user: AuthUserInfo) -> bool:
         return False
 
     if not get_auth_method(auth_id):
-        raise NotFound(description=_("Auth method not found."))
+        raise UnknownAuthMethod()
 
     # Look for already bound auth method username
     user_profile = User.objects(**{"bindings__" + auth_id: username}).first()
@@ -287,20 +314,20 @@ def bind_user(auth_id: str, user: AuthUserInfo) -> bool:
     return True
 
 
-def revoke_binding(username: str, binding_id: str) -> tuple[bool, str]:
+def revoke_binding(username: str, binding_id: str) -> None:
     """
     Revoke a binding method for a user
     :param binding_id: The binding method id
     :param username: username of the user
-    :return: Boolean if error occurred and message if necessary
+    :raise UnknownAuthMethod: if the binding method is not registered
+    :raise LastBindingWithoutPassword: if the user has no password and no other binding (or does not exist)
     """
     user_data = User.objects(username=username).first()
     if binding_id not in _auth_methods:
-        return True, _("Incorrect authentication binding.")
-    if user_data is not None and (len(user_data.bindings.keys()) > 1 or "password" in user_data):
-        User.objects(username=username).update(**{"unset__bindings__" + binding_id: 1})
-        return False, ""
-    return True, _("You must set a password before removing all bindings.")
+        raise UnknownAuthMethod()
+    if user_data is None or (len(user_data.bindings.keys()) <= 1 and "password" not in user_data):
+        raise LastBindingWithoutPassword()
+    User.objects(username=username).update(**{"unset__bindings__" + binding_id: 1})
 
 
 def lti_login(launch: LaunchData) -> User | None:
@@ -340,31 +367,30 @@ def generate_token() -> str:
     return secrets.token_hex(64)
 
 
-def check_new_password(password: str, confirmation: str) -> str | None:
-    """ :return: an error message if the new password is not acceptable, None otherwise """
+def check_new_password(password: str, confirmation: str) -> None:
+    """
+    :raise PasswordTooShort: if the password has less than 6 characters
+    :raise PasswordMismatch: if the confirmation differs from the password
+    """
     if len(password) < 6:
-        return _("Password too short.")
+        raise PasswordTooShort()
     if password != confirmation:
-        return _("Passwords don't match !")
-    return None
+        raise PasswordMismatch()
 
 
-def register_user(username: str, realname: str, email: str, password: str,
-                  language: str) -> tuple[User | None, str | None]:
+def register_user(username: str, realname: str, email: str, password: str, language: str) -> User:
     """
     Create a local account, to be activated with its `activate` token
-    :return: (User, None) if created, (None, error message) if the username or email is already used
+    :raise UsernameTaken, EmailTaken: if the username or email is already used
     """
     existing_user = User.objects(Q(username=username) | Q(email=email)).first()
     if existing_user is not None:
-        if existing_user.username == username:
-            return None, _("This username is already taken !")
-        return None, _("This email address is already in use !")
+        raise UsernameTaken() if existing_user.username == username else EmailTaken()
 
     user = User(username=username, realname=realname, email=email, password=hash_password(password),
                 activate=generate_token(), language=language, tos_accepted=True)
     user.save()
-    return user, None
+    return user
 
 
 def activate_user(activate_hash: str) -> bool:

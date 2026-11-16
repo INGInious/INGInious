@@ -13,7 +13,7 @@ from flask import current_app, session, render_template
 from flask_mail import Message
 from werkzeug.exceptions import Forbidden
 
-from inginious.frontend.pages.utils import INGIniousPage
+from inginious.frontend.pages.utils import INGIniousPage, auth_error_message
 from inginious.frontend.flask.mail import mail
 from inginious.frontend.controllers import auth
 
@@ -72,17 +72,17 @@ class RegistrationPage(INGIniousPage):
         elif email is None:
             error = True
             msg = _("Invalid email format.")
-        elif password_error := auth.check_new_password(data["passwd"], data["passwd2"]):
-            error = True
-            msg = password_error
         elif current_app.config["IS_TOS_DEFINED"] and "term_policy_check" not in data:
             error = True
             msg = _("Please accept the Terms of Service and Data Privacy")
 
         if not error:
-            user, msg = auth.register_user(data["username"], data["realname"], email, data["passwd"], session.language)
-            if user is None:
+            try:
+                auth.check_new_password(data["passwd"], data["passwd2"])
+                user = auth.register_user(data["username"], data["realname"], email, data["passwd"], session.language)
+            except auth.AuthError as e:
                 error = True
+                msg = auth_error_message(e)
             else:
                 try:
                     subject = _("Welcome on INGInious")
@@ -147,10 +147,11 @@ Someone (probably you) asked to reset your INGInious password. If this was you, 
         error = False
         msg = ""
 
-        password_error = auth.check_new_password(data["passwd"], data["passwd2"])
-        if password_error:
+        try:
+            auth.check_new_password(data["passwd"], data["passwd2"])
+        except auth.AuthError as e:
             error = True
-            msg = password_error
+            msg = auth_error_message(e)
 
         if not error:
             user = auth.reset_password(data["reset"], data["passwd"])

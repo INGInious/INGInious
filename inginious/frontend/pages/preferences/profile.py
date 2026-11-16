@@ -11,7 +11,7 @@ from flask import current_app, request, render_template, session
 from werkzeug.exceptions import NotFound
 
 from inginious.frontend.models import User
-from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.pages.utils import INGIniousAuthPage, auth_error_message
 from inginious.frontend.controllers import auth
 from inginious.frontend.i18n import available_languages
 
@@ -47,9 +47,10 @@ class ProfilePage(INGIniousAuthPage):
 
         # Check if updating the password.
         if current_app.config.get("ALLOW_REGISTRATION") and data["passwd"]:
-            msg = auth.check_new_password(data["passwd"], data["passwd2"])
-            if msg:
-                return result, msg, True
+            try:
+                auth.check_new_password(data["passwd"], data["passwd2"])
+            except auth.AuthError as e:
+                return result, auth_error_message(e), True
 
             # Accounts created through another auth method may not have a password yet
             if "password" in userdata and not auth.verify_password(userdata, data["oldpasswd"]):

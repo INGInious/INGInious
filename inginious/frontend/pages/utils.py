@@ -20,6 +20,19 @@ from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.i18n import available_languages
 
 
+def auth_error_message(error: auth.AuthError) -> str:
+    """ :return: the translated message to display for an error raised by the auth controller """
+    messages = {
+        auth.UnknownAuthMethod: _("Incorrect authentication binding."),
+        auth.LastBindingWithoutPassword: _("You must set a password before removing all bindings."),
+        auth.PasswordTooShort: _("Password too short."),
+        auth.PasswordMismatch: _("Passwords don't match !"),
+        auth.UsernameTaken: _("This username is already taken !"),
+        auth.EmailTaken: _("This email address is already in use !"),
+    }
+    return messages.get(type(error), _("An authentication error occurred."))
+
+
 class INGIniousPage(MethodView):
     """
     A base for all the pages of the INGInious webapp.

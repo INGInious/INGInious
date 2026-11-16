@@ -8,7 +8,7 @@
 from flask import request, jsonify, render_template
 
 from inginious.frontend.models import User
-from inginious.frontend.pages.utils import INGIniousAdministratorPage
+from inginious.frontend.pages.utils import INGIniousAdministratorPage, auth_error_message
 from inginious.frontend.controllers import auth
 
 
@@ -54,7 +54,10 @@ class AdministrationUserActionPage(INGIniousAdministratorPage):
             return jsonify(user_info.bindings if user_info is not None else {})
         elif action == "revoke_binding":
             binding_id = request.form.get("binding_id")
-            error, feedback = auth.revoke_binding(username, binding_id)
+            try:
+                auth.revoke_binding(username, binding_id)
+            except auth.AuthError as e:
+                feedback = auth_error_message(e)
         elif action == "add_user":
             realname = request.form.get("realname")
             email = request.form.get("email")

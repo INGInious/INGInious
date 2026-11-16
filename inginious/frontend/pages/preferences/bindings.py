@@ -6,7 +6,7 @@
 """ Auth bindings page """
 from flask import  session, request, redirect, render_template, url_for
 
-from inginious.frontend.pages.utils import INGIniousAuthPage
+from inginious.frontend.pages.utils import INGIniousAuthPage, auth_error_message
 from inginious.frontend.models import User
 from inginious.frontend.controllers import auth
 
@@ -40,7 +40,11 @@ class BindingsPage(INGIniousAuthPage):
                 return redirect(url_for("authenticationpage", auth_id=auth_binding))
         elif "revoke_auth_binding" in user_input:
             auth_id = user_input["revoke_auth_binding"]
-            error, msg = auth.revoke_binding(session.username, auth_id)
+            try:
+                auth.revoke_binding(session.username, auth_id)
+            except auth.AuthError as e:
+                error = True
+                msg = auth_error_message(e)
 
         bindings = user_data.bindings
 

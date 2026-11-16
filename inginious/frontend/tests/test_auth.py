@@ -15,11 +15,11 @@ import jwt
 import pytest
 from mongoengine import ValidationError, connect, disconnect
 from pymongo.errors import PyMongoError
-from werkzeug.exceptions import NotFound
 
 from inginious.frontend.controllers import auth
 from inginious.frontend.flask.mongo_sessions import MongoDBSessionInterface
 from inginious.frontend.models import User, Session, LaunchData, LTIData
+from inginious.frontend.pages.utils import auth_error_message
 
 TEST_DB = "INGInious_test_auth"
 JWT_SECRET = "a-test-secret-long-enough-for-hs256-signatures"
@@ -138,13 +138,19 @@ def test_sanitize_email(email, expected):
     assert auth.sanitize_email(email) == expected
 
 
-@pytest.mark.parametrize("password, confirmation, valid", [
-    ("abcdef", "abcdef", True),
-    ("abcde", "abcde", False),
-    ("abcdef", "abcdeg", False),
-])
-def test_check_new_password(password, confirmation, valid):
-    assert (auth.check_new_password(password, confirmation) is None) == valid
+def test_check_new_password():
+    auth.check_new_password("abcdef", "abcdef")
+    with pytest.raises(auth.PasswordTooShort):
+        auth.check_new_password("abcde", "abcde")
+    with pytest.raises(auth.PasswordMismatch):
+        auth.check_new_password("abcdef", "abcdeg")
+
+
+@pytest.mark.parametrize("error", [cls for cls in auth.AuthError.__subclasses__()
+                                   if cls not in (auth.AuthInvalidInputException, auth.AuthInvalidMethodException)])
+def test_auth_errors_have_a_message(error):
+    """ Errors pages may receive from the auth controller have a specific message """
+    assert auth_error_message(error()) != auth_error_message(auth.AuthError())
 
 
 def test_generate_token():
@@ -172,8 +178,8 @@ def test_verify_password():
 
 
 def test_register_activate_and_login(session):
-    user, error = auth.register_user("alice", "Alice", "alice@example.com", "secret", "fr")
-    assert error is None and user.activate
+    user = auth.register_user("alice", "Alice", "alice@example.com", "secret", "fr")
+    assert user.activate
     assert user.tos_accepted and user.language == "fr"
 
     # Accounts must be activated before logging in
@@ -190,10 +196,10 @@ def test_register_activate_and_login(session):
 
 def test_register_user_already_used():
     make_user("alice")
-    assert auth.register_user("alice", "A", "other@example.com", "secret", "en") == \
-           (None, "This username is already taken !")
-    assert auth.register_user("bob", "B", "alice@example.com", "secret", "en") == \
-           (None, "This email address is already in use !")
+    with pytest.raises(auth.UsernameTaken):
+        auth.register_user("alice", "A", "other@example.com", "secret", "en")
+    with pytest.raises(auth.EmailTaken):
+        auth.register_user("bob", "B", "alice@example.com", "secret", "en")
     assert User.objects.count() == 1
 
 
@@ -249,7 +255,7 @@ def test_connect_user_does_not_write_user(session):
 
 
 def test_bind_user_unknown_method(session):
-    with pytest.raises(NotFound):
+    with pytest.raises(auth.UnknownAuthMethod):
         auth.bind_user("unknown", ("ext", "Alice", "alice@example.com", {}))
 
 
@@ -304,10 +310,12 @@ def test_revoke_binding():
     make_user("alice", bindings={"dummy": ["ext", {}]})
     make_user("bob", "secret", bindings={"dummy": ["ext2", {}]})
 
-    assert auth.revoke_binding("alice", "unknown") == (True, "Incorrect authentication binding.")
+    with pytest.raises(auth.UnknownAuthMethod):
+        auth.revoke_binding("alice", "unknown")
     # The last binding of an account without password cannot be removed
-    assert auth.revoke_binding("alice", "dummy") == (True, "You must set a password before removing all bindings.")
-    assert auth.revoke_binding("bob", "dummy") == (False, "")
+    with pytest.raises(auth.LastBindingWithoutPassword):
+        auth.revoke_binding("alice", "dummy")
+    auth.revoke_binding("bob", "dummy")
     assert User.objects.get(username="bob").bindings == {}
 
 
