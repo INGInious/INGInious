@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import secrets
 import uuid
+from typing import NamedTuple
 import jwt
 import flask
 
@@ -22,8 +23,12 @@ from mongoengine import Q
 
 from inginious.frontend.models import User, APIToken, LaunchData, LTIData
 
-# (username, realname, email, additional data) returned by AuthMethod.callback
-AuthUserInfo = tuple[str, str, str, dict]
+class AuthUserInfo(NamedTuple):
+    """ User data returned by AuthMethod.callback """
+    username: str  # identifier of the user for the auth method
+    realname: str
+    email: str
+    additional: dict
 
 _auth_methods: dict[str, "AuthMethod"] = {}
 _logger = logging.getLogger("inginious.webapp.auth")
@@ -86,7 +91,7 @@ class AuthMethod(object, metaclass=ABCMeta):
     def callback(self, auth_storage: dict) -> AuthUserInfo | None:
         """
         :param auth_storage: The session auth method storage dict
-        :return: User tuple and , or None, if failed
+        :return: AuthUserInfo, or None, if failed
         """
         return None
 
@@ -267,11 +272,11 @@ def bind_user(auth_id: str, user: AuthUserInfo) -> bool:
     """
     Add a binding method to a user
     :param auth_id: The binding method id
-    :param user: (username, realname, email, additional) tuple returned by the auth method
+    :param user: AuthUserInfo returned by the auth method
     :return: Boolean if method has been add
     """
-    username, realname, raw_email, additional = user
-    email = sanitize_email(raw_email)
+    user = AuthUserInfo(*user)  # plugins may still return a plain tuple
+    email = sanitize_email(user.email)
     if email is None:
         _logger.warning("Invalid email format.")
         return False
@@ -280,14 +285,14 @@ def bind_user(auth_id: str, user: AuthUserInfo) -> bool:
         raise UnknownAuthMethod()
 
     # Look for already bound auth method username
-    user_profile = User.objects(**{"bindings__" + auth_id: username}).first()
+    user_profile = User.objects(**{"bindings__" + auth_id: user.username}).first()
 
     if user_profile and not session.loggedin:
         # Sign in
         connect_user(user_profile)
     elif user_profile and session.email == user_profile.email:
         # Logged in, refresh fields if found profile email matches session email
-        user_profile.bindings[auth_id] = [username, additional]
+        user_profile.bindings[auth_id] = [user.username, user.additional]
         user_profile.save()
     elif user_profile:
         # Logged in, but already linked to another account
@@ -296,7 +301,7 @@ def bind_user(auth_id: str, user: AuthUserInfo) -> bool:
         # No binding, but logged: add new binding
         # !!! Use email as it may happen that a user is logged with empty username
         # !!! if the binding link is used as is
-        User.objects(email=session.email).update(**{"bindings__" + auth_id: [username, additional]})
+        User.objects(email=session.email).update(**{"bindings__" + auth_id: [user.username, user.additional]})
     else:
         # No binding, check for email
         if User.objects(email=email).first():
@@ -305,8 +310,8 @@ def bind_user(auth_id: str, user: AuthUserInfo) -> bool:
             return False
         else:
             # New user, create an account using email address
-            user_profile = User(username="", realname=realname, email=email,
-                                bindings={auth_id: [username, additional]}, language=session.language)
+            user_profile = User(username="", realname=user.realname, email=email,
+                                bindings={auth_id: [user.username, user.additional]}, language=session.language)
 
             user_profile.save()
             connect_user(user_profile)

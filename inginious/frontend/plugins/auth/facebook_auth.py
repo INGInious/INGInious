@@ -12,7 +12,7 @@ import flask
 from requests_oauthlib import OAuth2Session
 from requests_oauthlib.compliance_fixes import facebook_compliance_fix
 
-from inginious.frontend.controllers.auth import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod, AuthUserInfo
 
 authorization_base_url = 'https://www.facebook.com/dialog/oauth'
 token_url = 'https://graph.facebook.com/oauth/access_token'
@@ -38,7 +38,7 @@ class FacebookAuthMethod(AuthMethod):
             r = facebook.get('https://graph.facebook.com/me?fields=id,name,email')
             profile = json.loads(r.content.decode('utf-8'))
             auth_storage["oauth_state"] = facebook.state
-            return str(profile["id"]), profile["name"], profile["email"], {}
+            return AuthUserInfo(str(profile["id"]), profile["name"], profile["email"], {})
         except:
             return None
 

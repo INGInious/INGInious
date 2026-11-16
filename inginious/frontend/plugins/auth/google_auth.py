@@ -12,7 +12,7 @@ import flask
 from flask import redirect
 from requests_oauthlib import OAuth2Session
 
-from inginious.frontend.controllers.auth import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod, AuthUserInfo
 
 authorization_base_url = 'https://accounts.google.com/o/oauth2/v2/auth'
 token_url = 'https://www.googleapis.com/oauth2/v4/token'
@@ -43,7 +43,7 @@ class GoogleAuthMethod(AuthMethod):
 
             response = google.get('https://www.googleapis.com/oauth2/v3/userinfo')
             profile = json.loads(response.content.decode('utf-8'))
-            return str(profile["sub"]), profile["name"], profile["email"], {}
+            return AuthUserInfo(str(profile["sub"]), profile["name"], profile["email"], {})
         except Exception as e:
             return None
 

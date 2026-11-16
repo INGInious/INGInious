@@ -256,18 +256,18 @@ def test_connect_user_does_not_write_user(session):
 
 def test_bind_user_unknown_method(session):
     with pytest.raises(auth.UnknownAuthMethod):
-        auth.bind_user("unknown", ("ext", "Alice", "alice@example.com", {}))
+        auth.bind_user("unknown", auth.AuthUserInfo("ext", "Alice", "alice@example.com", {}))
 
 
 def test_bind_user_invalid_email(session):
     auth.register_auth_method(DummyAuthMethod("dummy"))
-    assert not auth.bind_user("dummy", ("ext", "Alice", "not-an-email", {}))
+    assert not auth.bind_user("dummy", auth.AuthUserInfo("ext", "Alice", "not-an-email", {}))
     assert User.objects.count() == 0
 
 
 def test_bind_user_creates_account(session):
     auth.register_auth_method(DummyAuthMethod("dummy"))
-    assert auth.bind_user("dummy", ("ext", "Alice", "alice@EXAMPLE.com", {"k": "v"}))
+    assert auth.bind_user("dummy", auth.AuthUserInfo("ext", "Alice", "alice@EXAMPLE.com", {"k": "v"}))
     user = User.objects.get(email="alice@example.com")
     assert user.bindings == {"dummy": ["ext", {"k": "v"}]}
     assert session.loggedin and session.email == "alice@example.com"
@@ -276,14 +276,14 @@ def test_bind_user_creates_account(session):
 def test_bind_user_logs_in_bound_account(session):
     auth.register_auth_method(DummyAuthMethod("dummy"))
     make_user("alice", bindings={"dummy": ["ext", {}]})
-    assert auth.bind_user("dummy", ("ext", "Alice", "changed@example.com", {}))
+    assert auth.bind_user("dummy", auth.AuthUserInfo("ext", "Alice", "changed@example.com", {}))
     assert session.loggedin and session.username == "alice"
 
 
 def test_bind_user_refuses_existing_unbound_email(session):
     auth.register_auth_method(DummyAuthMethod("dummy"))
     make_user("alice")
-    assert not auth.bind_user("dummy", ("ext", "Alice", "alice@example.com", {}))
+    assert not auth.bind_user("dummy", auth.AuthUserInfo("ext", "Alice", "alice@example.com", {}))
     assert User.objects.get(username="alice").bindings == {}
     assert not session.loggedin
 
@@ -291,7 +291,7 @@ def test_bind_user_refuses_existing_unbound_email(session):
 def test_bind_user_adds_binding_to_logged_in_user(session):
     auth.register_auth_method(DummyAuthMethod("dummy"))
     auth.connect_user(make_user("alice"))
-    assert auth.bind_user("dummy", ("ext", "Alice", "other@example.com", {}))
+    assert auth.bind_user("dummy", auth.AuthUserInfo("ext", "Alice", "other@example.com", {}))
     assert User.objects.get(username="alice").bindings == {"dummy": ["ext", {}]}
 
 
@@ -299,7 +299,7 @@ def test_bind_user_keeps_binding_of_another_account(session):
     auth.register_auth_method(DummyAuthMethod("dummy"))
     make_user("bob", bindings={"dummy": ["ext", {}]})
     auth.connect_user(make_user("alice"))
-    auth.bind_user("dummy", ("ext", "Alice", "alice@example.com", {}))
+    auth.bind_user("dummy", auth.AuthUserInfo("ext", "Alice", "alice@example.com", {}))
     assert User.objects.get(username="alice").bindings == {}
     assert User.objects.get(username="bob").bindings == {"dummy": ["ext", {}]}
     assert session.username == "alice"

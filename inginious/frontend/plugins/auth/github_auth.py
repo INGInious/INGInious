@@ -11,7 +11,7 @@ import flask
 
 from requests_oauthlib import OAuth2Session
 
-from inginious.frontend.controllers.auth import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod, AuthUserInfo
 
 authorization_base_url = 'https://github.com/login/oauth/authorize'
 token_url = 'https://github.com/login/oauth/access_token'
@@ -37,7 +37,7 @@ class GithubAuthMethod(AuthMethod):
             r = github.get('https://api.github.com/user/emails')
             profile["email"] = json.loads(r.content.decode('utf-8'))[0]["email"]
             realname = profile["name"] if profile.get("name", None) else profile["login"]
-            return str(profile["id"]), realname, profile["email"], {}
+            return AuthUserInfo(str(profile["id"]), realname, profile["email"], {})
         except:
             return None
 

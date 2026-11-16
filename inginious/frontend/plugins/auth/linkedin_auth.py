@@ -11,7 +11,7 @@ import flask
 
 from requests_oauthlib import OAuth2Session
 
-from inginious.frontend.controllers.auth import AuthMethod
+from inginious.frontend.controllers.auth import AuthMethod, AuthUserInfo
 
 authorization_base_url = 'https://www.linkedin.com/oauth/v2/authorization'
 token_url = 'https://www.linkedin.com/oauth/v2/accessToken'
@@ -41,7 +41,8 @@ class LinkedInAuthMethod(AuthMethod):
                 if contact["type"] == "EMAIL":
                     profile["emailAddress"] = contact["handle~"]["emailAddress"]
                     break
-            return str(profile["id"]), profile["localizedFirstName"] + " " + profile["localizedLastName"], profile["emailAddress"], {}
+            return AuthUserInfo(str(profile["id"]), profile["localizedFirstName"] + " " + profile["localizedLastName"],
+                                profile["emailAddress"], {})
         except Exception as e:
             return None
 

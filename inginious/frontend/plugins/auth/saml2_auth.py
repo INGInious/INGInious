@@ -18,7 +18,7 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from inginious.frontend.pages.utils import INGIniousPage
-from inginious.frontend.controllers.auth import AuthMethod, get_auth_method
+from inginious.frontend.controllers.auth import AuthMethod, AuthUserInfo, get_auth_method
 
 settings = None
 
@@ -118,7 +118,7 @@ class SAMLAuthMethod(AuthMethod):
             if 'RelayState' in input_data and self_url != input_data['RelayState']:
                 auth_storage.update(json.loads(input_data['RelayState']))
                 # Initialize session in user manager and update cache
-                return str(username), realname, email, additional
+                return AuthUserInfo(str(username), realname, email, additional)
         else:
             logging.getLogger('inginious.webapp.plugin.auth.saml').error("Errors while processing response : " +
                                                                          ", ".join(errors))

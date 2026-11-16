@@ -13,7 +13,7 @@ from ldap3.core.exceptions import LDAPException
 from ldap3.utils.conv import escape_filter_chars
 
 from inginious.frontend.pages.social import AuthenticationPage
-from inginious.frontend.controllers.auth import AuthMethod, get_auth_method, bind_user
+from inginious.frontend.controllers.auth import AuthMethod, AuthUserInfo, get_auth_method, bind_user
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -119,7 +119,7 @@ class LDAPAuthenticationPage(AuthenticationPage):
                 conn.unbind()
 
             redir_url = session.auth_storage.get(id, {}).get("redir_url", "/")
-            if not bind_user(id, (username, realname, email, {})):
+            if not bind_user(id, AuthUserInfo(username, realname, email, {})):
                 return redirect(url_for("signinpage",binderror=""))
 
             return redirect(redir_url)
