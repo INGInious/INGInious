@@ -180,7 +180,7 @@
                 <form class="form row" role="form" method="post">
                     <div class="form-group col-sm-8">
                         <label class="sr-only" for="new_courseid">{{ _("Course") }}</label>
-                        <input name="new_courseid" type="text" class="form-control" id="new_courseid" required maxlength="50"
+                        <input name="new_courseid" type="text" class="form-control" id="new_courseid" required maxlength="{{ MAX_ID_LENGTH }}"
                                pattern="[a-zA-Z0-9\-\._]+" placeholder="{{ _('New course id') }}">
                         <small class="form-text text-muted">{{ _("Course IDs must be alphanumeric and may contain hyphens, periods (non-doubled), and underscores. The first character must be alphanumeric.") }}</small>
                     </div>

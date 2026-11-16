@@ -48,10 +48,12 @@ def _load_course(course_fs : FileSystemProvider, courseid : str):
 class Course(object):
     """ A course with some modification for users """
 
-    @staticmethod
-    def is_valid_id(courseid):
+    MIN_ID_LENGTH = 1
+    MAX_ID_LENGTH = 50
+
+    def is_valid_id(self, courseid):
         """Check whether courseid is a valid course identifier."""
-        return isinstance(courseid, str) and id_checker(courseid) and 1 <= len(courseid) <= 50 # set a maximum length of 50 characters for courseid somewhere in general
+        return isinstance(courseid, str) and id_checker(courseid) and self.MIN_ID_LENGTH <= len(courseid) <= self.MAX_ID_LENGTH
 
     def __init__(self, courseid, content):
         self._id = courseid

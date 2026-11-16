@@ -87,7 +87,7 @@
                 <div class="modal-body">
 
                     <p>{{ _('This will create a new course with the ID bellow. This new course will contain the tasks and structure of the selected course') }}</p>
-                    <input class="form-control" type="text" name="new_courseid" required maxlength="50"
+                    <input class="form-control" type="text" name="new_courseid" required maxlength="{{ MAX_ID_LENGTH }}"
                                pattern="^[a-z0-9][a-z0-9\-\._]*$" placeholder="{{ _('Course ID') }}">
                     <input id="courseid" type="hidden" name="courseid">
                 </div>

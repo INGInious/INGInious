@@ -55,7 +55,8 @@ class MarketplacePage(INGIniousAuthPage):
         if errors is None:
             errors = []
         courses = get_all_marketplace_courses()
-        return render_template("marketplace.html", courses=courses, errors=errors)
+        return render_template("marketplace.html", courses=courses, errors=errors,
+                               MAX_ID_LENGTH=Course.MAX_ID_LENGTH)
 
 
 def import_course(course, new_courseid, username):

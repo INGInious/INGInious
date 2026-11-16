@@ -103,4 +103,5 @@ class MyCoursesPage(INGIniousAuthPage):
                                            pinned_courses=pinned_courses,
                                            registrable_courses=registerable_courses,
                                            submissions=except_free_last_submissions,
+                                           MAX_ID_LENGTH=Course.MAX_ID_LENGTH,
                                            success=success, error=error)
