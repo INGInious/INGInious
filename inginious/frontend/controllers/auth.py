@@ -300,6 +300,38 @@ def revoke_binding(username, binding_id):
     return True, _("You must set a password before removing all bindings.")
 
 
+def lti_login(launch):
+    """
+    Connects the user bound to the LTI user of the launch and assigns the launch to it
+    :return: the User, or None if no account is bound to this LTI user yet
+    """
+    user = User.objects(**{"ltibindings__" + launch.lti.binding_key: launch.lti.username}).first()
+    if user:
+        if not session.loggedin or session.username != user.username:
+            connect_user(user)
+        launch.update(set__username=user.username, unset__token=True)
+    return user
+
+
+def bind_lti(username, lti):
+    """
+    Binds the LTI user to the INGInious account
+    :param lti: the LTIData of the launch
+    :return: True if bound (or already bound to this account), False if one of them is bound to another
+    """
+    user = User.objects.get(username=username)
+    lti_user = User.objects(**{"ltibindings__" + lti.binding_key: lti.username}).first()
+    if not user.ltibindings.get(lti.binding_key, "") and not lti_user:
+        user.ltibindings[lti.binding_key] = lti.username
+        user.save()
+        return True
+    if lti_user and lti_user.username == username:
+        return True
+    _logger.info("User %s tried to bind LTI user %s in for %s, but %s is already bound.",
+                 username, lti.username, lti.binding_key, user.ltibindings.get(lti.binding_key, ""))
+    return False
+
+
 def generate_token():
     """ :return: a random token, for account activation or password reset links """
     return secrets.token_hex(64)
