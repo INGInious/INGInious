@@ -10,8 +10,10 @@ import os
 import tempfile
 import shutil
 
-from inginious.common.filesystems import init_fs_provider
+import inginious.common.filesystems as filesystems
+from inginious.common.filesystems import init_fs_provider, invalidate_cache
 from inginious.common.filesystems.local import LocalFSProvider
+from inginious.common.exceptions import CourseAlreadyExistsException, InvalidNameException
 from inginious.frontend.courses import Course
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.environment_types import register_base_env_types
@@ -40,8 +42,77 @@ def ressource(request):
     c.save()
     shutil.rmtree(dir_path)
 
+@pytest.fixture
+def temp_fs(monkeypatch):
+    """
+    Create a temporary filesystem for testing purposes Allowing to test course creation and modification without
+    affecting the real filesystem. This fixture sets up a temporary directory as the filesystem provider for the duration
+    of the test. After the test is completed, the temporary directory is cleaned up.
+    """
+    register_base_env_types()
+    register_problem_types(get_default_displayable_problem_types())
+    register_task_dispenser(TableOfContents)
+    register_task_dispenser(CombinatoryTest)
+
+    with tempfile.TemporaryDirectory() as directory:
+        test_provider = LocalFSProvider(directory)
+        with monkeypatch.context() as patch:
+            patch.setattr(filesystems, "_fs_provider", test_provider)
+            yield directory
+            invalidate_cache(test_provider)
+
+
+@pytest.fixture
+def temp_git_course(git_repo):
+    """Create a local Git repository containing a committed course."""
+    (git_repo.workspace / "course.yaml").write_text(
+        """
+        name: "Git Course"
+        admins: ["admin"]
+        accessible: true
+        """
+    )
+    git_repo.api.index.add(["course.yaml"])
+    git_repo.api.index.commit("Add course")
+    return git_repo.uri
+
 
 class TestCourse(object):
+
+    @pytest.mark.parametrize("course_id", ["", "invalid/id", "invalid@id", "./..", "abc\n", ".", "..", "invalid{id}", "invalid id"])
+    def test_invalid_course_id(self, ressource, course_id):
+        assert Course("test", {"name": "Test"}).is_valid_id(course_id) is False
+
+    @pytest.mark.parametrize("course_id", ["validid", "valide_id", "valid.id", "valid-id"])
+    def test_valid_course_id(self, ressource, course_id):
+        assert Course("test", {"name": "Test"}).is_valid_id(course_id) is True
+
+    def test_course_id_load_char_limit(self, ressource):
+        """ Tests that a course with a long id cannot be loaded, raising an InvalidNameException"""
+        with pytest.raises(InvalidNameException):
+            Course.get("invalid/id")
+
+    def test_course_id_load_course_length_limit(self, ressource):
+        """ Tests that a course with a long id can be loaded (e.g. the course was created before size limit was set or it is an archive) """
+        Course.get("course_with_overly_long_course_id_that_exceeds_the_length_limit")
+
+    def test_course_id_load_all_courses(self, ressource):
+        """Test to see if a course with an invalid id does not raise an error when loading all courses"""
+        course = Course("invalid/id", {"name": "Test"})
+        # check no error is raised when loading all the courses
+        Course.get_all()
+
+    def test_course_id_length_boundaries(self, ressource):
+        course = Course("test", {"name": "Test"})
+        assert course.is_valid_id("a" * 50) is True
+        assert course.is_valid_id("a" * 51) is False
+
+    def test_get_archive_with_long_id(self, temp_fs):
+        """Tests that an archive with an id longer than the limit can be created and loaded"""
+        archive_id = "a" * 42 + "_archive_2026_11_16_10_09_59"
+        c = Course(archive_id, {"name": "Test", "archived": True})
+        c.create()
+        Course.get(archive_id)
 
     def test_course_loading(self, ressource):
         """Tests if a course file loads correctly"""
@@ -104,6 +175,39 @@ class TestCourse(object):
 
 class TestCourseWrite(object):
     """ Test the course update function """
+
+    def test_create_existing_course_id(self, ressource):
+        with pytest.raises(CourseAlreadyExistsException):
+            Course("test", {"name": "Duplicate"}).create()
+
+    def test_create_invalid_course_id(self, ressource):
+        with pytest.raises(InvalidNameException):
+            Course("invalid/id", {"name": "Invalid"}).create()
+
+    def test_create_valid_course_id(self, temp_fs):
+        c = Course("validid", {"name": "Valid"})
+        c.create()
+        assert c.get_id() == "validid"
+        assert c.get_descriptor()["name"] == "Valid"
+
+    def test_git_import_invalid_course_id(self, temp_fs, temp_git_course):
+        with pytest.raises(InvalidNameException):
+            Course("invalid/id", {"name": "Invalid"}).git_import(temp_git_course)
+
+    def test_git_import_existing_course_id(self, temp_fs, temp_git_course):
+        Course("test", {"name": "Existing"}).create()
+        with pytest.raises(CourseAlreadyExistsException):
+            Course("test", {"name": "Exists"}).git_import(temp_git_course)
+
+    def test_git_import_valid_course_id(self, temp_fs, temp_git_course):
+        Course("validid", {"name": "Valid"}).git_import(temp_git_course)
+        course = Course.get("validid")
+        assert course.get_id() == "validid"
+        assert course.get_descriptor()["name"] == "Git Course"
+
+    def test_git_import_non_existing_repo(self, temp_fs):
+        with pytest.raises(Exception, match="Course import failed:"):
+            Course("nonexistant", {"name": "Non-existant"}).git_import(temp_fs + "/missing-repo")
 
     def test_course_update(self, ressource):
         temp_dir = ressource
