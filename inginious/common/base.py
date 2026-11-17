@@ -5,6 +5,7 @@
 
 """ Basic dependencies for every modules that uses INGInious """
 import codecs
+import gettext
 import json
 import os.path
 import hashlib
@@ -12,6 +13,13 @@ import re
 
 import inginious.common.custom_yaml
 from collections import OrderedDict
+
+
+def get_translation(translations, language):
+    """ Returns the translation of language (ll or ll_CC) in translations, falling back on its ISO 639-1 part
+        when no region-specific translation exists """
+    language = language or ""
+    return translations.get(language) or translations.get(language.split("_")[0]) or gettext.NullTranslations()
 
 
 def id_checker(id_to_test):

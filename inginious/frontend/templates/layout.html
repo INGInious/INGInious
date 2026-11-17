@@ -208,7 +208,9 @@
     {% endfor %}
     <script>
         user_indentation_type = {{ config.INDENTATION_TYPES[session.code_indentation] | tojson }};
-        dtf = new Intl.DateTimeFormat([moment.locale({{ session.language | tojson }}), "en"], {
+        {# full BCP 47 tag (e.g. fr-BE) so that dates follow the conventions of the user country #}
+        moment.locale({{ session.language | tojson }});
+        dtf = new Intl.DateTimeFormat([{{ session.language | replace("_", "-") | tojson }}, "en"], {
         dateStyle: "short",
         timeStyle: "medium",
         timeZone: {{ session.timezone | tojson }},

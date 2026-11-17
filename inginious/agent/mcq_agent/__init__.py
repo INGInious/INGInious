@@ -8,6 +8,7 @@ import gettext
 
 from inginious.agent import Agent, CannotCreateJobException
 from inginious import get_root_path
+from inginious.common.base import get_translation
 from inginious.common.messages import BackendNewJob, BackendKillJob
 from inginious.common.tasks_problems import get_problem_types
 import os.path
@@ -72,7 +73,7 @@ class MCQAgent(Agent):
     async def new_job(self, msg: BackendNewJob):
         language = msg.inputdata.get("@lang", "")
         previous_state = msg.inputdata.get("@state", "")
-        translation = self._translations.get(language, gettext.NullTranslations())
+        translation = get_translation(self._translations, language)
         # TODO: this would probably require a refactor.
         # This may pose problem with apps that start multiple MCQAgents in the same process...
         builtins.__dict__['_'] = translation.gettext

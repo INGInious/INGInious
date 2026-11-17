@@ -16,7 +16,7 @@ from datetime import datetime
 
 from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
 from inginious.common.tags import Tag
-from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
+from inginious.common.base import get_translation, id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.models import User
@@ -109,7 +109,7 @@ class Course(object):
         self._translations = translations
 
     def get_translation_obj(self, language):
-        return self._translations.get(language, gettext.NullTranslations())
+        return get_translation(self._translations, language)
 
     def gettext(self, language, text):
         return self.get_translation_obj(language).gettext(text) if text else ""

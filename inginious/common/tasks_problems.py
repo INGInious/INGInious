@@ -5,13 +5,12 @@
 
 """ Tasks' problems """
 import importlib
-import gettext
 import inspect
 import sys
 import re
 from abc import ABCMeta, abstractmethod
 
-from inginious.common.base import id_checker
+from inginious.common.base import get_translation, id_checker
 
 
 def _inspect_problem_types(name: str, base_class) -> dict:
@@ -126,7 +125,7 @@ class Problem(object, metaclass=ABCMeta):
         return problem_content
 
     def get_translation_obj(self, language=None):
-        return self._translations.get(language, gettext.NullTranslations())
+        return get_translation(self._translations, language)
 
     def gettext(self, language, text):
         return self.get_translation_obj(language).gettext(text)if text else ""

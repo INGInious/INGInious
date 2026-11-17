@@ -16,7 +16,7 @@ from inginious.common import custom_yaml
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
-from inginious.frontend.i18n import available_languages
+from inginious.frontend.i18n import normalize_language
 
 
 class INGIniousPage(MethodView):
@@ -27,11 +27,13 @@ class INGIniousPage(MethodView):
 
     def _pre_check(self):
         """ Checks for language. """
-        if "lang" in request.args and request.args["lang"] in available_languages:
-            session.language = request.args["lang"]
+        language = normalize_language(request.args.get("lang"))
+        if language:
+            session.language = language
         elif not session.language:
-            best_lang = request.accept_languages.best_match(available_languages,default="en")
-            session.language = best_lang
+            # keep the country of the browser language (e.g. fr-BE) for localized date formats
+            detected = (normalize_language(lang) for lang in request.accept_languages.values())
+            session.language = next(filter(None, detected), "en")
 
     def GET(self, *args, **kwargs):
         """ Handles GET requests. It should be redefined by subclasses. """

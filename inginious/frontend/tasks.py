@@ -11,7 +11,7 @@ import logging
 
 from typing import Any
 
-from inginious.common.base import id_checker, get_json_or_yaml, loads_json_or_yaml
+from inginious.common.base import get_translation, id_checker, get_json_or_yaml, loads_json_or_yaml
 from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
 from inginious.common.tasks_problems import get_problem_types
 from inginious.frontend.environment_types import get_env_type
@@ -115,7 +115,7 @@ class Task(object):
         self._translations = translations
 
     def get_translation_obj(self, language):
-        return self._translations.get(language, gettext.NullTranslations())
+        return get_translation(self._translations, language)
 
     def gettext(self, language, text):
         return self.get_translation_obj(language).gettext(text) if text else ""
