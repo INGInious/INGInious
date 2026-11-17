@@ -310,24 +310,23 @@ class Course(object):
         """ Saves the Course into the filesystem """
         self._fs.put("course.yaml", get_json_or_yaml("course.yaml", self._content))
 
-    def create(self):
-        """Creates the course"""
+    def _validate_creation(self):
+        """Validate the course ID and ensure that it does not already exist."""
         if not self.is_archive() and not self.is_valid_id(self._id):
             logging.getLogger("inginious.course").warning("Course creation attempt with invalid ID : %s", self._id)
             raise InvalidNameException("Course with invalid id: " + str(self._id))
         if self._fs.exists():
             logging.getLogger("inginious.course").warning("Course creation attempt with already existing ID : %s", self._id)
             raise CourseAlreadyExistsException("Course with id " + str(self._id) + " already exists.")
+
+    def create(self):
+        """Creates the course"""
+        self._validate_creation()
         self.save()
 
     def git_import(self, git_url):
         """ Imports the course from a git repository.  """
-        if not self.is_archive() and not self.is_valid_id(self._id):
-            logging.getLogger("inginious.course").warning("Course creation attempt with invalid ID : %s", self._id)
-            raise InvalidNameException("Course with invalid id: " + str(self._id))
-        if self._fs.exists():
-            logging.getLogger("inginious.course").warning("Course creation attempt with already existing ID : %s", self._id)
-            raise CourseAlreadyExistsException("Course with id " + str(self._id) + " already exists.")
+        self._validate_creation()
         try:
             git.clone(git_url, self._fs.prefix)
         except Exception as e:
