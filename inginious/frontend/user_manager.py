@@ -394,7 +394,7 @@ class UserManager:
 
             ::
 
-                {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "grade": 0}
+                {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "grade": 0, "task_grades": {"task_1": 100.0, "task_2": 0.0, ...}}
         """
         return self.get_course_caches([username], course)[username]
 
@@ -409,7 +409,7 @@ class UserManager:
 
             ::
 
-                {"username": {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "grade": 0}}
+                {"username": {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "grade": 0, "task_grades": {"task_1": 100.0, "task_2": 0.0, ...}}}
         """
 
         user_tasks = UserTask.objects(
@@ -419,7 +419,7 @@ class UserManager:
         )
 
         retval = {
-            username: {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "grade": 0}
+            username: {"task_tried": 0, "total_tries": 0, "task_succeeded": 0, "grade": 0, "task_grades": {}}
             for username in usernames
         }
 
@@ -430,7 +430,10 @@ class UserManager:
                     "task_tried": {"$sum": {"$cond": [{"$ne": ["$tried", 0]}, 1, 0]}},
                     "total_tries": {"$sum": "$tried"},
                     "task_succeeded": {"$sum": {"$cond": ["$succeeded", 1, 0]}},
+                    "task_grades": {"$push": {"k": "$taskid", "v": "$grade"}},
                 }
+        }, {
+            "$addFields": {"task_grades": {"$arrayToObject": "$task_grades"}}
         }])
 
         users_grade = course.get_task_dispenser().get_course_grades(user_tasks, usernames)
