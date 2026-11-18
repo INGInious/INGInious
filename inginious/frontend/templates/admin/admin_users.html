@@ -148,7 +148,7 @@
                 <div class="row">
                     <div class="col-sm-12">
                         <label class="control-label">{{ _("Username") }} <span class="text-danger" aria-hidden="true">*</span> : </label>
-                        <input name="usrname" type="text" class="form-control" required minlength="4" pattern="[\-_\|~0-9A-Za-z]" aria-describedby="username_help">
+                        <input name="usrname" type="text" class="form-control" required minlength="{{ MIN_USERNAME_LENGTH }}" pattern="{{ USERNAME_REGEX }}" aria-describedby="username_help">
                         <small id="username_help" class="form-text text-muted">{{ _("Minimum 4 characters. Allowed: letters, digits, '-', '_', '|' and '~'. No spaces or other special characters.") }}</small>
                     </div>
                     <div class="col-sm-12">
@@ -161,7 +161,7 @@
                     </div>
                     <div class="col-sm-12">
                         <label class="control-label">{{ _("Password") }} <span class="text-danger" aria-hidden="true">*</span> : </label>
-                        <input name="password" type="password" class="form-control" required minlength="6" aria-describedby="passwd_help">
+                        <input name="password" type="password" class="form-control" required minlength="{{ MIN_PASSWORD_LENGTH }}" aria-describedby="passwd_help">
                         <small id="passwd_help" class="form-text text-muted">{{ _("Minimum 6 characters.") }}</small>
                     </div>
                 </div>

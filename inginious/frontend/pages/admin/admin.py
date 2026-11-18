@@ -30,8 +30,11 @@ class AdministrationUsersPage(INGIniousAdministratorPage):
         all_users = User.objects.skip((page-1)*user_per_page).limit(user_per_page)
         size_users = User.objects.count()
         pages = size_users // user_per_page + (size_users % user_per_page > 0) if user_per_page > 0 else 1
-        return render_template("admin/admin_users.html", all_users=all_users,
-                                           number_of_pages=pages, page_number=page)
+        return render_template("admin/admin_users.html",
+                                all_users=all_users, number_of_pages=pages, page_number=page,
+                                MIN_USERNAME_LENGTH=self.user_manager.MIN_USERNAME_LENGTH,
+                                USERNAME_REGEX=self.user_manager.USERNAME_REGEX,
+                                MIN_PASSWORD_LENGTH=self.user_manager.MIN_PASSWORD_LENGTH)
 
 
 class AdministrationUserActionPage(INGIniousAdministratorPage):

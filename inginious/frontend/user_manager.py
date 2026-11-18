@@ -81,6 +81,11 @@ class UserManager:
         self._auth_methods = OrderedDict()
         self._logger = logging.getLogger("inginious.webapp.users")
 
+        self.MIN_USERNAME_LENGTH = 4
+        self.MIN_PASSWORD_LENGTH = 6
+        self.USERNAME_REGEX = r"[\-_\|~0-9A-Za-z]"
+
+
     @classmethod
     def sanitize_email(cls, email: str) -> str:
         """
@@ -96,6 +101,14 @@ class UserManager:
 
         email = email.split('@')
         return "%s@%s" % (email[0], email[1].lower())
+
+    def validate_username(self, username: str) -> bool:
+        """
+        Validate a username.
+        :param username: The username to validate
+        :return: True if the username is valid, False else
+        """
+        return isinstance(username, str) and re.fullmatch(self.USERNAME_REGEX + "{%d,}" % self.MIN_USERNAME_LENGTH, username) is not None
 
     ##############################################
     #      User searching and authentication     #
@@ -377,13 +390,13 @@ class UserManager:
         realname = values.get("realname")
         email = values.get("email")
         password = values.get("password")
-        if not isinstance(username, str) or re.fullmatch(r"[-_|~0-9A-Za-z]{4,}", username) is None:
+        if not self.validate_username(username):
             return _("Invalid username format.")
         if not isinstance(realname, str) or not realname:
             return _("Complete name is required.")
         if not isinstance(email, str) or self.sanitize_email(email) is None:
             return _("Invalid email format.")
-        if not isinstance(password, str) or len(password) < 6:
+        if not isinstance(password, str) or len(password) < self.MIN_PASSWORD_LENGTH:
             return _("Password too short.")
 
         query = Q(username=username) | Q(email=email)
