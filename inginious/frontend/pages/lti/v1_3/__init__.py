@@ -12,6 +12,7 @@ from werkzeug.exceptions import NotFound, Forbidden
 from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest
 from pylti1p3.deep_link_resource import DeepLinkResource
 
+from common.exceptions import InvalidNameException
 from inginious.common.exceptions import CourseNotFoundException
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
@@ -99,8 +100,8 @@ class LTI13LaunchPage(INGIniousPage):
         """ Decrypt and process the LTI Launch message. """
         try:
             lti_config = Course.get(courseid).lti_config() if courseid else {}
-        except CourseNotFoundException as ex:
-            raise NotFound(description=_(str(ex)))
+        except CourseNotFoundException:
+            raise NotFound(description=_("Course not found."))
 
         flask_request = FlaskRequest()
         tool_conf = lti_tool(lti_config, current_app.config.get("LTI_CONFIG"))
@@ -129,9 +130,19 @@ class LTI13LaunchPage(INGIniousPage):
             custom_data = launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"]
             courseid = courseid or custom_data.get('courseid', '')
             taskid = taskid or custom_data.get('taskid', '')
+
+            # Check course
+            if not courseid:
+                raise Forbidden(description=_("Missing course ID."))
+
+            try:
+                lti_secrets = Course.get(courseid).lti_secrets()
+            except CourseNotFoundException:
+                raise Forbidden(description=_("Invalid LTI course or secret"))
+
             # Check course secret
-            if not Course.get(courseid).lti_secrets().get(platform_instance_id) == custom_data.get('secret', ''):
-                raise Forbidden(description=_("Invalid LTI secret"))
+            if not lti_secrets.get(platform_instance_id) == custom_data.get('secret', ''):
+                raise Forbidden(description=_("Invalid LTI course or secret"))
 
             redir_url = url_for("lti13.taskpage", launch_id=launch_id, courseid=courseid, taskid=taskid)
         elif message_launch.is_deep_link_launch():
