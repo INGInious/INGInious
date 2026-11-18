@@ -373,12 +373,25 @@ class UserManager:
         :param values: Dictionary of fields
         :return: An error message if something went wrong else None
         """
-        query = Q(username=values["username"]) | Q(email=values["email"])
+        username = values.get("username")
+        realname = values.get("realname")
+        email = values.get("email")
+        password = values.get("password")
+        if not isinstance(username, str) or re.fullmatch(r"[-_|~0-9A-Za-z]{4,}", username) is None:
+            return _("Invalid username format.")
+        if not isinstance(realname, str) or not realname:
+            return _("Complete name is required.")
+        if not isinstance(email, str) or self.sanitize_email(email) is None:
+            return _("Invalid email format.")
+        if not isinstance(password, str) or len(password) < 6:
+            return _("Password too short.")
+
+        query = Q(username=username) | Q(email=email)
         if User.objects(query).first() is not None:
             return _("User could not be created.")
 
-        User(username=values["username"], realname=values["realname"], email=values["email"],
-             password=self.hash_password(values["password"])).save()
+        User(username=username, realname=realname, email=email,
+             password=self.hash_password(password)).save()
 
         return None
 
