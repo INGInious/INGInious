@@ -12,7 +12,6 @@ from werkzeug.exceptions import NotFound, Forbidden
 from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskMessageLaunch, FlaskRequest
 from pylti1p3.deep_link_resource import DeepLinkResource
 
-from common.exceptions import InvalidNameException
 from inginious.common.exceptions import CourseNotFoundException
 from inginious.frontend.pages.tasks import TaskPage, TaskPageStaticDownload
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
