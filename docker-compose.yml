@@ -42,9 +42,7 @@ services:
       MONGO_INITDB_DATABASE: "INGInious"
 
       # MANDATORY ARGUMENT, INITIALISATION WILL FAIL IF NOT PROVIDED.
-      # Output of 'echo -n "superadmin" | argon2  ASUPERSECURESALT -id -t 3 -m 16 -l 64 -e'.
-      # $ are doubled because of variable expansion in compose env var.
-      INGINIOUS_SUPERADMIN_PASSWORD: '$$argon2id$$v=19$$m=65536,t=3,p=1$$QVNVUEVSU0VDVVJFU0FMVA$$NpeSDEsx+FwrIS277T9o/Q4z4Ypicibs3LiLZrftXsBUmBxFnK8FKa45w5q85ewM+dOlzZPMFdAmxpmDVAmLlQ'
+      INGINIOUS_SUPERADMIN_PASSWORD: ${INGINIOUS_SUPERADMIN_PASSWORD}
 
       # Username. Defaults to "superadmin" if not provided.
       INGINIOUS_SUPERADMIN_USERNAME: "superadmin"
@@ -200,7 +198,7 @@ services:
       OTEL_SERVICE_NAME: caddy
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       JAEGER_ADMIN: superadmin
-      JAEGER_PASSWORD: '$$argon2id$$v=19$$m=65536,t=3,p=1$$QVNVUEVSU0VDVVJFU0FMVA$$NpeSDEsx+FwrIS277T9o/Q4z4Ypicibs3LiLZrftXsBUmBxFnK8FKa45w5q85ewM+dOlzZPMFdAmxpmDVAmLlQ'
+      JAEGER_PASSWORD: ${JAEGER_PASSWORD}
     depends_on:
       - frontend
       - webdav
