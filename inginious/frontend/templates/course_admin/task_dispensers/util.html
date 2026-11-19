@@ -72,12 +72,6 @@
 {% include "course_admin/task_dispensers/util_task_edit_modal.html" %}
 </div>
 
-<div id="edit-modals-template">
-{% with taskid="NEWTASKID" %}
-    {% include "course_admin/task_dispensers/util_task_edit_modal.html" %}
-{% endwith %}
-</div>
-
 <div class="modal fade" id="addTaskModal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -144,7 +138,7 @@
             {% endfor %}
         </div>
         <div class="ml-auto btn-group btn-group-sm" role="group">
-            <a class="task_settings btn btn-primary m-auto" data-toggle="modal" data-target="#edit_NEWTASKID"
+            <a class="task_settings btn btn-primary m-auto" data-toggle="modal" data-target="#edit_task_modal" data-taskid="NEWTASKID"
                     title="{{ _('Task settings') }}">
                 <i class="fa fa-cogs" aria-hidden="true"></i>
             </a>

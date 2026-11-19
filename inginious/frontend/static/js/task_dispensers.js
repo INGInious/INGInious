@@ -125,10 +125,10 @@ function dispenser_util_add_tasks_to_section(button) {
 
     for (var i = 0; i < selected_tasks.length; i++) {
         warn_before_exit = true;
+        if (!(selected_tasks[i] in dispenser_config))
+            dispenser_config[selected_tasks[i]] = {};
         if(existing_task) {
             content.append($("#task_" + selected_tasks[i] + "_clone").clone().attr("id", 'task_' + selected_tasks[i]));
-            if (!(selected_tasks[i] in dispenser_config))
-                dispenser_config[selected_tasks[i]] = {};
         }
 	    else {
             // Copy and add the new task
@@ -139,11 +139,6 @@ function dispenser_util_add_tasks_to_section(button) {
             new_task_clone.find(".delete_task").tooltip({"placement": "bottom"})
             content.append(new_task_clone);
 
-            // Copy and add the new fields
-            var new_modal_clone = $("#edit-modals-template").clone();
-            new_modal_clone.html(new_modal_clone.html().replaceAll("NEWTASKID", selected_tasks[i]));
-            $("#edit-modals").append(new_modal_clone.children(".modal"));
-            $("#edit-modals").trigger("new_task");
             dispenser_add_task(selected_tasks[i]);
         }
     }

@@ -134,7 +134,7 @@
     });
 
     // Catch time picker changes in the modals
-    $('.date_picker').on("focusin focusout", function () { // works, but when autoselecting, leaving fires twice
+    $('.date_picker').on("focusout", function () {
         let grouped = $(this).hasClass("date_picker_grouped");
         let tasks = grouped ? $(".grouped-actions-task:checked") : $("#edit_task_modal");
 
