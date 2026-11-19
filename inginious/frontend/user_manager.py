@@ -81,6 +81,11 @@ class UserManager:
         self._auth_methods = OrderedDict()
         self._logger = logging.getLogger("inginious.webapp.users")
 
+        self.MIN_USERNAME_LENGTH = 4
+        self.MIN_PASSWORD_LENGTH = 6
+        self.USERNAME_REGEX = r"[\-_\|~0-9A-Za-z]"
+
+
     @classmethod
     def sanitize_email(cls, email: str) -> str:
         """
@@ -96,6 +101,14 @@ class UserManager:
 
         email = email.split('@')
         return "%s@%s" % (email[0], email[1].lower())
+
+    def validate_username(self, username: str) -> bool:
+        """
+        Validate a username.
+        :param username: The username to validate
+        :return: True if the username is valid, False else
+        """
+        return isinstance(username, str) and re.fullmatch(self.USERNAME_REGEX + "{%d,}" % self.MIN_USERNAME_LENGTH, username) is not None
 
     ##############################################
     #      User searching and authentication     #
@@ -373,12 +386,25 @@ class UserManager:
         :param values: Dictionary of fields
         :return: An error message if something went wrong else None
         """
-        query = Q(username=values["username"]) | Q(email=values["email"])
+        username = values.get("username")
+        realname = values.get("realname")
+        email = values.get("email")
+        password = values.get("password")
+        if not self.validate_username(username):
+            return _("Invalid username format.")
+        if not isinstance(realname, str) or not realname:
+            return _("Complete name is required.")
+        if not isinstance(email, str) or self.sanitize_email(email) is None:
+            return _("Invalid email format.")
+        if not isinstance(password, str) or len(password) < self.MIN_PASSWORD_LENGTH:
+            return _("Password too short.")
+
+        query = Q(username=username) | Q(email=email)
         if User.objects(query).first() is not None:
             return _("User could not be created.")
 
-        User(username=values["username"], realname=values["realname"], email=values["email"],
-             password=self.hash_password(values["password"])).save()
+        User(username=username, realname=realname, email=email,
+             password=self.hash_password(password)).save()
 
         return None
 
