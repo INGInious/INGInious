@@ -22,6 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install dependencies
+        run: sudo apt install -y argon2
+
       - name: Build core services
         run: for stage in ${CORE_CONTAINERS}; do docker build -f deploy/Containerfile --target=${stage} -t ${REGISTRY}/inginious/core-${stage}:${VERSION} . ; done
 
@@ -32,6 +35,10 @@ jobs:
       - name: Generate deployment secrets
         run: |
           sed -i -E "s/^(\s*secret_key:).*/\1 $(openssl rand -hex 32)/; s/^(api_jwt_secret:).*/\1 $(openssl rand -hex 32)/" configuration.deploy.yaml
+
+      - name: Generate admin passwords
+        run: |
+          sed -i -E "s|replace_me|'$(echo -n $(openssl rand -hex 16) | argon2 $(openssl rand -hex 8) -id -t 3 -m 16 -l 64 -e)'|g" .env
 
       - name: Test deployment
         id: deploy
@@ -66,9 +73,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install dependencies
+        run: sudo apt install -y argon2
+
       - name: Generate deployment secrets
         run: |
           sed -i -E "s/^(\s*secret_key:).*/\1 $(openssl rand -hex 32)/; s/^(api_jwt_secret:).*/\1 $(openssl rand -hex 32)/" configuration.deploy.yaml
+
+      - name: Generate admin passwords
+        run: |
+          sed -i -E "s|replace_me|'$(echo -n $(openssl rand -hex 16) | argon2 $(openssl rand -hex 8) -id -t 3 -m 16 -l 64 -e)'|g" .env
 
       - name: Test deployment
         id: deploy

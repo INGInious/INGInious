@@ -42,9 +42,7 @@ services:
       MONGO_INITDB_DATABASE: "INGInious"
 
       # MANDATORY ARGUMENT, INITIALISATION WILL FAIL IF NOT PROVIDED.
-      # Output of 'echo -n "superadmin" | argon2  ASUPERSECURESALT -id -t 3 -m 16 -l 64 -e'.
-      # $ are doubled because of variable expansion in compose env var.
-      INGINIOUS_SUPERADMIN_PASSWORD: '$$argon2id$$v=19$$m=65536,t=3,p=1$$QVNVUEVSU0VDVVJFU0FMVA$$NpeSDEsx+FwrIS277T9o/Q4z4Ypicibs3LiLZrftXsBUmBxFnK8FKa45w5q85ewM+dOlzZPMFdAmxpmDVAmLlQ'
+      INGINIOUS_SUPERADMIN_PASSWORD: ${INGINIOUS_SUPERADMIN_PASSWORD}
 
       # Username. Defaults to "superadmin" if not provided.
       INGINIOUS_SUPERADMIN_USERNAME: "superadmin"
@@ -145,6 +143,8 @@ services:
         condition: service_started
       backend:
         condition: service_started
+      otelcol:
+        condition: service_started
     environment:
       - INGINIOUS_WEBAPP_HOST=0.0.0.0
     volumes:
@@ -171,13 +171,38 @@ services:
     networks:
       - inginious
 
+  otelcol:
+    image: docker.io/otel/opentelemetry-collector:0.164.0
+    volumes:
+      - ./deploy/otelcol.yaml:/etc/otelcol/config.yaml
+    networks:
+      - inginious
+
+  jaeger:
+    image: docker.io/jaegertracing/jaeger:latest
+    volumes:
+      - ./deploy/jaeger.yml:/jaeger/config.yaml
+    command: ["--config", "/jaeger/config.yaml"]
+    depends_on:
+      - otelcol
+    networks:
+      - inginious
+
   caddy:
     image: docker.io/library/caddy:2.11.4-alpine
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:z
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otelcol:4317
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      OTEL_SERVICE_NAME: caddy
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      JAEGER_ADMIN: superadmin
+      JAEGER_PASSWORD: ${JAEGER_PASSWORD}
     depends_on:
       - frontend
       - webdav
+      - otelcol
     ports:
       - 443:443
     # For illustration purpose, not useful in real deployments.
