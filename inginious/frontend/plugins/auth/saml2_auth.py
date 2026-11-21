@@ -28,10 +28,11 @@ class SAMLAuthMethod(AuthMethod):
     SAML SSO auth method
     """
 
-    def __init__(self, id, name, imlink, settings):
+    def __init__(self, id, name, imlink, allow_removal, settings):
         self._id = id
         self._name = name
         self._imlink = imlink
+        self._allow_removal = allow_removal
         self._settings = settings
 
     def get_id(self):
@@ -47,6 +48,9 @@ class SAMLAuthMethod(AuthMethod):
                    'user-select: none; max-height:50px;" />'
         else:
             return '<i class="fa fa-id-card" style="font-size:50px; color:#000000;"></i>'
+
+    def allow_removal(self):
+        return self._allow_removal
 
     def get_auth_link(self, auth_storage):
         auth = OneLogin_Saml2_Auth(prepare_request(self._settings), self._settings)
@@ -167,5 +171,7 @@ class MetadataPage(INGIniousPage):
 
 def init(plugin_manager, client, conf):
     plugin_manager.add_page('/auth/<id>/metadata', MetadataPage.as_view('metadatapage_' + conf.get("id")))
-    plugin_manager.register_auth_method(SAMLAuthMethod(conf.get("id"), conf.get('name', 'SAML'), conf.get('imlink', ''), conf))
-
+    plugin_manager.register_auth_method(SAMLAuthMethod(
+        conf.get("id"), conf.get('name', 'SAML'), conf.get('imlink', ''),
+        conf.get("allow_removal", True), conf
+    ))

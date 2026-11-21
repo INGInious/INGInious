@@ -58,6 +58,9 @@ class FacebookAuthMethod(AuthMethod):
     def get_imlink(self):
         return '<i class="fa fa-facebook-square" style="font-size:50px; color:#4267b2;"></i>'
 
+    def allow_removal(self):
+        return True
+
 
 def init(plugin_manager, client, conf):
 

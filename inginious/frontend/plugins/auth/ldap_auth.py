@@ -24,10 +24,11 @@ class LdapAuthMethod(AuthMethod):
     LDAP auth method
     """
 
-    def __init__(self, id, name, imlink, settings):
+    def __init__(self, id, name, imlink, allow_removal, settings):
         self._id = id
         self._name = name
         self._imlink = imlink
+        self._allow_removal = allow_removal
         self._settings = settings
 
     def get_id(self):
@@ -52,6 +53,9 @@ class LdapAuthMethod(AuthMethod):
 
     def get_settings(self):
         return self._settings
+
+    def allow_removal(self):
+        return self._allow_removal
 
 
 class LDAPAuthenticationPage(AuthenticationPage):
@@ -165,7 +169,9 @@ def init(plugin_manager, client, conf):
     if conf.get("port", 0) == 0:
         conf["port"] = None
 
-    the_method = LdapAuthMethod(conf.get("id"), conf.get('name', 'LDAP'), conf.get("imlink", ""), conf)
+    plugin_manager.register_auth_method(LdapAuthMethod(
+        conf.get("id"), conf.get('name', 'LDAP'),
+        conf.get("imlink", ""), conf.get("allow_removal", True), conf
+    ))
     plugin_manager.add_page('/auth/page/<id>', LDAPAuthenticationPage.as_view('ldapauthenticationpage'))
-    plugin_manager.register_auth_method(the_method)
     plugin_manager.add_template_prefix("ldap_auth", PATH_TO_PLUGIN)
