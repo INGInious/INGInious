@@ -7,11 +7,11 @@
 import flask
 
 from inginious.frontend.courses import Course
-from inginious.frontend.pages.api._api_page import APIAuthenticatedPage, APINotFound, APIForbidden
+from inginious.frontend.pages.api._api_page import APIAuthenticatedPageV0, APINotFound
 from inginious.frontend.parsable_text import ParsableText
 
 
-class APITasks(APIAuthenticatedPage):
+class APITasks(APIAuthenticatedPageV0):
     r"""
         Endpoint
           ::
@@ -65,12 +65,14 @@ class APITasks(APIAuthenticatedPage):
         try:
             course = Course.get(courseid)
         except:
-            raise APINotFound("Course not found")
+            self._logger.info("Course '%s' not found.", courseid)
+            raise APINotFound()
 
         user = flask.g.user
 
         if not self.user_manager.course_is_open_to_user(course, user.username, lti=False):
-            raise APIForbidden("You are not registered to this course")
+            self._logger.warning("Course '%s' not open to user '%s'.", courseid, user.username)
+            raise APINotFound()
 
         if taskid is None:
             tasks = {tid: task for tid, task in course.get_tasks().items()
@@ -79,9 +81,11 @@ class APITasks(APIAuthenticatedPage):
             try:
                 task = course.get_task(taskid)
             except:
-                raise APINotFound("Task not found")
+                self._logger.info("Task '%s' not found in course '%s'.", taskid, courseid)
+                raise APINotFound()
             if not self.user_manager.task_is_visible_by_user(course, task, user.username, lti=False):
-                raise APINotFound("Task not found")
+                self._logger.warning("Task '%s' not open to user '%s'.", taskid, user.username)
+                raise APINotFound()
             tasks = {taskid: task}
 
         output = []
