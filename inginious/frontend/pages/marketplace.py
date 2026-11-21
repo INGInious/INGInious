@@ -4,23 +4,15 @@
 # more information about the licensing of this file.
 
 """ Course page """
-import sys
 from flask import session, request, redirect, render_template, url_for
 from werkzeug.exceptions import Forbidden
 
-from inginious.common.base import id_checker
-from inginious.common.exceptions import ImportCourseException
+from inginious.common.exceptions import ImportCourseException, InvalidNameException, CourseAlreadyExistsException
 from inginious.common.log import get_course_logger
 
 from inginious.frontend.courses import Course
 from inginious.frontend.marketplace_courses import get_all_marketplace_courses, get_marketplace_course
 from inginious.frontend.pages.utils import INGIniousAuthPage
-
-if sys.platform == 'win32':
-    import pbs
-    git = pbs.Command('git')
-else:
-    from sh import git  # pylint: disable=no-name-in-module
 
 
 class MarketplacePage(INGIniousAuthPage):
@@ -42,10 +34,14 @@ class MarketplacePage(INGIniousAuthPage):
         user_input = request.form
         errors = []
         if "new_courseid" in user_input:
-            new_courseid = user_input["new_courseid"]
+            new_courseid = user_input["new_courseid"].strip()
             try:
                 course = get_marketplace_course(user_input["courseid"])
                 import_course(course, new_courseid, session.username)
+            except InvalidNameException:
+                errors.append(_("Course ID is not valid"))
+            except CourseAlreadyExistsException:
+                errors.append(_("Course ID already exists"))
             except ImportCourseException as e:
                 errors.append(str(e))
             except:
@@ -59,24 +55,16 @@ class MarketplacePage(INGIniousAuthPage):
         if errors is None:
             errors = []
         courses = get_all_marketplace_courses()
-        return render_template("marketplace.html", courses=courses, errors=errors)
+        return render_template("marketplace.html", courses=courses, errors=errors,
+                               MAX_ID_LENGTH=Course.MAX_ID_LENGTH)
 
 
 def import_course(course, new_courseid, username):
-    if not id_checker(new_courseid):
-        raise ImportCourseException("Course with invalid name: " + new_courseid)
-
-    course_fs = Course(new_courseid, {"name": new_courseid}).get_fs()
-    if course_fs.exists("course.yaml") or course_fs.exists("course.json"):
-        raise ImportCourseException("Course with id " + new_courseid + " already exists.")
+    new_course = Course(new_courseid, {"name": new_courseid})
+    new_course.git_import(course.get_link())
 
     try:
-        git.clone(course.get_link(), course_fs.prefix)
-    except:
-        raise ImportCourseException(_("Couldn't clone course into your instance"))
-
-    try:
-        old_descriptor = Course.get(new_courseid).get_descriptor()
+        old_descriptor = new_course.get_descriptor()
     except:
         old_descriptor ={}
 
@@ -98,4 +86,3 @@ def import_course(course, new_courseid, username):
         raise ImportCourseException(_("An error occur while editing the course description"))
 
     get_course_logger(new_courseid).info("Course %s cloned from the marketplace.", new_courseid)
-

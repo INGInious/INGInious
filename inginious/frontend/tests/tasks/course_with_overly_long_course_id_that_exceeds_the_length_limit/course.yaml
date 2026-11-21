@@ -1,0 +1,5 @@
+accessible: true
+admins:
+- testadmin1
+- testadmin2
+name: Unit test 1

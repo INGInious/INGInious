@@ -1,0 +1,24 @@
+environment: "default"
+author: ["Test User"]
+name: "Task 3"
+context: "Here should go some introductory text."
+accessibility: null
+limits:
+    time: 60               
+    memory: 32             
+    disk: 100 
+    output: 1024
+problems:
+    unittest:
+        name: "Question 3"
+        type: "multiple_choice"
+        header: "Header 3"
+        multiple: true 
+        choices:
+          - text: "Choice 1 (valid)"
+            valid: true
+          - text: "Choice 2 (valid)"
+            valid: true
+          - text: "Choice 3"
+          - text: "Choice 4"
+        limit: 3

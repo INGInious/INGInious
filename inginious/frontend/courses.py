@@ -13,6 +13,7 @@ import os
 import logging
 from typing import Iterable, List, Any
 from datetime import datetime
+import sys
 
 from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
 from inginious.common.tags import Tag
@@ -24,7 +25,14 @@ from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.task_dispensers import get_task_dispensers
 from inginious.frontend.tasks import Task
-from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException
+from inginious.common.exceptions import InvalidNameException, CourseNotFoundException, CourseUnreadableException, CourseAlreadyExistsException
+
+
+if sys.platform == 'win32':
+    import pbs
+    git = pbs.Command('git')
+else:
+    from sh import git  # pylint: disable=no-name-in-module
 
 
 def _load_course(course_fs : FileSystemProvider, courseid : str):
@@ -40,11 +48,20 @@ def _load_course(course_fs : FileSystemProvider, courseid : str):
 class Course(object):
     """ A course with some modification for users """
 
+    MIN_ID_LENGTH = 1
+    MAX_ID_LENGTH = 50
+
+    def is_valid_id(self, courseid):
+        """Check whether courseid is a valid course identifier."""
+        return isinstance(courseid, str) and id_checker(courseid) and self.MIN_ID_LENGTH <= len(courseid) <= self.MAX_ID_LENGTH
+
     def __init__(self, courseid, content):
         self._id = courseid
         self._content = content
-        self._fs = get_fs_provider().from_subfolder(courseid)
-        self._new_doc = not self._fs.exists()
+        try:
+            self._fs = get_fs_provider().from_subfolder(courseid)
+        except FileNotFoundError:
+            raise InvalidNameException("Course with invalid id: " + str(courseid))
 
         self._translations = {}
 
@@ -292,14 +309,35 @@ class Course(object):
     def save(self):
         """ Saves the Course into the filesystem """
         self._fs.put("course.yaml", get_json_or_yaml("course.yaml", self._content))
-        if self._new_doc:
-            logging.getLogger("inginious.course").info("Course %s created in the factory.", self._fs.prefix)
+
+    def _validate_creation(self):
+        """Validate the course ID and ensure that it does not already exist."""
+        if not self.is_archive() and not self.is_valid_id(self._id):
+            logging.getLogger("inginious.course").warning("Course creation attempt with invalid ID : %s", self._id)
+            raise InvalidNameException("Course with invalid id: " + str(self._id))
+        if self._fs.exists():
+            logging.getLogger("inginious.course").warning("Course creation attempt with already existing ID : %s", self._id)
+            raise CourseAlreadyExistsException("Course with id " + str(self._id) + " already exists.")
+
+    def create(self):
+        """Creates the course"""
+        self._validate_creation()
+        self.save()
+
+    def git_import(self, git_url):
+        """ Imports the course from a git repository.  """
+        self._validate_creation()
+        try:
+            git.clone(git_url, self._fs.prefix)
+        except Exception as e:
+            logging.getLogger("inginious.course").warning("Course import attempt failed for ID : %s", self._id)
+            raise Exception("Course import failed: " + str(e))
 
     @classmethod
     def get(cls, courseid : str) -> Course:
         """ Fetch a course with id courseid from the specified course filesystem"""
         if not id_checker(courseid):
-            raise InvalidNameException("Course with invalid name: " + courseid)
+            raise InvalidNameException("Course with invalid name: " + str(courseid))
 
         course_fs = get_fs_provider().from_subfolder(courseid)
         if not course_fs.exists("course.yaml"):

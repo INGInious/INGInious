@@ -75,6 +75,7 @@ ldap = ["ldap3==2.9.1"]
 saml2 = ["python3-saml==1.16.0"]
 test = [
     "pytest == 8.3.4",
+    "pytest-git == 1.8.0",
     "coverage == 7.6.9"
 ]
 doc = [
@@ -115,3 +116,7 @@ Issues ="https://github.com/INGInious/INGInious/issues"
 # automatically find packages in the project
 [tool.setuptools.packages.find]
 include = ["inginious*"]
+
+# limit test discovery to the inginious directory by default
+[tool.pytest.ini_options]
+testpaths = ["inginious"]

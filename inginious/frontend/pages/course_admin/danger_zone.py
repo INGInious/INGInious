@@ -47,18 +47,17 @@ class CourseDangerZonePage(INGIniousAdminPage):
         if course.is_archive():
             raise CourseNotArchivable()
 
-        # Copy archive course
-        archive_course_id = courseid + "_archive_" + datetime.now(tz=timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-        archive_course_fs = Course(archive_course_id, {"name": archive_course_id}).get_fs()
-        archive_course_fs.copy_to(course_fs.prefix)
-
-        # Update archive YAML file
+        # Build archive course descriptor
+        archive_date = datetime.now(tz=timezone.utc)
+        archive_course_id = courseid + "_archive_" + archive_date.strftime("%Y_%m_%d_%H_%M_%S")
         archive_course_content = course.get_descriptor()
         archive_course_content["archived"] = True
-        archive_course_content["archive_date"] = datetime.now(tz=timezone.utc).isoformat()
+        archive_course_content["archive_date"] = archive_date.isoformat()
 
-        # Save archived course
-        Course(archive_course_id, archive_course_content).save()
+        # Copy course files and save the archive YAML (overwrites the copied course.yaml)
+        archive_course = Course(archive_course_id, archive_course_content)
+        archive_course.get_fs().copy_to(course_fs.prefix)
+        archive_course.save()
 
         # Update course id in DB
         staff = course.get_staff() if keep_staff else []

@@ -7,7 +7,8 @@
 from flask import session, request, redirect, render_template, url_for
 from werkzeug.exceptions import Forbidden
 
-from inginious.common.exceptions import ImportCourseException
+from inginious.common.exceptions import ImportCourseException, InvalidNameException, CourseAlreadyExistsException, CourseNotFoundException
+from inginious.frontend.courses import Course
 from inginious.frontend.marketplace_courses import get_marketplace_course
 from inginious.frontend.pages.marketplace import import_course
 from inginious.frontend.pages.utils import INGIniousAuthPage
@@ -20,7 +21,7 @@ class MarketplaceCoursePage(INGIniousAuthPage):
         """ Return the course """
         try:
             course = get_marketplace_course(courseid)
-        except:
+        except CourseNotFoundException:
             raise Forbidden(description=_("Course unavailable."))
 
         return course
@@ -47,6 +48,10 @@ class MarketplaceCoursePage(INGIniousAuthPage):
             new_courseid = user_input["new_courseid"]
             try:
                 import_course(course, new_courseid, session.username)
+            except InvalidNameException:
+                errors.append(_("Course ID is not valid"))
+            except CourseAlreadyExistsException:
+                errors.append(_("Course ID already exists"))
             except ImportCourseException as e:
                 errors.append(str(e))
             if not errors:
@@ -58,4 +63,5 @@ class MarketplaceCoursePage(INGIniousAuthPage):
         if errors is None:
             errors = []
 
-        return render_template("marketplace_course.html", course=course, errors=errors)
+        return render_template("marketplace_course.html", course=course, errors=errors,
+                               MAX_ID_LENGTH=Course.MAX_ID_LENGTH)
