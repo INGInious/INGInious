@@ -57,8 +57,9 @@ class Course(object):
             raise Exception("That course is not allowed to be displayed directly in the webapp")
 
         try:
-            self._admins = self._content.get('admins', [])
-            self._tutors = self._content.get('tutors', [])
+            # A key present in the YAML with no value parses to None, so get()'s default does not apply.
+            self._admins = self._content.get('admins') or []
+            self._tutors = self._content.get('tutors') or []
             self._description = self._content.get('description', '')
             self._accessible = AccessibleTime(self._content.get("accessible", None))
             self._registration = AccessibleTime(self._content.get("registration", None))
@@ -67,7 +68,7 @@ class Course(object):
             if self._registration_ac not in [None, "username", "binding", "email"]:
                 raise Exception("Course has an invalid value for registration_ac: " + self.get_id())
             self._registration_ac_accept = self._content.get('registration_ac_accept', True)
-            self._registration_ac_list = self._content.get('registration_ac_list', [])
+            self._registration_ac_list = self._content.get('registration_ac_list') or []
             self._groups_student_choice = self._content.get("groups_student_choice", False)
             self._allow_unregister = self._content.get('allow_unregister', True)
             self._allow_preview = self._content.get('allow_preview', False)
