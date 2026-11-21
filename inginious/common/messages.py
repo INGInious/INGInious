@@ -7,6 +7,8 @@ from typing import Dict, Type, Tuple, Union, Any, List, Optional
 import msgpack
 from dataclasses import dataclass, is_dataclass, asdict
 
+from inginious.common.agents import AgentType, GradingEnvironment, Capabilities
+
 BackendJobId = str
 ClientJobId = str
 SPResult = Tuple[str, str]  # JobId of the backend, composed with the address of the client and the client job id
@@ -40,6 +42,8 @@ class ClientNewJob:
     environment_parameters: Dict[str, Any] # parameters for the environment (timeouts, limits, ...)
     debug: Union[str, bool]  # True to enable debug, False to disable it, "ssh" to enable ssh debug
     launcher: str  # the name of the entity that launched this job, for logging purposes
+    """ AgentCapabilities required to run the job. """
+    capabilities: list[str]
 
 
 @dataclass(frozen=True)
@@ -64,6 +68,7 @@ class ClientGetQueue:
 class BackendUpdateEnvironments:
     """ Update the information about the environments on the client, from the informations retrieved from the agents """
     available_environments: Dict[str, List[str]]  # dict of available environment aliases (as keys) and type of the related agent (as value)
+    capabilities: dict[AgentType, dict[str, dict[str, str]]]
 
 
 @dataclass(frozen=True)
@@ -175,19 +180,17 @@ class BackendKillJob:
 @dataclass(frozen=True)
 class AgentHello:
     """ Let the agent say hello and announce which environments it has available """
-    friendly_name: str  # a string containing a friendly name to identify agent
-    available_job_slots: int  # an integer giving the number of concurrent
-    available_environments: Dict[str, Dict[str, Dict[str, Any]]]  # dict of available environments:
-    # {
-    #     "type": {
-    #         "name": {                 #  for example, "default"
-    #             "id": "env img id",   # "sha256:715c5cb5575cdb2641956e42af4a53e69edf763ce701006b2c6e0f4f39b68dd3"
-    #             "created": 12345678,  # create date
-    #             "ports": [22, 434],   # list of ports needed
-    #             "advertised": True,       # if False, the environment will not be advertised to the clients and thus not be accessible for from the frontend.
-    #         }
-    #     }
-    # }
+
+    """ Agent name. """
+    friendly_name: str
+    """ The number of concurrent jobs supported """
+    available_job_slots: int
+    """ Grading environments exposed by the Agent """
+    environments: dict[str, GradingEnvironment]
+    """ The Agent type """
+    agent_type: AgentType
+    """ Agent capabilities """
+    capabilities: Capabilities
 
 
 @dataclass(frozen=True)
