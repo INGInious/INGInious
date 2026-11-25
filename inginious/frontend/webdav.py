@@ -204,16 +204,6 @@ def get_app(config):
     """ Init the webdav app """
     connect(config.get('database', 'INGInious'), host=config.get('mongo_opt', {}).get('host', 'localhost'), tz_aware=True)
 
-    register_base_env_types()
-    register_problem_types(get_default_displayable_problem_types())
-    
-    for entry in config.get('plugins', []): 
-         module_name = entry["plugin_module"] 
-  
-         """ Load DisplayableProblem sub-classes """ 
-         displayable_pbl_types = inspect_displayable_problem_types(module_name) 
-         register_problem_types(displayable_pbl_types) 
-
     # Create the FS provider
     if "tasks_directory" not in config:
         raise RuntimeError("WebDav access is only supported if INGInious is using a local filesystem to access tasks")
