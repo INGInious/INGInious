@@ -13,6 +13,7 @@ import os
 import logging
 from typing import Iterable, List, Any
 from datetime import datetime
+from functools import cached_property
 
 from inginious.common.filesystems import FileSystemProvider, fetch_or_cache, invalidate_cache, get_fs_provider
 from inginious.common.tags import Tag
@@ -80,9 +81,6 @@ class Course(object):
             self._lti_secrets = self._content.get('lti_secrets', {})
             self._lti_send_back_grade = self._content.get('lti_send_back_grade', False)
             self._tags = {key: Tag(key, tag_dict, self.gettext) for key, tag_dict in self._content.get("tags", {}).items()}
-            task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
-            # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
-            self._task_dispenser = task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", {}), self.get_id())
         except:
             raise Exception("Course has an invalid YAML spec: " + self.get_id())
 
@@ -273,6 +271,13 @@ class Course(object):
        :return: the structure of the course
        """
         return self._task_dispenser
+
+    @cached_property
+    def _task_dispenser(self):
+        """ Lazily loaded, to avoid loading when not necessary (e.g. from webdav) """
+        task_dispenser_class = get_task_dispensers().get(self._content.get('task_dispenser', 'toc'), TableOfContents)
+        # Here we use a lambda to ensure we do not pass a fixed list of tasks to the task dispenser
+        return task_dispenser_class(lambda: self.get_tasks(), self._content.get("dispenser_data", {}), self.get_id())
 
     def _build_ac_regex(self, list_ac):
         """ Build a regex for the AC list, allowing for fast matching. The regex is only used internally """
