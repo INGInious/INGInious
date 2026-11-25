@@ -113,5 +113,6 @@
 </form>
 <script>
     $("select[name=timezone]").selectize();
+    $(function() { $("select[name=language]").selectize(); }); // run after names are processed
 </script>
 {% endblock %}
