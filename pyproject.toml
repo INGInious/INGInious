@@ -115,3 +115,7 @@ Issues ="https://github.com/INGInious/INGInious/issues"
 # automatically find packages in the project
 [tool.setuptools.packages.find]
 include = ["inginious*"]
+
+# limit test discovery to the inginious directory by default
+[tool.pytest.ini_options]
+testpaths = ["inginious"]
