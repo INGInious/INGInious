@@ -19,24 +19,11 @@ def pgettext(context, text):
     translations = _translations.get(language, _gettext.NullTranslations())
     return translations.pgettext(context, text) if text else ""
 
-_available_translations = {
-    "de": "Deutsch",
-    "el": "ελληνικά",
-    "es": "Español",
-    "fr": "Français",
-    "he": "עִבְרִית",
-    "nl": "Nederlands",
-    "nb_NO": "Norsk (bokmål)",
-    "pl": "Polski",
-    "pt": "Português",
-    "vi": "Tiếng Việt"
-}
-
-available_languages = {"en": "English"}
-available_languages.update(_available_translations)
+_available_translations = ["de", "el", "es", "fr", "he", "nl", "nb_NO", "pl", "pt", "vi"]
+available_languages = ["en"] + _available_translations
 
 _translations = {"en": _gettext.NullTranslations()} # English does not need translation ;-)
-for lang in _available_translations.keys():
+for lang in _available_translations:
     _translations[lang] = _gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
 
 # Define _ builtin but better to explicitly import using:

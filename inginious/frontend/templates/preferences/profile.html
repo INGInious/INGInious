@@ -65,8 +65,8 @@
         <div class="col-sm-12">
             <label class="control-label">{{ _("Language :") }} </label>
             <select name="language" class="form-control">
-                {% for code, language in config.LANGUAGES.items() %}
-                <option value="{{code}}" {% if code == session.language %} selected {% endif %}>{{ language }}</option>
+                {% for code in config.LANGUAGES %}
+                <option class="language-name" data-lang="{{ code }}" value="{{code}}" {% if code == session.language %} selected {% endif %}>{{ code }}</option>
                 {% endfor %}
             </select>
         </div>

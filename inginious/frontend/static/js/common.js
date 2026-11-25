@@ -16,6 +16,14 @@ $(document).on("focusin click", "[data-select-radio]", function () {
 
 function init_common()
 {
+    //Display each language name in its own language
+    $('.language-name').each(function(index, elem)
+    {
+        var code = $(elem).attr('data-lang').replace('_', '-');
+        var name = new Intl.DisplayNames([code], {type: 'language'}).of(code);
+        $(elem).text(name.charAt(0).toLocaleUpperCase(code) + name.slice(1));
+    });
+
     //Init CodeMirror
     colorizeStaticCode();
     $('.code-editor').each(function(index, elem)
