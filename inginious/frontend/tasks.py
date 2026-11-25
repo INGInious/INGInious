@@ -115,7 +115,8 @@ class Task(object):
         self._translations = translations
 
     def get_translation_obj(self, language):
-        return self._translations.get(language, gettext.NullTranslations())
+        language = language or ""
+        return self._translations.get(language) or self._translations.get(language.split("_")[0], gettext.NullTranslations())
 
     def gettext(self, language, text):
         return self.get_translation_obj(language).gettext(text) if text else ""

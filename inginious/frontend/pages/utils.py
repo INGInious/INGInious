@@ -16,7 +16,7 @@ from inginious.common import custom_yaml
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
 from inginious.frontend.parsable_text import ParsableText
-from inginious.frontend.i18n import available_languages
+from inginious.frontend.i18n import available_locales
 
 
 class INGIniousPage(MethodView):
@@ -27,10 +27,10 @@ class INGIniousPage(MethodView):
 
     def _pre_check(self):
         """ Checks for language. """
-        if "lang" in request.args and request.args["lang"] in available_languages:
+        if "lang" in request.args and request.args["lang"] in available_locales:
             session.language = request.args["lang"]
         elif not session.language:
-            best_lang = request.accept_languages.best_match(available_languages,default="en")
+            best_lang = request.accept_languages.best_match(available_locales,default="en")
             session.language = best_lang
 
     def GET(self, *args, **kwargs):

@@ -20,7 +20,7 @@ function init_common()
     $('.language-name').each(function(index, elem)
     {
         var code = $(elem).attr('data-lang').replace('_', '-');
-        var name = new Intl.DisplayNames([code], {type: 'language'}).of(code);
+        var name = new Intl.DisplayNames([code], {type: 'language', languageDisplay: 'standard'}).of(code);
         $(elem).text(name.charAt(0).toLocaleUpperCase(code) + name.slice(1));
     });
 

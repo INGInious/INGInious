@@ -19,12 +19,15 @@ def pgettext(context, text):
     translations = _translations.get(language, _gettext.NullTranslations())
     return translations.pgettext(context, text) if text else ""
 
-_available_translations = ["de", "el", "es", "fr", "he", "nl", "nb_NO", "pl", "pt", "vi"]
-available_languages = ["en"] + _available_translations
+available_languages = ["en", "de", "el", "es", "fr", "he", "nl", "nb_NO", "pl", "pt", "vi"]
+_regional_variants = ["de_AT", "de_BE", "de_CH", "de_DE", "el_CY", "el_GR", "en_AU", "en_CA", "en_GB", "en_IE", "en_US",
+                      "es_AR", "es_ES", "es_MX", "fr_BE", "fr_CA", "fr_CH", "fr_FR", "fr_LU", "he_IL", "nl_BE", "nl_NL",
+                      "pl_PL", "pt_BR", "pt_PT", "vi_VN"]
+available_locales = sorted(available_languages + _regional_variants)
 
-_translations = {"en": _gettext.NullTranslations()} # English does not need translation ;-)
-for lang in _available_translations:
-    _translations[lang] = _gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang])
+# gettext falls back on ll when no ll_CC catalog exists, and on NullTranslations for English
+_translations = {lang: _gettext.translation('messages', get_root_path() + '/frontend/i18n', [lang], fallback=True)
+                 for lang in available_locales}
 
 # Define _ builtin but better to explicitly import using:
 # from inginious.frontend.i18n import gettext as _
