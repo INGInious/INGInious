@@ -153,11 +153,11 @@
                             </div>
                         {% else %}
                             <a class="list-group-item list-group-item-action dropdown-toggle" data-toggle="collapse" href="#collapseLang" role="button" aria-expanded="false" aria-controls="collapseLang">
-                                <i class="fa fa-globe fa-fw"></i> {{ _("English") }} <span class="caret"></span>
+                                <i class="fa fa-globe fa-fw"></i> <span class="language-name" data-lang="{{ session.language }}">{{ session.language }}</span> <span class="caret"></span>
                             </a>
                             <div class="collapse list-group-collapse" id="collapseLang">
-                                {% for code, language in config.LANGUAGES.items() %}
-                                    <a href="?lang={{code}}" class="list-group-item list-group-item-action"><i class="fa fa-chevron-right fa-fw"></i> {{ code }} ({{ language }})</a>
+                                {% for code in config.LANGUAGES %}
+                                    <a href="?lang={{code}}" class="list-group-item list-group-item-action"><i class="fa fa-chevron-right fa-fw"></i> <span class="language-name" data-lang="{{ code }}">{{ code }}</span></a>
                                 {% endfor %}
                             </div>
 

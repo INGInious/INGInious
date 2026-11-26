@@ -19,7 +19,7 @@ from inginious.frontend.arch_helper import create_arch, start_asyncio_and_zmq
 from inginious.frontend.plugins import plugin_manager
 from inginious.frontend.submission_manager import WebAppSubmissionManager
 from inginious.frontend.user_manager import UserManager
-from inginious.frontend.i18n import available_languages, gettext, pgettext
+from inginious.frontend.i18n import available_languages, available_locales, gettext, pgettext
 from inginious import __version__, DB_VERSION
 from inginious.common.entrypoints import filesystem_from_config_dict
 from inginious.common.filesystems import init_fs_provider
@@ -135,6 +135,7 @@ def _put_configuration_defaults(config):
         "tabs": {"text": "tabs", "indent": 4, "indentWithTabs": True},
     }
     new_config["LANGUAGES"] = available_languages
+    new_config["LOCALES"] = available_locales
     new_config["IS_TOS_DEFINED"] = "PRIVACY_PAGE" in new_config and "TERMS_PAGE" in new_config
 
     return new_config

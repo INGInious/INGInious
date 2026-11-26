@@ -72,7 +72,7 @@ class MCQAgent(Agent):
     async def new_job(self, msg: BackendNewJob):
         language = msg.inputdata.get("@lang", "")
         previous_state = msg.inputdata.get("@state", "")
-        translation = self._translations.get(language, gettext.NullTranslations())
+        translation = self._translations.get(language) or self._translations.get(language.split("_")[0], gettext.NullTranslations())
         # TODO: this would probably require a refactor.
         # This may pose problem with apps that start multiple MCQAgents in the same process...
         builtins.__dict__['_'] = translation.gettext
@@ -88,10 +88,10 @@ class MCQAgent(Agent):
             translations_fs = course_fs.from_subfolder("$common").from_subfolder("student")\
                 .from_subfolder("$i18n")
 
-        if translations_fs.exists() and translations_fs.exists(language + ".mo"):
-            translations = {language: gettext.GNUTranslations(translations_fs.get_fd(language + ".mo"))}
-        else:
-            translations = {language: gettext.NullTranslations()}
+        translations = {}
+        for lang in {language, language.split("_")[0]}:
+            if translations_fs.exists() and translations_fs.exists(lang + ".mo"):
+                translations[lang] = gettext.GNUTranslations(translations_fs.get_fd(lang + ".mo"))
 
         task_problems= msg.task_problems
         problems = []

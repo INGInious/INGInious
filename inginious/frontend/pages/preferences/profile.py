@@ -13,7 +13,7 @@ from werkzeug.exceptions import NotFound
 from inginious.frontend.models import User
 from inginious.frontend.pages.utils import INGIniousAuthPage
 from inginious.frontend.user_manager import UserManager
-from inginious.frontend.i18n import available_languages
+from inginious.frontend.i18n import available_locales
 
 
 class ProfilePage(INGIniousAuthPage):
@@ -71,7 +71,7 @@ class ProfilePage(INGIniousAuthPage):
 
         # Check if updating language
         if data["language"] != userdata.language:
-            language = data["language"] if data["language"] in available_languages else "en"
+            language = data["language"] if data["language"] in available_locales else "en"
             profile_data_to_be_updated["language"] = language
 
         # check if updating code indentation
