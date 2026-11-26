@@ -12,6 +12,7 @@ import shutil
 
 from inginious.common.filesystems import init_fs_provider
 from inginious.common.filesystems.local import LocalFSProvider
+from inginious.common.exceptions import CourseAlreadyExistsException, InvalidNameException
 from inginious.frontend.courses import Course
 from inginious.frontend.task_dispensers.toc import TableOfContents
 from inginious.frontend.environment_types import register_base_env_types
@@ -25,23 +26,51 @@ task_dispensers = {TableOfContents.get_id(): TableOfContents, CombinatoryTest.ge
 
 @pytest.fixture()
 def ressource(request):
+    """
+    Create a temporary directory. Copy the test tasks directory into it and define it as the Filesystem provider.
+    Yield the temporary directory path to the test function. The temporary directory is automatically cleaned up at teardown.
+    """
     register_base_env_types()
-    dir_path = tempfile.mkdtemp()
-    init_fs_provider(LocalFSProvider(os.path.join(os.path.dirname(__file__), 'tasks')))
     register_problem_types(get_default_displayable_problem_types())
     register_task_dispenser(TableOfContents)
     register_task_dispenser(CombinatoryTest)
-    yield dir_path
-    c = Course("test",
-               {
-                   "name": "Unit test 1", "admins": ["testadmin1","testadmin2"],
-                   "accessible": True
-               })
-    c.save()
-    shutil.rmtree(dir_path)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        original_tasks_dir = os.path.join(os.path.dirname(__file__), 'tasks')
+        temp_tasks_dir = os.path.join(temp_dir, 'tasks')
+        shutil.copytree(original_tasks_dir, temp_tasks_dir)
+        init_fs_provider(LocalFSProvider(temp_tasks_dir))
+
+        yield temp_dir
 
 
 class TestCourse(object):
+
+    @pytest.mark.parametrize("course_id", ["", "invalid/id", "invalid@id", "./..", "abc\n", ".", "..", "invalid{id}", "invalid id"])
+    def test_invalid_course_id(self, course_id):
+        assert Course.is_valid_id(course_id) is False
+
+    @pytest.mark.parametrize("course_id", ["validid", "valide_id", "valid.id", "valid-id"])
+    def test_valid_course_id(self, course_id):
+        assert Course.is_valid_id(course_id) is True
+
+    def test_course_init_invalid_id(self, ressource):
+        """Tests that a course with an invalid id cannot be initialized, raising an InvalidNameException"""
+        with pytest.raises(InvalidNameException):
+            Course("invalid/id", {"name": "Test"})
+
+    def test_course_init_valid_id(self, ressource):
+        """Tests that a course with a valid id can be initialized"""
+        Course("validid", {"name": "Test"})
+
+    def test_course_id_load_char_limit(self, ressource):
+        """ Tests that a course with an invalid id cannot be loaded, raising an InvalidNameException"""
+        with pytest.raises(InvalidNameException):
+            Course.get("invalid/id")
+
+    def test_course_id_load_all_courses(self, ressource):
+        """Test to check that a course with an invalid id is not loaded by Course.get_all() and does not raise an exception"""
+        assert "invalid{id" not in Course.get_all()
 
     def test_course_loading(self, ressource):
         """Tests if a course file loads correctly"""
@@ -104,6 +133,26 @@ class TestCourse(object):
 
 class TestCourseWrite(object):
     """ Test the course update function """
+
+    def test_create_existing_course_id(self, ressource):
+        """Tests that creating a course with an existing id raises a CourseAlreadyExistsException"""
+        with pytest.raises(CourseAlreadyExistsException):
+            Course("test", {"name": "Duplicate"}).create()
+
+    def test_create_invalid_course_id(self, ressource):
+        """Tests that creating a course with an invalid id raises an InvalidNameException"""
+        with pytest.raises(InvalidNameException):
+            Course("invalid/id", {"name": "Invalid"}).create()
+
+    def test_create_valid_course_id(self, ressource):
+        """Tests that creating a course with a valid id creates the course and saves it correctly"""
+        c = Course("validid", {"name": "Valid"})
+        c.create()
+        assert c.get_id() == "validid"
+        assert c.get_descriptor()["name"] == "Valid"
+        saved_course = Course.get("validid")
+        assert saved_course.get_id() == "validid"
+        assert saved_course.get_descriptor()["name"] == "Valid"
 
     def test_course_update(self, ressource):
         temp_dir = ressource
